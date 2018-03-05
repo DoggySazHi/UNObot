@@ -117,8 +117,7 @@ namespace DiscordBot.Modules
             {
                 if (Program.gameStarted)
                 {
-                    Discord.UserExtensions.SendMessageAsync(Context.Message.Author, "Current card: " + 
-                                                            Program.currentcard.Color + " " + Program.currentcard.Value);
+                    ReplyAsync("Current card: " + Program.currentcard.Color + " " + Program.currentcard.Value);
                     return null;
                 }
                 else
@@ -141,11 +140,17 @@ namespace DiscordBot.Modules
                 {
                     Program.currentcard = UNOcore.RandomCard();
                     Discord.WebSocket.DiscordSocketClient dsc = new Discord.WebSocket.DiscordSocketClient();
-                    UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(0).ToString(), out ulong result);
+                    UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(0).Key.ToString(), out ulong result);
                     ReplyAsync("Game has started. Please remember; PM the bot to avoid bleeding!\n" +
-                               "You have been given 7 cards; PM \"cards\" to view them. " +
+                               "You have been given 7 cards; PM \"deck\" to view them. " +
                                $"The first player is <@{result}>.)");
                     Program.gameStarted = true;
+                    foreach(ulong player in Program.players.Keys){
+                        List<Card> list = (List<Card>)Program.players[player];
+                        for (int i = 1; i <= 7; i++){
+                            list.Add(UNOcore.RandomCard());
+                        }
+                    }
                     return ReplyAsync("Current card: " +
                                                             Program.currentcard.Color + " " + Program.currentcard.Value + "\n");
                 }
@@ -159,7 +164,7 @@ namespace DiscordBot.Modules
             {
                 if (Program.gameStarted)
                 {
-                    bool shouldwork = UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).ToString(), out ulong result);
+                    bool shouldwork = UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong result);
                     if (!shouldwork)
                     {
                         ReplyAsync($"{Context.User.Id}, you apparently don't exist.");
@@ -180,7 +185,7 @@ namespace DiscordBot.Modules
                             if (c.Equals(card))
                             {
                                 exists = true;
-                                cardindex = list.IndexOf(card);
+                                cardindex = list.IndexOf(c);
                             }
                         }
                         if (exists)
@@ -192,6 +197,11 @@ namespace DiscordBot.Modules
                                     Discord.UserExtensions.SendMessageAsync(Context.Message.Author, $"Since you are placing a Wild card, retype the command, but also add the color to switch to.");
                                     return null;
                                 }
+                                if (card.Color != "Wild")
+                                {
+                                    Program.currentcard.Color = card.Color;
+                                    Program.currentcard.Value = card.Value;
+                                }
                                 Discord.UserExtensions.SendMessageAsync(Context.Message.Author, $"You have placed a {card.Color} {card.Value}.");
                                 list.RemoveAt(cardindex);
                                 Program.players[Context.User.Id] = list;
@@ -202,7 +212,7 @@ namespace DiscordBot.Modules
                                 Discord.UserExtensions.SendMessageAsync(Context.Message.Author, "This is an illegal choice. Make sure your color or value matches.");
                                 return null;
                             }
-                            Discord.UserExtensions.SendMessageAsync(Context.Message.Author, $"Current card: {Program.currentcard.Color} {Program.currentcard.Value}");
+                            ReplyAsync($"Current card: {Program.currentcard.Color} {Program.currentcard.Value}");
                             if (Program.order == 1)
                             {
                                 Program.currentPlayer++;
@@ -231,7 +241,7 @@ namespace DiscordBot.Modules
                                 if (Program.currentPlayer < 0)
                                     Program.currentPlayer = Program.players.Count - Program.currentPlayer;
                             }
-                            UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).ToString(), out ulong id);
+                            UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong id);
                             ReplyAsync($"It is now <@{id}>'s turn.");
                             return null;
                         }
@@ -363,7 +373,7 @@ namespace DiscordBot.Modules
                                 if (Program.currentPlayer < 0)
                                     Program.currentPlayer = Program.players.Count - Program.currentPlayer;
                             }
-                            UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).ToString(), out ulong id);
+                            UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong id);
                             ReplyAsync($"It is now <@{id}>'s turn.");
                             return null;
                         }
