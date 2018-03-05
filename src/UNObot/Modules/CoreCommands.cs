@@ -132,6 +132,7 @@ namespace DiscordBot.Modules
         [Command("start")]
         public Task Start()
         {
+            //TODO Remember to start ONLY when players >2 !
             if (Program.players.Contains(Context.User.Id))
             {
                 if (Program.gameStarted)
