@@ -28,7 +28,7 @@ namespace DiscordBot.Modules
         public Task Ugay()
             => ReplyAsync(
                 $"<@{Context.User.Id}> no u\n");
-                
+
         [Command("u gay")]
         public Task Ugay2()
             => ReplyAsync(
@@ -46,11 +46,12 @@ namespace DiscordBot.Modules
             {
                 return ReplyAsync($"<@{Context.User.Id}>, you're already in the queue!\n");
             }
-            else
+            if (Program.gameStarted)
             {
-                Program.players.Add(Context.User.Id,new List<Card>());
-                return ReplyAsync($"<@{Context.User.Id}>, you have been added to the queue.\n");
-            }  
+                return ReplyAsync($"The game has already started, so you cannot join.\n");
+            }
+            Program.players.Add(Context.User.Id, new List<Card>());
+            return ReplyAsync($"<@{Context.User.Id}>, you have been added to the queue.\n");
         }
         [Command("leave")]
         public Task Leave()
@@ -58,26 +59,49 @@ namespace DiscordBot.Modules
             if (Program.players.Contains(Context.User.Id))
             {
                 Program.players.Remove(Context.User.Id);
-                return ReplyAsync($"<@{Context.User.Id}>, you have been removed from the queue.\n");
+                ReplyAsync($"<@{Context.User.Id}>, you have been removed from the queue.\n");
+                if (Program.order == 1)
+                {
+                    Program.currentPlayer++;
+                    if (Program.currentPlayer == Program.players.Count)
+                        Program.currentPlayer = Program.currentPlayer - Program.players.Count;
+                }
+                else
+                {
+                    Program.currentPlayer--;
+                    if (Program.currentPlayer < 0)
+                        Program.currentPlayer = Program.players.Count - Program.currentPlayer;
+                }
+                if (Program.players.Count == 0)
+                {
+                    Program.currentPlayer = 0;
+                    Program.gameStarted = false;
+                    Program.order = 1;
+                    Program.currentcard = null;
+                    Program.players = new System.Collections.Specialized.OrderedDictionary();
+                    ReplyAsync("Game has been reset, due to nobody in-game.");
+                }
+                return null;
             }
             else
             {
                 return ReplyAsync($"<@{Context.User.Id}>, you are already out of the queue!\n");
-            }                 
+            }
         }
         [Command("draw")]
         public Task Draw()
         {
             if (Program.players.Contains(Context.User.Id))
             {
-                if(Program.gameStarted)
+                if (Program.gameStarted)
                 {
                     Card card = UNOcore.RandomCard();
                     Discord.UserExtensions.SendMessageAsync(Context.Message.Author, "You have recieved: " + card.Color + " " + card.Value + ".");
-                    List<Card> playercards = (List<Card>) Program.players[Context.User.Id];
+                    List<Card> playercards = (List<Card>)Program.players[Context.User.Id];
                     playercards.Add(card);
                     return null;
-                } else
+                }
+                else
                     return ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
             }
             else
@@ -95,7 +119,8 @@ namespace DiscordBot.Modules
                 {
                     List<Card> list = (List<Card>)Program.players[Context.User.Id];
                     string response = "Cards available:\n";
-                    foreach (Card card in list) {
+                    foreach (Card card in list)
+                    {
                         response += card.Color + " " + card.Value + "\n";
                     }
                     Discord.UserExtensions.SendMessageAsync(Context.Message.Author, response);
@@ -131,7 +156,6 @@ namespace DiscordBot.Modules
         [Command("start")]
         public Task Start()
         {
-            //TODO Remember to start ONLY when players >2 !
             if (Program.players.Contains(Context.User.Id))
             {
                 if (Program.gameStarted)
@@ -145,9 +169,11 @@ namespace DiscordBot.Modules
                                "You have been given 7 cards; PM \"deck\" to view them. " +
                                $"The first player is <@{result}>.)");
                     Program.gameStarted = true;
-                    foreach(ulong player in Program.players.Keys){
+                    foreach (ulong player in Program.players.Keys)
+                    {
                         List<Card> list = (List<Card>)Program.players[player];
-                        for (int i = 1; i <= 7; i++){
+                        for (int i = 1; i <= 7; i++)
+                        {
                             list.Add(UNOcore.RandomCard());
                         }
                     }
@@ -157,130 +183,60 @@ namespace DiscordBot.Modules
             }
             return ReplyAsync($"<@{Context.User.Id}>, you are not in game.\n");
         }
-        [Command("play"),Priority(2)]
+        [Command("play"), Priority(2)]
         public Task Play(string color, string value)
         {
-            if (Program.players.Contains(Context.User.Id))
+            if (color.ToLower() == "wild")
             {
-                if (Program.gameStarted)
-                {
-                    bool shouldwork = UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong result);
-                    if (!shouldwork)
-                    {
-                        ReplyAsync($"{Context.User.Id}, you apparently don't exist.");
-                        return null;
-                    }
-                    if (result == Context.User.Id)
-                    {
-                        Card card = new Card
-                        {
-                            Color = color,
-                            Value = value
-                        };
-                        List<Card> list = (List<Card>)Program.players[Context.User.Id];
-                        bool exists = false;
-                        int cardindex = 0;
-                        foreach (Card c in list)
-                        {
-                            if (c.Equals(card))
-                            {
-                                exists = true;
-                                cardindex = list.IndexOf(c);
-                            }
-                        }
-                        if (exists)
-                        {
-                            if (card.Color == Program.currentcard.Color || card.Value == Program.currentcard.Value || card.Color == "Wild")
-                            {
-                                if (card.Color == "Wild")
-                                {
-                                    Discord.UserExtensions.SendMessageAsync(Context.Message.Author, $"Since you are placing a Wild card, retype the command, but also add the color to switch to.");
-                                    return null;
-                                }
-                                if (card.Color != "Wild")
-                                {
-                                    Program.currentcard.Color = card.Color;
-                                    Program.currentcard.Value = card.Value;
-                                }
-                                Discord.UserExtensions.SendMessageAsync(Context.Message.Author, $"You have placed a {card.Color} {card.Value}.");
-                                list.RemoveAt(cardindex);
-                                Program.players[Context.User.Id] = list;
-                                ReplyAsync($"{Context.User.Id} has placed an " + card.Color + " " + card.Value + ".");
-                            }
-                            else
-                            {
-                                Discord.UserExtensions.SendMessageAsync(Context.Message.Author, "This is an illegal choice. Make sure your color or value matches.");
-                                return null;
-                            }
-                            ReplyAsync($"Current card: {Program.currentcard.Color} {Program.currentcard.Value}");
-                            if (Program.order == 1)
-                            {
-                                Program.currentPlayer++;
-                                if (Program.currentcard.Value == "Skip")
-                                {
-                                    if (Program.currentPlayer == Program.players.Count)
-                                        Program.currentPlayer = Program.currentPlayer - Program.players.Count;
-                                    UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).ToString(), out ulong skipped);
-                                    SendAll($"<@{skipped}> has been skipped!");
-                                    Program.currentPlayer++;
-                                }
-                                if (Program.currentPlayer == Program.players.Count)
-                                    Program.currentPlayer = Program.currentPlayer - Program.players.Count;
-                            }
-                            else
-                            {
-                                Program.currentPlayer--;
-                                if (Program.currentcard.Value == "Skip")
-                                {
-                                    if (Program.currentPlayer == Program.players.Count)
-                                        Program.currentPlayer = Program.players.Count - Program.currentPlayer;
-                                    UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).ToString(), out ulong skipped);
-                                    SendAll($"<@{skipped}> has been skipped!");
-                                    Program.currentPlayer--;
-                                }
-                                if (Program.currentPlayer < 0)
-                                    Program.currentPlayer = Program.players.Count - Program.currentPlayer;
-                            }
-                            UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong id);
-                            ReplyAsync($"It is now <@{id}>'s turn.");
-                            return null;
-                        }
-                        else
-                        {
-                            Discord.UserExtensions.SendMessageAsync(Context.Message.Author, "You do not have this card!");
-                        }
-                        return null;
-                    } else
-                        return ReplyAsync($"<@{Context.User.Id}>, it is not your turn!\n");
-
-                }
-                else
-                {
-                    return ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
-                }
-            } 
+                ReplyAsync("You need to rerun the command, but also add what color should it represent.\nEx. play Wild Color Green");
+                return null;
+            }
             else
             {
-                return ReplyAsync($"<@{Context.User.Id}>, you are not in game.\n");
+                PlayCommon(color, value, null);
+                return null;
             }
-
         }
         [Command("play"), Priority(1)]
         public Task PlayWild(string color, string value, string wild)
         {
+            PlayCommon(color, value, wild);
+            return null;
+        }
+
+        public void PlayCommon(string color, string value, string wild)
+        {
             if (Program.players.Contains(Context.User.Id))
             {
                 if (Program.gameStarted)
                 {
-                    bool shouldwork = UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).ToString(), out ulong result);
+                    switch (color.ToLower())
+                    {
+                        case "red":
+                            color = "Red";
+                            break;
+                        case "blue":
+                            color = "Blue";
+                            break;
+                        case "green":
+                            color = "Green";
+                            break;
+                        case "yellow":
+                            color = "Yellow";
+                            break;
+                        default:
+                            ReplyAsync($"<@{Context.User.Id}>, that's not a color.");
+                            return;
+                    }
+                    bool shouldwork = UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong result);
                     if (!shouldwork)
                     {
-                        ReplyAsync($"{Context.User.Id}, you apparently don't exist.");
-                        return null;
+                        ReplyAsync($"<@{Context.User.Id}>, you apparently don't exist.");
+                        return;
                     }
                     if (result == Context.User.Id)
                     {
-                        Card card = new Card()
+                        Card card = new Card
                         {
                             Color = color,
                             Value = value
@@ -330,14 +286,14 @@ namespace DiscordBot.Modules
                                 Discord.UserExtensions.SendMessageAsync(Context.Message.Author, $"You have placed a {card.Color} {card.Value}.");
                                 list.RemoveAt(cardindex);
                                 Program.players[Context.User.Id] = list;
-                                ReplyAsync($"{Context.User.Id} has placed an " + card.Color + " " + card.Value + ".");
+                                ReplyAsync($"<@{Context.User.Id}> has placed an " + card.Color + " " + card.Value + ".");
                                 if (card.Color == "Wild")
-                                    ReplyAsync($"{Context.User.Id} has decided that the new color is {Program.currentcard.Color}.");
+                                    ReplyAsync($"<@{Context.User.Id}> has decided that the new color is {Program.currentcard.Color}.");
                             }
                             else
                             {
                                 Discord.UserExtensions.SendMessageAsync(Context.Message.Author, "This is an illegal choice. Make sure your color or value matches.");
-                                return null;
+                                return;
                             }
                             Discord.UserExtensions.SendMessageAsync(Context.Message.Author, $"Current card: {Program.currentcard.Color} {Program.currentcard.Value}");
                             if (Program.currentcard.Value == "Reverse")
@@ -348,49 +304,84 @@ namespace DiscordBot.Modules
                                 else
                                     Program.order = 1;
                             }
-                            if(Program.order == 1){
+                            if (Program.order == 1)
+                            {
                                 Program.currentPlayer++;
                                 if (Program.currentcard.Value == "Skip")
                                 {
                                     if (Program.currentPlayer == Program.players.Count)
                                         Program.currentPlayer = Program.currentPlayer - Program.players.Count;
-                                    UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).ToString(), out ulong skipped);
+                                    UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong skipped);
                                     SendAll($"<@{skipped}> has been skipped!");
                                     Program.currentPlayer++;
                                 }
                                 if (Program.currentPlayer == Program.players.Count)
                                     Program.currentPlayer = Program.currentPlayer - Program.players.Count;
-                            } else {
+                            }
+                            else
+                            {
                                 Program.currentPlayer--;
                                 if (Program.currentcard.Value == "Skip")
                                 {
                                     if (Program.currentPlayer == Program.players.Count)
                                         Program.currentPlayer = Program.players.Count - Program.currentPlayer;
-                                    UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).ToString(), out ulong skipped);
+                                    UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong skipped);
                                     SendAll($"<@{skipped}> has been skipped!");
                                     Program.currentPlayer--;
                                 }
                                 if (Program.currentPlayer < 0)
                                     Program.currentPlayer = Program.players.Count - Program.currentPlayer;
                             }
+                            if (Program.currentcard.Value == "+2" || Program.currentcard.Value == "+4")
+                            {
+                                UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong skipped);
+                                List<Card> skiplist = (List<Card>)Program.players[skipped];
+
+                                if (Program.currentcard.Value == "+2")
+                                {
+                                    skiplist.Add(UNOcore.RandomCard());
+                                    skiplist.Add(UNOcore.RandomCard());
+                                }
+                                if (Program.currentcard.Value == "+4")
+                                {
+                                    skiplist.Add(UNOcore.RandomCard());
+                                    skiplist.Add(UNOcore.RandomCard());
+                                    skiplist.Add(UNOcore.RandomCard());
+                                    skiplist.Add(UNOcore.RandomCard());
+                                }
+                                ReplyAsync($"<@{skipped}> has been skipped! They have also recieved a prize of {Program.currentcard.Value} cards.");
+                                if (Program.order == 1)
+                                {
+                                    Program.currentPlayer++;
+                                    if (Program.currentPlayer == Program.players.Count)
+                                        Program.currentPlayer = Program.currentPlayer - Program.players.Count;
+                                }
+                                else
+                                {
+                                    Program.currentPlayer--;
+                                    if (Program.currentPlayer < 0)
+                                        Program.currentPlayer = Program.players.Count - Program.currentPlayer;
+                                }
+                            }
                             UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong id);
                             ReplyAsync($"It is now <@{id}>'s turn.");
-                            return null;
+                            return;
                         }
                         else
                         {
                             Discord.UserExtensions.SendMessageAsync(Context.Message.Author, "You do not have this card!");
                         }
-                        return null;
-                    } else
-                        return ReplyAsync($"<@{Context.User.Id}>, it is not your turn!\n");
+                        return;
+                    }
+                    else
+                        ReplyAsync($"<@{Context.User.Id}>, it is not your turn!\n");
                 }
                 else
-                    return ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
+                    ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
             }
             else
             {
-                return ReplyAsync($"<@{Context.User.Id}>, you are not in game.\n");
+                ReplyAsync($"<@{Context.User.Id}>, you are not in game.\n");
             }
         }
 
