@@ -224,6 +224,9 @@ namespace DiscordBot.Modules
                         case "yellow":
                             color = "Yellow";
                             break;
+                        case "wild":
+                            color = "Wild";
+                            break;
                         default:
                             ReplyAsync($"<@{Context.User.Id}>, that's not a color.");
                             return;
