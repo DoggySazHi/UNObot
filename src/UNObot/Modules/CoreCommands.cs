@@ -28,7 +28,7 @@ namespace DiscordBot.Modules
         public Task Ugay()
             => ReplyAsync(
                 $"<@{Context.User.Id}> no u\n");
-        
+
         [Command("u gay")]
         public Task Ugay2()
             => ReplyAsync(
