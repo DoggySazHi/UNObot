@@ -28,7 +28,7 @@ namespace DiscordBot.Modules
         public Task Ugay()
             => ReplyAsync(
                 $"<@{Context.User.Id}> no u\n");
-
+        
         [Command("u gay")]
         public Task Ugay2()
             => ReplyAsync(
@@ -363,6 +363,7 @@ namespace DiscordBot.Modules
                                         Program.currentPlayer = Program.players.Count - Program.currentPlayer;
                                 }
                             }
+
                             UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong id);
                             ReplyAsync($"It is now <@{id}>'s turn.");
                             return;
@@ -385,68 +386,76 @@ namespace DiscordBot.Modules
             }
         }
 
-        public void SendAll (string message)
+        public void SendAll(string message)
         {
             foreach (ulong player in Program.players.Keys)
             {
                 Discord.WebSocket.DiscordSocketClient dsg = new Discord.WebSocket.DiscordSocketClient();
                 Discord.UserExtensions.SendMessageAsync(dsg.GetUser(player), message);
+
             }
         }
-    }
 
-    public static class UNOcore {
-        static readonly Random r = new Random();
+        public static class UNOcore
+        {
+            static readonly Random r = new Random();
 
-        public static Card RandomCard(){
-            Card card = new Card();
+            public static Card RandomCard()
+            {
+                Card card = new Card();
 
-            //0-9 is number, 10 is actioncard
-            int myCard = r.Next(0, 11);
-            // see switch
-            int myColor = r.Next(1, 5);
+                //0-9 is number, 10 is actioncard
+                int myCard = r.Next(0, 11);
+                // see switch
+                int myColor = r.Next(1, 5);
 
-            switch(myColor){
-                case 1:
-                    card.Color = "Red";
-                    break;
-                case 2:
-                    card.Color = "Yellow";
-                    break;
-                case 3:
-                    card.Color = "Green";
-                    break;
-                case 4:
-                    card.Color = "Blue";
-                    break;
-            }
-
-            if(myCard < 10){
-                card.Value = myCard.ToString();
-            } else {
-                //4 is wild, 1-3 is action
-                int action = r.Next(1, 5);
-                switch(action){
+                switch (myColor)
+                {
                     case 1:
-                        card.Value = "Skip";
+                        card.Color = "Red";
                         break;
                     case 2:
-                        card.Value = "Reverse";
+                        card.Color = "Yellow";
                         break;
                     case 3:
-                        card.Value = "+2";
+                        card.Color = "Green";
                         break;
                     case 4:
-                        int wild = r.Next(1, 3);
-                        card.Color = "Wild";
-                        if (wild == 1)
-                            card.Value = "Color";
-                        else
-                            card.Value = "+4";
+                        card.Color = "Blue";
                         break;
                 }
+
+                if (myCard < 10)
+                {
+                    card.Value = myCard.ToString();
+                }
+                else
+                {
+                    //4 is wild, 1-3 is action
+                    int action = r.Next(1, 5);
+                    switch (action)
+                    {
+                        case 1:
+                            card.Value = "Skip";
+                            break;
+                        case 2:
+                            card.Value = "Reverse";
+                            break;
+                        case 3:
+                            card.Value = "+2";
+                            break;
+                        case 4:
+                            int wild = r.Next(1, 3);
+                            card.Color = "Wild";
+                            if (wild == 1)
+                                card.Value = "Color";
+                            else
+                                card.Value = "+4";
+                            break;
+                    }
+                }
+                return card;
             }
-            return card;
         }
     }
 }
