@@ -21,7 +21,7 @@ namespace DiscordBot
         public static OrderedDictionary players = new OrderedDictionary();
         public static Modules.Card currentcard;
 
-        static void Main(string[] args)
+        static void Main()
             => new Program().MainAsync().GetAwaiter().GetResult();
 
         private DiscordSocketClient _client;

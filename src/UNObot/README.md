@@ -21,6 +21,8 @@ See the cards you have currently.
 
 Coming soon:
 - Players
-See who is playing andwho's turn is it.
+See who is playing and who's turn is it.
 - Uno
 Don't forget to say this when you end up with one card left!
+- Help
+Get a help list. It is just a copy of this readme, minus the header.
