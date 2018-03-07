@@ -153,6 +153,34 @@ namespace DiscordBot.Modules
                 return ReplyAsync($"<@{Context.User.Id}>, you are not in game.\n");
             }
         }
+        [Command("uno")]
+        public Task Uno()
+        {
+            if (Program.players.Contains(Context.User.Id))
+            {
+                if (Program.gameStarted)
+                {
+                    if(Context.User.Id == Program.onecardleft)
+                    {
+                        ReplyAsync($"Good job, <@{Context.User.Id}> has exactly one card left!");
+                        Program.onecardleft = 0;
+                    } else
+                    {
+                        ReplyAsync($"<@{Context.User.Id}>, you still have more than one card! As a result, you are forced to draw two cards.");
+                        List<Card> usercards = (List<Card>) Program.players[Context.User.Id];
+                        usercards.Add(UNOcore.RandomCard());
+                        usercards.Add(UNOcore.RandomCard());
+                    }
+                    return null;
+                }
+                else
+                    return ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
+            }
+            else
+            {
+                return ReplyAsync($"<@{Context.User.Id}>, you are not in game.\n");
+            }
+        }
         [Command("start")]
         public Task Start()
         {
@@ -239,6 +267,14 @@ namespace DiscordBot.Modules
                     }
                     if (result == Context.User.Id)
                     {
+                        if(Program.onecardleft != 0)
+                        {
+                            ReplyAsync($"<@{Program.onecardleft}> has forgotten to say UNO! They have been given 2 cards.");
+                            List <Card> forgotuno = (List<Card>)Program.players[Program.onecardleft];
+                            forgotuno.Add(UNOcore.RandomCard());
+                            forgotuno.Add(UNOcore.RandomCard());
+                            Program.onecardleft = 0;
+                        }
                         Card card = new Card
                         {
                             Color = color,
@@ -366,7 +402,28 @@ namespace DiscordBot.Modules
                                         Program.currentPlayer = Program.players.Count - Program.currentPlayer;
                                 }
                             }
-
+                            List< Card > userlist = (List<Card>)Program.players[Context.User.Id];
+                            if (userlist.Count == 1)
+                            {
+                                Program.onecardleft = Context.User.Id;
+                            }
+                            if (userlist.Count == 0)
+                            {
+                                ReplyAsync($"<@{Context.User.Id}> has won!");
+                                string response = "";
+                                foreach(ulong player in Program.players.Keys)
+                                {
+                                    List<Card> loserlist = (List<Card>)Program.players[player];
+                                    response += $"- <@{player}> had {loserlist.Count} cards left.";
+                                }
+                                ReplyAsync(response);
+                                Program.currentPlayer = 0;
+                                Program.gameStarted = false;
+                                Program.order = 1;
+                                Program.currentcard = null;
+                                Program.players = new System.Collections.Specialized.OrderedDictionary();
+                                ReplyAsync("Game is over. You may rejoin now.");
+                            }
                             UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong id);
                             ReplyAsync($"It is now <@{id}>'s turn.");
                             return;
