@@ -21,8 +21,10 @@ namespace DiscordBot.Modules
     {
         [Command("info")]
         public Task Info()
-            => ReplyAsync(
-                $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\n");
+        {
+            return ReplyAsync(
+                $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\n Version {Program.version}");
+        }
 
         [Command("ugay")]
         public Task Ugay()
@@ -63,7 +65,7 @@ namespace DiscordBot.Modules
                 if (Program.order == 1)
                 {
                     Program.currentPlayer++;
-                    if (Program.currentPlayer == Program.players.Count)
+                    if (Program.currentPlayer >= Program.players.Count)
                         Program.currentPlayer = Program.currentPlayer - Program.players.Count;
                 }
                 else
@@ -234,6 +236,7 @@ namespace DiscordBot.Modules
 
         public void PlayCommon(string color, string value, string wild)
         {
+            //TODO Case sensitive value? Check reset, and +4 not working
             if (Program.players.Contains(Context.User.Id))
             {
                 if (Program.gameStarted)
@@ -258,6 +261,23 @@ namespace DiscordBot.Modules
                         default:
                             ReplyAsync($"<@{Context.User.Id}>, that's not a color.");
                             return;
+                    }
+                    if (value.ToLower() == "reverse")
+                        value = "Reverse";
+                    if (value.ToLower() == "color")
+                        value = "Color";
+                    if (Program.currentPlayer > Program.players.Count || Program.currentPlayer < 0)
+                    {
+                        if (Program.order == 1)
+                        {
+                            if (Program.currentPlayer >= Program.players.Count)
+                                Program.currentPlayer = Program.currentPlayer - Program.players.Count;
+                        }
+                        else
+                        {
+                            if (Program.currentPlayer < 0)
+                                Program.currentPlayer = Program.players.Count - Program.currentPlayer;
+                        }
                     }
                     bool shouldwork = UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong result);
                     if (!shouldwork)
@@ -348,13 +368,13 @@ namespace DiscordBot.Modules
                                 Program.currentPlayer++;
                                 if (Program.currentcard.Value == "Skip")
                                 {
-                                    if (Program.currentPlayer == Program.players.Count)
+                                    if (Program.currentPlayer >= Program.players.Count)
                                         Program.currentPlayer = Program.currentPlayer - Program.players.Count;
                                     UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong skipped);
                                     SendAll($"<@{skipped}> has been skipped!");
                                     Program.currentPlayer++;
                                 }
-                                if (Program.currentPlayer == Program.players.Count)
+                                if (Program.currentPlayer >= Program.players.Count)
                                     Program.currentPlayer = Program.currentPlayer - Program.players.Count;
                             }
                             else
@@ -362,7 +382,7 @@ namespace DiscordBot.Modules
                                 Program.currentPlayer--;
                                 if (Program.currentcard.Value == "Skip")
                                 {
-                                    if (Program.currentPlayer == Program.players.Count)
+                                    if (Program.currentPlayer < 0)
                                         Program.currentPlayer = Program.players.Count - Program.currentPlayer;
                                     UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong skipped);
                                     SendAll($"<@{skipped}> has been skipped!");
@@ -392,7 +412,7 @@ namespace DiscordBot.Modules
                                 if (Program.order == 1)
                                 {
                                     Program.currentPlayer++;
-                                    if (Program.currentPlayer == Program.players.Count)
+                                    if (Program.currentPlayer >= Program.players.Count)
                                         Program.currentPlayer = Program.currentPlayer - Program.players.Count;
                                 }
                                 else
@@ -414,7 +434,7 @@ namespace DiscordBot.Modules
                                 foreach(ulong player in Program.players.Keys)
                                 {
                                     List<Card> loserlist = (List<Card>)Program.players[player];
-                                    response += $"- <@{player}> had {loserlist.Count} cards left.";
+                                    response += $"- <@{player}> had {loserlist.Count} cards left.\n";
                                 }
                                 ReplyAsync(response);
                                 Program.currentPlayer = 0;
@@ -425,7 +445,8 @@ namespace DiscordBot.Modules
                                 ReplyAsync("Game is over. You may rejoin now.");
                             }
                             UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong id);
-                            ReplyAsync($"It is now <@{id}>'s turn.");
+                            //TODO remove from this list
+                            ReplyAsync($"It is now <@{id}>'s turn. List position: {Program.currentPlayer}");
                             return;
                         }
                         else
