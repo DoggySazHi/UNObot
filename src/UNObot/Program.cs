@@ -20,6 +20,7 @@ namespace DiscordBot
         public static bool gameStarted = false;
         public static OrderedDictionary players = new OrderedDictionary();
         public static Modules.Card currentcard;
+        public static ulong onecardleft = 0;
 
         static void Main()
             => new Program().MainAsync().GetAwaiter().GetResult();
