@@ -193,26 +193,31 @@ namespace DiscordBot.Modules
         [Command("players")]
         public Task Players()
         {
-            if (Program.order == 1)
+            if (Program.gameStarted)
             {
-                Program.currentPlayer++;
-                if (Program.currentPlayer >= Program.players.Count)
-                    Program.currentPlayer = Program.currentPlayer - Program.players.Count;
+                if (Program.order == 1)
+                {
+                    Program.currentPlayer++;
+                    if (Program.currentPlayer >= Program.players.Count)
+                        Program.currentPlayer = Program.currentPlayer - Program.players.Count;
+                }
+                else
+                {
+                    Program.currentPlayer--;
+                    if (Program.currentPlayer < 0)
+                        Program.currentPlayer = Program.players.Count - Program.currentPlayer;
+                }
+                UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong id);
+                string response = $"Current player: <@{id}>";
+                foreach (ulong player in Program.players.Keys)
+                {
+                    List<Card> loserlist = (List<Card>)Program.players[player];
+                    response += $"- <@{player}> has {loserlist.Count} cards left.\n";
+                }
+                return ReplyAsync(response);
             }
             else
-            {
-                Program.currentPlayer--;
-                if (Program.currentPlayer < 0)
-                    Program.currentPlayer = Program.players.Count - Program.currentPlayer;
-            }
-            UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong id);
-            string response = $"Current player: <@{id}>";
-            foreach (ulong player in Program.players.Keys)
-            {
-                List<Card> loserlist = (List<Card>)Program.players[player];
-                response += $"- <@{player}> has {loserlist.Count} cards left.\n";
-            }
-            return ReplyAsync(response);
+                return ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
         }
         [Command("seed")]
         public Task Seed(int seed)
