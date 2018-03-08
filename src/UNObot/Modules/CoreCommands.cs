@@ -86,6 +86,7 @@ namespace DiscordBot.Modules
                     Program.currentcard = null;
                     Program.players = new System.Collections.Specialized.OrderedDictionary();
                     ReplyAsync("Game has been reset, due to nobody in-game.");
+                    playTimer.Dispose();
                 }
                 return null;
             }
@@ -220,10 +221,10 @@ namespace DiscordBot.Modules
                 return ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
         }
         [Command("seed")]
-        public Task Seed(int seed)
+        public Task Seed(string seed)
         {
-            UNOcore.r = new Random(seed);
-            return ReplyAsync("Seed has been updated. I do not guarntee 100% Wild cards.");
+            UNOcore.r = new Random(seed.GetHashCode());
+            return ReplyAsync("Seed has been updated. I do not guarantee 100% Wild cards.");
         }
         [Command("uno")]
         public Task Uno()
@@ -279,7 +280,7 @@ namespace DiscordBot.Modules
                     UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(0).Key.ToString(), out ulong result);
                     ReplyAsync("Game has started. Please remember; PM the bot to avoid bleeding!\n" +
                                "You have been given 7 cards; PM \"deck\" to view them.\n" +
-                               "Remember; you have 1 minute and 30 seconds to place a card." +
+                               "Remember; you have 1 minute and 30 seconds to place a card.\n" +
                                $"The first player is <@{result}>.\n");
                     SetTimer();
                     Program.gameStarted = true;
@@ -421,6 +422,7 @@ namespace DiscordBot.Modules
                             }
                             if (card.Color == Program.currentcard.Color || card.Value == Program.currentcard.Value || card.Color == "Wild")
                             {
+                                ResetTimer();
                                 if (card.Color != "Wild")
                                 {
                                     Program.currentcard.Color = card.Color;
@@ -538,6 +540,7 @@ namespace DiscordBot.Modules
                                 Program.order = 1;
                                 Program.currentcard = null;
                                 Program.players = new System.Collections.Specialized.OrderedDictionary();
+                                playTimer.Dispose();
                                 ReplyAsync("Game is over. You may rejoin now.");
                             }
                             if (Program.order == 1)
@@ -597,18 +600,6 @@ namespace DiscordBot.Modules
         }
 
         void AutoKick(Object source, ElapsedEventArgs e){
-            if (Program.order == 1)
-            {
-                Program.currentPlayer++;
-                if (Program.currentPlayer >= Program.players.Count)
-                    Program.currentPlayer = Program.currentPlayer - Program.players.Count;
-            }
-            else
-            {
-                Program.currentPlayer--;
-                if (Program.currentPlayer < 0)
-                    Program.currentPlayer = Program.players.Count - Program.currentPlayer;
-            }
             UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong id);
             Program.players.Remove(id);
             ReplyAsync($"<@{id}>, you have been AFK removed.\n");
@@ -624,6 +615,10 @@ namespace DiscordBot.Modules
                 if (Program.currentPlayer < 0)
                     Program.currentPlayer = Program.players.Count - Program.currentPlayer;
             }
+            ResetTimer();
+            UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong id2);
+            Program.players.Remove(id);
+            ReplyAsync($"It is now <@{id2}> turn.\n");
             if (Program.players.Count == 0)
             {
                 Program.currentPlayer = 0;
@@ -632,6 +627,7 @@ namespace DiscordBot.Modules
                 Program.currentcard = null;
                 Program.players = new System.Collections.Specialized.OrderedDictionary();
                 ReplyAsync("Game has been reset, due to nobody in-game.");
+                playTimer.Dispose();
             }
         }
 
