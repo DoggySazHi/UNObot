@@ -167,27 +167,27 @@ namespace DiscordBot.Modules
         {
             ReplyAsync("Help has been sent. Or, I think it has.");
             return Discord.UserExtensions.SendMessageAsync(Context.Message.Author, "Commands: @UNOBot#4308 (Required) {Required in certain conditions} [Optional] " +
-                               "- Join" +
-                               "Join the queue." +
+                               "- Join\n" +
+                               "Join the queue.\n" +
                                "- Leave" +
-                               "Leave the queue" +
-                               "- Start" +
-                               "Start the game. Game only starts when 2 or more players are available." +
-                               "- Draw" +
-                               "Get a card. This is randomized. Does not follow the 108 deck, but uses the probablity instead." +
-                               "- Play (Color/Wild) (#/Reverse/Skip/+2/+4/Color) {Wild color change}" +
-                               "Play a card. You must have the card in your deck. Also, if you are placing a wildcard, type in the color as the next parameter." +
-                               "- Card" +
-                               "See the last placed card." +
-                               "- Deck See the cards you have currently." +
-                               "- Uno" +
-                               "Don't forget to say this when you end up with one card left!" +
-                               "- Help" +
-                               "Get a help list. But you probably knew this." +
-                              "- Seed (seed)" +
-                              "Possibly increases your chance of winning." +
-                               "- Players" +
-                               "See who is playing and who's turn is it.");
+                               "Leave the queue.\n" +
+                               "- Start\n" +
+                               "Start the game. Game only starts when 2 or more players are available.\n" +
+                               "- Draw\n" +
+                               "Get a card. This is randomized. Does not follow the 108 deck, but uses the probablity instead.\n" +
+                               "- Play (Color/Wild) (#/Reverse/Skip/+2/+4/Color) {Wild color change}\n" +
+                               "Play a card. You must have the card in your deck. Also, if you are placing a wildcard, type in the color as the next parameter.\n" +
+                               "- Card\n" +
+                               "See the last placed card.\n" +
+                               "- Deck See the cards you have currently.\n" +
+                               "- Uno\n" +
+                               "Don't forget to say this when you end up with one card left!\n" +
+                               "- Help\n" +
+                               "Get a help list. But you probably knew this.\n" +
+                              "- Seed (seed)\n" +
+                              "Possibly increases your chance of winning.\n" +
+                               "- Players\n" +
+                               "See who is playing and who's turn is it.\n");
         }
 
         [Command("players")]
