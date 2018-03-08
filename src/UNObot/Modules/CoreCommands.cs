@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using Discord.Commands;
 using System.Linq;
 using System.Collections;
+using System.Timers;
+using Discord;
 
 namespace DiscordBot.Modules
 {
@@ -19,6 +21,8 @@ namespace DiscordBot.Modules
 
     public class CoreCommands : ModuleBase<SocketCommandContext>
     {
+        static System.Timers.Timer playTimer;
+
         [Command("info")]
         public Task Info()
         {
@@ -90,6 +94,16 @@ namespace DiscordBot.Modules
                 return ReplyAsync($"<@{Context.User.Id}>, you are already out of the queue!\n");
             }
         }
+        [Command("upupdowndownleftrightleftrightbastart")]
+        public Task Easteregg1()
+        {
+            return ReplyAsync($"<@419374055792050176> claims that <@{Context.User.Id}> is stupid.");
+        }
+        [Command("upupdowndownleftrightleftrightbastart")]
+        public Task Easteregg2(string response)
+        {
+            return ReplyAsync(response);
+        }
         [Command("draw")]
         public Task Draw()
         {
@@ -140,20 +154,71 @@ namespace DiscordBot.Modules
         [Command("card")]
         public Task Card()
         {
-            if (Program.players.Contains(Context.User.Id))
+            if (Program.gameStarted)
             {
-                if (Program.gameStarted)
-                {
-                    ReplyAsync("Current card: " + Program.currentcard.Color + " " + Program.currentcard.Value);
-                    return null;
-                }
-                else
-                    return ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
+                ReplyAsync("Current card: " + Program.currentcard.Color + " " + Program.currentcard.Value);
+                return null;
+            }
+            else
+                return ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
+        }
+        [Command("help")]
+        public Task Help()
+        {
+            ReplyAsync("Help has been sent. Or, I think it has.");
+            return Discord.UserExtensions.SendMessageAsync(Context.Message.Author, "Commands: @UNOBot#4308 (Required) {Required in certain conditions} [Optional] " +
+                               "- Join" +
+                               "Join the queue." +
+                               "- Leave" +
+                               "Leave the queue" +
+                               "- Start" +
+                               "Start the game. Game only starts when 2 or more players are available." +
+                               "- Draw" +
+                               "Get a card. This is randomized. Does not follow the 108 deck, but uses the probablity instead." +
+                               "- Play (Color/Wild) (#/Reverse/Skip/+2/+4/Color) {Wild color change}" +
+                               "Play a card. You must have the card in your deck. Also, if you are placing a wildcard, type in the color as the next parameter." +
+                               "- Card" +
+                               "See the last placed card." +
+                               "- Deck See the cards you have currently." +
+                               "- Uno" +
+                               "Don't forget to say this when you end up with one card left!" +
+                               "- Help" +
+                               "Get a help list. But you probably knew this." +
+                              "- Seed (seed)" +
+                              "Possibly increases your chance of winning." +
+                               "- Players" +
+                               "See who is playing and who's turn is it.");
+        }
+
+        [Command("players")]
+        public Task Players()
+        {
+            if (Program.order == 1)
+            {
+                Program.currentPlayer++;
+                if (Program.currentPlayer >= Program.players.Count)
+                    Program.currentPlayer = Program.currentPlayer - Program.players.Count;
             }
             else
             {
-                return ReplyAsync($"<@{Context.User.Id}>, you are not in game.\n");
+                Program.currentPlayer--;
+                if (Program.currentPlayer < 0)
+                    Program.currentPlayer = Program.players.Count - Program.currentPlayer;
             }
+            UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong id);
+            string response = $"Current player: <@{id}>";
+            foreach (ulong player in Program.players.Keys)
+            {
+                List<Card> loserlist = (List<Card>)Program.players[player];
+                response += $"- <@{player}> has {loserlist.Count} cards left.\n";
+            }
+            return ReplyAsync(response);
+        }
+        [Command("seed")]
+        public Task Seed(int seed)
+        {
+            UNOcore.r = new Random(seed);
+            return ReplyAsync("Seed has been updated. I do not guarntee 100% Wild cards.");
         }
         [Command("uno")]
         public Task Uno()
@@ -208,8 +273,10 @@ namespace DiscordBot.Modules
                     }
                     UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(0).Key.ToString(), out ulong result);
                     ReplyAsync("Game has started. Please remember; PM the bot to avoid bleeding!\n" +
-                               "You have been given 7 cards; PM \"deck\" to view them. " +
-                               $"The first player is <@{result}>.)");
+                               "You have been given 7 cards; PM \"deck\" to view them.\n" +
+                               "Remember; you have 1 minute and 30 seconds to place a card." +
+                               $"The first player is <@{result}>.\n");
+                    SetTimer();
                     Program.gameStarted = true;
                     foreach (ulong player in Program.players.Keys)
                     {
@@ -481,8 +548,7 @@ namespace DiscordBot.Modules
                                     Program.currentPlayer = Program.players.Count - Program.currentPlayer;
                             }
                             UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong id);
-                            //TODO remove from this list
-                            ReplyAsync($"It is now <@{id}>'s turn. List position: {Program.currentPlayer}");
+                            ReplyAsync($"It is now <@{id}>'s turn.");
                             return;
                         }
                         else
@@ -513,9 +579,60 @@ namespace DiscordBot.Modules
             }
         }
 
+        void SetTimer() {
+            playTimer = new Timer(90000);
+            playTimer.Elapsed += AutoKick;
+            playTimer.AutoReset = false;
+            playTimer.Start();
+        }
+
+        void ResetTimer() {
+            playTimer.Stop();
+            playTimer.Start();
+        }
+
+        void AutoKick(Object source, ElapsedEventArgs e){
+            if (Program.order == 1)
+            {
+                Program.currentPlayer++;
+                if (Program.currentPlayer >= Program.players.Count)
+                    Program.currentPlayer = Program.currentPlayer - Program.players.Count;
+            }
+            else
+            {
+                Program.currentPlayer--;
+                if (Program.currentPlayer < 0)
+                    Program.currentPlayer = Program.players.Count - Program.currentPlayer;
+            }
+            UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong id);
+            Program.players.Remove(id);
+            ReplyAsync($"<@{id}>, you have been AFK removed.\n");
+            if (Program.order == 1)
+            {
+                Program.currentPlayer++;
+                if (Program.currentPlayer >= Program.players.Count)
+                    Program.currentPlayer = Program.currentPlayer - Program.players.Count;
+            }
+            else
+            {
+                Program.currentPlayer--;
+                if (Program.currentPlayer < 0)
+                    Program.currentPlayer = Program.players.Count - Program.currentPlayer;
+            }
+            if (Program.players.Count == 0)
+            {
+                Program.currentPlayer = 0;
+                Program.gameStarted = false;
+                Program.order = 1;
+                Program.currentcard = null;
+                Program.players = new System.Collections.Specialized.OrderedDictionary();
+                ReplyAsync("Game has been reset, due to nobody in-game.");
+            }
+        }
+
         public static class UNOcore
         {
-            static readonly Random r = new Random();
+            public static Random r = new Random();
 
             public static Card RandomCard()
             {
