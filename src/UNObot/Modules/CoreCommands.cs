@@ -194,6 +194,18 @@ namespace DiscordBot.Modules
                 {
                     Program.currentcard = UNOcore.RandomCard();
                     Discord.WebSocket.DiscordSocketClient dsc = new Discord.WebSocket.DiscordSocketClient();
+                    if (Program.order == 1)
+                    {
+                        Program.currentPlayer++;
+                        if (Program.currentPlayer >= Program.players.Count)
+                            Program.currentPlayer = Program.currentPlayer - Program.players.Count;
+                    }
+                    else
+                    {
+                        Program.currentPlayer--;
+                        if (Program.currentPlayer < 0)
+                            Program.currentPlayer = Program.players.Count - Program.currentPlayer;
+                    }
                     UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(0).Key.ToString(), out ulong result);
                     ReplyAsync("Game has started. Please remember; PM the bot to avoid bleeding!\n" +
                                "You have been given 7 cards; PM \"deck\" to view them. " +
@@ -393,6 +405,18 @@ namespace DiscordBot.Modules
                             }
                             if (Program.currentcard.Value == "+2" || Program.currentcard.Value == "+4")
                             {
+                                if (Program.order == 1)
+                                {
+                                    Program.currentPlayer++;
+                                    if (Program.currentPlayer >= Program.players.Count)
+                                        Program.currentPlayer = Program.currentPlayer - Program.players.Count;
+                                }
+                                else
+                                {
+                                    Program.currentPlayer--;
+                                    if (Program.currentPlayer < 0)
+                                        Program.currentPlayer = Program.players.Count - Program.currentPlayer;
+                                }
                                 UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong skipped);
                                 List<Card> skiplist = (List<Card>)Program.players[skipped];
 
@@ -443,6 +467,18 @@ namespace DiscordBot.Modules
                                 Program.currentcard = null;
                                 Program.players = new System.Collections.Specialized.OrderedDictionary();
                                 ReplyAsync("Game is over. You may rejoin now.");
+                            }
+                            if (Program.order == 1)
+                            {
+                                Program.currentPlayer++;
+                                if (Program.currentPlayer >= Program.players.Count)
+                                    Program.currentPlayer = Program.currentPlayer - Program.players.Count;
+                            }
+                            else
+                            {
+                                Program.currentPlayer--;
+                                if (Program.currentPlayer < 0)
+                                    Program.currentPlayer = Program.players.Count - Program.currentPlayer;
                             }
                             UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong id);
                             //TODO remove from this list
