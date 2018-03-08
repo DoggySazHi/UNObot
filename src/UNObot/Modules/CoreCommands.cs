@@ -191,6 +191,15 @@ namespace DiscordBot.Modules
                                "See who is playing and who's turn is it.\n");
         }
 
+        [Command("asdf")]
+        public Task Credits()
+        {
+            return ReplyAsync("UNObot: Programmed by DoggySazHi\n" +
+                "Tested by Aragami and Fm\n" +
+                "Created for the UBOWS server\n\n" +
+                "Stickerz was here.");
+        }
+
         [Command("players")]
         public Task Players()
         {
