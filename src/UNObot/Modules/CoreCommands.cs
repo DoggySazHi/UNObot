@@ -21,6 +21,7 @@ namespace DiscordBot.Modules
 
     public class CoreCommands : ModuleBase<SocketCommandContext>
     {
+        UNObot.Modules.UNOdb db = new UNObot.Modules.UNOdb();
         static System.Timers.Timer playTimer;
 
         [Command("info")]
@@ -48,24 +49,19 @@ namespace DiscordBot.Modules
         [Command("join")]
         public Task Join()
         {
-            if (Program.players.Contains(Context.User.Id))
-            {
-                return ReplyAsync($"<@{Context.User.Id}>, you're already in the queue!\n");
-            }
-            if (Program.gameStarted)
-            {
-                return ReplyAsync($"The game has already started, so you cannot join.\n");
-            }
-            Program.players.Add(Context.User.Id, new List<Card>());
-            return ReplyAsync($"<@{Context.User.Id}>, you have been added to the queue.\n");
+            db.AddUser(Context.User.Id, Context.User.Username);
+            return ReplyAsync($"{Context.User.Username} has been added to the queue.\n");
         }
         [Command("leave")]
         public Task Leave()
         {
+            db.RemoveUser(Context.User.Id, Context.User.Username);
+            return ReplyAsync($"{Context.User.Username} has been removed from the queue.\n");
+            /*
             if (Program.players.Contains(Context.User.Id))
             {
                 Program.players.Remove(Context.User.Id);
-                ReplyAsync($"<@{Context.User.Id}>, you have been removed from the queue.\n");
+                ReplyAsync($"{Context.User.Username} has been removed from the queue.\n");
                 if (Program.order == 1)
                 {
                     Program.currentPlayer++;
@@ -84,7 +80,6 @@ namespace DiscordBot.Modules
                     Program.gameStarted = false;
                     Program.order = 1;
                     Program.currentcard = null;
-                    Program.players = new System.Collections.Specialized.OrderedDictionary();
                     ReplyAsync("Game has been reset, due to nobody in-game.");
                     playTimer.Dispose();
                 }
@@ -94,6 +89,7 @@ namespace DiscordBot.Modules
             {
                 return ReplyAsync($"<@{Context.User.Id}>, you are already out of the queue!\n");
             }
+            */
         }
         [Command("upupdowndownleftrightleftrightbastart")]
         public Task Easteregg1()
