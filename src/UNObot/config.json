@@ -1,5 +1,8 @@
-{
+﻿{
   //"token": "NDE4NjE4MjAyMTk3NzIxMDk4.DXkTEg.8A8pjpP43Je2RmLDLxrYFyfCIcQ"
-  "token": "NDE5Mzc0MDU1NzkyMDUwMTc2.DXvMCw.40THNlbxNu_pnxS_XkwRdiTqQZ4",
+  //Main
+  //"token": "NDE5Mzc0MDU1NzkyMDUwMTc2.DXvMCw.40THNlbxNu_pnxS_XkwRdiTqQZ4",
+  //Debug
+  "token": "NDIyMTk1Njc5OTMxNDAwMTkz.DYYQPA._k12hgqjsislSCYkiIEGa5LoU78",
   "connStr": "server=192.168.1.12;user=UNObot;database=UNObot;port=3306;password=uN0b0t[.-.]hi"
 }

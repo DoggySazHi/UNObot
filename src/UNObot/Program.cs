@@ -14,7 +14,7 @@ namespace DiscordBot
 {
     class Program
     {
-        public static readonly string version = "1.4B6";
+        public static readonly string version = "1.5B1";
         public static int currentPlayer = 0;
         //1: Clockwise 2: Counter-Clockwise
         public static byte order = 1;
