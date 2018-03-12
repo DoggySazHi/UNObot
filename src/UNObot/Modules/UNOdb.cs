@@ -68,26 +68,18 @@ namespace UNObot.Modules
                 MySqlParameter p3 = new MySqlParameter();
                 p3.Value = usrname;
                 Cmd.Parameters.Add(p3);
-                using (MySqlDataReader Dtr = Cmd.ExecuteReader())
+                try
                 {
-                    try
-                    {
-                        conn.Open();
-
-                        while (Dtr.Read())
-                        {
-
-                        }
-
-                    }
-                    catch (MySqlException ex)
-                    {
-                        Console.WriteLine($"A MySQL error has been caught, Error {ex}");
-                    }
-                    finally
-                    {
-                        conn.Close();
-                    }
+                    conn.Open();
+                    Cmd.ExecuteNonQuery();
+                }
+                catch (MySqlException ex)
+                {
+                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                }
+                finally
+                {
+                    conn.Close();
                 }
             }
         }
@@ -110,68 +102,18 @@ namespace UNObot.Modules
                 MySqlParameter p3 = new MySqlParameter();
                 p3.Value = usrname;
                 Cmd.Parameters.Add(p3);
-                using (MySqlDataReader Dtr = Cmd.ExecuteReader())
+                try
                 {
-                    try
-                    {
-                        conn.Open();
-
-                        while (Dtr.Read())
-                        {
-
-                        }
-
-                    }
-                    catch (MySqlException ex)
-                    {
-                        Console.WriteLine($"A MySQL error has been caught, Error {ex}");
-                    }
-                    finally
-                    {
-                        conn.Close();
-                    }
+                    conn.Open();
+                    Cmd.ExecuteNonQuery();
                 }
-            }
-        }
-        public void CardAdd(ulong id, string usrname)
-        {
-            if (conn == null)
-                GetConnectionString();
-            using (MySqlCommand Cmd = new MySqlCommand())
-            {
-                Cmd.Connection = conn;
-                Cmd.CommandText = "UPDATE ? IN Players VALUES() WHERE userid = ?";
-                MySqlParameter p1 = new MySqlParameter();
-                p1.Value = id;
-                Cmd.Parameters.Add(p1);
-
-                MySqlParameter p2 = new MySqlParameter();
-                p2.Value = usrname;
-                Cmd.Parameters.Add(p2);
-                //for third parameter
-                MySqlParameter p3 = new MySqlParameter();
-                p3.Value = usrname;
-                Cmd.Parameters.Add(p3);
-                using (MySqlDataReader Dtr = Cmd.ExecuteReader())
+                catch (MySqlException ex)
                 {
-                    try
-                    {
-                        conn.Open();
-
-                        while (Dtr.Read())
-                        {
-
-                        }
-
-                    }
-                    catch (MySqlException ex)
-                    {
-                        Console.WriteLine($"A MySQL error has been caught, Error {ex}");
-                    }
-                    finally
-                    {
-                        conn.Close();
-                    }
+                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                }
+                finally
+                {
+                    conn.Close();
                 }
             }
         }
