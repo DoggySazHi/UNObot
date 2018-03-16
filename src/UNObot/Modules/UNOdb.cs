@@ -130,9 +130,48 @@ namespace UNObot.Modules
                 return players;
             }
         }
-        public void add7cards()
+        public void StarterCard()
         {
-            //Yes
+            List<ulong> players = GetPlayers();
+            foreach (ulong player in players)
+            {
+                for(int i = 0; i < 7; i++)
+                {
+                    AddCard(player, DiscordBot.Modules.CoreCommands.UNOcore.RandomCard());
+                }
+            }
+        }
+        public void AddCard(ulong player, DiscordBot.Modules.Card card)
+        {
+            if (conn == null)
+                GetConnectionString();
+            MySqlCommand Cmd = new MySqlCommand();
+            Cmd.Connection = conn;
+            Cmd.CommandText = "INSERT INTO Players (userid, username, inGame) VALUES(?, ?, 1) ON DUPLICATE KEY UPDATE username = ?, inGame = 1";
+            MySqlParameter p1 = new MySqlParameter();
+            p1.Value = id;
+            Cmd.Parameters.Add(p1);
+
+            MySqlParameter p2 = new MySqlParameter();
+            p2.Value = usrname;
+            Cmd.Parameters.Add(p2);
+            //for third parameter
+            MySqlParameter p3 = new MySqlParameter();
+            p3.Value = usrname;
+            Cmd.Parameters.Add(p3);
+            try
+            {
+                conn.Open();
+                Cmd.ExecuteNonQueryAsync();
+            }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            finally
+            {
+                conn.Close();
+            }
         }
     }
 }
