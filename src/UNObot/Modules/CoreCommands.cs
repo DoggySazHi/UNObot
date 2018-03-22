@@ -55,41 +55,31 @@ namespace DiscordBot.Modules
         [Command("leave")]
         public Task Leave()
         {
-            db.RemoveUser(Context.User.Id, Context.User.Username);
-            return ReplyAsync($"{Context.User.Username} has been removed from the queue.\n");
-            /*
-            if (Program.players.Contains(Context.User.Id))
+            db.RemoveUser(Context.User.Id);
+            ReplyAsync($"{Context.User.Username} has been removed from the queue.\n");
+            List<ulong> players = db.GetPlayers();
+            if (Program.order == 1)
             {
-                Program.players.Remove(Context.User.Id);
-                ReplyAsync($"{Context.User.Username} has been removed from the queue.\n");
-                if (Program.order == 1)
-                {
-                    Program.currentPlayer++;
-                    if (Program.currentPlayer >= Program.players.Count)
-                        Program.currentPlayer = Program.currentPlayer - Program.players.Count;
-                }
-                else
-                {
-                    Program.currentPlayer--;
-                    if (Program.currentPlayer < 0)
-                        Program.currentPlayer = Program.players.Count - Program.currentPlayer;
-                }
-                if (Program.players.Count == 0)
-                {
-                    Program.currentPlayer = 0;
-                    Program.gameStarted = false;
-                    Program.order = 1;
-                    Program.currentcard = null;
-                    ReplyAsync("Game has been reset, due to nobody in-game.");
-                    playTimer.Dispose();
-                }
-                return null;
+                Program.currentPlayer++;
+                if (Program.currentPlayer >= players.Count)
+                    Program.currentPlayer = Program.currentPlayer - players.Count;
             }
             else
             {
-                return ReplyAsync($"<@{Context.User.Id}>, you are already out of the queue!\n");
+                Program.currentPlayer--;
+                if (Program.currentPlayer < 0)
+                    Program.currentPlayer = players.Count - Program.currentPlayer;
             }
-            */
+            if (players.Count == 0)
+            {
+                Program.currentPlayer = 0;
+                Program.gameStarted = false;
+                Program.order = 1;
+                Program.currentcard = null;
+                ReplyAsync("Game has been reset, due to nobody in-game.");
+                playTimer.Dispose();
+            }
+            return null;
         }
         [Command("upupdowndownleftrightleftrightbastart")]
         public Task Easteregg1()
@@ -104,14 +94,13 @@ namespace DiscordBot.Modules
         [Command("draw")]
         public Task Draw()
         {
-            if (Program.players.Contains(Context.User.Id))
+            if (db.IsPlayerInGame(Context.User.Id))
             {
                 if (Program.gameStarted)
                 {
                     Card card = UNOcore.RandomCard();
                     Discord.UserExtensions.SendMessageAsync(Context.Message.Author, "You have recieved: " + card.Color + " " + card.Value + ".");
-                    List<Card> playercards = (List<Card>)Program.players[Context.User.Id];
-                    playercards.Add(card);
+                    db.AddCard(Context.User.Id, card);
                     return null;
                 }
                 else
@@ -126,11 +115,11 @@ namespace DiscordBot.Modules
         [Command("deck")]
         public Task Deck()
         {
-            if (Program.players.Contains(Context.User.Id))
+            if (db.IsPlayerInGame(Context.User.Id))
             {
                 if (Program.gameStarted)
                 {
-                    List<Card> list = (List<Card>)Program.players[Context.User.Id];
+                    List<Card> list = db.GetCards(Context.User.Id);
                     string response = "Cards available:\n";
                     foreach (Card card in list)
                     {
@@ -199,25 +188,24 @@ namespace DiscordBot.Modules
         [Command("players")]
         public Task Players()
         {
+            List<ulong> players = db.GetPlayers();
             if (Program.gameStarted)
             {
                 if (Program.order == 1)
                 {
-                    Program.currentPlayer++;
-                    if (Program.currentPlayer >= Program.players.Count)
-                        Program.currentPlayer = Program.currentPlayer - Program.players.Count;
+                    if (Program.currentPlayer >= players.Count)
+                        Program.currentPlayer = Program.currentPlayer - players.Count;
                 }
                 else
                 {
-                    Program.currentPlayer--;
                     if (Program.currentPlayer < 0)
-                        Program.currentPlayer = Program.players.Count - Program.currentPlayer;
+                        Program.currentPlayer = players.Count - Program.currentPlayer;
                 }
-                UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong id);
+                ulong id = players.ElementAt(Program.currentPlayer);
                 string response = $"Current player: <@{id}>";
-                foreach (ulong player in Program.players.Keys)
+                foreach (ulong player in players)
                 {
-                    List<Card> loserlist = (List<Card>)Program.players[player];
+                    List<Card> loserlist = db.GetCards(player);
                     response += $"- <@{player}> has {loserlist.Count} cards left.\n";
                 }
                 return ReplyAsync(response);
@@ -234,7 +222,7 @@ namespace DiscordBot.Modules
         [Command("uno")]
         public Task Uno()
         {
-            if (Program.players.Contains(Context.User.Id))
+            if (db.IsPlayerInGame(Context.User.Id))
             {
                 if (Program.gameStarted)
                 {
@@ -245,7 +233,7 @@ namespace DiscordBot.Modules
                     } else
                     {
                         ReplyAsync($"<@{Context.User.Id}>, you still have more than one card! As a result, you are forced to draw two cards.");
-                        List<Card> usercards = (List<Card>) Program.players[Context.User.Id];
+                        List<Card> usercards = db.GetCards(Context.User.Id);
                         usercards.Add(UNOcore.RandomCard());
                         usercards.Add(UNOcore.RandomCard());
                     }
@@ -262,41 +250,34 @@ namespace DiscordBot.Modules
         [Command("start")]
         public Task Start()
         {
-            if (Program.players.Contains(Context.User.Id))
+            if (db.IsPlayerInGame(Context.User.Id))
             {
                 if (Program.gameStarted)
                     return ReplyAsync($"<@{Context.User.Id}>, the game has already started!\n");
                 else
                 {
+                    List<ulong> players = db.GetPlayers();
                     Program.currentcard = UNOcore.RandomCard();
                     Discord.WebSocket.DiscordSocketClient dsc = new Discord.WebSocket.DiscordSocketClient();
                     if (Program.order == 1)
                     {
                         Program.currentPlayer++;
-                        if (Program.currentPlayer >= Program.players.Count)
-                            Program.currentPlayer = Program.currentPlayer - Program.players.Count;
+                        if (Program.currentPlayer >= players.Count)
+                            Program.currentPlayer = Program.currentPlayer - players.Count;
                     }
                     else
                     {
                         Program.currentPlayer--;
                         if (Program.currentPlayer < 0)
-                            Program.currentPlayer = Program.players.Count - Program.currentPlayer;
+                            Program.currentPlayer = players.Count - Program.currentPlayer;
                     }
-                    UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(0).Key.ToString(), out ulong result);
                     ReplyAsync("Game has started. Please remember; PM the bot to avoid bleeding!\n" +
                                "You have been given 7 cards; PM \"deck\" to view them.\n" +
                                "Remember; you have 1 minute and 30 seconds to place a card.\n" +
-                               $"The first player is <@{result}>.\n");
+                               $"The first player is <@{players.ElementAt(0)}>.\n");
                     SetTimer();
                     Program.gameStarted = true;
-                    foreach (ulong player in Program.players.Keys)
-                    {
-                        List<Card> list = (List<Card>)Program.players[player];
-                        for (int i = 1; i <= 7; i++)
-                        {
-                            list.Add(UNOcore.RandomCard());
-                        }
-                    }
+                    db.StarterCard();
                     return ReplyAsync("Current card: " +
                                                             Program.currentcard.Color + " " + Program.currentcard.Value + "\n");
                 }
@@ -327,10 +308,11 @@ namespace DiscordBot.Modules
         public void PlayCommon(string color, string value, string wild)
         {
             //TODO Case sensitive value? Check reset, and +4 not working
-            if (Program.players.Contains(Context.User.Id))
+            if (db.IsPlayerInGame(Context.User.Id))
             {
                 if (Program.gameStarted)
                 {
+                    List<ulong> players = db.GetPlayers();
                     switch (color.ToLower())
                     {
                         case "red":
@@ -356,33 +338,26 @@ namespace DiscordBot.Modules
                         value = "Reverse";
                     if (value.ToLower() == "color")
                         value = "Color";
-                    if (Program.currentPlayer > Program.players.Count || Program.currentPlayer < 0)
+                    if (Program.currentPlayer > players.Count || Program.currentPlayer < 0)
                     {
                         if (Program.order == 1)
                         {
-                            if (Program.currentPlayer >= Program.players.Count)
-                                Program.currentPlayer = Program.currentPlayer - Program.players.Count;
+                            if (Program.currentPlayer >= players.Count)
+                                Program.currentPlayer = Program.currentPlayer - players.Count;
                         }
                         else
                         {
                             if (Program.currentPlayer < 0)
-                                Program.currentPlayer = Program.players.Count - Program.currentPlayer;
+                                Program.currentPlayer = players.Count - Program.currentPlayer;
                         }
                     }
-                    bool shouldwork = UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong result);
-                    if (!shouldwork)
-                    {
-                        ReplyAsync($"<@{Context.User.Id}>, you apparently don't exist.");
-                        return;
-                    }
-                    if (result == Context.User.Id)
+                    if (players.ElementAt(Program.currentPlayer) == Context.User.Id)
                     {
                         if(Program.onecardleft != 0)
                         {
                             ReplyAsync($"<@{Program.onecardleft}> has forgotten to say UNO! They have been given 2 cards.");
-                            List <Card> forgotuno = (List<Card>)Program.players[Program.onecardleft];
-                            forgotuno.Add(UNOcore.RandomCard());
-                            forgotuno.Add(UNOcore.RandomCard());
+                            db.AddCard(Program.onecardleft, UNOcore.RandomCard());
+                            db.AddCard(Program.onecardleft, UNOcore.RandomCard());
                             Program.onecardleft = 0;
                         }
                         Card card = new Card
@@ -390,16 +365,11 @@ namespace DiscordBot.Modules
                             Color = color,
                             Value = value
                         };
-                        List<Card> list = (List<Card>)Program.players[Context.User.Id];
+                        List<Card> list = db.GetCards(Context.User.Id);
                         bool exists = false;
-                        int cardindex = 0;
                         foreach (Card c in list)
                         {
-                            if (c.Equals(card))
-                            {
-                                exists = true;
-                                cardindex = list.IndexOf(c);
-                            }
+                            exists |= c.Equals(card);
                         }
                         if (exists)
                         {
@@ -434,8 +404,7 @@ namespace DiscordBot.Modules
                                     Program.currentcard.Value = card.Value;
                                 }
                                 Discord.UserExtensions.SendMessageAsync(Context.Message.Author, $"You have placed a {card.Color} {card.Value}.");
-                                list.RemoveAt(cardindex);
-                                Program.players[Context.User.Id] = list;
+                                db.RemoveCard(Context.User.Id, card);
                                 ReplyAsync($"<@{Context.User.Id}> has placed an " + card.Color + " " + card.Value + ".");
                                 if (card.Color == "Wild")
                                     ReplyAsync($"<@{Context.User.Id}> has decided that the new color is {Program.currentcard.Color}.");
@@ -459,14 +428,13 @@ namespace DiscordBot.Modules
                                 Program.currentPlayer++;
                                 if (Program.currentcard.Value == "Skip")
                                 {
-                                    if (Program.currentPlayer >= Program.players.Count)
-                                        Program.currentPlayer = Program.currentPlayer - Program.players.Count;
-                                    UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong skipped);
-                                    SendAll($"<@{skipped}> has been skipped!");
+                                    if (Program.currentPlayer >= players.Count)
+                                        Program.currentPlayer = Program.currentPlayer - players.Count;
+                                    SendAll($"<@{players.ElementAt(Program.currentPlayer)}> has been skipped!");
                                     Program.currentPlayer++;
                                 }
-                                if (Program.currentPlayer >= Program.players.Count)
-                                    Program.currentPlayer = Program.currentPlayer - Program.players.Count;
+                                if (Program.currentPlayer >= players.Count)
+                                    Program.currentPlayer = Program.currentPlayer - players.Count;
                             }
                             else
                             {
@@ -474,30 +442,28 @@ namespace DiscordBot.Modules
                                 if (Program.currentcard.Value == "Skip")
                                 {
                                     if (Program.currentPlayer < 0)
-                                        Program.currentPlayer = Program.players.Count - Program.currentPlayer;
-                                    UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong skipped);
-                                    SendAll($"<@{skipped}> has been skipped!");
+                                        Program.currentPlayer = players.Count - Program.currentPlayer;
+                                    SendAll($"<@{players.ElementAt(Program.currentPlayer)}> has been skipped!");
                                     Program.currentPlayer--;
                                 }
                                 if (Program.currentPlayer < 0)
-                                    Program.currentPlayer = Program.players.Count - Program.currentPlayer;
+                                    Program.currentPlayer = players.Count - Program.currentPlayer;
                             }
                             if (Program.currentcard.Value == "+2" || Program.currentcard.Value == "+4")
                             {
                                 if (Program.order == 1)
                                 {
                                     Program.currentPlayer++;
-                                    if (Program.currentPlayer >= Program.players.Count)
-                                        Program.currentPlayer = Program.currentPlayer - Program.players.Count;
+                                    if (Program.currentPlayer >= players.Count)
+                                        Program.currentPlayer = Program.currentPlayer - players.Count;
                                 }
                                 else
                                 {
                                     Program.currentPlayer--;
                                     if (Program.currentPlayer < 0)
-                                        Program.currentPlayer = Program.players.Count - Program.currentPlayer;
+                                        Program.currentPlayer = players.Count - Program.currentPlayer;
                                 }
-                                UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong skipped);
-                                List<Card> skiplist = (List<Card>)Program.players[skipped];
+                                List<Card> skiplist = db.GetCards(players.ElementAt(Program.currentPlayer));
 
                                 if (Program.currentcard.Value == "+2")
                                 {
@@ -511,21 +477,21 @@ namespace DiscordBot.Modules
                                     skiplist.Add(UNOcore.RandomCard());
                                     skiplist.Add(UNOcore.RandomCard());
                                 }
-                                ReplyAsync($"<@{skipped}> has been skipped! They have also recieved a prize of {Program.currentcard.Value} cards.");
+                                ReplyAsync($"<@{players.ElementAt(Program.currentPlayer)}> has been skipped! They have also recieved a prize of {Program.currentcard.Value} cards.");
                                 if (Program.order == 1)
                                 {
                                     Program.currentPlayer++;
-                                    if (Program.currentPlayer >= Program.players.Count)
-                                        Program.currentPlayer = Program.currentPlayer - Program.players.Count;
+                                    if (Program.currentPlayer >= players.Count)
+                                        Program.currentPlayer = Program.currentPlayer - players.Count;
                                 }
                                 else
                                 {
                                     Program.currentPlayer--;
                                     if (Program.currentPlayer < 0)
-                                        Program.currentPlayer = Program.players.Count - Program.currentPlayer;
+                                        Program.currentPlayer = players.Count - Program.currentPlayer;
                                 }
                             }
-                            List< Card > userlist = (List<Card>)Program.players[Context.User.Id];
+                            List<Card> userlist = db.GetCards(Context.User.Id);
                             if (userlist.Count == 1)
                             {
                                 Program.onecardleft = Context.User.Id;
@@ -534,9 +500,9 @@ namespace DiscordBot.Modules
                             {
                                 ReplyAsync($"<@{Context.User.Id}> has won!");
                                 string response = "";
-                                foreach(ulong player in Program.players.Keys)
+                                foreach(ulong player in db.GetPlayers())
                                 {
-                                    List<Card> loserlist = (List<Card>)Program.players[player];
+                                    List<Card> loserlist = db.GetCards(player);
                                     response += $"- <@{player}> had {loserlist.Count} cards left.\n";
                                 }
                                 ReplyAsync(response);
@@ -544,24 +510,22 @@ namespace DiscordBot.Modules
                                 Program.gameStarted = false;
                                 Program.order = 1;
                                 Program.currentcard = null;
-                                Program.players = new System.Collections.Specialized.OrderedDictionary();
                                 playTimer.Dispose();
                                 ReplyAsync("Game is over. You may rejoin now.");
                             }
                             if (Program.order == 1)
                             {
                                 Program.currentPlayer++;
-                                if (Program.currentPlayer >= Program.players.Count)
-                                    Program.currentPlayer = Program.currentPlayer - Program.players.Count;
+                                if (Program.currentPlayer >= players.Count)
+                                    Program.currentPlayer = Program.currentPlayer - players.Count;
                             }
                             else
                             {
                                 Program.currentPlayer--;
                                 if (Program.currentPlayer < 0)
-                                    Program.currentPlayer = Program.players.Count - Program.currentPlayer;
+                                    Program.currentPlayer = players.Count - Program.currentPlayer;
                             }
-                            UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong id);
-                            ReplyAsync($"It is now <@{id}>'s turn.");
+                            ReplyAsync($"It is now <@{db.GetPlayers().ElementAt(Program.currentPlayer)}>'s turn.");
                             return;
                         }
                         else
@@ -584,7 +548,7 @@ namespace DiscordBot.Modules
 
         public void SendAll(string message)
         {
-            foreach (ulong player in Program.players.Keys)
+            foreach (ulong player in db.GetPlayers())
             {
                 Discord.WebSocket.DiscordSocketClient dsg = new Discord.WebSocket.DiscordSocketClient();
                 Discord.UserExtensions.SendMessageAsync(dsg.GetUser(player), message);
@@ -605,34 +569,38 @@ namespace DiscordBot.Modules
         }
 
         void AutoKick(Object source, ElapsedEventArgs e){
-            UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong id);
-            Program.players.Remove(id);
+            ulong id = db.GetPlayers().ElementAt(Program.currentPlayer);
+            db.RemoveUser(id);
             ReplyAsync($"<@{id}>, you have been AFK removed.\n");
+            List<ulong> players = db.GetPlayers();
             if (Program.order == 1)
             {
                 Program.currentPlayer++;
-                if (Program.currentPlayer >= Program.players.Count)
-                    Program.currentPlayer = Program.currentPlayer - Program.players.Count;
+                if (Program.currentPlayer >= players.Count)
+                    Program.currentPlayer = Program.currentPlayer - players.Count;
             }
             else
             {
                 Program.currentPlayer--;
                 if (Program.currentPlayer < 0)
-                    Program.currentPlayer = Program.players.Count - Program.currentPlayer;
+                    Program.currentPlayer = players.Count - Program.currentPlayer;
             }
             ResetTimer();
-            UInt64.TryParse(Program.players.Cast<DictionaryEntry>().ElementAt(Program.currentPlayer).Key.ToString(), out ulong id2);
-            Program.players.Remove(id);
-            ReplyAsync($"It is now <@{id2}> turn.\n");
-            if (Program.players.Count == 0)
+            //reupdate
+            players = db.GetPlayers();
+            if (players.Count == 0)
             {
                 Program.currentPlayer = 0;
                 Program.gameStarted = false;
                 Program.order = 1;
                 Program.currentcard = null;
-                Program.players = new System.Collections.Specialized.OrderedDictionary();
                 ReplyAsync("Game has been reset, due to nobody in-game.");
                 playTimer.Dispose();
+            }
+            else
+            {
+                ulong id2 = players.ElementAt(Program.currentPlayer);
+                ReplyAsync($"It is now <@{id2}> turn.\n");
             }
         }
 
