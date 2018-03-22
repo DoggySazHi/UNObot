@@ -14,12 +14,12 @@ namespace DiscordBot
 {
     class Program
     {
+        UNObot.Modules.UNOdb db = new UNObot.Modules.UNOdb();
         public static readonly string version = "1.5B1";
         public static int currentPlayer = 0;
         //1: Clockwise 2: Counter-Clockwise
         public static byte order = 1;
         public static bool gameStarted = false;
-        public static OrderedDictionary players = new OrderedDictionary();
         public static Modules.Card currentcard;
         public static ulong onecardleft = 0;
 
@@ -40,7 +40,7 @@ namespace DiscordBot
 
             await _client.LoginAsync(TokenType.Bot, _config["token"]);
             await _client.StartAsync();
-
+            db.CleanAll();
             await Task.Delay(-1);
         }
 
