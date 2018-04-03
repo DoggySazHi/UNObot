@@ -15,7 +15,7 @@ namespace DiscordBot
     class Program
     {
         UNObot.Modules.UNOdb db = new UNObot.Modules.UNOdb();
-        public static readonly string version = "1.5B1";
+        public static readonly string version = "1.5B2.n0u";
         public static int currentPlayer = 0;
         //1: Clockwise 2: Counter-Clockwise
         public static byte order = 1;
