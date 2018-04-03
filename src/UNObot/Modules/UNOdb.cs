@@ -135,12 +135,11 @@ namespace UNObot.Modules
             Cmd.Connection = conn;
             Cmd.CommandText = "SELECT userid,username FROM UNObot.Players WHERE inGame = 1";
             List<ulong> players = new List<ulong>();
+            conn.Open();
             using (MySqlDataReader dr = Cmd.ExecuteReader())
             {
                 try
                 {
-                    conn.Open();
-                    Cmd.ExecuteReader();
                     while (dr.Read())
                     {
                         players.Add(dr.GetUInt64(0));
@@ -168,16 +167,16 @@ namespace UNObot.Modules
             MySqlParameter p1 = new MySqlParameter();
             p1.Value = player;
             Cmd.Parameters.Add(p1);
+            conn.Open();
             using (MySqlDataReader dr = Cmd.ExecuteReader())
             {
                 try
                 {
-                    conn.Open();
-                    Cmd.ExecuteReader();
                     while (dr.Read())
                     {
                         if (dr.GetByte(0) == 1)
                             yesorno = true;
+                        dr.NextResult();
                     }
                 }
                 catch (MySqlException ex)
@@ -205,16 +204,17 @@ namespace UNObot.Modules
             Cmd.Parameters.Add(p1);
             List<DiscordBot.Modules.Card> cards = new List<DiscordBot.Modules.Card>();
             string json = "";
+            conn.Open();
             using (MySqlDataReader dr = Cmd.ExecuteReader())
             {
                 try
                 {
-                    conn.Open();
                     Cmd.ExecuteNonQuery();
 
                     while (dr.Read())
                     {
                         jsonstring = dr.GetString(0);
+                        dr.NextResult();
                     }
                 }
                 catch (MySqlException ex)
@@ -247,6 +247,7 @@ namespace UNObot.Modules
                 GetConnectionString();
 
             List<DiscordBot.Modules.Card> cards = GetCards(player);
+            Console.WriteLine("yes, i got the damnn cards");
             cards.Add(card);
             string json = JsonConvert.SerializeObject(cards);
 
@@ -261,7 +262,6 @@ namespace UNObot.Modules
             MySqlParameter p2 = new MySqlParameter();
             p2.Value = player;
             Cmd.Parameters.Add(p2);
-
             try
             {
                 conn.Open();
