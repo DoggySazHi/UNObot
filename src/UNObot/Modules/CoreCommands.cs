@@ -28,7 +28,7 @@ namespace DiscordBot.Modules
         public Task Info()
         {
             return ReplyAsync(
-                $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\n Version {Program.version}");
+                $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\n Version {Program.version}\nblame potatoes and StickerzYT");
         }
 
         [Command("ugay")]

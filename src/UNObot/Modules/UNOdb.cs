@@ -198,7 +198,7 @@ namespace UNObot.Modules
             string jsonstring = "";
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
-            Cmd.CommandText = "SELECT cards FROM UNObot.Players WHERE inGame = 1 AND userid = ?";
+            Cmd.CommandText = "SELECT cards FROM UNObot.Players WHERE userid = ?";
             MySqlParameter p1 = new MySqlParameter();
             p1.Value = player;
             Cmd.Parameters.Add(p1);
@@ -209,8 +209,6 @@ namespace UNObot.Modules
             {
                 try
                 {
-                    Cmd.ExecuteNonQuery();
-
                     while (dr.Read())
                     {
                         jsonstring = dr.GetString(0);
@@ -226,6 +224,7 @@ namespace UNObot.Modules
                     conn.Close();
                 }
                 cards = JsonConvert.DeserializeObject<List<DiscordBot.Modules.Card>>(json);
+                Console.WriteLine(json);
                 return cards;
             }
         }
@@ -245,12 +244,12 @@ namespace UNObot.Modules
         {
             if (conn == null)
                 GetConnectionString();
-
+                
             List<DiscordBot.Modules.Card> cards = GetCards(player);
-            Console.WriteLine("yes, i got the damnn cards");
+            if (cards == null)
+                cards = new List<DiscordBot.Modules.Card>();
             cards.Add(card);
             string json = JsonConvert.SerializeObject(cards);
-
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
             Cmd.CommandText = "UPDATE UNObot.Players SET cards = ? WHERE userid = ?";
