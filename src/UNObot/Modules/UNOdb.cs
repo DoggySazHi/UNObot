@@ -81,13 +81,18 @@ namespace UNObot.Modules
             MySqlCommand Cmd = new MySqlCommand
             {
                 Connection = conn,
-                CommandText = "INSERT INTO Players (userid, inGame) VALUES(?, 0) ON DUPLICATE KEY UPDATE inGame = 0"
+                CommandText = "INSERT INTO Players (userid, inGame, cards) VALUES(?, 0) ON DUPLICATE KEY UPDATE inGame = 0, cards = ?"
             };
             MySqlParameter p1 = new MySqlParameter
             {
                 Value = id
             };
             Cmd.Parameters.Add(p1);
+            MySqlParameter p2 = new MySqlParameter
+            {
+                Value = "[]"
+            };
+            Cmd.Parameters.Add(p2);
             try
             {
                 conn.Open();
@@ -203,7 +208,6 @@ namespace UNObot.Modules
             p1.Value = player;
             Cmd.Parameters.Add(p1);
             List<DiscordBot.Modules.Card> cards = new List<DiscordBot.Modules.Card>();
-            string json = "";
             conn.Open();
             using (MySqlDataReader dr = Cmd.ExecuteReader())
             {
@@ -212,6 +216,7 @@ namespace UNObot.Modules
                     while (dr.Read())
                     {
                         jsonstring = dr.GetString(0);
+                        Console.WriteLine(jsonstring);
                         dr.NextResult();
                     }
                 }
@@ -223,8 +228,7 @@ namespace UNObot.Modules
                 {
                     conn.Close();
                 }
-                cards = JsonConvert.DeserializeObject<List<DiscordBot.Modules.Card>>(json);
-                Console.WriteLine(json);
+                cards = JsonConvert.DeserializeObject<List<DiscordBot.Modules.Card>>(jsonstring);
                 return cards;
             }
         }
