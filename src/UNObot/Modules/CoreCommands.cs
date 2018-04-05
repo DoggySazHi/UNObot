@@ -52,6 +52,11 @@ namespace DiscordBot.Modules
             db.AddUser(Context.User.Id, Context.User.Username);
             return ReplyAsync($"{Context.User.Username} has been added to the queue.\n");
         }
+        [Command("stats")]
+        public Task Stats()
+        {
+            return ReplyAsync("ha, stats isn't invented yet");
+        }
         [Command("leave")]
         public Task Leave()
         {
