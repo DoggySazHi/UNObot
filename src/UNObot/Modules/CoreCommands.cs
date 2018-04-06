@@ -49,7 +49,17 @@ namespace DiscordBot.Modules
         public Task Ugay3()
             => ReplyAsync(
                 $"<@{Context.User.Id}> no u\n");
+        [Command("purge")]
+        public async Task purge(int length)
+        {
+            var messages = await this.Context.Channel.GetMessagesAsync((int)length + 1).Flatten();
 
+            await this.Context.Channel.DeleteMessagesAsync(messages);
+            const int delay = 5000;
+            var m = await this.ReplyAsync($"Purge completed. _This message will be deleted in {delay / 1000} seconds._");
+            await Task.Delay(delay);
+            await m.DeleteAsync();
+        }
         [Command("join")]
         public Task Join()
         {
