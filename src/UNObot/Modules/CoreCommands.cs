@@ -292,7 +292,7 @@ namespace DiscordBot.Modules
                     ReplyAsync("Game has started. Please remember; PM the bot to avoid bleeding!\n" +
                                "You have been given 7 cards; PM \"deck\" to view them.\n" +
                                "Remember; you have 1 minute and 30 seconds to place a card.\n" +
-                               $"The first player is <@{players.ElementAt(0)}>.\n");
+                               $"The first player is <@{players.ElementAt(Program.currentPlayer)}>.\n");
                     SetTimer();
                     Program.gameStarted = true;
                     db.StarterCard();
@@ -441,6 +441,8 @@ namespace DiscordBot.Modules
                                 else
                                     Program.order = 1;
                             }
+                            //HACK remove
+                            Console.WriteLine(Program.currentPlayer);
                             if (Program.order == 1)
                             {
                                 Program.currentPlayer++;
@@ -495,6 +497,8 @@ namespace DiscordBot.Modules
                                     skiplist.Add(UNOcore.RandomCard());
                                     skiplist.Add(UNOcore.RandomCard());
                                 }
+                                //HACK Remove
+                                Console.WriteLine(Program.currentPlayer);
                                 ReplyAsync($"<@{players.ElementAt(Program.currentPlayer)}> has been skipped! They have also recieved a prize of {Program.currentcard.Value} cards.");
                                 if (Program.order == 1)
                                 {
@@ -508,6 +512,8 @@ namespace DiscordBot.Modules
                                     if (Program.currentPlayer < 0)
                                         Program.currentPlayer = players.Count - Program.currentPlayer;
                                 }
+                                //HACK remove
+                                Console.WriteLine(Program.currentPlayer);
                             }
                             List<Card> userlist = db.GetCards(Context.User.Id);
                             if (userlist.Count == 1)
