@@ -45,7 +45,7 @@ namespace UNObot.Modules
                 GetConnectionString();
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
-            Cmd.CommandText = "INSERT INTO Players (userid, username, inGame) VALUES(?, ?, 1) ON DUPLICATE KEY UPDATE username = ?, inGame = 1";
+            Cmd.CommandText = "INSERT INTO Players (userid, username, inGame, cards) VALUES(?, ?, 1, ?) ON DUPLICATE KEY UPDATE username = ?, inGame = 1, cards = ?";
             MySqlParameter p1 = new MySqlParameter
             {
                 Value = id
@@ -57,12 +57,21 @@ namespace UNObot.Modules
                 Value = usrname
             };
             Cmd.Parameters.Add(p2);
-            //for third parameter
             MySqlParameter p3 = new MySqlParameter
+            {
+                Value = "[]"
+            };
+            Cmd.Parameters.Add(p3);
+            MySqlParameter p4 = new MySqlParameter
             {
                 Value = usrname
             };
-            Cmd.Parameters.Add(p3);
+            Cmd.Parameters.Add(p4);
+            MySqlParameter p5 = new MySqlParameter
+            {
+                Value = "[]"
+            };
+            Cmd.Parameters.Add(p5);
             try
             {
                 conn.Open();
@@ -249,7 +258,14 @@ namespace UNObot.Modules
                 {
                     AddCard(player, DiscordBot.Modules.CoreCommands.UNOcore.RandomCard());
                 }
+                //add gamesJoined
             }
+        }
+        public void UpdateStats(ulong player, int mode)
+        {
+            //1 is gamesJoined
+            //2 is gamesPlayed
+            //3 is gamesWon
         }
         //TODO this
         public void AddCard(ulong player, DiscordBot.Modules.Card card)
