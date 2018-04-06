@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -26,8 +27,10 @@ namespace UNObot.Modules
             try
             {
                 Console.WriteLine("Connecting to MySQL...");
+                //ha, damn the limited encodings.
+                Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+                Encoding.GetEncoding("windows-1254");
                 conn.Open();
-                // Perform database operations
             }
             catch (Exception ex)
             {
