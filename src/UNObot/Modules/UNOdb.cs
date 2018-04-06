@@ -81,7 +81,7 @@ namespace UNObot.Modules
             MySqlCommand Cmd = new MySqlCommand
             {
                 Connection = conn,
-                CommandText = "INSERT INTO Players (userid, inGame, cards) VALUES(?, 0) ON DUPLICATE KEY UPDATE inGame = 0, cards = ?"
+                CommandText = "INSERT INTO Players (userid, inGame, cards) VALUES(?, 0, ?) ON DUPLICATE KEY UPDATE inGame = 0, cards = ?"
             };
             MySqlParameter p1 = new MySqlParameter
             {
@@ -93,6 +93,11 @@ namespace UNObot.Modules
                 Value = "[]"
             };
             Cmd.Parameters.Add(p2);
+            MySqlParameter p3 = new MySqlParameter
+            {
+                Value = "[]"
+            };
+            Cmd.Parameters.Add(p3);
             try
             {
                 conn.Open();

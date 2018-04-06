@@ -28,9 +28,13 @@ namespace DiscordBot.Modules
         public Task Info()
         {
             return ReplyAsync(
-                $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\n Version {Program.version}\nblame potatoes and StickerzYT");
+                $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {Program.version}\nblame Aragami and FM for the existance of this");
         }
-
+        [Command("gulag")]
+        public Task Gulag()
+        {
+            return ReplyAsync($"@<{Context.User.Id}> has been sent to gulag and has all of his cards converted to red blyats.");
+        }
         [Command("ugay")]
         public Task Ugay()
             => ReplyAsync(
@@ -187,7 +191,8 @@ namespace DiscordBot.Modules
             return ReplyAsync("UNObot: Programmed by DoggySazHi\n" +
                 "Tested by Aragami and Fm\n" +
                 "Created for the UBOWS server\n\n" +
-                "Stickerz was here.");
+                "Stickerz was here.\n" +
+                "Blame LocalDisk for any bugs.");
         }
 
         [Command("players")]
