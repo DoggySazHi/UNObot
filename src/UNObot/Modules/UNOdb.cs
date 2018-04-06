@@ -233,7 +233,6 @@ namespace UNObot.Modules
                     while (dr.Read())
                     {
                         jsonstring = dr.GetString(0);
-                        Console.WriteLine(jsonstring);
                         dr.NextResult();
                     }
                 }
@@ -266,7 +265,7 @@ namespace UNObot.Modules
             //1 is gamesJoined
             //2 is gamesPlayed
             //3 is gamesWon
-        }
+         }
         //TODO this
         public void AddCard(ulong player, DiscordBot.Modules.Card card)
         {
