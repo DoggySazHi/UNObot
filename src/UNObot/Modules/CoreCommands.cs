@@ -53,19 +53,27 @@ namespace DiscordBot.Modules
         [Command("join")]
         public Task Join()
         {
-            db.AddUser(Context.User.Id, Context.User.Username);
+            if(Program.gameStarted == true)
+                return ReplyAsync($"The game has already started!\n");
+            else if(db.IsPlayerInGame(Context.User.Id))
+                return ReplyAsync($"{Context.User.Username}, you are already in game!\n");
+            else
+                db.AddUser(Context.User.Id, Context.User.Username);
             return ReplyAsync($"{Context.User.Username} has been added to the queue.\n");
         }
         [Command("stats")]
         public Task Stats()
         {
+            //TODO actually do something here
             return ReplyAsync("ha, stats isn't invented yet");
         }
         [Command("leave")]
         public Task Leave()
         {
-            db.RemoveUser(Context.User.Id);
-            ReplyAsync($"{Context.User.Username} has been removed from the queue.\n");
+            if(db.IsPlayerInGame(Context.User.Id))
+                db.RemoveUser(Context.User.Id);
+            else
+                return ReplyAsync($"{Context.User.Username}, you are already out of game!\n");
             List<ulong> players = db.GetPlayers();
             if (Program.order == 1)
             {
@@ -88,7 +96,7 @@ namespace DiscordBot.Modules
                 ReplyAsync("Game has been reset, due to nobody in-game.");
                 playTimer.Dispose();
             }
-            return null;
+            return ReplyAsync($"{Context.User.Username} has been removed from the queue.\n");
         }
         [Command("upupdowndownleftrightleftrightbastart")]
         public Task Easteregg1()
