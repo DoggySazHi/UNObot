@@ -81,11 +81,22 @@ namespace DiscordBot.Modules
         [Command("stats")]
         public Task Stats()
         {
-            //TODO actually do something here
             int[] stats = db.GetStats(Context.User.Id);
-            if(Context.User.Id == 278524552462598145)
-                ReplyAsync("WARNING: This user is known to cheat.");
             return ReplyAsync($"{Context.User.Username}'s stats:\n"
+                                + $"Games joined: {stats[0]}\n"
+                                + $"Games fully played: {stats[1]}\n"
+                                + $"Games won: {stats[2]}");
+        }
+        [Command("stats")]
+        public Task Stats2(string user)
+        {
+            user = user.Trim(new Char[] { ' ', '<', '>', '!', '@' });
+            if (!UInt64.TryParse(user, out ulong userid))
+                return ReplyAsync("Mention the player with this command to see their stats.");
+            if (!db.UserExists(userid))
+                return ReplyAsync($"<@{userid}> The user does not exist; did you type it wrong?");
+            int[] stats = db.GetStats(userid);
+            return ReplyAsync($"<@{userid}>'s stats:\n"
                                 + $"Games joined: {stats[0]}\n"
                                 + $"Games fully played: {stats[1]}\n"
                                 + $"Games won: {stats[2]}");
@@ -116,9 +127,12 @@ namespace DiscordBot.Modules
             return ReplyAsync($"<@419374055792050176> claims that <@{Context.User.Id}> is stupid.");
         }
         [Command("upupdowndownleftrightleftrightbastart")]
-        public Task Easteregg2(string response)
+        public async Task Easteregg2(string response)
         {
-            return ReplyAsync(response);
+            var messages = await this.Context.Channel.GetMessagesAsync(1).Flatten();
+
+            await this.Context.Channel.DeleteMessagesAsync(messages);
+            await ReplyAsync(response);
         }
         [Command("draw")]
         public Task Draw()
@@ -201,8 +215,12 @@ namespace DiscordBot.Modules
                                "Get a help list. But you probably knew this.\n" +
                               "- Seed (seed)\n" +
                               "Possibly increases your chance of winning.\n" +
-                               "- Players\n" +
-                               "See who is playing and who's turn is it.\n");
+                              "- Players\n" +
+                              "See who is playing and who's turn is it.\n" +
+                              "- Stats [player by mention]\n" +
+                              "See if you or somebody else is a pro or a noob at UNO. It's probably the former.\n" +
+                              "- Info\n" +
+                              "See the current version and crap about UNObot.");
         }
 
         [Command("asdf")]
@@ -494,6 +512,7 @@ namespace DiscordBot.Modules
                                 Program.currentcard = null;
                                 playTimer.Dispose();
                                 ReplyAsync("Game is over. You may rejoin now.");
+                                return;
                             }
                             FixOrder();
                             ReplyAsync($"It is now <@{db.Players.ElementAt(Program.currentPlayer)}>'s turn.");

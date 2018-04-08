@@ -264,6 +264,40 @@ namespace UNObot.Modules
                 return cards;
             }
         }
+        public bool UserExists(ulong player)
+        {
+            if (conn == null)
+                GetConnectionString();
+            bool exists = false;
+            MySqlCommand Cmd = new MySqlCommand();
+            Cmd.Connection = conn;
+            Cmd.CommandText = "SELECT EXISTS(SELECT 1 FROM UNObot.Players WHERE userid = ?)";
+            MySqlParameter p1 = new MySqlParameter();
+            p1.Value = player;
+            Cmd.Parameters.Add(p1);
+            conn.Open();
+            using (MySqlDataReader dr = Cmd.ExecuteReader())
+            {
+                try
+                {
+                    while (dr.Read())
+                    {
+                        if (dr.GetInt64(0) == 1)
+                            exists = true;
+                        dr.NextResult();
+                    }
+                }
+                catch (MySqlException ex)
+                {
+                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                }
+                finally
+                {
+                    conn.Close();
+                }
+                return exists;
+            }
+        }
         public void StarterCard()
         {
             List<ulong> players = Players;
