@@ -241,7 +241,7 @@ namespace DiscordBot.Modules
             {
                 FixOrder();
                 ulong id = players.ElementAt(Program.currentPlayer);
-                string response = $"Current player: <@{id}>";
+                string response = $"Current player: <@{id}>\n";
                 foreach (ulong player in players)
                 {
                     List<Card> loserlist = db.GetCards(player);
