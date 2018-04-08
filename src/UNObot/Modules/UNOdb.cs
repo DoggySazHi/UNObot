@@ -126,6 +126,18 @@ namespace UNObot.Modules
         }
         public void CleanAll()
         {
+            using (StreamReader r = new StreamReader("config.json"))
+            {
+                string json = r.ReadToEnd();
+                JObject jObject = JObject.Parse(json);
+                if (jObject["version"] == null)
+                {
+                    Console.WriteLine("ERROR: Version has not been written in config.json!\nIt must contain a version.");
+                    return;
+                }
+                DiscordBot.Program.version = (string)jObject["version"];
+                Console.WriteLine($"Running {DiscordBot.Program.version}!");
+            }
             if (conn == null)
                 GetConnectionString();
             MySqlCommand Cmd = new MySqlCommand();
@@ -149,35 +161,39 @@ namespace UNObot.Modules
                 conn.Close();
             }
         }
-        public List<ulong> GetPlayers()
+        public List<ulong> Players
         {
-            if (conn == null)
-                GetConnectionString();
-            MySqlCommand Cmd = new MySqlCommand();
-            Cmd.Connection = conn;
-            Cmd.CommandText = "SELECT userid,username FROM UNObot.Players WHERE inGame = 1";
-            List<ulong> players = new List<ulong>();
-            conn.Open();
-            using (MySqlDataReader dr = Cmd.ExecuteReader())
+            get
             {
-                try
+                if (conn == null)
+                    GetConnectionString();
+                MySqlCommand Cmd = new MySqlCommand();
+                Cmd.Connection = conn;
+                Cmd.CommandText = "SELECT userid,username FROM UNObot.Players WHERE inGame = 1";
+                List<ulong> players = new List<ulong>();
+                conn.Open();
+                using (MySqlDataReader dr = Cmd.ExecuteReader())
                 {
-                    while (dr.Read())
+                    try
                     {
-                        players.Add(dr.GetUInt64(0));
+                        while (dr.Read())
+                        {
+                            players.Add(dr.GetUInt64(0));
+                        }
                     }
+                    catch (MySqlException ex)
+                    {
+                        Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                    }
+                    finally
+                    {
+                        conn.Close();
+                    }
+                    return players;
                 }
-                catch (MySqlException ex)
-                {
-                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
-                }
-                finally
-                {
-                    conn.Close();
-                }
-                return players;
             }
         }
+
         public bool IsPlayerInGame(ulong player)
         {
             if (conn == null)
@@ -250,7 +266,7 @@ namespace UNObot.Modules
         }
         public void StarterCard()
         {
-            List<ulong> players = GetPlayers();
+            List<ulong> players = Players;
             foreach (ulong player in players)
             {
                 for(int i = 0; i < 7; i++)
@@ -260,11 +276,80 @@ namespace UNObot.Modules
                 //add gamesJoined
             }
         }
+        public int[] GetStats(ulong player)
+        {
+            if (conn == null)
+                GetConnectionString();
+            MySqlCommand Cmd = new MySqlCommand();
+            Cmd.Connection = conn;
+            Cmd.CommandText = "SELECT gamesJoined,gamesPlayed,gamesWon FROM UNObot.Players WHERE userid = ?";
+            MySqlParameter p1 = new MySqlParameter();
+            p1.Value = player;
+            Cmd.Parameters.Add(p1);
+            int[] stats = new int[3];
+            conn.Open();
+            using (MySqlDataReader dr = Cmd.ExecuteReader())
+            {
+                try
+                {
+                    while (dr.Read())
+                    {
+                        stats[0] = dr.GetInt32(0);
+                        stats[1] = dr.GetInt32(1);
+                        stats[2] = dr.GetInt32(2);
+                        dr.NextResult();
+                    }
+                }
+                catch (MySqlException ex)
+                {
+                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                }
+                finally
+                {
+                    conn.Close();
+                }
+                return stats;
+            }
+        }
         public void UpdateStats(ulong player, int mode)
         {
             //1 is gamesJoined
             //2 is gamesPlayed
             //3 is gamesWon
+            if (conn == null)
+                GetConnectionString();
+                
+            MySqlCommand Cmd = new MySqlCommand();
+            Cmd.Connection = conn;
+            switch(mode)
+            {
+                case 1:
+                    Cmd.CommandText = "UPDATE UNObot.Players SET gamesJoined = gamesJoined + 1 WHERE userid = ?";
+                    break;
+                case 2:
+                    Cmd.CommandText = "UPDATE UNObot.Players SET gamesPlayed = gamesPlayed + 1 WHERE userid = ?";
+                    break;
+                case 3:
+                    Cmd.CommandText = "UPDATE UNObot.Players SET gamesWon = gamesWon + 1 WHERE userid = ?";
+                    break;
+            }
+
+            MySqlParameter p1 = new MySqlParameter();
+            p1.Value = player;
+            Cmd.Parameters.Add(p1);
+            try
+            {
+                conn.Open();
+                Cmd.ExecuteNonQuery();
+            }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            finally
+            {
+                conn.Close();
+            }
          }
         //TODO this
         public void AddCard(ulong player, DiscordBot.Modules.Card card)
