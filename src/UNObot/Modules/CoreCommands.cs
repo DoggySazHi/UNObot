@@ -57,46 +57,58 @@ namespace DiscordBot.Modules
             => ReplyAsync(
                 $"<@{Context.User.Id}> no u\n");
         [Command("purge"),RequireUserPermission(GuildPermission.Administrator)]
-        public async Task purge(int length)
+        public async Task Purge(int length)
         {
-            var messages = await this.Context.Channel.GetMessagesAsync((int)length + 1).Flatten();
+            var messages = await Context.Channel.GetMessagesAsync(length + 1).Flatten();
 
-            await this.Context.Channel.DeleteMessagesAsync(messages);
+            await Context.Channel.DeleteMessagesAsync(messages);
             const int delay = 5000;
-            var m = await this.ReplyAsync($"Purge completed. _This message will be deleted in {delay / 1000} seconds._");
+            var m = await ReplyAsync($"Purge completed. _This message will be deleted in {delay / 1000} seconds._");
             await Task.Delay(delay);
             await m.DeleteAsync();
         }
         [Command("join")]
-        public Task Join()
+        public async Task Join()
         {
-            if(Program.gameStarted == true)
-                return ReplyAsync($"The game has already started!\n");
-            else if(db.IsPlayerInGame(Context.User.Id))
-                return ReplyAsync($"{Context.User.Username}, you are already in game!\n");
+            if (Program.gameStarted == true)
+            {
+                await ReplyAsync($"The game has already started!\n");
+                return;
+            }
+            else if (await db.IsPlayerInGame(Context.User.Id))
+            {
+                await ReplyAsync($"{Context.User.Username}, you are already in game!\n");
+                return;
+            }
             else
-                db.AddUser(Context.User.Id, Context.User.Username);
-            return ReplyAsync($"{Context.User.Username} has been added to the queue.\n");
+                await db.AddUser(Context.User.Id, Context.User.Username);
+            await ReplyAsync($"{Context.User.Username} has been added to the queue.\n");
         }
         [Command("stats")]
-        public Task Stats()
+        public async Task Stats()
         {
-            int[] stats = db.GetStats(Context.User.Id);
-            return ReplyAsync($"{Context.User.Username}'s stats:\n"
+            int[] stats = await db.GetStats(Context.User.Id);
+            await ReplyAsync($"{Context.User.Username}'s stats:\n"
                                 + $"Games joined: {stats[0]}\n"
                                 + $"Games fully played: {stats[1]}\n"
                                 + $"Games won: {stats[2]}");
         }
         [Command("stats")]
-        public Task Stats2(string user)
+        public async Task Stats2(string user)
         {
             user = user.Trim(new Char[] { ' ', '<', '>', '!', '@' });
             if (!UInt64.TryParse(user, out ulong userid))
-                return ReplyAsync("Mention the player with this command to see their stats.");
-            if (!db.UserExists(userid))
-                return ReplyAsync($"The user does not exist; either you have typed it wrong, or that user doesn't exist in the UNObot database.");
-            int[] stats = db.GetStats(userid);
-            return ReplyAsync($"<@{userid}>'s stats:\n"
+            {
+                await ReplyAsync("Mention the player with this command to see their stats.");
+                return;
+            }
+            if (!await db.UserExists(userid))
+            {
+                await ReplyAsync($"The user does not exist; either you have typed it wrong, or that user doesn't exist in the UNObot database.");
+                return;
+            }
+            int[] stats = await db.GetStats(userid);
+            await ReplyAsync($"<@{userid}>'s stats:\n"
                                 + $"Games joined: {stats[0]}\n"
                                 + $"Games fully played: {stats[1]}\n"
                                 + $"Games won: {stats[2]}");
@@ -115,29 +127,32 @@ namespace DiscordBot.Modules
                 return ReplyAsync($"<@{userid}>'s Profile Picture Link: {newuser.GetAvatarUrl()}");
         }
         [Command("leave")]
-        public Task Leave()
+        public async Task Leave()
         {
-            if(db.IsPlayerInGame(Context.User.Id))
-                db.RemoveUser(Context.User.Id);
+            if(await db.IsPlayerInGame(Context.User.Id))
+                await db.RemoveUser(Context.User.Id);
             else
-                return ReplyAsync($"{Context.User.Username}, you are already out of game!\n");
-            List<ulong> players = db.Players;
-            NextPlayer();
+            {
+                await ReplyAsync($"{Context.User.Username}, you are already out of game!\n");
+                return;
+            }
+            List<ulong> players = await db.GetPlayers();
+            await NextPlayer();
             if (players.Count == 0)
             {
                 Program.currentPlayer = 0;
                 Program.gameStarted = false;
                 Program.order = 1;
                 Program.currentcard = null;
-                ReplyAsync("Game has been reset, due to nobody in-game.");
+                await ReplyAsync("Game has been reset, due to nobody in-game.");
                 playTimer.Dispose();
             }
-            return ReplyAsync($"{Context.User.Username} has been removed from the queue.\n");
+            await ReplyAsync($"{Context.User.Username} has been removed from the queue.\n");
         }
         [Command("upupdowndownleftrightleftrightbastart")]
-        public Task Easteregg1()
+        public async Task Easteregg1()
         {
-            return ReplyAsync($"<@419374055792050176> claims that <@{Context.User.Id}> is stupid.");
+            await ReplyAsync($"<@419374055792050176> claims that <@{Context.User.Id}> is stupid.");
         }
         [Command("upupdowndownleftrightleftrightbastart")]
         public async Task Easteregg2(string response)
@@ -148,67 +163,75 @@ namespace DiscordBot.Modules
             await ReplyAsync(response);
         }
         [Command("draw")]
-        public Task Draw()
+        public async Task Draw()
         {
-            if (db.IsPlayerInGame(Context.User.Id))
+            if (await db.IsPlayerInGame(Context.User.Id))
             {
                 if (Program.gameStarted)
                 {
                     Card card = UNOcore.RandomCard();
-                    Discord.UserExtensions.SendMessageAsync(Context.Message.Author, "You have recieved: " + card.Color + " " + card.Value + ".");
-                    db.AddCard(Context.User.Id, card);
-                    return null;
+                    await UserExtensions.SendMessageAsync(Context.Message.Author, "You have recieved: " + card.Color + " " + card.Value + ".");
+                    await db.AddCard(Context.User.Id, card);
+                    return;
                 }
                 else
-                    return ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
+                {
+                    await ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
+                    return;
+                }
             }
             else
             {
-                return ReplyAsync($"<@{Context.User.Id}>, you are not in game.\n");
+                await ReplyAsync($"<@{Context.User.Id}>, you are not in game.\n");
+                return;
             }
         }
 
         [Command("deck")]
-        public Task Deck()
+        public async Task Deck()
         {
-            if (db.IsPlayerInGame(Context.User.Id))
+            if (await db.IsPlayerInGame(Context.User.Id))
             {
                 if (Program.gameStarted)
                 {
-                    List<Card> list = db.GetCards(Context.User.Id);
+                    List<Card> list = await db.GetCards(Context.User.Id);
                     string response = "Cards available:\n";
                     foreach (Card card in list)
                     {
                         response += card.Color + " " + card.Value + "\n";
                     }
-                    Discord.UserExtensions.SendMessageAsync(Context.Message.Author, response);
-                    return null;
+                    await UserExtensions.SendMessageAsync(Context.Message.Author, response);
+                    return;
                 }
                 else
-                    return ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
+                {
+                    await ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
+                    return;
+                }
             }
             else
             {
-                return ReplyAsync($"<@{Context.User.Id}>, you are not in game.\n");
+                await ReplyAsync($"<@{Context.User.Id}>, you are not in game.\n");
+                return;
             }
         }
 
         [Command("card")]
-        public Task Card()
+        public async Task Card()
         {
             if (Program.gameStarted)
             {
-                ReplyAsync("Current card: " + Program.currentcard.Color + " " + Program.currentcard.Value);
-                return null;
+                await ReplyAsync("Current card: " + Program.currentcard.Color + " " + Program.currentcard.Value);
+                return;
             }
             else
-                return ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
+                await ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
         }
         [Command("help")]
-        public Task Help()
+        public async Task Help()
         {
-            ReplyAsync("Help has been sent. Or, I think it has.");
-            return Discord.UserExtensions.SendMessageAsync(Context.Message.Author, "Commands: @UNOBot#4308 (Required) {Required in certain conditions} [Optional] " +
+            await ReplyAsync("Help has been sent. Or, I think it has.");
+            await UserExtensions.SendMessageAsync(Context.Message.Author, "Commands: @UNOBot#4308 (Required) {Required in certain conditions} [Optional] " +
                                "- Join\n" +
                                "Join the queue.\n" +
                                "- Leave" +
@@ -233,13 +256,13 @@ namespace DiscordBot.Modules
                               "- Stats [player by mention]\n" +
                               "See if you or somebody else is a pro or a noob at UNO. It's probably the former.\n" +
                               "- Info\n" +
-                              "See the current version and crap about UNObot.");
+                              "See the current version and other stuff about UNObot.");
         }
 
         [Command("asdf")]
-        public Task Credits()
+        public async Task Credits()
         {
-            return ReplyAsync("UNObot: Programmed by DoggySazHi\n" +
+            await ReplyAsync("UNObot: Programmed by DoggySazHi\n" +
                 "Tested by Aragami and Fm\n" +
                 "Created for the UBOWS server\n\n" +
                 "Stickerz was here.\n" +
@@ -247,115 +270,109 @@ namespace DiscordBot.Modules
         }
 
         [Command("players")]
-        public Task Players()
+        public async Task Players()
         {
-            List<ulong> players = db.Players;
+            List<ulong> players = await db.GetPlayers();
             if (Program.gameStarted)
             {
-                FixOrder();
+                await FixOrder();
                 ulong id = players.ElementAt(Program.currentPlayer);
                 string response = $"Current player: <@{id}>\n";
                 foreach (ulong player in players)
                 {
-                    List<Card> loserlist = db.GetCards(player);
+                    List<Card> loserlist = await db.GetCards(player);
                     response += $"- <@{player}> has {loserlist.Count} cards left.\n";
                 }
-                return ReplyAsync(response);
+                await ReplyAsync(response);
             }
             else
-                return ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
+                await ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
         }
         [Command("seed")]
-        public Task Seed(string seed)
+        public async Task Seed(string seed)
         {
             UNOcore.r = new Random(seed.GetHashCode());
-            return ReplyAsync("Seed has been updated. I do not guarantee 100% Wild cards.");
+            await ReplyAsync("Seed has been updated. I do not guarantee 100% Wild cards.");
         }
         [Command("uno")]
-        public Task Uno()
+        public async Task Uno()
         {
-            if (db.IsPlayerInGame(Context.User.Id))
+            if (await db.IsPlayerInGame(Context.User.Id))
             {
                 if (Program.gameStarted)
                 {
                     if(Context.User.Id == Program.onecardleft)
                     {
-                        ReplyAsync($"Good job, <@{Context.User.Id}> has exactly one card left!");
+                        await ReplyAsync($"Good job, <@{Context.User.Id}> has exactly one card left!");
                         Program.onecardleft = 0;
                     } else
                     {
-                        ReplyAsync($"<@{Context.User.Id}>, you still have more than one card! As a result, you are forced to draw two cards.");
-                        List<Card> usercards = db.GetCards(Context.User.Id);
+                        await ReplyAsync($"<@{Context.User.Id}>, you still have more than one card! As a result, you are forced to draw two cards.");
+                        List<Card> usercards = await db.GetCards(Context.User.Id);
                         usercards.Add(UNOcore.RandomCard());
                         usercards.Add(UNOcore.RandomCard());
                     }
-                    return null;
+                    return;
                 }
                 else
-                    return ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
+                    await ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
             }
             else
-            {
-                return ReplyAsync($"<@{Context.User.Id}>, you are not in game.\n");
-            }
+                await ReplyAsync($"<@{Context.User.Id}>, you are not in game.\n");
         }
         [Command("start")]
-        public Task Start()
+        public async Task Start()
         {
-            if (db.IsPlayerInGame(Context.User.Id))
+            if (await db.IsPlayerInGame(Context.User.Id))
             {
                 if (Program.gameStarted)
-                    return ReplyAsync($"<@{Context.User.Id}>, the game has already started!\n");
+                    await ReplyAsync($"<@{Context.User.Id}>, the game has already started!\n");
                 else
                 {
-                    List<ulong> players = db.Players;
+                    List<ulong> players = await db.GetPlayers();
                     Program.currentcard = UNOcore.RandomCard();
-                    NextPlayer();
-                    foreach(ulong player in db.Players)
+                    await NextPlayer();
+                    foreach(ulong player in players)
                     {
-                        db.UpdateStats(player, 1);
+                        await db.UpdateStats(player, 1);
                     }
-                    ReplyAsync("Game has started. All information about your cards will be PMed.\n" +
+                    await ReplyAsync("Game has started. All information about your cards will be PMed.\n" +
                                "You have been given 7 cards; PM \"deck\" to view them.\n" +
                                "Remember; you have 1 minute and 30 seconds to place a card.\n" +
                                $"The first player is <@{players.ElementAt(Program.currentPlayer)}>.\n");
                     SetTimer();
                     Program.gameStarted = true;
-                    db.StarterCard();
-                    return ReplyAsync("Current card: " +
-                                                            Program.currentcard.Color + " " + Program.currentcard.Value + "\n");
+                    await db.StarterCard();
+                    await ReplyAsync($"Current card: {Program.currentcard.Color } {Program.currentcard.Value}\n");
                 }
             }
-            return ReplyAsync($"<@{Context.User.Id}>, you are not in game.\n");
+            await ReplyAsync($"<@{Context.User.Id}>, you are not in game.\n");
         }
         [Command("play"), Priority(2)]
-        public Task Play(string color, string value)
+        public async Task Play(string color, string value)
         {
             if (color.ToLower() == "wild")
             {
-                ReplyAsync("You need to rerun the command, but also add what color should it represent.\nEx. play Wild Color Green");
-                return null;
+                await ReplyAsync("You need to rerun the command, but also add what color should it represent.\nEx. play Wild Color Green");
             }
             else
             {
-                PlayCommon(color, value, null);
-                return null;
+                await PlayCommon(color, value, null);
             }
         }
         [Command("play"), Priority(1)]
-        public Task PlayWild(string color, string value, string wild)
+        public async Task PlayWild(string color, string value, string wild)
         {
-            PlayCommon(color, value, wild);
-            return null;
+            await PlayCommon(color, value, wild);
         }
 
-        public void PlayCommon(string color, string value, string wild)
+        public async Task PlayCommon(string color, string value, string wild)
         {
-            if (db.IsPlayerInGame(Context.User.Id))
+            if (await db.IsPlayerInGame(Context.User.Id))
             {
                 if (Program.gameStarted)
                 {
-                    List<ulong> players = db.Players;
+                    List<ulong> players = await db.GetPlayers();
                     switch (color.ToLower())
                     {
                         case "red":
@@ -374,21 +391,21 @@ namespace DiscordBot.Modules
                             color = "Wild";
                             break;
                         default:
-                            ReplyAsync($"<@{Context.User.Id}>, that's not a color.");
+                            await ReplyAsync($"<@{Context.User.Id}>, that's not a color.");
                             return;
                     }
                     if (value.ToLower() == "reverse")
                         value = "Reverse";
                     if (value.ToLower() == "color")
                         value = "Color";
-                    FixOrder();
+                    await FixOrder();
                     if (players.ElementAt(Program.currentPlayer) == Context.User.Id)
                     {
                         if(Program.onecardleft != 0)
                         {
-                            ReplyAsync($"<@{Program.onecardleft}> has forgotten to say UNO! They have been given 2 cards.");
-                            db.AddCard(Program.onecardleft, UNOcore.RandomCard());
-                            db.AddCard(Program.onecardleft, UNOcore.RandomCard());
+                            await ReplyAsync($"<@{Program.onecardleft}> has forgotten to say UNO! They have been given 2 cards.");
+                            await db.AddCard(Program.onecardleft, UNOcore.RandomCard());
+                            await db.AddCard(Program.onecardleft, UNOcore.RandomCard());
                             Program.onecardleft = 0;
                         }
                         Card card = new Card
@@ -396,7 +413,7 @@ namespace DiscordBot.Modules
                             Color = color,
                             Value = value
                         };
-                        List<Card> list = db.GetCards(Context.User.Id);
+                        List<Card> list = await db.GetCards(Context.User.Id);
                         bool exists = false;
                         foreach (Card c in list)
                         {
@@ -434,28 +451,34 @@ namespace DiscordBot.Modules
                                     Program.currentcard.Color = card.Color;
                                     Program.currentcard.Value = card.Value;
                                 }
-                                Discord.UserExtensions.SendMessageAsync(Context.Message.Author, $"You have placed a {card.Color} {card.Value}.");
-                                db.RemoveCard(Context.User.Id, card);
-                                ReplyAsync($"<@{Context.User.Id}> has placed an " + card.Color + " " + card.Value + ".");
+                                await UserExtensions.SendMessageAsync(Context.Message.Author, $"You have placed a {card.Color} {card.Value}.");
+                                await db.RemoveCard(Context.User.Id, card);
+                                await ReplyAsync($"<@{Context.User.Id}> has placed an " + card.Color + " " + card.Value + ".");
                                 if (card.Color == "Wild")
-                                    ReplyAsync($"<@{Context.User.Id}> has decided that the new color is {Program.currentcard.Color}.");
+                                    await ReplyAsync($"<@{Context.User.Id}> has decided that the new color is {Program.currentcard.Color}.");
                             }
                             else
                             {
-                                Discord.UserExtensions.SendMessageAsync(Context.Message.Author, "This is an illegal choice. Make sure your color or value matches.");
+                                await UserExtensions.SendMessageAsync(Context.Message.Author, "This is an illegal choice. Make sure your color or value matches.");
                                 return;
                             }
-                            Discord.UserExtensions.SendMessageAsync(Context.Message.Author, $"Current card: {Program.currentcard.Color} {Program.currentcard.Value}");
+                            await UserExtensions.SendMessageAsync(Context.Message.Author, $"Current card: {Program.currentcard.Color} {Program.currentcard.Value}");
                             if (Program.currentcard.Value == "Reverse")
                             {
-                                ReplyAsync($"The order has been reversed! Also, {players.ElementAt(Program.currentPlayer)} has been skipped!");
+                                await ReplyAsync($"The order has been reversed! Also, {players.ElementAt(Program.currentPlayer)} has been skipped!");
                                 if (Program.order == 1)
                                     Program.order = 2;
                                 else
                                     Program.order = 1;
-                                NextPlayer();
+                                await NextPlayer();
                             }
-                            //TODO somehow simplify this crap? Note: uses next player()
+                            await NextPlayer();
+                            if(Program.currentcard.Value == "Skip")
+                            {
+                                await ReplyAsync($"<@{players.ElementAt(Program.currentPlayer)}> has been skipped!");
+                                await NextPlayer();
+                            }
+                            /*
                             if (Program.order == 1)
                             {
                                 Program.currentPlayer++;
@@ -463,7 +486,7 @@ namespace DiscordBot.Modules
                                 {
                                     if (Program.currentPlayer >= players.Count)
                                         Program.currentPlayer = Program.currentPlayer - players.Count;
-                                    ReplyAsync($"<@{players.ElementAt(Program.currentPlayer)}> has been skipped!");
+                                    await ReplyAsync($"<@{players.ElementAt(Program.currentPlayer)}> has been skipped!");
                                     Program.currentPlayer++;
                                 }
                                 if (Program.currentPlayer >= players.Count)
@@ -476,17 +499,17 @@ namespace DiscordBot.Modules
                                 {
                                     if (Program.currentPlayer < 0)
                                         Program.currentPlayer = players.Count - Program.currentPlayer;
-                                    ReplyAsync($"<@{players.ElementAt(Program.currentPlayer)}> has been skipped!");
+                                    await ReplyAsync($"<@{players.ElementAt(Program.currentPlayer)}> has been skipped!");
                                     Program.currentPlayer--;
                                 }
                                 if (Program.currentPlayer < 0)
                                     Program.currentPlayer = players.Count - Program.currentPlayer;
-                            }
+                            }*/
                             if (Program.currentcard.Value == "+2" || Program.currentcard.Value == "+4")
                             {
-                                ReplyAsync($"<@{players.ElementAt(Program.currentPlayer)}> has been skipped! They have also recieved a prize of {Program.currentcard.Value} cards.");
-                                NextPlayer();
-                                List<Card> skiplist = db.GetCards(players.ElementAt(Program.currentPlayer));
+                                await ReplyAsync($"<@{players.ElementAt(Program.currentPlayer)}> has been skipped! They have also recieved a prize of {Program.currentcard.Value} cards.");
+                                await NextPlayer();
+                                List<Card> skiplist = await db.GetCards(players.ElementAt(Program.currentPlayer));
 
                                 if (Program.currentcard.Value == "+2")
                                 {
@@ -501,50 +524,51 @@ namespace DiscordBot.Modules
                                     skiplist.Add(UNOcore.RandomCard());
                                 }
                             }
-                            List<Card> userlist = db.GetCards(Context.User.Id);
+                            List<Card> userlist = await db.GetCards(Context.User.Id);
                             if (userlist.Count == 1)
                             {
                                 Program.onecardleft = Context.User.Id;
                             }
                             if (userlist.Count == 0)
                             {
-                                ReplyAsync($"<@{Context.User.Id}> has won!");
-                                db.UpdateStats(Context.User.Id, 3);
+                                await ReplyAsync($"<@{Context.User.Id}> has won!");
+                                await db.UpdateStats(Context.User.Id, 3);
                                 string response = "";
-                                foreach(ulong player in db.Players)
+                                foreach(ulong player in await db.GetPlayers())
                                 {
-                                    List<Card> loserlist = db.GetCards(player);
+                                    List<Card> loserlist = await db.GetCards(player);
                                     response += $"- <@{player}> had {loserlist.Count} cards left.\n";
-                                    db.UpdateStats(player, 2);
+                                    await db.UpdateStats(player, 2);
                                 }
-                                ReplyAsync(response);
+                                await ReplyAsync(response);
                                 Program.currentPlayer = 0;
                                 Program.gameStarted = false;
                                 Program.order = 1;
                                 Program.currentcard = null;
                                 playTimer.Dispose();
-                                ReplyAsync("Game is over. You may rejoin now.");
+                                await ReplyAsync("Game is over. You may rejoin now.");
                                 return;
                             }
-                            FixOrder();
-                            ReplyAsync($"It is now <@{db.Players.ElementAt(Program.currentPlayer)}>'s turn.");
+                            await FixOrder();
+                            //HACK if something goes wrong, probably replace players with GetPlayers
+                            await ReplyAsync($"It is now <@{players.ElementAt(Program.currentPlayer)}>'s turn.");
                             return;
                         }
                         else
                         {
-                            Discord.UserExtensions.SendMessageAsync(Context.Message.Author, "You do not have this card!");
+                            await UserExtensions.SendMessageAsync(Context.Message.Author, "You do not have this card!");
                         }
                         return;
                     }
                     else
-                        ReplyAsync($"<@{Context.User.Id}>, it is not your turn!\n");
+                        await ReplyAsync($"<@{Context.User.Id}>, it is not your turn!\n");
                 }
                 else
-                    ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
+                    await ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
             }
             else
             {
-                ReplyAsync($"<@{Context.User.Id}>, you are not in game.\n");
+                await ReplyAsync($"<@{Context.User.Id}>, you are not in game.\n");
             }
         }
 
@@ -560,54 +584,56 @@ namespace DiscordBot.Modules
             playTimer.Start();
         }
 
-        void NextPlayer()
+        async Task NextPlayer()
         {
-            FixOrder();
+            List<ulong> players = await db.GetPlayers();
+            await FixOrder();
             if (Program.order == 1)
             {
                 Program.currentPlayer++;
-                if (Program.currentPlayer >= db.Players.Count)
+                if (Program.currentPlayer >= players.Count)
                     Program.currentPlayer = 0;
             }
             else
             {
                 Program.currentPlayer--;
                 if (Program.currentPlayer < 0)
-                    Program.currentPlayer = db.Players.Count - 1;
+                    Program.currentPlayer = players.Count - 1;
             }
-            FixOrder();
+            await FixOrder();
         }
 
-        void FixOrder()
+        async Task FixOrder()
         {
-            if (Program.order == 1 && Program.currentPlayer >= db.Players.Count)
+            List<ulong> players = await db.GetPlayers();
+            if (Program.order == 1 && Program.currentPlayer >= players.Count)
                     Program.currentPlayer = 0;
             else if (Program.currentPlayer < 0)
-                Program.currentPlayer = db.Players.Count - 1;
+                Program.currentPlayer = players.Count - 1;
         }
-        void AutoKick(Object source, ElapsedEventArgs e){
-            ulong id = db.Players.ElementAt(Program.currentPlayer);
-            db.RemoveUser(id);
-            ReplyAsync($"<@{id}>, you have been AFK removed.\n");
-            List<ulong> players = db.Players;
-            NextPlayer();
+        async void AutoKick(Object source, ElapsedEventArgs e){
+            List<ulong> players = await db.GetPlayers();
+            ulong id = players.ElementAt(Program.currentPlayer);
+            await db.RemoveUser(id);
+            await ReplyAsync($"<@{id}>, you have been AFK removed.\n");
+            await NextPlayer();
             ResetTimer();
             //reupdate
-            players = db.Players;
+            players = await db.GetPlayers();
             if (players.Count == 0)
             {
                 Program.currentPlayer = 0;
                 Program.gameStarted = false;
                 Program.order = 1;
                 Program.currentcard = null;
-                ReplyAsync("Game has been reset, due to nobody in-game.");
+                await ReplyAsync("Game has been reset, due to nobody in-game.");
                 playTimer.Dispose();
             }
             else
             {
-                FixOrder();
+                await FixOrder();
                 ulong id2 = players.ElementAt(Program.currentPlayer);
-                ReplyAsync($"It is now <@{id2}> turn.\n");
+                await ReplyAsync($"It is now <@{id2}> turn.\n");
             }
 
         }
