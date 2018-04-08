@@ -94,12 +94,25 @@ namespace DiscordBot.Modules
             if (!UInt64.TryParse(user, out ulong userid))
                 return ReplyAsync("Mention the player with this command to see their stats.");
             if (!db.UserExists(userid))
-                return ReplyAsync($"<@{userid}> The user does not exist; did you type it wrong?");
+                return ReplyAsync($"The user does not exist; either you have typed it wrong, or that user doesn't exist in the UNObot database.");
             int[] stats = db.GetStats(userid);
             return ReplyAsync($"<@{userid}>'s stats:\n"
                                 + $"Games joined: {stats[0]}\n"
                                 + $"Games fully played: {stats[1]}\n"
                                 + $"Games won: {stats[2]}");
+        }
+        [Command("pfpsteal")]
+        public Task Pfpsteal(string user)
+        {
+            user = user.Trim(new Char[] { ' ', '<', '>', '!', '@' });
+            if (!UInt64.TryParse(user, out ulong userid))
+                return ReplyAsync("Mention the player with this command to see their stats.");
+            Discord.WebSocket.DiscordSocketClient discordSocketClient = new Discord.WebSocket.DiscordSocketClient();
+            Discord.WebSocket.SocketUser newuser = discordSocketClient.GetUser(userid);
+            if (newuser == null)
+                return ReplyAsync($"The user does not exist; did you type it wrong?");
+            else
+                return ReplyAsync($"<@{userid}>'s Profile Picture Link: {newuser.GetAvatarUrl()}");
         }
         [Command("leave")]
         public Task Leave()
@@ -297,7 +310,6 @@ namespace DiscordBot.Modules
                 {
                     List<ulong> players = db.Players;
                     Program.currentcard = UNOcore.RandomCard();
-                    Discord.WebSocket.DiscordSocketClient dsc = new Discord.WebSocket.DiscordSocketClient();
                     NextPlayer();
                     foreach(ulong player in db.Players)
                     {
