@@ -16,12 +16,12 @@ namespace DiscordBot
     {
         UNObot.Modules.UNOdb db = new UNObot.Modules.UNOdb();
         public static string version = "Unknown Version";
-        public static int currentPlayer = 0;
+        public static int currentPlayer;
         //1: Clockwise 2: Counter-Clockwise
         public static byte order = 1;
-        public static bool gameStarted = false;
+        public static bool gameStarted;
         public static Modules.Card currentcard;
-        public static ulong onecardleft = 0;
+        public static ulong onecardleft;
 
         static void Main()
             => new Program().MainAsync().GetAwaiter().GetResult();
@@ -40,7 +40,7 @@ namespace DiscordBot
 
             await _client.LoginAsync(TokenType.Bot, _config["token"]);
             await _client.StartAsync();
-            db.CleanAll();
+            await db.CleanAll();
             await Task.Delay(-1);
         }
 
