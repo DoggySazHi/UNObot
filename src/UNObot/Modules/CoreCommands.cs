@@ -172,6 +172,7 @@ namespace DiscordBot.Modules
                     Card card = UNOcore.RandomCard();
                     await UserExtensions.SendMessageAsync(Context.Message.Author, "You have recieved: " + card.Color + " " + card.Value + ".");
                     await db.AddCard(Context.User.Id, card);
+                    ResetTimer();
                     return;
                 }
                 else
@@ -344,9 +345,11 @@ namespace DiscordBot.Modules
                     Program.gameStarted = true;
                     await db.StarterCard();
                     await ReplyAsync($"Current card: {Program.currentcard.Color } {Program.currentcard.Value}\n");
+
                 }
             }
-            await ReplyAsync($"<@{Context.User.Id}>, you are not in game.\n");
+            else
+                await ReplyAsync($"<@{Context.User.Id}>, you are not in game.\n");
         }
         [Command("play"), Priority(2)]
         public async Task Play(string color, string value)
