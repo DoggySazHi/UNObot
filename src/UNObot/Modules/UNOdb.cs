@@ -163,6 +163,39 @@ namespace UNObot.Modules
             }
         }
 
+        public async Task AddUpdateGuilds(string Guild, ushort ingame)
+        {
+            if (conn == null)
+                GetConnectionString();
+            MySqlCommand Cmd = new MySqlCommand();
+            Cmd.Connection = conn;
+            Cmd.CommandText = "INSERT INTO Games (server, inGame) VALUES(?, 0) ON DUPLICATE KEY UPDATE inGame = ?";
+            MySqlParameter p1 = new MySqlParameter
+            {
+                Value = Guild
+            };
+            Cmd.Parameters.Add(p1);
+
+            MySqlParameter p2 = new MySqlParameter
+            {
+                Value = ingame
+            };
+            Cmd.Parameters.Add(p2);
+            try
+            {
+                conn.Open();
+                await Cmd.ExecuteNonQueryAsync();
+            }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            finally
+            {
+                conn.Close();
+            }
+            
+        }
         public async Task<List<ulong>> GetPlayers()
         {
             if (conn == null)
