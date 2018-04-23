@@ -9,64 +9,12 @@ using Discord;
 
 namespace DiscordBot.Modules
 {
-    public class Card
-    {
-        public string Color;
-        public string Value;
-
-        public override String ToString() => $"{Color} {Value}";
-
-        public bool Equals(Card other) => Value == other.Value && Color == other.Color;
-    }
 
     public class CoreCommands : ModuleBase<SocketCommandContext>
     {
         UNObot.Modules.UNOdb db = new UNObot.Modules.UNOdb();
         static System.Timers.Timer playTimer;
 
-        [Command("info")]
-        public Task Info()
-        {
-            return ReplyAsync(
-                $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {Program.version}\nblame Aragami and FM for the existance of this");
-        }
-        [Command("exit"),RequireUserPermission(GuildPermission.Administrator)]
-        public Task Exit()
-        {
-            ReplyAsync("Sorry to be a hassle. Goodbye world!");
-            Environment.Exit(0);
-            return null;
-        }
-        [Command("gulag")]
-        public Task Gulag()
-        {
-            return ReplyAsync($"<{@Context.User.Id}> has been sent to gulag and has all of his cards converted to red blyats.");
-        }
-        [Command("ugay")]
-        public Task Ugay()
-            => ReplyAsync(
-                $"<@{Context.User.Id}> no u\n");
-
-        [Command("u gay")]
-        public Task Ugay2()
-            => ReplyAsync(
-                $"<@{Context.User.Id}> no u\n");
-
-        [Command("you gay")]
-        public Task Ugay3()
-            => ReplyAsync(
-                $"<@{Context.User.Id}> no u\n");
-        [Command("purge"),RequireUserPermission(GuildPermission.Administrator)]
-        public async Task Purge(int length)
-        {
-            var messages = await Context.Channel.GetMessagesAsync(length + 1).Flatten();
-
-            await Context.Channel.DeleteMessagesAsync(messages);
-            const int delay = 5000;
-            var m = await ReplyAsync($"Purge completed. _This message will be deleted in {delay / 1000} seconds._");
-            await Task.Delay(delay);
-            await m.DeleteAsync();
-        }
         [Command("join")]
         public async Task Join()
         {
@@ -81,7 +29,7 @@ namespace DiscordBot.Modules
                 return;
             }
             else
-                await db.AddUser(Context.User.Id, Context.User.Username);
+                await db.AddUser(Context.User.Id, Context.User.Username, Context.Guild.Id);
             await ReplyAsync($"{Context.User.Username} has been added to the queue.\n");
         }
         [Command("stats")]
@@ -112,19 +60,6 @@ namespace DiscordBot.Modules
                                 + $"Games joined: {stats[0]}\n"
                                 + $"Games fully played: {stats[1]}\n"
                                 + $"Games won: {stats[2]}");
-        }
-        [Command("pfpsteal")]
-        public Task Pfpsteal(string user)
-        {
-            user = user.Trim(new Char[] { ' ', '<', '>', '!', '@' });
-            if (!UInt64.TryParse(user, out ulong userid))
-                return ReplyAsync("Mention the player with this command to see their stats.");
-            Discord.WebSocket.DiscordSocketClient discordSocketClient = new Discord.WebSocket.DiscordSocketClient();
-            Discord.WebSocket.SocketUser newuser = discordSocketClient.GetUser(userid);
-            if (newuser == null)
-                return ReplyAsync($"The user does not exist; did you type it wrong?");
-            else
-                return ReplyAsync($"<@{userid}>'s Profile Picture Link: {newuser.GetAvatarUrl()}");
         }
         [Command("leave")]
         public async Task Leave()
@@ -639,68 +574,6 @@ namespace DiscordBot.Modules
                 await ReplyAsync($"It is now <@{id2}> turn.\n");
             }
 
-        }
-
-        public static class UNOcore
-        {
-            public static Random r = new Random();
-
-            public static Card RandomCard()
-            {
-                Card card = new Card();
-
-                //0-9 is number, 10 is actioncard
-                int myCard = r.Next(0, 11);
-                // see switch
-                int myColor = r.Next(1, 5);
-
-                switch (myColor)
-                {
-                    case 1:
-                        card.Color = "Red";
-                        break;
-                    case 2:
-                        card.Color = "Yellow";
-                        break;
-                    case 3:
-                        card.Color = "Green";
-                        break;
-                    case 4:
-                        card.Color = "Blue";
-                        break;
-                }
-
-                if (myCard < 10)
-                {
-                    card.Value = myCard.ToString();
-                }
-                else
-                {
-                    //4 is wild, 1-3 is action
-                    int action = r.Next(1, 5);
-                    switch (action)
-                    {
-                        case 1:
-                            card.Value = "Skip";
-                            break;
-                        case 2:
-                            card.Value = "Reverse";
-                            break;
-                        case 3:
-                            card.Value = "+2";
-                            break;
-                        case 4:
-                            int wild = r.Next(1, 3);
-                            card.Color = "Wild";
-                            if (wild == 1)
-                                card.Value = "Color";
-                            else
-                                card.Value = "+4";
-                            break;
-                    }
-                }
-                return card;
-            }
         }
     }
 }

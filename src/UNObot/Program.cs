@@ -7,8 +7,6 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using DiscordBot.Services;
-using System.Collections.Generic;
-using System.Collections.Specialized;
 
 namespace DiscordBot
 {
@@ -26,8 +24,8 @@ namespace DiscordBot
         static void Main()
             => new Program().MainAsync().GetAwaiter().GetResult();
 
-        private DiscordSocketClient _client;
-        private IConfiguration _config;
+        DiscordSocketClient _client;
+        IConfiguration _config;
 
         public async Task MainAsync()
         {
@@ -44,7 +42,7 @@ namespace DiscordBot
             await Task.Delay(-1);
         }
 
-        private IServiceProvider ConfigureServices()
+        IServiceProvider ConfigureServices()
         {
             return new ServiceCollection()
                 // Base
@@ -60,7 +58,7 @@ namespace DiscordBot
                 .BuildServiceProvider();
         }
 
-        private IConfiguration BuildConfig()
+        IConfiguration BuildConfig()
         {
             return new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
