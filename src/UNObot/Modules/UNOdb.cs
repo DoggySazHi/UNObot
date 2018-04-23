@@ -40,13 +40,73 @@ namespace UNObot.Modules
             conn.Close();
             Console.WriteLine("Successfully connected.");
         }
-        public async Task AddUser(ulong id, string usrname)
+        public async Task AddGame(ulong server)
+        {
+            if(conn == null)
+                GetConnectionString();
+                        MySqlCommand Cmd = new MySqlCommand();
+            Cmd.Connection = conn;
+            Cmd.CommandText = "INSERT IGNORE INTO Games (server) VALUES(?)";
+            MySqlParameter p1 = new MySqlParameter
+            {
+                Value = server
+            };
+            Cmd.Parameters.Add(p1);
+            try
+            {
+                conn.Open();
+                await Cmd.ExecuteNonQueryAsync();
+            }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            finally
+            {
+                conn.Close();
+            }
+        }
+        public async Task<bool> IsServerInGame(ulong server)
+        {
+            if (conn == null)
+                GetConnectionString();
+            bool yesorno = false;
+            MySqlCommand Cmd = new MySqlCommand();
+            Cmd.Connection = conn;
+            Cmd.CommandText = "SELECT inGame FROM UNObot.Games WHERE server = ?";
+            MySqlParameter p1 = new MySqlParameter();
+            p1.Value = server;
+            Cmd.Parameters.Add(p1);
+            conn.Open();
+            using (MySqlDataReader dr = (MySqlDataReader) await Cmd.ExecuteReaderAsync())
+            {
+                try
+                {
+                    while (dr.Read())
+                    {
+                        if (dr.GetByte(0) == 1)
+                            yesorno = true;
+                        await dr.NextResultAsync();
+                    }
+                }
+                catch (MySqlException ex)
+                {
+                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                }
+                finally
+                {
+                    conn.Close();
+                }
+                return yesorno;
+            }
+        }
+        public async Task AddUser(ulong id, string usrname, ulong server)
         {
             if (conn == null)
                 GetConnectionString();
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
-            Cmd.CommandText = "INSERT INTO Players (userid, username, inGame, cards) VALUES(?, ?, 1, ?) ON DUPLICATE KEY UPDATE username = ?, inGame = 1, cards = ?";
+            Cmd.CommandText = "INSERT INTO Players (userid, username, inGame, cards, server) VALUES(?, ?, 1, ?, ?) ON DUPLICATE KEY UPDATE username = ?, inGame = 1, cards = ?, server = ?";
             MySqlParameter p1 = new MySqlParameter
             {
                 Value = id
@@ -65,14 +125,24 @@ namespace UNObot.Modules
             Cmd.Parameters.Add(p3);
             MySqlParameter p4 = new MySqlParameter
             {
-                Value = usrname
+                Value = server
             };
             Cmd.Parameters.Add(p4);
             MySqlParameter p5 = new MySqlParameter
             {
-                Value = "[]"
+                Value = usrname
             };
             Cmd.Parameters.Add(p5);
+            MySqlParameter p6 = new MySqlParameter
+            {
+                Value = "[]"
+            };
+            Cmd.Parameters.Add(p6);
+            MySqlParameter p7 = new MySqlParameter
+            {
+                Value = server
+            };
+            Cmd.Parameters.Add(p7);
             try
             {
                 conn.Open();
@@ -94,7 +164,7 @@ namespace UNObot.Modules
             MySqlCommand Cmd = new MySqlCommand
             {
                 Connection = conn,
-                CommandText = "INSERT INTO Players (userid, inGame, cards) VALUES(?, 0, ?) ON DUPLICATE KEY UPDATE inGame = 0, cards = ?"
+                CommandText = "INSERT INTO Players (userid, inGame, cards, server) VALUES(?, 0, ?, null) ON DUPLICATE KEY UPDATE inGame = 0, cards = ?, server = null"
             };
             MySqlParameter p1 = new MySqlParameter
             {
@@ -196,14 +266,15 @@ namespace UNObot.Modules
             }
             
         }
-        public async Task<List<ulong>> GetPlayers()
+        //TODO Replace with Queue type, as well as convert it to new format
+        public async Task<Queue<ulong>> GetPlayers()
         {
             if (conn == null)
                 GetConnectionString();
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
             Cmd.CommandText = "SELECT userid,username FROM UNObot.Players WHERE inGame = 1";
-            List<ulong> players = new List<ulong>();
+            Queue<ulong> players = new Queue<ulong>();
             conn.Open();
             using (MySqlDataReader dr = (MySqlDataReader)await Cmd.ExecuteReaderAsync())
             {
@@ -211,7 +282,7 @@ namespace UNObot.Modules
                 {
                     while (dr.Read())
                     {
-                        players.Add(dr.GetUInt64(0));
+                        players.Enqueue(dr.GetUInt64(0));
                         await dr.NextResultAsync();
                     }
                 }
@@ -333,12 +404,12 @@ namespace UNObot.Modules
         }
         public async Task StarterCard()
         {
-            List<ulong> players = await GetPlayers();
+            Queue<ulong> players = await GetPlayers();
             foreach (ulong player in players)
             {
                 for(int i = 0; i < 7; i++)
                 {
-                    await AddCard(player, DiscordBot.Modules.CoreCommands.UNOcore.RandomCard());
+                    await AddCard(player, DiscordBot.Modules.UNOcore.RandomCard());
                 }
             }
         }
