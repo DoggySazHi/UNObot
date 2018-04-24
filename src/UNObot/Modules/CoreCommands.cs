@@ -71,7 +71,7 @@ namespace DiscordBot.Modules
                 await ReplyAsync($"{Context.User.Username}, you are already out of game!\n");
                 return;
             }
-            List<ulong> players = await db.GetPlayers();
+            Queue<ulong> players = await db.GetPlayers();
             await NextPlayer();
             if (players.Count == 0)
             {
@@ -208,7 +208,7 @@ namespace DiscordBot.Modules
         [Command("players")]
         public async Task Players()
         {
-            List<ulong> players = await db.GetPlayers();
+            Queue<ulong> players = await db.GetPlayers();
             if (Program.gameStarted)
             {
                 await FixOrder();
@@ -265,7 +265,7 @@ namespace DiscordBot.Modules
                     await ReplyAsync($"<@{Context.User.Id}>, the game has already started!\n");
                 else
                 {
-                    List<ulong> players = await db.GetPlayers();
+                    Queue<ulong> players = await db.GetPlayers();
                     Program.currentcard = UNOcore.RandomCard();
                     await NextPlayer();
                     foreach(ulong player in players)
@@ -310,7 +310,7 @@ namespace DiscordBot.Modules
             {
                 if (Program.gameStarted)
                 {
-                    List<ulong> players = await db.GetPlayers();
+                    Queue<ulong> players = await db.GetPlayers();
                     switch (color.ToLower())
                     {
                         case "red":
@@ -510,21 +510,11 @@ namespace DiscordBot.Modules
             }
         }
 
-        void SetTimer() {
-            playTimer = new Timer(90000);
-            playTimer.Elapsed += AutoKick;
-            playTimer.AutoReset = false;
-            playTimer.Start();
-        }
 
-        void ResetTimer() {
-            playTimer.Stop();
-            playTimer.Start();
-        }
 
         async Task NextPlayer()
         {
-            List<ulong> players = await db.GetPlayers();
+            Queue<ulong> players = await db.GetPlayers();
             await FixOrder();
             if (Program.order == 1)
             {
@@ -543,14 +533,14 @@ namespace DiscordBot.Modules
 
         async Task FixOrder()
         {
-            List<ulong> players = await db.GetPlayers();
+            Queue<ulong> players = await db.GetPlayers();
             if (Program.order == 1 && Program.currentPlayer >= players.Count)
                     Program.currentPlayer = 0;
             else if (Program.currentPlayer < 0)
                 Program.currentPlayer = players.Count - 1;
         }
         async void AutoKick(Object source, ElapsedEventArgs e){
-            List<ulong> players = await db.GetPlayers();
+            Queue<ulong> players = await db.GetPlayers();
             ulong id = players.ElementAt(Program.currentPlayer);
             await db.RemoveUser(id);
             await ReplyAsync($"<@{id}>, you have been AFK removed.\n");
