@@ -224,12 +224,6 @@ namespace DiscordBot.Modules
             else
                 await ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
         }
-        [Command("seed")]
-        public async Task Seed(string seed)
-        {
-            UNOcore.r = new Random(seed.GetHashCode());
-            await ReplyAsync("Seed has been updated. I do not guarantee 100% Wild cards.");
-        }
         [Command("uno")]
         public async Task Uno()
         {
