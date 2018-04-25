@@ -267,13 +267,18 @@ namespace UNObot.Modules
             
         }
         //TODO Replace with Queue type, as well as convert it to new format
-        public async Task<Queue<ulong>> GetPlayers()
+        public async Task<Queue<ulong>> GetPlayers(ulong server)
         {
             if (conn == null)
                 GetConnectionString();
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
-            Cmd.CommandText = "SELECT userid,username FROM UNObot.Players WHERE inGame = 1";
+            Cmd.CommandText = "SELECT userid,username FROM UNObot.Games WHERE inGame = 1 AND server = ?";
+            MySqlParameter p1 = new MySqlParameter
+            {
+                Value = server
+            };
+            Cmd.Parameters.Add(p1);
             Queue<ulong> players = new Queue<ulong>();
             conn.Open();
             using (MySqlDataReader dr = (MySqlDataReader)await Cmd.ExecuteReaderAsync())
@@ -402,9 +407,9 @@ namespace UNObot.Modules
                 return exists;
             }
         }
-        public async Task StarterCard()
+        public async Task StarterCard(ulong server)
         {
-            Queue<ulong> players = await GetPlayers();
+            Queue<ulong> players = await GetPlayers(server);
             foreach (ulong player in players)
             {
                 for(int i = 0; i < 7; i++)

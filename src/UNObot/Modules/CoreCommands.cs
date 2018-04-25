@@ -13,25 +13,7 @@ namespace DiscordBot.Modules
     public class CoreCommands : ModuleBase<SocketCommandContext>
     {
         UNObot.Modules.UNOdb db = new UNObot.Modules.UNOdb();
-        static System.Timers.Timer playTimer;
 
-        [Command("join")]
-        public async Task Join()
-        {
-            if (Program.gameStarted == true)
-            {
-                await ReplyAsync($"The game has already started!\n");
-                return;
-            }
-            else if (await db.IsPlayerInGame(Context.User.Id))
-            {
-                await ReplyAsync($"{Context.User.Username}, you are already in game!\n");
-                return;
-            }
-            else
-                await db.AddUser(Context.User.Id, Context.User.Username, Context.Guild.Id);
-            await ReplyAsync($"{Context.User.Username} has been added to the queue.\n");
-        }
         [Command("stats")]
         public async Task Stats()
         {
@@ -163,47 +145,7 @@ namespace DiscordBot.Modules
             else
                 await ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
         }
-        [Command("help")]
-        public async Task Help()
-        {
-            await ReplyAsync("Help has been sent. Or, I think it has.");
-            await UserExtensions.SendMessageAsync(Context.Message.Author, "Commands: @UNOBot#4308 (Required) {Required in certain conditions} [Optional] " +
-                               "- Join\n" +
-                               "Join the queue.\n" +
-                               "- Leave" +
-                               "Leave the queue.\n" +
-                               "- Start\n" +
-                               "Start the game. Game only starts when 2 or more players are available.\n" +
-                               "- Draw\n" +
-                               "Get a card. This is randomized. Does not follow the 108 deck, but uses the probablity instead.\n" +
-                               "- Play (Color/Wild) (#/Reverse/Skip/+2/+4/Color) {Wild color change}\n" +
-                               "Play a card. You must have the card in your deck. Also, if you are placing a wildcard, type in the color as the next parameter.\n" +
-                               "- Card\n" +
-                               "See the last placed card.\n" +
-                               "- Deck See the cards you have currently.\n" +
-                               "- Uno\n" +
-                               "Don't forget to say this when you end up with one card left!\n" +
-                               "- Help\n" +
-                               "Get a help list. But you probably knew this.\n" +
-                              "- Seed (seed)\n" +
-                              "Possibly increases your chance of winning.\n" +
-                              "- Players\n" +
-                              "See who is playing and who's turn is it.\n" +
-                              "- Stats [player by mention]\n" +
-                              "See if you or somebody else is a pro or a noob at UNO. It's probably the former.\n" +
-                              "- Info\n" +
-                              "See the current version and other stuff about UNObot.");
-        }
 
-        [Command("asdf")]
-        public async Task Credits()
-        {
-            await ReplyAsync("UNObot: Programmed by DoggySazHi\n" +
-                "Tested by Aragami and Fm\n" +
-                "Created for the UBOWS server\n\n" +
-                "Stickerz was here.\n" +
-                "Blame LocalDisk and Harvest for any bugs.");
-        }
 
         [Command("players")]
         public async Task Players()
