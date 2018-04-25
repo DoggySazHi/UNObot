@@ -9,6 +9,7 @@
 
 # User-specific files
 *.suo
+*.json
 *.user
 *.userosscache
 *.sln.docstates
