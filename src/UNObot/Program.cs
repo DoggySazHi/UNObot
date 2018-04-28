@@ -8,19 +8,20 @@ using Discord.Commands;
 using Discord.WebSocket;
 using DiscordBot.Services;
 
-namespace DiscordBot
+namespace UNObot
 {
     class Program
     {
         UNObot.Modules.UNOdb db = new UNObot.Modules.UNOdb();
         public static string version = "Unknown Version";
+        /*
         public static int currentPlayer;
         //1: Clockwise 2: Counter-Clockwise
         public static byte order = 1;
         public static bool gameStarted;
         public static Modules.Card currentcard;
         public static ulong onecardleft;
-
+        */
         static void Main()
             => new Program().MainAsync().GetAwaiter().GetResult();
 

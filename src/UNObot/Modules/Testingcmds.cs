@@ -31,5 +31,12 @@ namespace DiscordBot.Modules
             else
                 return ReplyAsync($"<@{userid}>'s Profile Picture Link: {newuser.GetAvatarUrl()}");
         }
+        [Command("exit"),RequireUserPermission(GuildPermission.Administrator)]
+        public Task Exit()
+        {
+            ReplyAsync("Sorry to be a hassle. Goodbye world!");
+            Environment.Exit(0);
+            return null;
+        }
     }
 }

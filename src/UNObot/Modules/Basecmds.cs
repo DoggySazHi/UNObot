@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 
-namespace DiscordBot.Modules
+namespace UNObot.Modules
 {
     public class Basecmds : ModuleBase<SocketCommandContext>
     {
@@ -12,13 +12,6 @@ namespace DiscordBot.Modules
         {
             return ReplyAsync(
                 $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {Program.version}\nblame Aragami and FM for the existance of this");
-        }
-        [Command("exit"),RequireUserPermission(GuildPermission.Administrator)]
-        public Task Exit()
-        {
-            ReplyAsync("Sorry to be a hassle. Goodbye world!");
-            Environment.Exit(0);
-            return null;
         }
         [Command("gulag")]
         public Task Gulag()
@@ -39,6 +32,20 @@ namespace DiscordBot.Modules
         public Task Ugay3()
             => ReplyAsync(
                 $"<@{Context.User.Id}> no u\n");
+
+        [Command("upupdowndownleftrightleftrightbastart")]
+        public async Task Easteregg1()
+        {
+            await ReplyAsync($"I claim that <@{Context.User.Id}> is triple gay. Say \"No U\", and I play a reverse card.");
+        }
+        [Command("upupdowndownleftrightleftrightbastart")]
+        public async Task Easteregg2(string response)
+        {
+            var messages = await this.Context.Channel.GetMessagesAsync(1).Flatten();
+
+            await this.Context.Channel.DeleteMessagesAsync(messages);
+            await ReplyAsync(response);
+        }
 
         [Command("help")]
         public async Task Help()

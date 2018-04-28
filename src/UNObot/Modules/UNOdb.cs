@@ -66,6 +66,37 @@ namespace UNObot.Modules
                 conn.Close();
             }
         }
+        public async Task ResetGame(ulong server)
+        {
+            if(conn == null)
+                GetConnectionString();
+            MySqlCommand Cmd = new MySqlCommand();
+            Cmd.Connection = conn;
+            Cmd.CommandText = "UPDATE Games SET inGame = 0, currentCard = ?, order = 1, currentPlayer = 0, oneCardLeft = null WHERE server = ?";
+            MySqlParameter p1 = new MySqlParameter
+            {
+                Value = "[]"
+            };
+            Cmd.Parameters.Add(p1);
+            MySqlParameter p2 = new MySqlParameter
+            {
+                Value = server
+            };
+            Cmd.Parameters.Add(p2);
+            try
+            {
+                conn.Open();
+                await Cmd.ExecuteNonQueryAsync();
+            }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            finally
+            {
+                conn.Close();
+            }
+        }
         public async Task<bool> IsServerInGame(ulong server)
         {
             if (conn == null)
@@ -206,8 +237,8 @@ namespace UNObot.Modules
                     Console.WriteLine("ERROR: Version has not been written in config.json!\nIt must contain a version.");
                     return;
                 }
-                DiscordBot.Program.version = (string)jObject["version"];
-                Console.WriteLine($"Running {DiscordBot.Program.version}!");
+                Program.version = (string)jObject["version"];
+                Console.WriteLine($"Running {Program.version}!");
             }
             if (conn == null)
                 GetConnectionString();
@@ -233,7 +264,7 @@ namespace UNObot.Modules
             }
         }
 
-        public async Task AddUpdateGuilds(string Guild, ushort ingame)
+        public async Task AddGuild(string Guild, ushort ingame)
         {
             if (conn == null)
                 GetConnectionString();
@@ -273,7 +304,7 @@ namespace UNObot.Modules
                 GetConnectionString();
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
-            Cmd.CommandText = "SELECT userid,username FROM UNObot.Games WHERE inGame = 1 AND server = ?";
+            Cmd.CommandText = "SELECT queue FROM Games WHERE inGame = 1 AND server = ?";
             MySqlParameter p1 = new MySqlParameter
             {
                 Value = server
@@ -287,7 +318,7 @@ namespace UNObot.Modules
                 {
                     while (dr.Read())
                     {
-                        players.Enqueue(dr.GetUInt64(0));
+                        players = JsonConvert.DeserializeObject<Queue<ulong>>(dr.GetString(0));
                         await dr.NextResultAsync();
                     }
                 }
@@ -337,8 +368,45 @@ namespace UNObot.Modules
                 return yesorno;
             }
         }
+
+        public async Task<bool> IsPlayerInServerGame(ulong player, ulong server)
+        {
+            if (conn == null)
+                GetConnectionString();
+            MySqlCommand Cmd = new MySqlCommand();
+            Cmd.Connection = conn;
+            Cmd.CommandText = "SELECT queue FROM Games WHERE server = ?";
+            Queue<ulong> players = new Queue<ulong>();
+            MySqlParameter p1 = new MySqlParameter();
+            p1.Value = server;
+            Cmd.Parameters.Add(p1);
+            conn.Open();
+            using (MySqlDataReader dr = (MySqlDataReader) await Cmd.ExecuteReaderAsync())
+            {
+                try
+                {
+                    while (dr.Read())
+                    {
+                        players = JsonConvert.DeserializeObject<Queue<ulong>>(dr.GetString(0));
+                        await dr.NextResultAsync();
+                    }
+                }
+                catch (MySqlException ex)
+                {
+                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                }
+                finally
+                {
+                    conn.Close();
+                }
+                if(players.Contains(player))
+                    return true;
+                else
+                    return false;
+            }
+        }
         //Done?
-        public async Task<List<DiscordBot.Modules.Card>> GetCards(ulong player)
+        public async Task<List<Card>> GetCards(ulong player)
         {
             if (conn == null)
                 GetConnectionString();
@@ -349,7 +417,7 @@ namespace UNObot.Modules
             MySqlParameter p1 = new MySqlParameter();
             p1.Value = player;
             Cmd.Parameters.Add(p1);
-            List<DiscordBot.Modules.Card> cards = new List<DiscordBot.Modules.Card>();
+            List<Card> cards = new List<Card>();
             conn.Open();
             using (MySqlDataReader dr = (MySqlDataReader) await Cmd.ExecuteReaderAsync())
             {
@@ -369,7 +437,7 @@ namespace UNObot.Modules
                 {
                     conn.Close();
                 }
-                cards = JsonConvert.DeserializeObject<List<DiscordBot.Modules.Card>>(jsonstring);
+                cards = JsonConvert.DeserializeObject<List<Card>>(jsonstring);
                 return cards;
             }
         }
@@ -407,6 +475,44 @@ namespace UNObot.Modules
                 return exists;
             }
         }
+        public async Task<bool> GetUsersAndAdd(ulong server)
+        {
+            string json = JsonConvert.SerializeObject(GetPlayers(server));
+            if (conn == null)
+                GetConnectionString();
+            bool exists = false;
+            MySqlCommand Cmd = new MySqlCommand();
+            Cmd.Connection = conn;
+            Cmd.CommandText = "UPDATE Players SET queue = ? WHERE server = ?";
+            MySqlParameter p1 = new MySqlParameter();
+            p1.Value = json;
+            Cmd.Parameters.Add(p1);
+            MySqlParameter p2 = new MySqlParameter();
+            p1.Value = server;
+            Cmd.Parameters.Add(p2);
+            conn.Open();
+            using (MySqlDataReader dr = (MySqlDataReader) await Cmd.ExecuteReaderAsync())
+            {
+                try
+                {
+                    while (dr.Read())
+                    {
+                        if (dr.GetInt64(0) == 1)
+                            exists = true;
+                        await dr.NextResultAsync();
+                    }
+                }
+                catch (MySqlException ex)
+                {
+                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                }
+                finally
+                {
+                    conn.Close();
+                }
+                return exists;
+            }
+        }
         public async Task StarterCard(ulong server)
         {
             Queue<ulong> players = await GetPlayers(server);
@@ -414,7 +520,7 @@ namespace UNObot.Modules
             {
                 for(int i = 0; i < 7; i++)
                 {
-                    await AddCard(player, DiscordBot.Modules.UNOcore.RandomCard());
+                    await AddCard(player, UNOcore.RandomCard());
                 }
             }
         }
@@ -494,14 +600,14 @@ namespace UNObot.Modules
                 conn.Close();
             }
          }
-        public async Task AddCard(ulong player, DiscordBot.Modules.Card card)
+        public async Task AddCard(ulong player, Card card)
         {
             if (conn == null)
                 GetConnectionString();
                 
-            List<DiscordBot.Modules.Card> cards = await GetCards(player);
+            List<Card> cards = await GetCards(player);
             if (cards == null)
-                cards = new List<DiscordBot.Modules.Card>();
+                cards = new List<Card>();
             cards.Add(card);
             string json = JsonConvert.SerializeObject(cards);
             MySqlCommand Cmd = new MySqlCommand();
@@ -529,15 +635,15 @@ namespace UNObot.Modules
                 conn.Close();
             }
         }
-        public async Task<bool> RemoveCard(ulong player, DiscordBot.Modules.Card card)
+        public async Task<bool> RemoveCard(ulong player, Card card)
         {
             bool foundCard = false;
             if (conn == null)
                 GetConnectionString();
 
-            List<DiscordBot.Modules.Card> cards = await GetCards(player);
+            List<Card> cards = await GetCards(player);
             int currentPlace = 0;
-            foreach (DiscordBot.Modules.Card cardindeck in cards){
+            foreach (Card cardindeck in cards){
                 if(card.Equals(cardindeck)){
                     cards.RemoveAt(currentPlace);
                     foundCard = true;
