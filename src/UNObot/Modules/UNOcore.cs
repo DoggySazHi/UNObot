@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Timers;
-namespace DiscordBot.Modules
+namespace UNObot.Modules
 {
     public class Card
     {
@@ -125,7 +125,7 @@ namespace DiscordBot.Modules
     }
     public class AFKtimer
     {
-        static GameTimer playTimer;
+        public static GameTimer playTimer;
         void ResetTimer()
         {
             playTimer.Stop();

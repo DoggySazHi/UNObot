@@ -7,78 +7,13 @@ using System.Collections;
 using System.Timers;
 using Discord;
 
-namespace DiscordBot.Modules
+namespace UNObot.Modules
 {
 
     public class CoreCommands : ModuleBase<SocketCommandContext>
     {
         UNObot.Modules.UNOdb db = new UNObot.Modules.UNOdb();
 
-        [Command("stats")]
-        public async Task Stats()
-        {
-            int[] stats = await db.GetStats(Context.User.Id);
-            await ReplyAsync($"{Context.User.Username}'s stats:\n"
-                                + $"Games joined: {stats[0]}\n"
-                                + $"Games fully played: {stats[1]}\n"
-                                + $"Games won: {stats[2]}");
-        }
-        [Command("stats")]
-        public async Task Stats2(string user)
-        {
-            user = user.Trim(new Char[] { ' ', '<', '>', '!', '@' });
-            if (!UInt64.TryParse(user, out ulong userid))
-            {
-                await ReplyAsync("Mention the player with this command to see their stats.");
-                return;
-            }
-            if (!await db.UserExists(userid))
-            {
-                await ReplyAsync($"The user does not exist; either you have typed it wrong, or that user doesn't exist in the UNObot database.");
-                return;
-            }
-            int[] stats = await db.GetStats(userid);
-            await ReplyAsync($"<@{userid}>'s stats:\n"
-                                + $"Games joined: {stats[0]}\n"
-                                + $"Games fully played: {stats[1]}\n"
-                                + $"Games won: {stats[2]}");
-        }
-        [Command("leave")]
-        public async Task Leave()
-        {
-            if(await db.IsPlayerInGame(Context.User.Id))
-                await db.RemoveUser(Context.User.Id);
-            else
-            {
-                await ReplyAsync($"{Context.User.Username}, you are already out of game!\n");
-                return;
-            }
-            Queue<ulong> players = await db.GetPlayers();
-            await NextPlayer();
-            if (players.Count == 0)
-            {
-                Program.currentPlayer = 0;
-                Program.gameStarted = false;
-                Program.order = 1;
-                Program.currentcard = null;
-                await ReplyAsync("Game has been reset, due to nobody in-game.");
-                playTimer.Dispose();
-            }
-            await ReplyAsync($"{Context.User.Username} has been removed from the queue.\n");
-        }
-        [Command("upupdowndownleftrightleftrightbastart")]
-        public async Task Easteregg1()
-        {
-            await ReplyAsync($"<@419374055792050176> claims that <@{Context.User.Id}> is stupid.");
-        }
-        [Command("upupdowndownleftrightleftrightbastart")]
-        public async Task Easteregg2(string response)
-        {
-            var messages = await this.Context.Channel.GetMessagesAsync(1).Flatten();
-
-            await this.Context.Channel.DeleteMessagesAsync(messages);
-            await ReplyAsync(response);
-        }
         [Command("draw")]
         public async Task Draw()
         {
