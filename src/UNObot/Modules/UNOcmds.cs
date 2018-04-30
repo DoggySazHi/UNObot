@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 
 namespace UNObot.Modules
@@ -9,6 +10,7 @@ namespace UNObot.Modules
     {
         UNOdb db = new UNOdb();
         QueueHandler queueHandler = new QueueHandler();
+        AFKtimer AFKtimer = new AFKtimer();
 
         [Command("seed")]
         public async Task Seed(string seed)
@@ -49,7 +51,7 @@ namespace UNObot.Modules
             {
                 await db.ResetGame(Context.Guild.Id);
                 await ReplyAsync("Game has been reset, due to nobody in-game.");
-                AFKtimer.playTimer.Dispose();
+                AFKtimer.playTimers[Context.Guild.Id].Dispose();
             }
             await ReplyAsync($"{Context.User.Username} has been removed from the queue.\n");
         }
@@ -91,7 +93,11 @@ namespace UNObot.Modules
                 {
                     if(await db.IsServerInGame(Context.Guild.Id))
                     {
-                        //GOOD TO GO
+                        Card card = UNOcore.RandomCard();
+                        await UserExtensions.SendMessageAsync(Context.Message.Author, "You have recieved: " + card.Color + " " + card.Value + ".");
+                        await db.AddCard(Context.User.Id, card);
+                        AFKtimer.ResetTimer(Context.Guild.Id);
+                        return;
                     }
                     else
                         await ReplyAsync("The game has not started!");

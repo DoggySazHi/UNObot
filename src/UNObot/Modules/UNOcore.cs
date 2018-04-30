@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Timers;
+using System.Collections.Generic;
 namespace UNObot.Modules
 {
     public class Card
@@ -125,29 +126,31 @@ namespace UNObot.Modules
     }
     public class AFKtimer
     {
-        public static GameTimer playTimer;
-        void ResetTimer()
+        public Dictionary<ulong,GameTimer> playTimers = new Dictionary<ulong,GameTimer>();
+
+        public void ResetTimer(ulong server)
         {
-            playTimer.Stop();
-            playTimer.Start();
+            playTimers[server].Stop();
+            playTimers[server].Start();
         }
-        void StartTimer()
+        public void StartTimer(ulong server)
         {
-            playTimer = (GameTimer) new Timer(90000);
-            playTimer.AutoReset = false;
-            playTimer.Elapsed += TimerOver;
-            playTimer.Start();
+            playTimers[server] = (GameTimer) new Timer(90000);
+            playTimers[server].AutoReset = false;
+            playTimers[server].Elapsed += TimerOver;
+            playTimers[server].Start();
         }
         private static void TimerOver(Object source, ElapsedEventArgs e)
         {
             //TODO write something here nerd
         }
-        void DeleteTimer()
+        public void DeleteTimer(ulong server)
         {
-            if(playTimer.Disposed)
+            if(playTimers[server].Disposed)
                 ColorConsole.WriteLine("[WARN] Attempted to dispose a timer that was already disposed!", ConsoleColor.Yellow);
             else
-                playTimer.Dispose();
+                playTimers[server].Dispose();
+            playTimers.Remove(server);
         }
     }
 }
