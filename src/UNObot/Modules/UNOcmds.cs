@@ -108,5 +108,77 @@ namespace UNObot.Modules
             else
                 await ReplyAsync("You are not in any game!");
         }
+
+        [Command("deck")]
+        public async Task Deck()
+        {
+            if(await db.IsPlayerInGame(Context.User.Id))
+            {
+                if(await db.IsPlayerInServerGame(Context.User.Id,Context.Guild.Id))
+                {
+                    if(await db.IsServerInGame(Context.Guild.Id))
+                    {
+                        List<Card> list = await db.GetCards(Context.User.Id);
+                        string response = "Cards available:\n";
+                        foreach (Card card in list)
+                        {
+                            response += card.Color + " " + card.Value + "\n";
+                        }
+                        await UserExtensions.SendMessageAsync(Context.Message.Author, response);
+                    }
+                    else
+                        await ReplyAsync("The game has not started!");
+                }
+                else
+                    await ReplyAsync("You are in a game, however you are not in the right server!");
+            }
+            else
+                await ReplyAsync("You are not in any game!");
+        }
+        /*
+        if(await db.IsPlayerInGame(Context.User.Id))
+            {
+                if(await db.IsPlayerInServerGame(Context.User.Id,Context.Guild.Id))
+                {
+                    if(await db.IsServerInGame(Context.Guild.Id))
+                    {
+                        List<Card> list = await db.GetCards(Context.User.Id);
+                        string response = "Cards available:\n";
+                        foreach (Card card in list)
+                        {
+                            response += card.Color + " " + card.Value + "\n";
+                        }
+                        await UserExtensions.SendMessageAsync(Context.Message.Author, response);
+                    }
+                    else
+                        await ReplyAsync("The game has not started!");
+                }
+                else
+                    await ReplyAsync("You are in a game, however you are not in the right server!");
+            }
+            else
+                await ReplyAsync("You are not in any game!");
+        */
+        [Command("card")]
+        public async Task Card()
+        {
+            if(await db.IsPlayerInGame(Context.User.Id))
+            {
+                if(await db.IsPlayerInServerGame(Context.User.Id,Context.Guild.Id))
+                {
+                    if(await db.IsServerInGame(Context.Guild.Id))
+                    {
+                        Card currentCard = await db.GetCurrentCard(Context.Guild.Id);
+                        await ReplyAsync("Current card: " + currentCard.ToString());
+                    }
+                    else
+                        await ReplyAsync("The game has not started!");
+                }
+                else
+                    await ReplyAsync("You are in a game, however you are not in the right server!");
+            }
+            else
+                await ReplyAsync("You are not in any game!");
+        }
     }
 }
