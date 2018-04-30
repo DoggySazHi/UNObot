@@ -333,6 +333,41 @@ namespace UNObot.Modules
                 return players;
             }
         }
+        public async Task<Card> GetCurrentCard(ulong server)
+        {
+            if (conn == null)
+                GetConnectionString();
+            MySqlCommand Cmd = new MySqlCommand();
+            Cmd.Connection = conn;
+            Cmd.CommandText = "SELECT currentCard FROM Games WHERE inGame = 1 AND server = ?";
+            MySqlParameter p1 = new MySqlParameter
+            {
+                Value = server
+            };
+            Cmd.Parameters.Add(p1);
+            Card card = new Card();
+            conn.Open();
+            using (MySqlDataReader dr = (MySqlDataReader)await Cmd.ExecuteReaderAsync())
+            {
+                try
+                {
+                    while (dr.Read())
+                    {
+                        card = JsonConvert.DeserializeObject<Card>(dr.GetString(0));
+                        await dr.NextResultAsync();
+                    }
+                }
+                catch (MySqlException ex)
+                {
+                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                }
+                finally
+                {
+                    conn.Close();
+                }
+                return card;
+            }
+        }
 
         public async Task<bool> IsPlayerInGame(ulong player)
         {

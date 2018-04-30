@@ -14,78 +14,10 @@ namespace UNObot.Modules
     {
         UNObot.Modules.UNOdb db = new UNObot.Modules.UNOdb();
 
-        [Command("draw")]
-        public async Task Draw()
-        {
-            if (await db.IsPlayerInGame(Context.User.Id))
-            {
-                if (Program.gameStarted)
-                {
-                    Card card = UNOcore.RandomCard();
-                    await UserExtensions.SendMessageAsync(Context.Message.Author, "You have recieved: " + card.Color + " " + card.Value + ".");
-                    await db.AddCard(Context.User.Id, card);
-                    ResetTimer();
-                    return;
-                }
-                else
-                {
-                    await ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
-                    return;
-                }
-            }
-            else
-            {
-                await ReplyAsync($"<@{Context.User.Id}>, you are not in game.\n");
-                return;
-            }
-        }
-
-        [Command("deck")]
-        public async Task Deck()
-        {
-            if (await db.IsPlayerInGame(Context.User.Id))
-            {
-                if (Program.gameStarted)
-                {
-                    List<Card> list = await db.GetCards(Context.User.Id);
-                    string response = "Cards available:\n";
-                    foreach (Card card in list)
-                    {
-                        response += card.Color + " " + card.Value + "\n";
-                    }
-                    await UserExtensions.SendMessageAsync(Context.Message.Author, response);
-                    return;
-                }
-                else
-                {
-                    await ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
-                    return;
-                }
-            }
-            else
-            {
-                await ReplyAsync($"<@{Context.User.Id}>, you are not in game.\n");
-                return;
-            }
-        }
-
-        [Command("card")]
-        public async Task Card()
-        {
-            if (Program.gameStarted)
-            {
-                await ReplyAsync("Current card: " + Program.currentcard.Color + " " + Program.currentcard.Value);
-                return;
-            }
-            else
-                await ReplyAsync($"<@{Context.User.Id}>, the game has not started!\n");
-        }
-
-
         [Command("players")]
         public async Task Players()
         {
-            Queue<ulong> players = await db.GetPlayers();
+            Queue<ulong> players = await db.GetPlayers(Context.Guild.Id);
             if (Program.gameStarted)
             {
                 await FixOrder();
