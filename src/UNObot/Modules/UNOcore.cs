@@ -130,15 +130,25 @@ namespace UNObot.Modules
 
         public void ResetTimer(ulong server)
         {
-            playTimers[server].Stop();
-            playTimers[server].Start();
+            if(!playTimers.ContainsKey(server))
+                ColorConsole.WriteLine("ERROR: Attempted to reset timer that doesn't exist!", ConsoleColor.Red);
+            else
+            {
+                playTimers[server].Stop();
+                playTimers[server].Start();
+            }
         }
         public void StartTimer(ulong server)
         {
-            playTimers[server] = (GameTimer) new Timer(90000);
-            playTimers[server].AutoReset = false;
-            playTimers[server].Elapsed += TimerOver;
-            playTimers[server].Start();
+            if(playTimers.ContainsKey(server))
+                ColorConsole.WriteLine("WARNING: Attempted to start timer that already existed!", ConsoleColor.Yellow);
+            else
+            {
+                playTimers[server] = (GameTimer) new Timer(90000);
+                playTimers[server].AutoReset = false;
+                playTimers[server].Elapsed += TimerOver;
+                playTimers[server].Start();
+            }
         }
         private static void TimerOver(Object source, ElapsedEventArgs e)
         {
