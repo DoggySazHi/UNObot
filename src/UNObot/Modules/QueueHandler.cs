@@ -14,7 +14,7 @@ namespace UNObot.Modules
             ulong sendToBack = players.Dequeue();
             players.Enqueue(sendToBack);
         }
-        async public Task<ulong> CurrentPlayer(ulong server)
+        async public Task<ulong> GetCurrentPlayer(ulong server)
         {
             Queue<ulong> players = await db.GetPlayers(server);
             return players.Peek();
