@@ -42,7 +42,6 @@ namespace DiscordBot.Services
             if(context.IsPrivate)
             {
                 await context.Channel.SendMessageAsync("I do not accept DM messages. Please use me in a guild/server.");
-                return;
             }
             var result = await _commands.ExecuteAsync(context, argPos, _provider);
             if (result.Error.HasValue)
