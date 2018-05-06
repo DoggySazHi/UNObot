@@ -11,6 +11,7 @@ namespace UNObot.Modules
         UNOdb db = new UNOdb();
         QueueHandler queueHandler = new QueueHandler();
         AFKtimer AFKtimer = new AFKtimer();
+        PlayCard playCard = new PlayCard();
 
         [Command("seed")]
         public async Task Seed(string seed)
@@ -43,20 +44,22 @@ namespace UNObot.Modules
             await db.AddGame(Context.Guild.Id);
             await db.AddUser(Context.User.Id, Context.User.Username);
             if(await db.IsPlayerInGame(Context.User.Id) && await db.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
+            {
                 await db.RemoveUser(Context.User.Id);
+                await queueHandler.RemovePlayer(Context.User.Id, Context.Guild.Id);
+            }
             else
             {
                 await ReplyAsync($"{Context.User.Username}, you are already out of game! Note that you must run this command in the server you are playing in.\n");
                 return;
             }
-            Queue<ulong> players = await db.GetPlayers(Context.Guild.Id);
-            await queueHandler.NextPlayer(Context.Guild.Id);
-            if (players.Count == 0)
+            if (await queueHandler.PlayerCount(Context.Guild.Id) == 0)
             {
                 await db.ResetGame(Context.Guild.Id);
                 await ReplyAsync("Game has been reset, due to nobody in-game.");
-                AFKtimer.DeleteTimer(Context.Guild.Id);
+                return;
             }
+            await queueHandler.NextPlayer(Context.Guild.Id);
             await ReplyAsync($"{Context.User.Username} has been removed from the queue.\n");
         }
         [Command("stats")]
@@ -286,6 +289,65 @@ namespace UNObot.Modules
             }
             else
                 await ReplyAsync("You can't start a game if you're already in one!");
+        }
+        [Command("play"), Priority(2)]
+        public async Task Play(string color, string value)
+        {
+            if(await db.IsPlayerInGame(Context.User.Id))
+            {
+            if(await db.IsPlayerInServerGame(Context.User.Id,Context.Guild.Id))
+            {
+            if(await db.IsServerInGame(Context.Guild.Id))
+            {
+                if(Context.User.Id == await queueHandler.GetCurrentPlayer(Context.Guild.Id))
+                {
+                    if (color.ToLower() == "wild")
+                    {
+                        await ReplyAsync("You need to rerun the command, but also add what color should it represent.\nEx. play Wild Color Green");
+                    }
+                    else
+                    {
+                        AFKtimer.ResetTimer(Context.Guild.Id);
+                        await playCard.Play(color, value, null, Context.User.Id, Context.Guild.Id);
+                    }
+                }
+                else
+                    await ReplyAsync("It is not your turn!");
+            }
+            else
+            await ReplyAsync("The game has not started!");
+            }
+            else
+            await ReplyAsync("You are in a game, however you are not in the right server!");
+            }
+            else
+            await ReplyAsync("You are not in any game!");
+        }
+        [Command("play"), Priority(1)]
+        public async Task PlayWild(string color, string value, string wild)
+        {
+            if(await db.IsPlayerInGame(Context.User.Id))
+            {
+            if(await db.IsPlayerInServerGame(Context.User.Id,Context.Guild.Id))
+            {
+            if(await db.IsServerInGame(Context.Guild.Id))
+            {
+                if(Context.User.Id == await queueHandler.GetCurrentPlayer(Context.Guild.Id))
+                {
+                    AFKtimer.ResetTimer(Context.Guild.Id);
+                    await playCard.Play(color, value, wild, Context.User.Id, Context.Guild.Id);
+                }
+                else
+                    await ReplyAsync("It is not your turn!");
+            }
+            else
+            await ReplyAsync("The game has not started!");
+            }
+            else
+            await ReplyAsync("You are in a game, however you are not in the right server!");
+            }
+            else
+            await ReplyAsync("You are not in any game!");
         }
     }
 }
