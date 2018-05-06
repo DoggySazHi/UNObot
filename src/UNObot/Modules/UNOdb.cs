@@ -790,6 +790,40 @@ namespace UNObot.Modules
                 return stats;
             }
         }
+        public async Task<string> GetNote(ulong player)
+        {
+            if (conn == null)
+                GetConnectionString();
+            MySqlCommand Cmd = new MySqlCommand();
+            Cmd.Connection = conn;
+            Cmd.CommandText = "SELECT note FROM UNObot.Players WHERE userid = ?";
+            MySqlParameter p1 = new MySqlParameter();
+            p1.Value = player;
+            Cmd.Parameters.Add(p1);
+            await conn.OpenAsync();
+            String message = null;
+            //TODO replace all cases
+            using (MySqlDataReader dr = (MySqlDataReader) await Cmd.ExecuteReaderAsync())
+            {
+                try
+                {
+                    while (dr.Read())
+                    {
+                        if(!await dr.IsDBNullAsync(0))
+                            message = dr.GetString(0);
+                    }
+                }
+                catch (MySqlException ex)
+                {
+                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                }
+                finally
+                {
+                    conn.Close();
+                }
+            }
+            return message;
+        }
         public async Task UpdateStats(ulong player, int mode)
         {
             //1 is gamesJoined
