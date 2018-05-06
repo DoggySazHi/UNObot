@@ -66,6 +66,11 @@ namespace UNObot.Modules
         public async Task Stats()
         {
             int[] stats = await db.GetStats(Context.User.Id);
+            string note = await db.GetNote(Context.User.Id);
+            if(note != null)
+            {
+                await ReplyAsync($"NOTE: {db.GetNote(Context.User.Id)}");
+            }
             await ReplyAsync($"{Context.User.Username}'s stats:\n"
                                 + $"Games joined: {stats[0]}\n"
                                 + $"Games fully played: {stats[1]}\n"

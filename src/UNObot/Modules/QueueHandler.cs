@@ -48,7 +48,7 @@ namespace UNObot.Modules
             }
             else if(player == result)
             {
-                //call end game, like empty crap
+                ColorConsole.WriteLine("EMPTY", ConsoleColor.Yellow);
             }
             else
             {

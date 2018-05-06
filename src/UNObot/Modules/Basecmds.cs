@@ -8,37 +8,47 @@ namespace UNObot.Modules
     public class Basecmds : ModuleBase<SocketCommandContext>
     {
         [Command("info")]
-        public Task Info()
+        public async Task Info()
         {
-            return ReplyAsync(
+            await ReplyAsync(
                 $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {Program.version}\nblame Aragami and FM for the existance of this");
+            #if DEBUG
+            await ReplyAsync("UNObot is currently running in DEBUG mode. Errors are prone to occur.");
+            #else
+            await ReplyAsync("UNObot is currently running in RELEASE/DEPLOY mode. Everything SHOULD be fine.")
+            #endif
         }
         [Command("gulag")]
-        public Task Gulag()
+        public async Task Gulag()
         {
-            return ReplyAsync($"<{@Context.User.Id}> has been sent to gulag and has all of his cards converted to red blyats.");
+            await ReplyAsync($"<{@Context.User.Id}> has been sent to gulag and has all of his cards converted to red blyats.");
+        }
+        [Command("nepnep")]
+        public async Task Nep()
+        {
+            await ReplyAsync($"You got me there at \"nep\".");
         }
         [Command("ugay")]
-        public Task Ugay()
-            => ReplyAsync(
+        public async Task Ugay()
+            => await ReplyAsync(
                 $"<@{Context.User.Id}> no u\n");
 
         [Command("u gay")]
-        public Task Ugay2()
-            => ReplyAsync(
+        public async Task Ugay2()
+            => await ReplyAsync(
                 $"<@{Context.User.Id}> no u\n");
 
         [Command("you gay")]
-        public Task Ugay3()
-            => ReplyAsync(
+        public async Task Ugay3()
+            => await ReplyAsync(
                 $"<@{Context.User.Id}> no u\n");
 
-        [Command("upupdowndownleftrightleftrightbastart")]
+        [Command("no u")]
         public async Task Easteregg1()
         {
-            await ReplyAsync($"I claim that <@{Context.User.Id}> is triple gay. Say \"No U\", and I play a reverse card.");
+            await ReplyAsync($"I claim that <@{Context.User.Id}> is triple gay. Say \"No U\" again, u ded m8.");
         }
-        [Command("upupdowndownleftrightleftrightbastart")]
+        [Command("doggyisthebest")]
         public async Task Easteregg2(string response)
         {
             var messages = await this.Context.Channel.GetMessagesAsync(1).Flatten();
@@ -46,7 +56,9 @@ namespace UNObot.Modules
             await this.Context.Channel.DeleteMessagesAsync(messages);
             await ReplyAsync(response);
         }
-
+        [Command("upupdowndownleftrightleftrightbastart")]
+        public async Task OldEasterEgg(string[] args)
+            => await ReplyAsync("lol, that's outdated");
         [Command("help")]
         public async Task Help()
         {
