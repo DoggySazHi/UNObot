@@ -118,6 +118,7 @@ namespace UNObot.Modules
     }
     public class GameTimer : Timer
     {
+        public ulong Server { get; set; }
         public new bool Disposed { get; set; }
         protected override void Dispose(bool disposing) {
             Disposed = true;
@@ -127,7 +128,8 @@ namespace UNObot.Modules
     public class AFKtimer
     {
         public Dictionary<ulong,GameTimer> playTimers = new Dictionary<ulong,GameTimer>();
-
+        UNOdb db = new UNOdb();
+        QueueHandler queueHandler = new QueueHandler();
         public void ResetTimer(ulong server)
         {
             if(!playTimers.ContainsKey(server))
@@ -145,14 +147,39 @@ namespace UNObot.Modules
             else
             {
                 playTimers[server] = (GameTimer) new Timer(90000);
+                playTimers[server].Server = server;
                 playTimers[server].AutoReset = false;
                 playTimers[server].Elapsed += TimerOver;
                 playTimers[server].Start();
             }
         }
-        private static void TimerOver(Object source, ElapsedEventArgs e)
+        private async void TimerOver(Object source, ElapsedEventArgs e)
         {
-            //TODO write something here nerd
+            ulong serverID = 0;
+            foreach (ulong server in playTimers.Keys)
+            {
+                if(playTimers[server].Equals(source))
+                    serverID = server;
+            }
+            if(serverID == 0)
+            {
+                ColorConsole.WriteLine("ERROR: Couldn't figure out what server timer belonged to!", ConsoleColor.Yellow);
+                return;
+            }
+            ulong currentPlayer = await queueHandler.GetCurrentPlayer(serverID);
+            await db.RemoveUser(currentPlayer);
+            await PlayCard.ReplyAsync($"<@{currentPlayer}>, you have been AFK removed.\n");
+            await queueHandler.NextPlayer(serverID);
+            ResetTimer(serverID);
+            //reupdate
+            if (await queueHandler.PlayerCount(serverID) == 0)
+            {
+                await db.ResetGame(serverID);
+                await PlayCard.ReplyAsync("Game has been reset, due to nobody in-game.");
+                DeleteTimer(serverID);
+            }
+            else
+                await PlayCard.ReplyAsync($"It is now <@{queueHandler.GetCurrentPlayer(serverID)}> turn.\n");
         }
         public void DeleteTimer(ulong server)
         {

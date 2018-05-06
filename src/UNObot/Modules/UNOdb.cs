@@ -73,6 +73,8 @@ namespace UNObot.Modules
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
             Cmd.CommandText = "UPDATE Games SET inGame = 0, currentCard = ?, order = 1, currentPlayer = 0, oneCardLeft = null WHERE server = ?";
+            AFKtimer afkTimer = new AFKtimer();
+            afkTimer.DeleteTimer(server);
             MySqlParameter p1 = new MySqlParameter
             {
                 Value = "[]"
@@ -366,7 +368,39 @@ namespace UNObot.Modules
                 return players;
             }
         }
-        private async Task<Queue<ulong>> GetUsersWithServer(ulong server)
+        public async Task SetPlayers(ulong server, Queue<ulong> players)
+        {
+            string json = JsonConvert.SerializeObject(players);
+            if (conn == null)
+                GetConnectionString();
+            MySqlCommand Cmd = new MySqlCommand();
+            Cmd.Connection = conn;
+            Cmd.CommandText = "UPDATE Games SET queue = ? WHERE inGame = 1 AND server = ?";
+            MySqlParameter p1 = new MySqlParameter
+            {
+                Value = json
+            };
+            Cmd.Parameters.Add(p1);
+            MySqlParameter p2 = new MySqlParameter
+            {
+                Value = server
+            };
+            Cmd.Parameters.Add(p2);
+            try
+            {
+                await conn.OpenAsync();
+                await Cmd.ExecuteNonQueryAsync();
+            }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            finally
+            {
+                conn.Close();
+            }
+        }
+        async Task<Queue<ulong>> GetUsersWithServer(ulong server)
         {
             Queue<ulong> players = new Queue<ulong>();
             if (conn == null)

@@ -57,10 +57,13 @@ namespace DiscordBot.Services
                         await context.Channel.SendMessageAsync("There are multiple commands with the same name. Type '<@419374055792050176> help' to see which one you need.");
                         break;
                     case CommandError.UnmetPrecondition:
-                        await context.Channel.SendMessageAsync("Hmm, I don't have the permissions to do this! Make sure I can read/write/edit messages.\nGiving admin is acceptable, but because Doggy is writing this, it is unrecommended.");
+                        await context.Channel.SendMessageAsync("You do not have the **power** to run this command!");
+                        break;
+                    case CommandError.Exception:
+                        await context.Channel.SendMessageAsync(":bomb: _UNObot has encountered a fatal error, but luckily, we have caught the error.\nPlease send all bug reports to DoggySazHi.");
                         break;
                     default:
-                        await context.Channel.SendMessageAsync("An internal error has occured, and UNObot has probably been halted. Notify DoggySazHi.");
+                        await context.Channel.SendMessageAsync(":bomb: _UNObot has encountered a fatal error, and your action could not be completed.\nPlease send all bug reports to DoggySazHi.");
                         break;
                 }
                 #if DEBUG
