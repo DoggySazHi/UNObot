@@ -57,7 +57,10 @@ namespace UNObot.Modules
             await ReplyAsync(response);
         }
         [Command("upupdowndownleftrightleftrightbastart")]
-        public async Task OldEasterEgg(string[] args)
+        public async Task OldEasterEgg(string asdf)
+            => await ReplyAsync("lol, that's outdated");
+       [Command("upupdowndownleftrightleftrightbastart")]
+        public async Task OldEasterEgg()
             => await ReplyAsync("lol, that's outdated");
         [Command("help")]
         public async Task Help()

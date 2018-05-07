@@ -84,8 +84,6 @@ namespace UNObot.Modules
         public static void WriteLine(string Text, string Color)
         {
             ConsoleColor[] colors = (ConsoleColor[]) ConsoleColor.GetValues(typeof(ConsoleColor));
-            ConsoleColor behind = Console.BackgroundColor;
-            ConsoleColor front = Console.ForegroundColor;
             bool colorFound = false;
             foreach(var color in colors)
             {
@@ -98,8 +96,7 @@ namespace UNObot.Modules
                 }
             }
             Console.WriteLine(Text);
-            Console.BackgroundColor = behind;
-            Console.ForegroundColor = front;
+            Console.ResetColor();
             #if DEBUG
             if(!colorFound)
                 WriteLine("[WARN] Attempted to WriteLine with a color that doesn't exist!", ConsoleColor.Yellow);
@@ -107,13 +104,10 @@ namespace UNObot.Modules
         }
         public static void WriteLine(string Text, ConsoleColor color)
         {
-            ConsoleColor behind = Console.BackgroundColor;
-            ConsoleColor front = Console.ForegroundColor;
             Console.BackgroundColor = ConsoleColor.Black;
             Console.ForegroundColor = color;
             Console.WriteLine(Text);
-            Console.BackgroundColor = behind;
-            Console.ForegroundColor = front;
+            Console.ResetColor();
         }
     }
     public class GameTimer : Timer
