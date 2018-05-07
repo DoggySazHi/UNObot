@@ -208,6 +208,11 @@ namespace UNObot.Modules
                 Value = usrname
             };
             Cmd.Parameters.Add(p2);
+            MySqlParameter p3 = new MySqlParameter
+            {
+                Value = usrname
+            };
+            Cmd.Parameters.Add(p3);
             try
             {
                 await conn.OpenAsync();
