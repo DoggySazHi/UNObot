@@ -342,7 +342,6 @@ namespace UNObot.Modules
             }
             
         }
-        //TODO Replace with Queue type, as well as convert it to new format
         //NOTE THAT THIS GETS DIRECTLY FROM SERVER; YOU MUST ADD PLAYERS TO SERVER AddPlayersToServer
         public async Task<Queue<ulong>> GetPlayers(ulong server)
         {
@@ -778,7 +777,7 @@ namespace UNObot.Modules
             MySqlParameter p1 = new MySqlParameter();
             p1.Value = player;
             Cmd.Parameters.Add(p1);
-            int[] stats = new int[3] {0, 0, 0};
+            int[] stats = {0, 0, 0};
             await conn.OpenAsync();
             //TODO replace all cases
             using (MySqlDataReader dr = (MySqlDataReader) await Cmd.ExecuteReaderAsync())
