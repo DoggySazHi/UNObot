@@ -17,18 +17,23 @@ namespace UNObot.Modules
     {
         public static Random r = new Random();
 
-        public static Card RandomCard()
+        public async static Task<Card> RandomCard()
+        {
+            Card card = await Task.Run(() => RandomCardSync());
+            return card;
+        }
+        public static Card RandomCardSync()
         {
             Card card = new Card();
-            Object lockObject = new object();
+            object lockObject = new object();
             int myColor = 1;
             int myCard = 0;
             lock(lockObject)
             {
                 //0-9 is number, 10 is actioncard
-                myColor = r.Next(0, 11);
+                myCard = r.Next(0, 11);
                 // see switch
-                myCard = r.Next(1, 5);
+                myColor = r.Next(1, 5);
             }
 
             switch (myColor)
@@ -76,6 +81,7 @@ namespace UNObot.Modules
                         break;
                 }
             }
+            Console.WriteLine(card.Color + " " + card.Value + " " + myColor + " " + myCard);
             return card;
         }
     }
@@ -140,9 +146,13 @@ namespace UNObot.Modules
                 ColorConsole.WriteLine("WARNING: Attempted to start timer that already existed!", ConsoleColor.Yellow);
             else
             {
-                playTimers[server] = (GameTimer) new Timer(90000);
-                playTimers[server].Server = server;
-                playTimers[server].AutoReset = false;
+                playTimers[server] = new GameTimer
+                {
+                    Interval = 90000,
+                    Server = server,
+                    AutoReset = false,
+                    Disposed = false,
+                };
                 playTimers[server].Elapsed += TimerOver;
                 playTimers[server].Start();
             }
@@ -150,18 +160,18 @@ namespace UNObot.Modules
         private async void TimerOver(Object source, ElapsedEventArgs e)
         {
             ulong serverID = 0;
-            foreach (ulong server in playTimers.Keys)
-            {
-                if(playTimers[server].Equals(source))
-                    serverID = server;
-            }
+            GameTimer timer = (GameTimer) source;
+            serverID = timer.Server;
             if(serverID == 0)
             {
                 ColorConsole.WriteLine("ERROR: Couldn't figure out what server timer belonged to!", ConsoleColor.Yellow);
                 return;
             }
+            Console.WriteLine("CurrPlayer");
             ulong currentPlayer = await queueHandler.GetCurrentPlayer(serverID);
+            Console.WriteLine("RemoveUser");
             await db.RemoveUser(currentPlayer);
+            Console.WriteLine("SayPlayer");
             await PlayCard.ReplyAsync($"<@{currentPlayer}>, you have been AFK removed.\n");
             await queueHandler.NextPlayer(serverID);
             ResetTimer(serverID);

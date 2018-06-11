@@ -24,7 +24,14 @@ namespace UNObot.Modules
         async public Task<ulong> GetCurrentPlayer(ulong server)
         {
             Queue<ulong> players = await db.GetPlayers(server);
-            return players.Peek();
+            ulong player = 0;
+            if(players.TryPeek(out player))
+                return player;
+            else
+            {
+                ColorConsole.WriteLine("[ERR] No players!", ConsoleColor.Red);
+                return player;
+            }
         }
         async public Task<int> PlayerCount(ulong server)
         {
