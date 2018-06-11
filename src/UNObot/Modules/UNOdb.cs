@@ -37,7 +37,7 @@ namespace UNObot.Modules
             {
                 Console.WriteLine($"MySQL has encountered an error: {ex}");
             }
-            conn.Close();
+            conn.CloseAsync();
             Console.WriteLine("Successfully connected.");
         }
         public async Task AddGame(ulong server)
@@ -63,7 +63,7 @@ namespace UNObot.Modules
             }
             finally
             {
-                conn.Close();
+                await conn.CloseAsync();
             }
         }
         public async Task ResetGame(ulong server)
@@ -96,7 +96,7 @@ namespace UNObot.Modules
             }
             finally
             {
-                conn.Close();
+                await conn.CloseAsync();
             }
         }
         public async Task<bool> IsServerInGame(ulong server)
@@ -128,7 +128,7 @@ namespace UNObot.Modules
                 }
                 finally
                 {
-                    conn.Close();
+                    await conn.CloseAsync();
                 }
                 return yesorno;
             }
@@ -187,7 +187,7 @@ namespace UNObot.Modules
             }
             finally
             {
-                conn.Close();
+                await conn.CloseAsync();
             }
         }
         public async Task AddUser(ulong id, string usrname)
@@ -224,7 +224,7 @@ namespace UNObot.Modules
             }
             finally
             {
-                conn.Close();
+                await conn.CloseAsync();
             }
         }
         public async Task RemoveUser(ulong id)
@@ -262,7 +262,7 @@ namespace UNObot.Modules
             }
             finally
             {
-                conn.Close();
+                await conn.CloseAsync();
             }          
         }
         public async Task CleanAll()
@@ -283,11 +283,17 @@ namespace UNObot.Modules
                 GetConnectionString();
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
-            Cmd.CommandText = "SET SQL_SAFE_UPDATES = 0; UPDATE UNObot.Players SET cards = ?, inGame = 0, gameName = null; SET SQL_SAFE_UPDATES = 1;";
+            Cmd.CommandText = "SET SQL_SAFE_UPDATES = 0; UPDATE UNObot.Players SET cards = ?, inGame = 0, gameName = null; UPDATE Games SET inGame = 0, currentCard = ?, oneCardLeft = 0, queue = ?; SET SQL_SAFE_UPDATES = 1;";
             MySqlParameter p1 = new MySqlParameter();
             JArray empty = new JArray();
             p1.Value = empty.ToString();
             Cmd.Parameters.Add(p1);
+            MySqlParameter p2 = new MySqlParameter();
+            p2.Value = empty.ToString();
+            Cmd.Parameters.Add(p2);
+            MySqlParameter p3 = new MySqlParameter();
+            p3.Value = empty.ToString();
+            Cmd.Parameters.Add(p3);
             try
             {
                 await conn.OpenAsync();
@@ -299,7 +305,7 @@ namespace UNObot.Modules
             }
             finally
             {
-                conn.Close();
+                await conn.CloseAsync();
             }
         }
 
@@ -332,7 +338,7 @@ namespace UNObot.Modules
             }
             finally
             {
-                conn.Close();
+                await conn.CloseAsync();
             }
             
         }
@@ -358,6 +364,8 @@ namespace UNObot.Modules
                 {
                     while (dr.Read())
                     {
+                        Console.WriteLine(server);
+                        Console.WriteLine(dr.GetString(0));
                         players = JsonConvert.DeserializeObject<Queue<ulong>>(dr.GetString(0));
                         await dr.NextResultAsync();
                     }
@@ -368,7 +376,7 @@ namespace UNObot.Modules
                 }
                 finally
                 {
-                    conn.Close();
+                    await conn.CloseAsync();
                 }
                 return players;
             }
@@ -402,7 +410,7 @@ namespace UNObot.Modules
             }
             finally
             {
-                conn.Close();
+                await conn.CloseAsync();
             }
         }
         async Task<Queue<ulong>> GetUsersWithServer(ulong server)
@@ -435,7 +443,7 @@ namespace UNObot.Modules
                 }
                 finally
                 {
-                    conn.Close();
+                    await conn.CloseAsync();
                 }
                 return players;
             }
@@ -472,7 +480,7 @@ namespace UNObot.Modules
                 }
                 finally
                 {
-                    conn.Close();
+                    await conn.CloseAsync();
                 }
                 return player;
             }
@@ -505,7 +513,7 @@ namespace UNObot.Modules
             }
             finally
             {
-                conn.Close();
+                await conn.CloseAsync();
             }
             return player;
         }
@@ -539,7 +547,7 @@ namespace UNObot.Modules
                 }
                 finally
                 {
-                    conn.Close();
+                    await conn.CloseAsync();
                 }
                 return card;
             }
@@ -573,7 +581,7 @@ namespace UNObot.Modules
             }
             finally
             {
-                conn.Close();
+                await conn.CloseAsync();
             }
         }
 
@@ -606,7 +614,7 @@ namespace UNObot.Modules
                 }
                 finally
                 {
-                    conn.Close();
+                    await conn.CloseAsync();
                 }
                 return yesorno;
             }
@@ -618,7 +626,7 @@ namespace UNObot.Modules
                 GetConnectionString();
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
-            Cmd.CommandText = "SELECT queue FROM Games WHERE server = ?";
+            Cmd.CommandText = "SELECT queue FROM UNObot.Games WHERE server = ?";
             Queue<ulong> players = new Queue<ulong>();
             MySqlParameter p1 = new MySqlParameter();
             p1.Value = server;
@@ -640,7 +648,7 @@ namespace UNObot.Modules
                 }
                 finally
                 {
-                    conn.Close();
+                    await conn.CloseAsync();
                 }
                 if(players.Contains(player))
                     return true;
@@ -678,7 +686,7 @@ namespace UNObot.Modules
                 }
                 finally
                 {
-                    conn.Close();
+                    await conn.CloseAsync();
                 }
                 cards = JsonConvert.DeserializeObject<List<Card>>(jsonstring);
                 return cards;
@@ -713,25 +721,27 @@ namespace UNObot.Modules
                 }
                 finally
                 {
-                    conn.Close();
+                    await conn.CloseAsync();
                 }
                 return exists;
             }
         }
-        public async Task<bool> GetUsersAndAdd(ulong server)
+        public async Task GetUsersAndAdd(ulong server)
         {
-            string json = JsonConvert.SerializeObject(GetUsersWithServer(server));
             if (conn == null)
                 GetConnectionString();
-            bool exists = false;
+            Queue<ulong> players = await GetUsersWithServer(server);
+            if(players.Count == 0)
+                ColorConsole.WriteLine("[WARN] Why is the list empty whem I'm getting players?", ConsoleColor.Yellow);
+            string json = JsonConvert.SerializeObject(players);
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
-            Cmd.CommandText = "UPDATE Players SET queue = ? WHERE server = ?";
+            Cmd.CommandText = "UPDATE UNObot.Games SET queue = ? WHERE server = ? AND inGame = 1";
             MySqlParameter p1 = new MySqlParameter();
-            p1.Value = json;
-            Cmd.Parameters.Add(p1);
             MySqlParameter p2 = new MySqlParameter();
-            p1.Value = server;
+            p1.Value = json;
+            p2.Value = server;
+            Cmd.Parameters.Add(p1);
             Cmd.Parameters.Add(p2);
             try
             {
@@ -740,13 +750,12 @@ namespace UNObot.Modules
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                ColorConsole.WriteLine($"A MySQL error has been caught, Error {ex}", ConsoleColor.Red);
             }
             finally
             {
-                conn.Close();
+                await conn.CloseAsync();
             }
-            return exists;
         }
         public async Task StarterCard(ulong server)
         {
@@ -755,7 +764,7 @@ namespace UNObot.Modules
             {
                 for(int i = 0; i < 7; i++)
                 {
-                    await AddCard(player, UNOcore.RandomCard());
+                    await AddCard(player, await UNOcore.RandomCard());
                 }
             }
         }
@@ -769,7 +778,7 @@ namespace UNObot.Modules
             MySqlParameter p1 = new MySqlParameter();
             p1.Value = player;
             Cmd.Parameters.Add(p1);
-            int[] stats = new int[3];
+            int[] stats = new int[3] {0, 0, 0};
             await conn.OpenAsync();
             //TODO replace all cases
             using (MySqlDataReader dr = (MySqlDataReader) await Cmd.ExecuteReaderAsync())
@@ -790,7 +799,7 @@ namespace UNObot.Modules
                 }
                 finally
                 {
-                    conn.Close();
+                    await conn.CloseAsync();
                 }
                 return stats;
             }
@@ -824,7 +833,7 @@ namespace UNObot.Modules
                 }
                 finally
                 {
-                    conn.Close();
+                    await conn.CloseAsync();
                 }
             }
             return message;
@@ -866,7 +875,7 @@ namespace UNObot.Modules
             }
             finally
             {
-                conn.Close();
+                await conn.CloseAsync();
             }
          }
         public async Task AddCard(ulong player, Card card)
@@ -901,7 +910,7 @@ namespace UNObot.Modules
             }
             finally
             {
-                conn.Close();
+                await conn.CloseAsync();
             }
         }
         public async Task<bool> RemoveCard(ulong player, Card card)
@@ -947,7 +956,7 @@ namespace UNObot.Modules
             }
             finally
             {
-                conn.Close();
+                await conn.CloseAsync();
             }
             return true;
         }

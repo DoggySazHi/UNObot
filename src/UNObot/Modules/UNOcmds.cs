@@ -67,6 +67,10 @@ namespace UNObot.Modules
         {
             int[] stats = await db.GetStats(Context.User.Id);
             string note = await db.GetNote(Context.User.Id);
+            if(!await db.UserExists(Context.User.Id))
+            {
+                await ReplyAsync("You do not currently exist in the database.");
+            }
             if(note != null)
             {
                 await ReplyAsync($"NOTE: {db.GetNote(Context.User.Id)}");
@@ -109,7 +113,7 @@ namespace UNObot.Modules
                     {
                         if(await queueHandler.GetCurrentPlayer(Context.Guild.Id) == Context.User.Id)
                         {
-                            Card card = UNOcore.RandomCard();
+                            Card card = await UNOcore.RandomCard();
                             await UserExtensions.SendMessageAsync(Context.Message.Author, "You have recieved: " + card.Color + " " + card.Value + ".");
                             await db.AddCard(Context.User.Id, card);
                             AFKtimer.ResetTimer(Context.Guild.Id);
@@ -247,8 +251,8 @@ namespace UNObot.Modules
                     else
                     {
                         await ReplyAsync("Uh oh, you still have more than one card! Two cards have been added to your hand.");
-                        await db.AddCard(Context.User.Id, UNOcore.RandomCard());
-                        await db.AddCard(Context.User.Id, UNOcore.RandomCard());
+                        await db.AddCard(Context.User.Id, await UNOcore.RandomCard());
+                        await db.AddCard(Context.User.Id, await UNOcore.RandomCard());
                     }
                 }
                 else
@@ -267,33 +271,33 @@ namespace UNObot.Modules
 
         public async Task Start()
         {
+            if(await db.IsPlayerInGame(Context.User.Id))
+            {
             await db.AddGame(Context.Guild.Id);
             await db.AddUser(Context.User.Id, Context.User.Username);
-            if(!await db.IsPlayerInGame(Context.User.Id))
+            if(await db.IsServerInGame(Context.Guild.Id))
+                await ReplyAsync("The game has already started!");
+            else
             {
-                if(await db.IsServerInGame(Context.Guild.Id))
-                    await ReplyAsync("The game has already started!");
-                else
+                await db.AddGuild(Context.Guild.Id, 1);
+                await db.GetUsersAndAdd(Context.Guild.Id);
+                foreach(ulong player in await db.GetPlayers(Context.Guild.Id))
                 {
-                    await db.AddGuild(Context.Guild.Id, 1);
-                    await db.GetUsersAndAdd(Context.Guild.Id);
-                    foreach(ulong player in await db.GetPlayers(Context.Guild.Id))
-                    {
-                        await db.UpdateStats(player, 1);
-                    }
-                    await ReplyAsync("Game has started. All information about your cards will be PMed.\n" +
-                            "You have been given 7 cards; PM \"deck\" to view them.\n" +
-                            "Remember; you have 1 minute and 30 seconds to place a card.\n" +
-                            $"The first player is <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>.\n");
-                    Card currentCard = UNOcore.RandomCard();
-                    await db.SetCurrentCard(Context.Guild.Id, currentCard);
-                    await ReplyAsync($"Current card: {currentCard.ToString()}\n");
-                    await db.StarterCard(Context.Guild.Id);
-                    AFKtimer.StartTimer(Context.Guild.Id);
+                    await db.UpdateStats(player, 1);
                 }
+                await ReplyAsync("Game has started. All information about your cards will be PMed.\n" +
+                        "You have been given 7 cards; PM \"deck\" to view them.\n" +
+                        "Remember; you have 1 minute and 30 seconds to place a card.\n" +
+                        $"The first player is <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>.\n");
+                Card currentCard = await UNOcore.RandomCard();
+                await db.SetCurrentCard(Context.Guild.Id, currentCard);
+                await ReplyAsync($"Current card: {currentCard.ToString()}\n");
+                await db.StarterCard(Context.Guild.Id);
+                AFKtimer.StartTimer(Context.Guild.Id);
+            }
             }
             else
-                await ReplyAsync("You can't start a game if you're already in one!");
+                await ReplyAsync("You have not joined a game!");
         }
         [Command("play"), Priority(2)]
         public async Task Play(string color, string value)

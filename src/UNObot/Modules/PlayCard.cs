@@ -76,8 +76,8 @@ namespace UNObot.Modules
             if(await db.GetUNOPlayer(server) != 0)
             {
                 await ReplyAsync($"<@{await db.GetUNOPlayer(server)}> has forgotten to say UNO! They have been given 2 cards.");
-                await db.AddCard(await db.GetUNOPlayer(server), UNOcore.RandomCard());
-                await db.AddCard(await db.GetUNOPlayer(server), UNOcore.RandomCard());
+                await db.AddCard(await db.GetUNOPlayer(server), await UNOcore.RandomCard());
+                await db.AddCard(await db.GetUNOPlayer(server), await UNOcore.RandomCard());
                 await db.SetUNOPlayer(server, 0);
             }
             Card playCard = new Card
@@ -132,11 +132,8 @@ namespace UNObot.Modules
                 if(playCard.Value == "+4")
                 {
                     await ReplyAsync($"<@{await queueHandler.GetCurrentPlayer(server)}> has recieved four cards from the action.");
-                    // no 4 loop 4 u
-                    await db.AddCard(await queueHandler.GetCurrentPlayer(server), UNOcore.RandomCard());
-                    await db.AddCard(await queueHandler.GetCurrentPlayer(server), UNOcore.RandomCard());
-                    await db.AddCard(await queueHandler.GetCurrentPlayer(server), UNOcore.RandomCard());
-                    await db.AddCard(await queueHandler.GetCurrentPlayer(server), UNOcore.RandomCard());
+                    for(int i = 0; i < 4; i++)
+                        await db.AddCard(await queueHandler.GetCurrentPlayer(server), await UNOcore.RandomCard());
                 }
                 await ReplyAsync($"Due to the wild card, the current card is now {wild}.");
                 Card newCard = new Card
@@ -149,8 +146,8 @@ namespace UNObot.Modules
             if(playCard.Value == "+2")
             {
                 await ReplyAsync($"<@{await queueHandler.GetCurrentPlayer(server)}> has recieved two cards from the action.");
-                await db.AddCard(await queueHandler.GetCurrentPlayer(server), UNOcore.RandomCard());
-                await db.AddCard(await queueHandler.GetCurrentPlayer(server), UNOcore.RandomCard());
+                await db.AddCard(await queueHandler.GetCurrentPlayer(server), await UNOcore.RandomCard());
+                await db.AddCard(await queueHandler.GetCurrentPlayer(server), await UNOcore.RandomCard());
             } else if (playCard.Value == "Skip")
             {
                 await ReplyAsync($"<@{await queueHandler.GetCurrentPlayer(server)}> has been skipped! Feelsbadm8.");
