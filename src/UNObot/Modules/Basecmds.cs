@@ -12,10 +12,10 @@ namespace UNObot.Modules
         {
             await ReplyAsync(
                 $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {Program.version}\nblame Aragami and FM for the existance of this");
-            #if DEBUG
+#if DEBUG
             await ReplyAsync("UNObot is currently running in DEBUG mode. Errors are prone to occur.");
-            #else
-            await ReplyAsync("UNObot is currently running in RELEASE/DEPLOY mode. Everything SHOULD be fine.")
+#else
+            await ReplyAsync("UNObot is currently running in RELEASE/DEPLOY mode. Everything SHOULD be fine.");
             #endif
         }
         [Command("gulag")]
@@ -57,6 +57,7 @@ namespace UNObot.Modules
             await ReplyAsync(response);
         }
         [Command("upupdowndownleftrightleftrightbastart")]
+        //Ignore unused variable, forces random input
         public async Task OldEasterEgg(string asdf)
             => await ReplyAsync("lol, that's outdated");
        [Command("upupdowndownleftrightleftrightbastart")]
