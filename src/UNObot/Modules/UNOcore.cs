@@ -89,7 +89,8 @@ namespace UNObot.Modules
     {
         public static void WriteLine(string Text, string Color)
         {
-            ConsoleColor[] colors = (ConsoleColor[]) ConsoleColor.GetValues(typeof(ConsoleColor));
+            ConsoleColor[] colors = (ConsoleColor[])Enum.GetValues(typeof(ConsoleColor));
+            //Ignore warning; debug mode.
             bool colorFound = false;
             foreach(var color in colors)
             {
@@ -97,7 +98,7 @@ namespace UNObot.Modules
                 {
                     Console.BackgroundColor = ConsoleColor.Black;
                     Console.ForegroundColor = color;
-                    colorFound |= true;
+                    colorFound = true;
                     break;
                 }
             }
@@ -116,22 +117,18 @@ namespace UNObot.Modules
             Console.ResetColor();
         }
     }
-    public class GameTimer : Timer
-    {
-        public ulong Server { get; set; }
-        public new bool Disposed { get; set; }
-        protected override void Dispose(bool disposing) {
-            Disposed = true;
-            base.Dispose(disposing);
-        }
-    }
     public class AFKtimer
     {
-        public Dictionary<ulong,GameTimer> playTimers = new Dictionary<ulong,GameTimer>();
+        public Dictionary<ulong,Timer> playTimers = new Dictionary<ulong,Timer>();
+
         UNOdb db = new UNOdb();
+
         QueueHandler queueHandler = new QueueHandler();
+
         public void ResetTimer(ulong server)
         {
+            Console.WriteLine("Would be resetting timer...");
+            /*
             if(!playTimers.ContainsKey(server))
                 ColorConsole.WriteLine("ERROR: Attempted to reset timer that doesn't exist!", ConsoleColor.Red);
             else
@@ -139,19 +136,19 @@ namespace UNObot.Modules
                 playTimers[server].Stop();
                 playTimers[server].Start();
             }
+            */
         }
         public void StartTimer(ulong server)
         {
+            Console.WriteLine("Starting timer!");
             if(playTimers.ContainsKey(server))
                 ColorConsole.WriteLine("WARNING: Attempted to start timer that already existed!", ConsoleColor.Yellow);
             else
             {
-                playTimers[server] = new GameTimer
+                playTimers[server] = new Timer
                 {
                     Interval = 90000,
-                    Server = server,
-                    AutoReset = false,
-                    Disposed = false,
+                    AutoReset = false
                 };
                 playTimers[server].Elapsed += TimerOver;
                 playTimers[server].Start();
@@ -159,9 +156,15 @@ namespace UNObot.Modules
         }
         private async void TimerOver(Object source, ElapsedEventArgs e)
         {
+            Console.WriteLine("Timer over!");
             ulong serverID = 0;
-            GameTimer timer = (GameTimer) source;
-            serverID = timer.Server;
+            foreach(ulong server in playTimers.Keys)
+            {
+                Timer timer = (Timer)source;
+                if (timer.Equals(playTimers[server]))
+                    serverID = server;
+                timer.Dispose();
+            }
             if(serverID == 0)
             {
                 ColorConsole.WriteLine("ERROR: Couldn't figure out what server timer belonged to!", ConsoleColor.Yellow);
@@ -185,9 +188,10 @@ namespace UNObot.Modules
             else
                 await PlayCard.ReplyAsync($"It is now <@{queueHandler.GetCurrentPlayer(serverID)}> turn.\n");
         }
+
         public void DeleteTimer(ulong server)
         {
-            if(playTimers[server].Disposed)
+            if(playTimers[server] == null)
                 ColorConsole.WriteLine("[WARN] Attempted to dispose a timer that was already disposed!", ConsoleColor.Yellow);
             else
                 playTimers[server].Dispose();
