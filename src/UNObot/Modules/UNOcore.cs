@@ -127,8 +127,6 @@ namespace UNObot.Modules
 
         public void ResetTimer(ulong server)
         {
-            Console.WriteLine("Would be resetting timer...");
-            /*
             if(!playTimers.ContainsKey(server))
                 ColorConsole.WriteLine("ERROR: Attempted to reset timer that doesn't exist!", ConsoleColor.Red);
             else
@@ -136,7 +134,6 @@ namespace UNObot.Modules
                 playTimers[server].Stop();
                 playTimers[server].Start();
             }
-            */
         }
         public void StartTimer(ulong server)
         {
@@ -154,7 +151,7 @@ namespace UNObot.Modules
                 playTimers[server].Start();
             }
         }
-        private async void TimerOver(Object source, ElapsedEventArgs e)
+        async void TimerOver(Object source, ElapsedEventArgs e)
         {
             Console.WriteLine("Timer over!");
             ulong serverID = 0;
@@ -175,18 +172,18 @@ namespace UNObot.Modules
             Console.WriteLine("RemoveUser");
             await db.RemoveUser(currentPlayer);
             Console.WriteLine("SayPlayer");
-            await PlayCard.ReplyAsync($"<@{currentPlayer}>, you have been AFK removed.\n");
+            //await PlayCard.ReplyAsync($"<@{currentPlayer}>, you have been AFK removed.\n");
             await queueHandler.NextPlayer(serverID);
             ResetTimer(serverID);
             //reupdate
             if (await queueHandler.PlayerCount(serverID) == 0)
             {
                 await db.ResetGame(serverID);
-                await PlayCard.ReplyAsync("Game has been reset, due to nobody in-game.");
+                //await PlayCard.ReplyAsync("Game has been reset, due to nobody in-game.");
                 DeleteTimer(serverID);
             }
-            else
-                await PlayCard.ReplyAsync($"It is now <@{queueHandler.GetCurrentPlayer(serverID)}> turn.\n");
+            //else
+                //await PlayCard.ReplyAsync($"It is now <@{queueHandler.GetCurrentPlayer(serverID)}> turn.\n");
         }
 
         public void DeleteTimer(ulong server)

@@ -44,9 +44,11 @@ namespace UNObot.Modules
         {
             if(conn == null)
                 GetConnectionString();
-                        MySqlCommand Cmd = new MySqlCommand();
-            Cmd.Connection = conn;
-            Cmd.CommandText = "INSERT IGNORE INTO Games (server) VALUES(?)";
+            MySqlCommand Cmd = new MySqlCommand
+            {
+                Connection = conn,
+                CommandText = "INSERT IGNORE INTO Games (server) VALUES(?)"
+            };
             MySqlParameter p1 = new MySqlParameter
             {
                 Value = server
@@ -70,9 +72,11 @@ namespace UNObot.Modules
         {
             if(conn == null)
                 GetConnectionString();
-            MySqlCommand Cmd = new MySqlCommand();
-            Cmd.Connection = conn;
-            Cmd.CommandText = "UPDATE Games SET inGame = 0, currentCard = ?, order = 1, currentPlayer = 0, oneCardLeft = null WHERE server = ?";
+            MySqlCommand Cmd = new MySqlCommand
+            {
+                Connection = conn,
+                CommandText = "UPDATE Games SET inGame = 0, currentCard = ?, order = 1, currentPlayer = 0, oneCardLeft = null WHERE server = ?"
+            };
             AFKtimer afkTimer = new AFKtimer();
             afkTimer.DeleteTimer(server);
             MySqlParameter p1 = new MySqlParameter
@@ -104,11 +108,15 @@ namespace UNObot.Modules
             if (conn == null)
                 GetConnectionString();
             bool yesorno = false;
-            MySqlCommand Cmd = new MySqlCommand();
-            Cmd.Connection = conn;
-            Cmd.CommandText = "SELECT inGame FROM UNObot.Games WHERE server = ?";
-            MySqlParameter p1 = new MySqlParameter();
-            p1.Value = server;
+            MySqlCommand Cmd = new MySqlCommand
+            {
+                Connection = conn,
+                CommandText = "SELECT inGame FROM UNObot.Games WHERE server = ?"
+            };
+            MySqlParameter p1 = new MySqlParameter
+            {
+                Value = server
+            };
             Cmd.Parameters.Add(p1);
             await conn.OpenAsync();
             using (MySqlDataReader dr = (MySqlDataReader) await Cmd.ExecuteReaderAsync())
@@ -117,8 +125,7 @@ namespace UNObot.Modules
                 {
                     while (dr.Read())
                     {
-                        if (dr.GetByte(0) == 1)
-                            yesorno = true;
+                        yesorno |= dr.GetByte(0) == 1;
                         await dr.NextResultAsync();
                     }
                 }
@@ -137,9 +144,11 @@ namespace UNObot.Modules
         {
             if (conn == null)
                 GetConnectionString();
-            MySqlCommand Cmd = new MySqlCommand();
-            Cmd.Connection = conn;
-            Cmd.CommandText = "INSERT INTO Players (userid, username, inGame, cards, server) VALUES(?, ?, 1, ?, ?) ON DUPLICATE KEY UPDATE username = ?, inGame = 1, cards = ?, server = ?";
+            MySqlCommand Cmd = new MySqlCommand
+            {
+                Connection = conn,
+                CommandText = "INSERT INTO Players (userid, username, inGame, cards, server) VALUES(?, ?, 1, ?, ?) ON DUPLICATE KEY UPDATE username = ?, inGame = 1, cards = ?, server = ?"
+            };
             MySqlParameter p1 = new MySqlParameter
             {
                 Value = id
@@ -194,9 +203,11 @@ namespace UNObot.Modules
         {
             if (conn == null)
                 GetConnectionString();
-            MySqlCommand Cmd = new MySqlCommand();
-            Cmd.Connection = conn;
-            Cmd.CommandText = "INSERT INTO Players (userid, username) VALUES(?, ?) ON DUPLICATE KEY UPDATE username = ?";
+            MySqlCommand Cmd = new MySqlCommand
+            {
+                Connection = conn,
+                CommandText = "INSERT INTO Players (userid, username) VALUES(?, ?) ON DUPLICATE KEY UPDATE username = ?"
+            };
             MySqlParameter p1 = new MySqlParameter
             {
                 Value = id
@@ -281,18 +292,26 @@ namespace UNObot.Modules
             }
             if (conn == null)
                 GetConnectionString();
-            MySqlCommand Cmd = new MySqlCommand();
-            Cmd.Connection = conn;
-            Cmd.CommandText = "SET SQL_SAFE_UPDATES = 0; UPDATE UNObot.Players SET cards = ?, inGame = 0, gameName = null; UPDATE Games SET inGame = 0, currentCard = ?, oneCardLeft = 0, queue = ?; SET SQL_SAFE_UPDATES = 1;";
-            MySqlParameter p1 = new MySqlParameter();
+            MySqlCommand Cmd = new MySqlCommand
+            {
+                Connection = conn,
+                CommandText = "SET SQL_SAFE_UPDATES = 0; UPDATE UNObot.Players SET cards = ?, inGame = 0, gameName = null; UPDATE Games SET inGame = 0, currentCard = ?, oneCardLeft = 0, queue = ?; SET SQL_SAFE_UPDATES = 1;"
+            };
             JArray empty = new JArray();
-            p1.Value = empty.ToString();
+            MySqlParameter p1 = new MySqlParameter()
+            {
+                Value = empty.ToString()
+            };
             Cmd.Parameters.Add(p1);
-            MySqlParameter p2 = new MySqlParameter();
-            p2.Value = empty.ToString();
+            MySqlParameter p2 = new MySqlParameter
+            {
+                Value = empty.ToString()
+            };
             Cmd.Parameters.Add(p2);
-            MySqlParameter p3 = new MySqlParameter();
-            p3.Value = empty.ToString();
+            MySqlParameter p3 = new MySqlParameter
+            {
+                Value = empty.ToString()
+            };
             Cmd.Parameters.Add(p3);
             try
             {

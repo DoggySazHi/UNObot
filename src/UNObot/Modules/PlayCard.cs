@@ -1,16 +1,14 @@
 using System.Threading.Tasks;
 using System;
-using Discord;
-using Discord.Commands;
 using System.Collections.Generic;
 
 namespace UNObot.Modules
 {
-    class PlayCard : ModuleBase<SocketCommandContext>
+    class PlayCard
     {
         UNOdb db = new UNOdb();
         QueueHandler queueHandler = new QueueHandler();
-        public async Task Play(string color, string value, string wild, ulong player, ulong server)
+        public async Task<string> Play(string color, string value, string wild, ulong player, ulong server)
         {
             switch (color.ToLower())
             {
@@ -30,24 +28,27 @@ namespace UNObot.Modules
                     color = "Wild";
                     break;
                 default:
-                    await ReplyAsync($"<@{player}>, that's not a color.");
-                    return;
+                    return $"<@{player}>, that's not a color.";
             }
-            switch (value.ToLower())
+            if (!Int32.TryParse(value, out int output))
             {
-                case "reverse":
-                    value = "Reverse";
-                    break;
-                case "color":
-                    value = "Color";
-                    break;
-                case "+4":
-                    value = "+4";
-                    break;
-                default:
-                    await ReplyAsync($"<@{player}>, that's not a value.");
-                    return;
+                switch (value.ToLower())
+                {
+                    case "reverse":
+                        value = "Reverse";
+                        break;
+                    case "color":
+                        value = "Color";
+                        break;
+                    case "+4":
+                        value = "+4";
+                        break;
+                    default:
+                        return $"<@{player}>, that's not a value.";
+                }
             }
+            else
+                value = output.ToString();
             if(wild != null)
             {
                 switch(wild)
@@ -68,18 +69,10 @@ namespace UNObot.Modules
                         wild = "Wild";
                         break;
                     default:
-                        await ReplyAsync($"<@{player}>, that's not a color for your wild card!");
-                        return;
+                        return $"<@{player}>, that's not a color for your wild card!";
                 }
             }
             //Great, filtering active.
-            if(await db.GetUNOPlayer(server) != 0)
-            {
-                await ReplyAsync($"<@{await db.GetUNOPlayer(server)}> has forgotten to say UNO! They have been given 2 cards.");
-                await db.AddCard(await db.GetUNOPlayer(server), await UNOcore.RandomCard());
-                await db.AddCard(await db.GetUNOPlayer(server), await UNOcore.RandomCard());
-                await db.SetUNOPlayer(server, 0);
-            }
             Card playCard = new Card
             {
                 Color = color,
@@ -92,16 +85,22 @@ namespace UNObot.Modules
             }
             if(!existing)
             {
-                await ReplyAsync("You do not have this card!");
-                return;
+                return "You do not have this card!";
             }
             Card currentCard = await db.GetCurrentCard(server);
             if(!(playCard.Color == currentCard.Color || playCard.Value == currentCard.Value || playCard.Color == "Wild"))
             {
-                await ReplyAsync("This is illegal you know. Your card must match in color/value, or be a wild card.");
-                return;
+                return "This is illegal you know. Your card must match in color/value, or be a wild card.";
             }
-            await ReplyAsync($"<@{player}> has placed an {playCard.ToString()}.");
+            string Response = "";
+            Response += $"<@{player}> has placed an {playCard.ToString()}.\n";
+            if (await db.GetUNOPlayer(server) != 0)
+            {
+                Response += $"<@{await db.GetUNOPlayer(server)}> has forgotten to say UNO! They have been given 2 cards.";
+                await db.AddCard(await db.GetUNOPlayer(server), await UNOcore.RandomCard());
+                await db.AddCard(await db.GetUNOPlayer(server), await UNOcore.RandomCard());
+                await db.SetUNOPlayer(server, 0);
+            }
             await db.RemoveCard(player, playCard);
             await db.SetCurrentCard(server, playCard);
             //time to check if someone won or set uno player
@@ -109,8 +108,8 @@ namespace UNObot.Modules
             if(checkCards.Count == 0)
             {
                 //woah person won
-                await ReplyAsync($"<@{Context.User.Id}> has won!");
-                await db.UpdateStats(Context.User.Id, 3);
+                Response += $"<@{player}> has won!";
+                await db.UpdateStats(player, 3);
                 
                 string response = "";
                 foreach(ulong getplayer in await db.GetPlayers(server))
@@ -119,10 +118,10 @@ namespace UNObot.Modules
                     response += $"- <@{player}> had {loserlist.Count} cards left.\n";
                     await db.UpdateStats(player, 2);
                 }
-                await ReplyAsync(response);
+                Response += response;
                 await db.ResetGame(server);
-                await ReplyAsync("Game is over. You may rejoin now.");
-                return;
+                Response += "Game is over. You may rejoin now.";
+                return Response;
             } else if (checkCards.Count == 1)
                 await db.SetUNOPlayer(server, player);
             //keeps on going if nobody won
@@ -131,11 +130,11 @@ namespace UNObot.Modules
             {
                 if(playCard.Value == "+4")
                 {
-                    await ReplyAsync($"<@{await queueHandler.GetCurrentPlayer(server)}> has recieved four cards from the action.");
+                    Response += $"<@{await queueHandler.GetCurrentPlayer(server)}> has recieved four cards from the action.";
                     for(int i = 0; i < 4; i++)
                         await db.AddCard(await queueHandler.GetCurrentPlayer(server), await UNOcore.RandomCard());
                 }
-                await ReplyAsync($"Due to the wild card, the current card is now {wild}.");
+                Response += $"Due to the wild card, the current card is now {wild}.";
                 Card newCard = new Card
                 {
                     Color = wild,
@@ -143,26 +142,28 @@ namespace UNObot.Modules
                 };
                 await db.SetCurrentCard(server, newCard);
             }
-            if(playCard.Value == "+2")
-            {
-                await ReplyAsync($"<@{await queueHandler.GetCurrentPlayer(server)}> has recieved two cards from the action.");
-                await db.AddCard(await queueHandler.GetCurrentPlayer(server), await UNOcore.RandomCard());
-                await db.AddCard(await queueHandler.GetCurrentPlayer(server), await UNOcore.RandomCard());
-            } else if (playCard.Value == "Skip")
-            {
-                await ReplyAsync($"<@{await queueHandler.GetCurrentPlayer(server)}> has been skipped! Feelsbadm8.");
-                await queueHandler.NextPlayer(server);
-            } else if (playCard.Value == "Reverse")
-            {
-                await ReplyAsync("The order has been reversed!");
-                await queueHandler.ReversePlayers(server);
-                if(await queueHandler.PlayerCount(server) != 2)
-                    await queueHandler.NextPlayer(server);
-            }
-            await ReplyAsync($"It is now <@{queueHandler.GetCurrentPlayer(server)}>'s turn.");
-        }
 
-        public static async Task ReplyAsync(string reply)
-            => await ReplyAsync(reply);
+            switch (playCard.Value)
+            {
+                case "+2":
+                    Response += $"<@{await queueHandler.GetCurrentPlayer(server)}> has recieved two cards from the action.";
+                    await db.AddCard(await queueHandler.GetCurrentPlayer(server), await UNOcore.RandomCard());
+                    await db.AddCard(await queueHandler.GetCurrentPlayer(server), await UNOcore.RandomCard());
+                    break;
+                case "Skip":
+                    Response += $"<@{await queueHandler.GetCurrentPlayer(server)}> has been skipped!";
+                    await queueHandler.NextPlayer(server);
+                    break;
+                case "Reverse":
+                    Response += "The order has been reversed!";
+                    await queueHandler.ReversePlayers(server);
+                    if (await queueHandler.PlayerCount(server) != 2)
+                        await queueHandler.NextPlayer(server);
+                    break;
+            }
+
+            Response += $"It is now <@{queueHandler.GetCurrentPlayer(server)}>'s turn.";
+            return Response;
+        }
     }
 }
