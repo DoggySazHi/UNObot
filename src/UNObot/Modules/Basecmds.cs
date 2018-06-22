@@ -56,10 +56,7 @@ namespace UNObot.Modules
             await this.Context.Channel.DeleteMessagesAsync(messages);
             await ReplyAsync(response);
         }
-        [Command("upupdowndownleftrightleftrightbastart")]
         //Ignore unused variable, forces random input
-        public async Task OldEasterEgg(string asdf)
-            => await ReplyAsync("lol, that's outdated");
        [Command("upupdowndownleftrightleftrightbastart")]
         public async Task OldEasterEgg()
             => await ReplyAsync("lol, that's outdated");

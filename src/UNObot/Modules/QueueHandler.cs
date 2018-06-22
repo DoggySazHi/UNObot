@@ -51,7 +51,6 @@ namespace UNObot.Modules
             {
                 ColorConsole.WriteLine("Error: Couldn't read first player!", ConsoleColor.Red);
                 await db.ResetGame(server);
-                await PlayCard.ReplyAsync("In an attempt to save myself, I have ended the game. ERR_PLAYERLIST_TRYPEEKERR");
             }
             else if(player == result)
             {
