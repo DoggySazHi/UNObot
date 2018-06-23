@@ -73,7 +73,7 @@ namespace UNObot.Modules
             }
             if (note != null)
             {
-                await ReplyAsync($"NOTE: {db.GetNote(Context.User.Id)}");
+                await ReplyAsync($"NOTE: {note}");
             }
             await ReplyAsync($"{Context.User.Username}'s stats:\n"
                                 + $"Games joined: {stats[0]}\n"
@@ -95,12 +95,17 @@ namespace UNObot.Modules
                 return;
             }
             int[] stats = await db.GetStats(userid);
+            string note = await db.GetNote(userid);
+            if (note != null)
+            {
+                await ReplyAsync($"NOTE: {note}");
+            }
             await ReplyAsync($"<@{userid}>'s stats:\n"
                                 + $"Games joined: {stats[0]}\n"
                                 + $"Games fully played: {stats[1]}\n"
                                 + $"Games won: {stats[2]}");
         }
-        [Command("draw")]
+        [Command("draw"), Alias("take")]
         public async Task Draw()
         {
             await db.AddGame(Context.Guild.Id);
@@ -132,7 +137,7 @@ namespace UNObot.Modules
                 await ReplyAsync("You are not in any game!");
         }
 
-        [Command("deck")]
+        [Command("deck"), Alias("hand", "cards")]
         public async Task Deck()
         {
             await db.AddGame(Context.Guild.Id);
@@ -201,7 +206,7 @@ namespace UNObot.Modules
             else
                 await ReplyAsync("You are not in any game!");
         }
-        [Command("players")]
+        [Command("players"), Alias("users")]
         public async Task Players()
         {
             await db.AddGame(Context.Guild.Id);
