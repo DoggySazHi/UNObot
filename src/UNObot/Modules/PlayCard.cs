@@ -96,7 +96,7 @@ namespace UNObot.Modules
             Response += $"<@{player}> has placed an {playCard.ToString()}.\n";
             if (await db.GetUNOPlayer(server) != 0)
             {
-                Response += $"<@{await db.GetUNOPlayer(server)}> has forgotten to say UNO! They have been given 2 cards.";
+                Response += $"<@{await db.GetUNOPlayer(server)}> has forgotten to say UNO! They have been given 2 cards.\n";
                 await db.AddCard(await db.GetUNOPlayer(server), await UNOcore.RandomCard());
                 await db.AddCard(await db.GetUNOPlayer(server), await UNOcore.RandomCard());
                 await db.SetUNOPlayer(server, 0);
@@ -108,7 +108,7 @@ namespace UNObot.Modules
             if(checkCards.Count == 0)
             {
                 //woah person won
-                Response += $"<@{player}> has won!";
+                Response += $"<@{player}> has won!\n";
                 await db.UpdateStats(player, 3);
                 
                 string response = "";
@@ -130,11 +130,11 @@ namespace UNObot.Modules
             {
                 if(playCard.Value == "+4")
                 {
-                    Response += $"<@{await queueHandler.GetCurrentPlayer(server)}> has recieved four cards from the action.";
+                    Response += $"<@{await queueHandler.GetCurrentPlayer(server)}> has recieved four cards from the action.\n";
                     for(int i = 0; i < 4; i++)
                         await db.AddCard(await queueHandler.GetCurrentPlayer(server), await UNOcore.RandomCard());
                 }
-                Response += $"Due to the wild card, the current card is now {wild}.";
+                Response += $"Due to the wild card, the current card is now {wild}.\n";
                 Card newCard = new Card
                 {
                     Color = wild,
@@ -146,23 +146,23 @@ namespace UNObot.Modules
             switch (playCard.Value)
             {
                 case "+2":
-                    Response += $"<@{await queueHandler.GetCurrentPlayer(server)}> has recieved two cards from the action.";
+                    Response += $"<@{await queueHandler.GetCurrentPlayer(server)}> has recieved two cards from the action.\n";
                     await db.AddCard(await queueHandler.GetCurrentPlayer(server), await UNOcore.RandomCard());
                     await db.AddCard(await queueHandler.GetCurrentPlayer(server), await UNOcore.RandomCard());
                     break;
                 case "Skip":
-                    Response += $"<@{await queueHandler.GetCurrentPlayer(server)}> has been skipped!";
+                    Response += $"<@{await queueHandler.GetCurrentPlayer(server)}> has been skipped!\n";
                     await queueHandler.NextPlayer(server);
                     break;
                 case "Reverse":
-                    Response += "The order has been reversed!";
+                    Response += "The order has been reversed!\n";
                     await queueHandler.ReversePlayers(server);
                     if (await queueHandler.PlayerCount(server) != 2)
                         await queueHandler.NextPlayer(server);
                     break;
             }
 
-            Response += $"It is now <@{queueHandler.GetCurrentPlayer(server)}>'s turn.";
+            Response += $"It is now <@{await queueHandler.GetCurrentPlayer(server)}>'s turn.";
             return Response;
         }
     }
