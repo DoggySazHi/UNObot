@@ -2,6 +2,8 @@ using System;
 using System.Threading.Tasks;
 using System.Timers;
 using System.Collections.Generic;
+using Discord.WebSocket;
+
 namespace UNObot.Modules
 {
     public class Card
@@ -15,14 +17,10 @@ namespace UNObot.Modules
     }
     public static class UNOcore
     {
+        static UNOdb db = new UNOdb();
         public static Random r = new Random();
 
-        public async static Task<Card> RandomCard()
-        {
-            Card card = await Task.Run(() => RandomCardSync());
-            return card;
-        }
-        public static Card RandomCardSync()
+        public static Card RandomCard()
         {
             Card card = new Card();
             object lockObject = new object();
@@ -85,7 +83,7 @@ namespace UNObot.Modules
             return card;
         }
     }
-    public class ColorConsole
+    public static class ColorConsole
     {
         public static void WriteLine(string Text, string Color)
         {
@@ -119,7 +117,7 @@ namespace UNObot.Modules
     }
     public class AFKtimer
     {
-        public Dictionary<ulong,Timer> playTimers = new Dictionary<ulong,Timer>();
+        public static Dictionary<ulong,Timer> playTimers = new Dictionary<ulong,Timer>();
 
         UNOdb db = new UNOdb();
 
@@ -160,38 +158,44 @@ namespace UNObot.Modules
                 Timer timer = (Timer)source;
                 if (timer.Equals(playTimers[server]))
                     serverID = server;
-                timer.Dispose();
             }
             if(serverID == 0)
             {
                 ColorConsole.WriteLine("ERROR: Couldn't figure out what server timer belonged to!", ConsoleColor.Yellow);
                 return;
             }
-            Console.WriteLine("CurrPlayer");
             ulong currentPlayer = await queueHandler.GetCurrentPlayer(serverID);
-            Console.WriteLine("RemoveUser");
             await db.RemoveUser(currentPlayer);
+            await queueHandler.RemovePlayer(currentPlayer, serverID);
             Console.WriteLine("SayPlayer");
-            //await PlayCard.ReplyAsync($"<@{currentPlayer}>, you have been AFK removed.\n");
-            await queueHandler.NextPlayer(serverID);
-            ResetTimer(serverID);
-            //reupdate
-            if (await queueHandler.PlayerCount(serverID) == 0)
+            await Program.SendMessage($"<@{currentPlayer}>, you have been AFK removed.\n", serverID);
+            await Program.SendPM("You have been AFK removed.", currentPlayer);
+            if (await queueHandler.PlayerCount(serverID) == 1)
             {
                 await db.ResetGame(serverID);
-                //await PlayCard.ReplyAsync("Game has been reset, due to nobody in-game.");
+                await Program.SendMessage("Game has been reset, due to nobody in-game.", serverID);
                 DeleteTimer(serverID);
+                return;
             }
+            Console.WriteLine("NextPlayer");
+            await queueHandler.NextPlayer(serverID);
+            Console.WriteLine("ResetPlayer");
+            ResetTimer(serverID);
+            //reupdate
+
             //else
-                //await PlayCard.ReplyAsync($"It is now <@{queueHandler.GetCurrentPlayer(serverID)}> turn.\n");
+            await Program.SendMessage($"It is now <@{queueHandler.GetCurrentPlayer(serverID)}> turn.\n", serverID);
         }
 
         public void DeleteTimer(ulong server)
         {
-            if(playTimers[server] == null)
-                ColorConsole.WriteLine("[WARN] Attempted to dispose a timer that was already disposed!", ConsoleColor.Yellow);
-            else
-                playTimers[server].Dispose();
+            if (playTimers.ContainsKey(server))
+            {
+                if (playTimers[server] == null)
+                    ColorConsole.WriteLine("[WARN] Attempted to dispose a timer that was already disposed!", ConsoleColor.Yellow);
+                else
+                    playTimers[server].Dispose();
+            }
             playTimers.Remove(server);
         }
     }

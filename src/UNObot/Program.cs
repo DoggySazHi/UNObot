@@ -12,7 +12,7 @@ namespace UNObot
 {
     class Program
     {
-        UNObot.Modules.UNOdb db = new UNObot.Modules.UNOdb();
+        static Modules.UNOdb db = new Modules.UNOdb();
         public static string version = "Unknown Version";
         /*
         public static int currentPlayer;
@@ -25,7 +25,7 @@ namespace UNObot
         static void Main()
             => new Program().MainAsync().GetAwaiter().GetResult();
 
-        DiscordSocketClient _client;
+        public static DiscordSocketClient _client;
         IConfiguration _config;
 
         public async Task MainAsync()
@@ -67,5 +67,17 @@ namespace UNObot
                 .Build();
         }
 
+        public static async Task SendMessage(string text, ulong server)
+        {
+            ulong channel = 0;
+            channel = _client.GetGuild(server).DefaultChannel.Id;
+            Console.WriteLine($"Channel: {channel}");
+            if(await db.HasDefaultChannel(server))
+                channel = await db.GetDefaultChannel(server);
+            Console.WriteLine($"Channel: {channel}");
+            await _client.GetGuild(server).GetTextChannel(channel).SendMessageAsync(text);
+        }
+        public static async Task SendPM(string text, ulong user)
+            => await UserExtensions.SendMessageAsync(_client.GetUser(user), text);
     }
 }

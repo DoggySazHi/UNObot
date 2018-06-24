@@ -51,9 +51,15 @@ namespace UNObot.Modules
         [Command("doggyisthebest")]
         public async Task Easteregg2(string response)
         {
-            var messages = await this.Context.Channel.GetMessagesAsync(1).Flatten();
+            var messages = await Context.Channel.GetMessagesAsync(1).FlattenAsync();
 
-            await this.Context.Channel.DeleteMessagesAsync(messages);
+            ITextChannel textchannel = Context.Channel as ITextChannel;
+            if(textchannel == null)
+            {
+                Console.WriteLine("error cast");
+                return;
+            }
+            await textchannel.DeleteMessagesAsync(messages);
             await ReplyAsync(response);
         }
         //Ignore unused variable, forces random input
