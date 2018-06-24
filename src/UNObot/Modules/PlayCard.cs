@@ -97,8 +97,8 @@ namespace UNObot.Modules
             if (await db.GetUNOPlayer(server) != 0)
             {
                 Response += $"<@{await db.GetUNOPlayer(server)}> has forgotten to say UNO! They have been given 2 cards.\n";
-                await db.AddCard(await db.GetUNOPlayer(server), await UNOcore.RandomCard());
-                await db.AddCard(await db.GetUNOPlayer(server), await UNOcore.RandomCard());
+                await db.AddCard(await db.GetUNOPlayer(server), UNOcore.RandomCard());
+                await db.AddCard(await db.GetUNOPlayer(server), UNOcore.RandomCard());
                 await db.SetUNOPlayer(server, 0);
             }
             await db.RemoveCard(player, playCard);
@@ -132,7 +132,7 @@ namespace UNObot.Modules
                 {
                     Response += $"<@{await queueHandler.GetCurrentPlayer(server)}> has recieved four cards from the action.\n";
                     for(int i = 0; i < 4; i++)
-                        await db.AddCard(await queueHandler.GetCurrentPlayer(server), await UNOcore.RandomCard());
+                        await db.AddCard(await queueHandler.GetCurrentPlayer(server), UNOcore.RandomCard());
                 }
                 Response += $"Due to the wild card, the current card is now {wild}.\n";
                 Card newCard = new Card
@@ -147,8 +147,8 @@ namespace UNObot.Modules
             {
                 case "+2":
                     Response += $"<@{await queueHandler.GetCurrentPlayer(server)}> has recieved two cards from the action.\n";
-                    await db.AddCard(await queueHandler.GetCurrentPlayer(server), await UNOcore.RandomCard());
-                    await db.AddCard(await queueHandler.GetCurrentPlayer(server), await UNOcore.RandomCard());
+                    await db.AddCard(await queueHandler.GetCurrentPlayer(server), UNOcore.RandomCard());
+                    await db.AddCard(await queueHandler.GetCurrentPlayer(server), UNOcore.RandomCard());
                     break;
                 case "Skip":
                     Response += $"<@{await queueHandler.GetCurrentPlayer(server)}> has been skipped!\n";
