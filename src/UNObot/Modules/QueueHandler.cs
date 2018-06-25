@@ -55,13 +55,16 @@ namespace UNObot.Modules
             else if(player == result)
             {
                 ColorConsole.WriteLine("EMPTY", ConsoleColor.Yellow);
+                players.Dequeue();
             }
             else
             {
-                foreach(ulong playerLoop in players)
+                for (int i = 0; i < players.Count; i++)
                 {
-                    if(playerLoop == players.Peek())
+                    Console.WriteLine("trypee" + players.Peek());
+                    if(player == players.Peek())
                     {
+                        Console.WriteLine("RemovedPlayer");
                         players.Dequeue();
                         break;
                     }
@@ -69,6 +72,12 @@ namespace UNObot.Modules
                     players.Enqueue(sendToBack);
                 }
             }
+            await db.SetPlayers(server, players);
+        }
+        public async Task DropFrontPlayer(ulong server)
+        {
+            Queue<ulong> players = await db.GetPlayers(server);
+            players.Dequeue();
             await db.SetPlayers(server, players);
         }
     }

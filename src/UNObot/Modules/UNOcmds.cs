@@ -53,7 +53,7 @@ namespace UNObot.Modules
                 await ReplyAsync($"{Context.User.Username}, you are already out of game! Note that you must run this command in the server you are playing in.\n");
                 return;
             }
-            if (await db.IsServerInGame(Context.Guild.Id) && (await queueHandler.PlayerCount(Context.Guild.Id) == 1))
+            if (await db.IsServerInGame(Context.Guild.Id) && (await queueHandler.PlayerCount(Context.Guild.Id) == 0))
             {
                 await db.ResetGame(Context.Guild.Id);
                 await ReplyAsync($"Due to {Context.User.Username}'s departure, the game has been reset.");
@@ -250,22 +250,17 @@ namespace UNObot.Modules
                 {
                     if (await db.IsServerInGame(Context.Guild.Id))
                     {
-                        if (await queueHandler.GetCurrentPlayer(Context.Guild.Id) == Context.User.Id)
+                        if (await db.GetUNOPlayer(Context.Guild.Id) == Context.User.Id)
                         {
-                            if (await db.GetUNOPlayer(Context.Guild.Id) == Context.User.Id)
-                            {
-                                await ReplyAsync("Great, you have one card left! Everyone still has a chance however, so keep going!");
-                                await db.SetUNOPlayer(Context.Guild.Id, 0);
-                            }
-                            else
-                            {
-                                await ReplyAsync("Uh oh, you still have more than one card! Two cards have been added to your hand.");
-                                await db.AddCard(Context.User.Id, UNOcore.RandomCard());
-                                await db.AddCard(Context.User.Id, UNOcore.RandomCard());
-                            }
+                            await ReplyAsync("Great, you have one card left! Everyone still has a chance however, so keep going!");
+                            await db.SetUNOPlayer(Context.Guild.Id, 0);
                         }
                         else
-                            await ReplyAsync("Just saved you two cards, it's not your turn!");
+                        {
+                            await ReplyAsync("Uh oh, you still have more than one card! Two cards have been added to your hand.");
+                            await db.AddCard(Context.User.Id, UNOcore.RandomCard());
+                            await db.AddCard(Context.User.Id, UNOcore.RandomCard());
+                        }
                     }
                     else
                         await ReplyAsync("The game has not started!");
