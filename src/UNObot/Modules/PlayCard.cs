@@ -30,7 +30,7 @@ namespace UNObot.Modules
                 default:
                     return $"<@{player}>, that's not a color.";
             }
-            if (!Int32.TryParse(value, out int output))
+            if (!Int32.TryParse(value, out int output) || value == "+4")
             {
                 switch (value.ToLower())
                 {
@@ -51,7 +51,7 @@ namespace UNObot.Modules
                 value = output.ToString();
             if(wild != null)
             {
-                switch(wild)
+                switch(wild.ToLower())
                 {
                     case "red":
                         wild = "Red";
@@ -115,8 +115,9 @@ namespace UNObot.Modules
                 foreach(ulong getplayer in await db.GetPlayers(server))
                 {
                     List<Card> loserlist = await db.GetCards(getplayer);
-                    response += $"- <@{player}> had {loserlist.Count} cards left.\n";
-                    await db.UpdateStats(player, 2);
+                    response += $"- <@{getplayer}> had {loserlist.Count} cards left.\n";
+                    await db.UpdateStats(getplayer, 2);
+                    await db.RemoveUser(getplayer);
                 }
                 Response += response;
                 await db.ResetGame(server);

@@ -6,6 +6,25 @@ using Discord.WebSocket;
 
 namespace UNObot.Modules
 {
+    public class Command
+    {
+        public string CommandName;
+        public string[] Aliases;
+        public string Help;
+
+        public Command(string CommandName, string Help)
+        {
+            this.CommandName = CommandName;
+            this.Help = Help;
+        }
+        public Command(string CommandName, string[] Aliases, string Help)
+        {
+            this.CommandName = CommandName;
+            this.Aliases = Aliases;
+            this.Help = Help;
+        }
+    }
+
     public class Card
     {
         public string Color;
@@ -166,25 +185,19 @@ namespace UNObot.Modules
             }
             ulong currentPlayer = await queueHandler.GetCurrentPlayer(serverID);
             await db.RemoveUser(currentPlayer);
-            await queueHandler.RemovePlayer(currentPlayer, serverID);
+            await queueHandler.DropFrontPlayer(serverID);
             Console.WriteLine("SayPlayer");
             await Program.SendMessage($"<@{currentPlayer}>, you have been AFK removed.\n", serverID);
             await Program.SendPM("You have been AFK removed.", currentPlayer);
-            if (await queueHandler.PlayerCount(serverID) == 1)
+            if (await queueHandler.PlayerCount(serverID) == 0)
             {
                 await db.ResetGame(serverID);
                 await Program.SendMessage("Game has been reset, due to nobody in-game.", serverID);
                 DeleteTimer(serverID);
                 return;
             }
-            Console.WriteLine("NextPlayer");
-            await queueHandler.NextPlayer(serverID);
-            Console.WriteLine("ResetPlayer");
             ResetTimer(serverID);
-            //reupdate
-
-            //else
-            await Program.SendMessage($"It is now <@{queueHandler.GetCurrentPlayer(serverID)}> turn.\n", serverID);
+            await Program.SendMessage($"It is now <@{await queueHandler.GetCurrentPlayer(serverID)}> turn.\n", serverID);
         }
 
         public void DeleteTimer(ulong server)
