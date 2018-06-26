@@ -1104,6 +1104,69 @@ namespace UNObot.Modules
                 await conn.CloseAsync();
             }
         }
+        public async Task<char> GetPrefix(ulong server)
+        {
+            if (conn == null)
+                GetConnectionString();
+
+            char prefix = '!';
+            MySqlCommand Cmd = new MySqlCommand();
+            Cmd.Connection = conn;
+            Cmd.CommandText = "SELECT commandPrefix FROM Games WHERE server = ?";
+
+            MySqlParameter p1 = new MySqlParameter();
+            p1.Value = server;
+            Cmd.Parameters.Add(p1);
+            using (MySqlDataReader dr = (MySqlDataReader)await Cmd.ExecuteReaderAsync())
+            {
+                try
+                {
+                    while (dr.Read())
+                    {
+                        prefix = dr.GetChar(0);
+                    }
+                }
+                catch (MySqlException ex)
+                {
+                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                }
+                finally
+                {
+                    await conn.CloseAsync();
+                }
+            }
+            return prefix;
+        }
+        public async Task SetPrefix(ulong server, char prefix)
+        {
+            if (conn == null)
+                GetConnectionString();
+
+            MySqlCommand Cmd = new MySqlCommand();
+            Cmd.Connection = conn;
+            Cmd.CommandText = "UPDATE Games SET commandPrefix = ? WHERE server = ?";
+
+            MySqlParameter p1 = new MySqlParameter();
+            p1.Value = prefix;
+            Cmd.Parameters.Add(p1);
+
+            MySqlParameter p2 = new MySqlParameter();
+            p2.Value = server;
+            Cmd.Parameters.Add(p2);
+            try
+            {
+                await conn.OpenAsync();
+                await Cmd.ExecuteNonQueryAsync();
+            }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            finally
+            {
+                await conn.CloseAsync();
+            }
+        }
         public async Task<bool> RemoveCard(ulong player, Card card)
         {
             bool foundCard = false;

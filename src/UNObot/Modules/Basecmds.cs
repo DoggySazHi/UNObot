@@ -53,8 +53,7 @@ namespace UNObot.Modules
         {
             var messages = await Context.Channel.GetMessagesAsync(1).FlattenAsync();
 
-            ITextChannel textchannel = Context.Channel as ITextChannel;
-            if(textchannel == null)
+            if (!(Context.Channel is ITextChannel textchannel))
             {
                 Console.WriteLine("error cast");
                 return;
@@ -117,12 +116,17 @@ namespace UNObot.Modules
         {
             string Response = "";
             int index = Program.commands.FindIndex(o => o.CommandName == cmdSearch);
-            if(index < 0)
+            int index2 = Program.commands.FindIndex(o => o.Aliases.Contains(cmdSearch) == true);
+            Command cmd;
+            if(index >= 0)
+                cmd = Program.commands[index];
+            else if(index2 >= 0)
+                cmd = Program.commands[index2];
+            else
             {
                 await ReplyAsync("Command was not found in the help list.");
                 return;
             }
-            Command cmd = Program.commands[index];
             if(!cmd.Active)
                 Response += "Note: This command might be hidden or depricated.\n";
             Response += $"- {cmd.CommandName}: {cmd.Help}\n";
