@@ -54,20 +54,24 @@ namespace UNObot.Modules
             }
             else if(player == result)
             {
-                ColorConsole.WriteLine("EMPTY", ConsoleColor.Yellow);
                 players.Dequeue();
             }
             else
             {
+                ulong oldplayer = players.Peek();
                 for (int i = 0; i < players.Count; i++)
                 {
-                    Console.WriteLine("trypee" + players.Peek());
                     if(player == players.Peek())
                     {
                         Console.WriteLine("RemovedPlayer");
                         players.Dequeue();
                         break;
                     }
+                    ulong sendToBack = players.Dequeue();
+                    players.Enqueue(sendToBack);
+                }
+                while(oldplayer != players.Peek())
+                {
                     ulong sendToBack = players.Dequeue();
                     players.Enqueue(sendToBack);
                 }

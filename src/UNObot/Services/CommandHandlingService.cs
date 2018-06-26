@@ -9,6 +9,7 @@ namespace DiscordBot.Services
 {
     public class CommandHandlingService
     {
+        UNObot.Modules.UNOdb db = new UNObot.Modules.UNOdb();
         private readonly DiscordSocketClient _discord;
         private readonly CommandService _commands;
         private IServiceProvider _provider;

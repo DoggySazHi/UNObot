@@ -19,10 +19,6 @@ namespace DiscordBot.Modules
                 return;
             }
             await textchannel.DeleteMessagesAsync(messages);
-            const int delay = 5000;
-            var m = await ReplyAsync($"Purge completed. _This message will be deleted in {delay / 1000} seconds._");
-            await Task.Delay(delay);
-            await m.DeleteAsync();
         }
         [Command("exit")]
         public async Task Exit()
