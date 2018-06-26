@@ -6,6 +6,10 @@
     <ApplicationIcon>uno.ico</ApplicationIcon>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <LangVersion>7.1</LangVersion>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <Optimize>true</Optimize>
   </PropertyGroup>

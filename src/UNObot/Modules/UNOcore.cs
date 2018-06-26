@@ -3,25 +3,54 @@ using System.Threading.Tasks;
 using System.Timers;
 using System.Collections.Generic;
 using Discord.WebSocket;
+using Newtonsoft.Json;
 
 namespace UNObot.Modules
 {
     public class Command
     {
-        public string CommandName;
-        public string[] Aliases;
-        public string Help;
-
+        public string CommandName { get; set; }
+        public List<string> Usages { get; set; }
+        public List<string> Aliases { get; set; }
+        public string Help { get; set; }
+        public bool Active { get; set; }
+        public string Version { get; set; }
+        
+        [Obsolete("Added for compatability. Avoid usage.")]
         public Command(string CommandName, string Help)
         {
             this.CommandName = CommandName;
             this.Help = Help;
+            Active = true;
+            Version = "UNObot 1.0";
         }
-        public Command(string CommandName, string[] Aliases, string Help)
+        [Obsolete("Added for compatability. Avoid usage.")]
+        public Command(string CommandName, List<string> Aliases, string Help)
         {
             this.CommandName = CommandName;
             this.Aliases = Aliases;
             this.Help = Help;
+            Active = true;
+            Version = "UNObot 1.0";
+        }
+        [Obsolete("Added for compatability. Avoid usage.")]
+        public Command(string CommandName, List<string> Aliases, string Help, string Version)
+        {
+            this.CommandName = CommandName;
+            this.Aliases = Aliases;
+            this.Help = Help;
+            Active = true;
+            Version = "UNObot 1.0";
+        }
+        [JsonConstructor]
+        public Command(string CommandName, List<string> Aliases, List<string> Usages, string Help, bool Active, string Version)
+        {
+            this.CommandName = CommandName;
+            this.Aliases = Aliases;
+            this.Usages = Usages;
+            this.Help = Help;
+            this.Active = Active;
+            this.Version = Version;
         }
     }
 

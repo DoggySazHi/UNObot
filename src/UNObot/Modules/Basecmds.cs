@@ -66,11 +66,25 @@ namespace UNObot.Modules
        [Command("upupdowndownleftrightleftrightbastart")]
         public async Task OldEasterEgg()
             => await ReplyAsync("lol, that's outdated");
-        [Command("help")]
+        [Command("help"), Alias("ahh", "ahhh", "ahhhh")]
         public async Task Help()
         {
             await ReplyAsync("Help has been sent. Or, I think it has.");
-            await UserExtensions.SendMessageAsync(Context.Message.Author, "Commands: @UNOBot#4308 (Required) {Required in certain conditions} [Optional] " +
+            string Response = "Commands: @UNOBot#4308 command/ !command\n (Required) {May be required} [Optional]\n";
+            foreach(Command cmd in Program.commands)
+            {
+                if(cmd.Active)
+                {
+                    Response += $"- {cmd.CommandName}: {cmd.Help}\n";
+                    if(cmd.Usages.Count > 0)
+                        Response += $"Usage(s): {string.Join(", ", cmd.Usages.ToArray())}\n";
+                    //Response += $"Introduced in {cmd.Version}. ";
+                    if(cmd.Aliases.Count > 0)
+                        Response += $"Aliases: {string.Join(", ", cmd.Aliases.ToArray())}\n";
+                }
+            }
+            await UserExtensions.SendMessageAsync(Context.Message.Author, Response);
+            /*await UserExtensions.SendMessageAsync(Context.Message.Author, "Commands: @UNOBot#4308 (Required) {Required in certain conditions} [Optional] " +
                                "- Join\n" +
                                "Join the queue.\n" +
                                "- Leave" +
@@ -96,9 +110,30 @@ namespace UNObot.Modules
                               "See if you or somebody else is a pro or a noob at UNO. It's probably the former.\n" +
                               "- Info\n" +
                               "See the current version and other stuff about UNObot.");
+                              */
         }
-
-        [Command("credits")]
+        [Command("help")]
+        public async Task Help(string cmdSearch)
+        {
+            string Response = "";
+            int index = Program.commands.FindIndex(o => o.CommandName == cmdSearch);
+            if(index < 0)
+            {
+                await ReplyAsync("Command was not found in the help list.");
+                return;
+            }
+            Command cmd = Program.commands[index];
+            if(!cmd.Active)
+                Response += "Note: This command might be hidden or depricated.\n";
+            Response += $"- {cmd.CommandName}: {cmd.Help}\n";
+            if(cmd.Usages.Count > 0)
+                Response += $"Usage(s): {string.Join(",", cmd.Usages.ToArray())}\n";
+            Response += $"Introduced in {cmd.Version}. ";
+            if(cmd.Aliases.Count > 0)
+                Response += $"Aliases: {string.Join(",", cmd.Aliases.ToArray())}\n";
+            await ReplyAsync(Response);
+        }
+        [Command("credits"), Alias("asdf")]
         public async Task Credits()
         {
             await ReplyAsync("UNObot: Programmed by DoggySazHi\n" +

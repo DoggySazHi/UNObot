@@ -24,25 +24,16 @@ namespace DiscordBot.Modules
             await Task.Delay(delay);
             await m.DeleteAsync();
         }
-        [Command("pfpsteal")]
-        public Task Pfpsteal(string user)
+        [Command("exit")]
+        public async Task Exit()
         {
-            user = user.Trim(new Char[] { ' ', '<', '>', '!', '@' });
-            if (!UInt64.TryParse(user, out ulong userid))
-                return ReplyAsync("Mention the player with this command to see their stats.");
-            Discord.WebSocket.DiscordSocketClient discordSocketClient = new Discord.WebSocket.DiscordSocketClient();
-            Discord.WebSocket.SocketUser newuser = discordSocketClient.GetUser(userid);
-            if (newuser == null)
-                return ReplyAsync($"The user does not exist; did you type it wrong?");
-            else
-                return ReplyAsync($"<@{userid}>'s Profile Picture Link: {newuser.GetAvatarUrl()}");
-        }
-        [Command("exit"),RequireUserPermission(GuildPermission.Administrator)]
-        public Task Exit()
-        {
-            ReplyAsync("Sorry to be a hassle. Goodbye world!");
+            if(Context.User.Id != 191397590946807809)
+            {
+                await ReplyAsync("You can only exit if you're DoggySazHi.");
+                return;
+            }
+            await ReplyAsync("Sorry to be a hassle. Goodbye world!");
             Environment.Exit(0);
-            return null;
         }
     }
 }
