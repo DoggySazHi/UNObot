@@ -301,7 +301,7 @@ namespace UNObot.Modules
             MySqlCommand Cmd = new MySqlCommand
             {
                 Connection = conn,
-                CommandText = "SET SQL_SAFE_UPDATES = 0; UPDATE UNObot.Players SET cards = ?, inGame = 0, gameName = null; UPDATE Games SET inGame = 0, currentCard = ?, `order` = 1, oneCardLeft = 0, queue = ?; SET SQL_SAFE_UPDATES = 1;"
+                CommandText = "SET SQL_SAFE_UPDATES = 0; UPDATE UNObot.Players SET cards = ?, inGame = 0, server = null, gameName = null; UPDATE Games SET inGame = 0, currentCard = ?, `order` = 1, oneCardLeft = 0, queue = ?; SET SQL_SAFE_UPDATES = 1;"
             };
             JArray empty = new JArray();
             MySqlParameter p1 = new MySqlParameter()

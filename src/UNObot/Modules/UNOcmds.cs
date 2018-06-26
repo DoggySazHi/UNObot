@@ -187,7 +187,7 @@ namespace UNObot.Modules
             else
                 await ReplyAsync("You are not in any game!");
         */
-        [Command("card")]
+        [Command("card"), Alias("top")]
         public async Task Card()
         {
             await db.AddGame(Context.Guild.Id);
@@ -304,7 +304,7 @@ namespace UNObot.Modules
             else
                 await ReplyAsync("You have not joined a game!");
         }
-        [Command("play"), Priority(2)]
+        [Command("play"), Priority(2), Alias("put", "place")]
         public async Task Play(string color, string value)
         {
             if (await db.IsPlayerInGame(Context.User.Id))
@@ -337,7 +337,7 @@ namespace UNObot.Modules
             else
                 await ReplyAsync("You are not in any game!");
         }
-        [Command("play"), Priority(1)]
+        [Command("play"), Priority(1), Alias("put", "place")]
         public async Task PlayWild(string color, string value, string wild)
         {
             if (await db.IsPlayerInGame(Context.User.Id))

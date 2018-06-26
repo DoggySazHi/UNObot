@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -7,6 +8,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using DiscordBot.Services;
+using Newtonsoft.Json;
 
 namespace UNObot
 {
@@ -14,6 +16,7 @@ namespace UNObot
     {
         static Modules.UNOdb db = new Modules.UNOdb();
         public static string version = "Unknown Version";
+        public static List<Modules.Command> commands = new List<Modules.Command>();
         /*
         public static int currentPlayer;
         //1: Clockwise 2: Counter-Clockwise
@@ -40,6 +43,7 @@ namespace UNObot
             await _client.LoginAsync(TokenType.Bot, _config["token"]);
             await _client.StartAsync();
             await db.CleanAll();
+            await LoadHelp();
             await Task.Delay(-1);
         }
 
@@ -67,6 +71,27 @@ namespace UNObot
                 .Build();
         }
 
+        static async Task LoadHelp()
+        {
+            if(File.Exists("help.json"))
+            {
+                Console.WriteLine("Loading help.json into memory...");
+
+                using (StreamReader r = new StreamReader("help.json"))
+                {
+                    string json = await r.ReadToEndAsync();
+                    commands = JsonConvert.DeserializeObject<List<Modules.Command>>(json);
+                }
+                Console.WriteLine($"Loaded {commands.Count} commands!");
+            }
+            else
+            {
+                Console.WriteLine("WARNING: help.json didn't exist! Creating help.json...");
+                using (StreamWriter sw = File.CreateText("help.json"))
+                    await sw.WriteLineAsync("[]");
+                Console.WriteLine("File created! Please generate your own via the help tool.");
+            }
+        }
         public static async Task SendMessage(string text, ulong server)
         {
             ulong channel = 0;

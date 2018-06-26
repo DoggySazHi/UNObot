@@ -30,7 +30,7 @@ namespace UNObot.Modules
                 default:
                     return $"<@{player}>, that's not a color.";
             }
-            if (!Int32.TryParse(value, out int output) || value == "+4")
+            if (!Int32.TryParse(value, out int output) || value == "+4" || value == "+2")
             {
                 switch (value.ToLower())
                 {
@@ -42,6 +42,9 @@ namespace UNObot.Modules
                         break;
                     case "+4":
                         value = "+4";
+                        break;
+                    case "+2":
+                        value = "+2";
                         break;
                     default:
                         return $"<@{player}>, that's not a value.";
