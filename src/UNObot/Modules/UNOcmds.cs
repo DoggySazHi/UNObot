@@ -62,7 +62,6 @@ namespace UNObot.Modules
             await ReplyAsync($"{Context.User.Username} has been removed from the queue.\n");
             if (await queueHandler.PlayerCount(Context.Guild.Id) > 1 && await db.IsServerInGame(Context.Guild.Id))
             {
-                await queueHandler.NextPlayer(Context.Guild.Id);
                 await ReplyAsync($"It is now <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
             }
         }
