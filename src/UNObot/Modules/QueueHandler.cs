@@ -70,10 +70,12 @@ namespace UNObot.Modules
                     ulong sendToBack = players.Dequeue();
                     players.Enqueue(sendToBack);
                 }
-                while(oldplayer != players.Peek())
+                while(true)
                 {
                     ulong sendToBack = players.Dequeue();
                     players.Enqueue(sendToBack);
+                    if (oldplayer == players.Peek())
+                        break;
                 }
             }
             await db.SetPlayers(server, players);
