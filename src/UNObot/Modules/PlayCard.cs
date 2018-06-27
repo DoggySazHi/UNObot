@@ -37,6 +37,9 @@ namespace UNObot.Modules
                     case "reverse":
                         value = "Reverse";
                         break;
+                    case "skip":
+                        value = "Skip";
+                        break;
                     case "color":
                         value = "Color";
                         break;

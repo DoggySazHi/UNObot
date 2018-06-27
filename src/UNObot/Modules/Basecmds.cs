@@ -62,7 +62,7 @@ namespace UNObot.Modules
             await ReplyAsync(response);
         }
         //Ignore unused variable, forces random input
-       [Command("upupdowndownleftrightleftrightbastart")]
+        [Command("upupdowndownleftrightleftrightbastart")]
         public async Task OldEasterEgg()
             => await ReplyAsync("lol, that's outdated");
         [Command("help"), Alias("ahh", "ahhh", "ahhhh")]
@@ -131,10 +131,10 @@ namespace UNObot.Modules
                 Response += "Note: This command might be hidden or depricated.\n";
             Response += $"- {cmd.CommandName}: {cmd.Help}\n";
             if(cmd.Usages.Count > 0)
-                Response += $"Usage(s): {string.Join(",", cmd.Usages.ToArray())}\n";
+                Response += $"Usage(s): {string.Join(", ", cmd.Usages.ToArray())}\n";
             Response += $"Introduced in {cmd.Version}. ";
             if(cmd.Aliases.Count > 0)
-                Response += $"Aliases: {string.Join(",", cmd.Aliases.ToArray())}\n";
+                Response += $"Aliases: {string.Join(", ", cmd.Aliases.ToArray())}\n";
             await ReplyAsync(Response);
         }
         [Command("credits"), Alias("asdf")]
