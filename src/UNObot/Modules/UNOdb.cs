@@ -388,8 +388,6 @@ namespace UNObot.Modules
                 {
                     while (dr.Read())
                     {
-                        Console.WriteLine(server);
-                        Console.WriteLine(dr.GetString(0));
                         players = JsonConvert.DeserializeObject<Queue<ulong>>(dr.GetString(0));
                         await dr.NextResultAsync();
                     }
@@ -502,7 +500,6 @@ namespace UNObot.Modules
                 {
                     await conn.CloseAsync();
                 }
-                Console.WriteLine(players.Count);
                 return players;
             }
         }
@@ -924,7 +921,6 @@ namespace UNObot.Modules
             if(players.Count == 0)
                 ColorConsole.WriteLine("[WARN] Why is the list empty whem I'm getting players?", ConsoleColor.Yellow);
             string json = JsonConvert.SerializeObject(players);
-            Console.WriteLine(json);
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
             Cmd.CommandText = "UPDATE UNObot.Games SET queue = ? WHERE server = ? AND inGame = 1";

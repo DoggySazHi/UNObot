@@ -69,7 +69,7 @@ namespace UNObot.Modules
         public async Task Help()
         {
             await ReplyAsync("Help has been sent. Or, I think it has.");
-            string Response = "Commands: @UNOBot#4308 command/ !command\n (Required) {May be required} [Optional]\n";
+            string Response = "```Commands: @UNOBot#4308 command/ !command\n (Required) {May be required} [Optional]\n\n;
             foreach(Command cmd in Program.commands)
             {
                 if(cmd.Active)
@@ -80,8 +80,10 @@ namespace UNObot.Modules
                     //Response += $"Introduced in {cmd.Version}. ";
                     if(cmd.Aliases.Count > 0)
                         Response += $"Aliases: {string.Join(", ", cmd.Aliases.ToArray())}\n";
+                    Response += "\n";
                 }
             }
+            Response += "```";
             await UserExtensions.SendMessageAsync(Context.Message.Author, Response);
             /*await UserExtensions.SendMessageAsync(Context.Message.Author, "Commands: @UNOBot#4308 (Required) {Required in certain conditions} [Optional] " +
                                "- Join\n" +
@@ -127,6 +129,7 @@ namespace UNObot.Modules
                 await ReplyAsync("Command was not found in the help list.");
                 return;
             }
+            Response += "```";
             if(!cmd.Active)
                 Response += "Note: This command might be hidden or depricated.\n";
             Response += $"- {cmd.CommandName}: {cmd.Help}\n";
@@ -135,6 +138,7 @@ namespace UNObot.Modules
             Response += $"Introduced in {cmd.Version}. ";
             if(cmd.Aliases.Count > 0)
                 Response += $"Aliases: {string.Join(", ", cmd.Aliases.ToArray())}\n";
+            Response += "```";
             await ReplyAsync(Response);
         }
         [Command("credits"), Alias("asdf")]
