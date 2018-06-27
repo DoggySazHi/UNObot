@@ -42,8 +42,8 @@ namespace UNObot
 
             await _client.LoginAsync(TokenType.Bot, _config["token"]);
             await _client.StartAsync();
-            await _client.SetGameAsync("UNObot 2.1");
             await db.CleanAll();
+            await _client.SetGameAsync($"UNObot {version}");
             await LoadHelp();
             await Task.Delay(-1);
         }
