@@ -12,16 +12,18 @@ namespace UNObot.Modules
         {
             await ReplyAsync(
                 $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {Program.version}\nblame Aragami and FM for the existance of this");
-#if DEBUG
-            await ReplyAsync("UNObot is currently running in DEBUG mode. Errors are prone to occur.");
-#else
-            await ReplyAsync("UNObot is currently running in RELEASE/DEPLOY mode. Everything SHOULD be fine.");
-            #endif
         }
         [Command("gulag")]
         public async Task Gulag()
         {
-            await ReplyAsync($"<{@Context.User.Id}> has been sent to gulag and has all of his cards converted to red blyats.");
+            await ReplyAsync($"<@{Context.User.Id}> has been sent to gulag and has all of his cards converted to red blyats.");
+        }
+        [Command("gulag")]
+        public async Task Gulag2(string user)
+        {
+            //extraclean
+            user = user.Trim(new Char[] { ' ', '<', '>', '!', '@' });
+            await ReplyAsync($"<@{user}> has been sent to gulag and has all of his cards converted to red blyats.");
         }
         [Command("nepnep")]
         public async Task Nep()
@@ -48,7 +50,7 @@ namespace UNObot.Modules
         {
             await ReplyAsync($"I claim that <@{Context.User.Id}> is triple gay. Say \"No U\" again, u ded m8.");
         }
-        [Command("doggyisthebest")]
+        [Command("doggyisthebest"), RequireBotPermission(ChannelPermission.ManageMessages)]
         public async Task Easteregg2(string response)
         {
             var messages = await Context.Channel.GetMessagesAsync(1).FlattenAsync();
@@ -69,7 +71,7 @@ namespace UNObot.Modules
         public async Task Help()
         {
             await ReplyAsync("Help has been sent. Or, I think it has.");
-            string Response = "```Commands: @UNOBot#4308 command/ !command\n (Required) {May be required} [Optional]\n\n;
+            string Response = "```Commands: @UNOBot#4308 command/ .command\n (Required) {May be required} [Optional]\n \n";
             foreach(Command cmd in Program.commands)
             {
                 if(cmd.Active)
@@ -131,7 +133,7 @@ namespace UNObot.Modules
             }
             Response += "```";
             if(!cmd.Active)
-                Response += "Note: This command might be hidden or depricated.\n";
+                Response += "Note: This command might be hidden or deprecated.\n";
             Response += $"- {cmd.CommandName}: {cmd.Help}\n";
             if(cmd.Usages.Count > 0)
                 Response += $"Usage(s): {string.Join(", ", cmd.Usages.ToArray())}\n";
