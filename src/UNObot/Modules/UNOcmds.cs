@@ -222,6 +222,8 @@ namespace UNObot.Modules
                     {
                         ulong currentPlayer = await queueHandler.GetCurrentPlayer(Context.Guild.Id);
                         string response = $"Current player: <@{currentPlayer}>\n";
+                        Card currentCard = await db.GetCurrentCard(Context.Guild.Id);
+                        response += $"Current card: {currentCard}";
                         foreach (ulong player in await db.GetPlayers(Context.Guild.Id))
                         {
                             List<Card> loserlist = await db.GetCards(player);
