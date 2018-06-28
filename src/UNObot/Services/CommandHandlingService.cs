@@ -37,7 +37,7 @@ namespace DiscordBot.Services
             if (message.Source != MessageSource.User) return;
 
             int argPos = 0;
-            if (!(message.HasCharPrefix('!', ref argPos)) && !message.HasMentionPrefix(_discord.CurrentUser, ref argPos)) return;
+            if (!(message.HasCharPrefix('.', ref argPos)) && !message.HasMentionPrefix(_discord.CurrentUser, ref argPos)) return;
 
             var context = new SocketCommandContext(_discord, message);
 
