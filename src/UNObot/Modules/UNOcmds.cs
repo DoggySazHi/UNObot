@@ -209,6 +209,70 @@ namespace UNObot.Modules
             else
                 await ReplyAsync("You are not in any game!");
         }
+        [Command("quickplay")]
+        public async Task QuickPlay()
+        {
+            if (await db.IsPlayerInGame(Context.User.Id))
+            {
+                if (await db.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
+                {
+                    if (await db.IsServerInGame(Context.Guild.Id))
+                    {
+                        if (Context.User.Id == await queueHandler.GetCurrentPlayer(Context.Guild.Id))
+                        {
+                            //TODO - kete
+                            //TODO - add the normal playcard check (ingame)
+                            List<Card> playerCards = await db.GetCards(Context.User.Id);
+                            Card currentCard = await db.GetCurrentCard(Context.Guild.Id);
+                            bool found = false;
+                            foreach (Card c in playerCards)
+                            {
+                                if (c.Color == currentCard.Color || c.Value == currentCard.Value)
+                                {
+                                    found = true;
+                                    await UserExtensions.SendMessageAsync(Context.Message.Author, "Played the first card that matched the criteria!");
+                                    await playCard.Play(c.Color, c.Value, null, Context.User.Id, Context.Guild.Id);
+                                    break;
+                                }
+                            }
+                            if (!found)
+                            {
+                                int cardsDrawn = 0;
+                                List<Card> cardsTaken = new List<Card>();
+                                String response = "Cards drawn:\n";
+                                while (true)
+                                {
+                                    Card rngcard = UNOcore.RandomCard();
+                                    await db.AddCard(Context.User.Id, rngcard);
+                                    cardsTaken.Add(rngcard);
+                                    cardsDrawn++;
+                                    if (rngcard.Color == currentCard.Color || rngcard.Value == currentCard.Value)
+                                    {
+                                        foreach (Card cardTake in cardsTaken)
+                                        {
+                                            response += cardTake + "\n";
+                                        }
+                                        await ReplyAsync($"You have drawn {cardsDrawn} cards.");
+                                        await UserExtensions.SendMessageAsync(Context.Message.Author, response);
+                                        await playCard.Play(rngcard.Color, rngcard.Value, null, Context.User.Id, Context.Guild.Id);
+                                        break;
+                                    }
+                                }
+                            }
+                            AFKtimer.ResetTimer(Context.Guild.Id);
+                        }
+                        else
+                            await ReplyAsync("It is not your turn!");
+                    }
+                    else
+                        await ReplyAsync("The game has not started!");
+                }
+                else
+                    await ReplyAsync("You are in a game, however you are not in the right server!");
+            }
+            else
+                await ReplyAsync("You are not in any game!");
+        }
         [Command("players"), Alias("users")]
         public async Task Players()
         {
@@ -276,7 +340,7 @@ namespace UNObot.Modules
 
         public async Task Start()
         {
-            
+
             if (await db.IsPlayerInGame(Context.User.Id))
             {
                 await db.AddGame(Context.Guild.Id);
