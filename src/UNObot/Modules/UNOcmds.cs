@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -152,12 +153,37 @@ namespace UNObot.Modules
                     if (await db.IsServerInGame(Context.Guild.Id))
                     {
                         List<Card> list = await db.GetCards(Context.User.Id);
-                        string response = "Cards available:\n";
+                        string response = $"Current card: {db.GetCurrentCard(Context.Guild.Id)}\nCards available:\n";
                         foreach (Card card in list)
                         {
                             response += card.Color + " " + card.Value + "\n";
                         }
                         await UserExtensions.SendMessageAsync(Context.Message.Author, response);
+                    }
+                    else
+                        await ReplyAsync("The game has not started!");
+                }
+                else
+                    await ReplyAsync("The game has not started, or you are not in the right server!");
+            }
+            else
+                await ReplyAsync("You are not in any game!");
+        }
+        [Command("sort")]
+        public async Task Sort()
+        {
+            await db.AddGame(Context.Guild.Id);
+            await db.AddUser(Context.User.Id, Context.User.Username);
+            if (await db.IsPlayerInGame(Context.User.Id))
+            {
+                if (await db.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
+                {
+                    if (await db.IsServerInGame(Context.Guild.Id))
+                    {
+                        List<Card> list = await db.GetCards(Context.User.Id);
+                        var sorted = list.OrderBy((arg) => arg.Color).ThenBy((arg) => arg.Value).ToList<Card>();
+                        await db.SetCards(Context.User.Id, sorted);
+                        await UserExtensions.SendMessageAsync(Context.Message.Author, "Sorted cards!");
                     }
                     else
                         await ReplyAsync("The game has not started!");
@@ -231,7 +257,7 @@ namespace UNObot.Modules
                                 {
                                     found = true;
                                     await UserExtensions.SendMessageAsync(Context.Message.Author, "Played the first card that matched the criteria!");
-                                    await playCard.Play(c.Color, c.Value, null, Context.User.Id, Context.Guild.Id);
+                                    await ReplyAsync(await playCard.Play(c.Color, c.Value, null, Context.User.Id, Context.Guild.Id));
                                     break;
                                 }
                             }
@@ -254,7 +280,7 @@ namespace UNObot.Modules
                                         }
                                         await ReplyAsync($"You have drawn {cardsDrawn} cards.");
                                         await UserExtensions.SendMessageAsync(Context.Message.Author, response);
-                                        await playCard.Play(rngcard.Color, rngcard.Value, null, Context.User.Id, Context.Guild.Id);
+                                        await ReplyAsync(await playCard.Play(rngcard.Color, rngcard.Value, null, Context.User.Id, Context.Guild.Id));
                                         break;
                                     }
                                 }
@@ -340,7 +366,6 @@ namespace UNObot.Modules
 
         public async Task Start()
         {
-
             if (await db.IsPlayerInGame(Context.User.Id))
             {
                 await db.AddGame(Context.Guild.Id);
@@ -349,7 +374,81 @@ namespace UNObot.Modules
                     await ReplyAsync("The game has already started!");
                 else
                 {
-                    await db.AddGuild(Context.Guild.Id, 1);
+                    await db.AddGuild(Context.Guild.Id, 1, 1);
+                    await db.GetUsersAndAdd(Context.Guild.Id);
+                    foreach (ulong player in await db.GetPlayers(Context.Guild.Id))
+                    {
+                        await db.UpdateStats(player, 1);
+                    }
+                    await ReplyAsync("Game has started. All information about your cards will be PMed.\n" +
+                            "You have been given 7 cards; PM \"deck\" to view them.\n" +
+                            "Remember; you have 1 minute and 30 seconds to place a card.\n" +
+                            $"The first player is <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>.\n");
+                    Card currentCard = UNOcore.RandomCard();
+                    while (true)
+                    {
+                        if (currentCard.Color == "Wild")
+                            currentCard = UNOcore.RandomCard();
+                        else
+                            break;
+                    }
+                    switch (currentCard.Value)
+                    {
+                        case "+2":
+                            var curuser = await queueHandler.GetCurrentPlayer(Context.Guild.Id);
+                            await db.AddCard(curuser, UNOcore.RandomCard());
+                            await db.AddCard(curuser, UNOcore.RandomCard());
+                            break;
+                        case "Reverse":
+                            await queueHandler.ReversePlayers(Context.Guild.Id);
+                            await ReplyAsync($"What? The order has been reversed! Now, it's <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
+                            break;
+                        case "Skip":
+                            await queueHandler.NextPlayer(Context.Guild.Id);
+                            await ReplyAsync($"What's this? A skip? Oh well, now it's <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
+                            break;
+                    }
+                    await db.SetCurrentCard(Context.Guild.Id, currentCard);
+                    await ReplyAsync($"Current card: {currentCard.ToString()}\n");
+                    await db.StarterCard(Context.Guild.Id);
+                    AFKtimer.StartTimer(Context.Guild.Id);
+                }
+            }
+            else
+                await ReplyAsync("You have not joined a game!");
+        }
+        [Command("start")]
+
+        public async Task Start(string mode)
+        {
+            if (await db.IsPlayerInGame(Context.User.Id))
+            {
+                await db.AddGame(Context.Guild.Id);
+                await db.AddUser(Context.User.Id, Context.User.Username);
+                if (await db.IsServerInGame(Context.Guild.Id))
+                    await ReplyAsync("The game has already started!");
+                else
+                {
+                    switch (mode)
+                    {
+                        //TODO - Modify addguild cmd 
+                        case "private":
+                            await ReplyAsync("Playing in privacy!");
+                            await db.AddGuild(Context.Guild.Id, 1, 2);
+                            break;
+                        case "fast":
+                            //TODO - Add skip command. Check if fast mode is on.
+                            //Skip only when you can't play.
+                            await ReplyAsync("Playing in fast mode!");
+                            await db.AddGuild(Context.Guild.Id, 1, 3);
+                            break;
+                        case "normal":
+                            await ReplyAsync("Playing in normal mode!");
+                            await db.AddGuild(Context.Guild.Id, 1, 1);
+                            break;
+                        default:
+                            return;
+                    }
                     await db.GetUsersAndAdd(Context.Guild.Id);
                     foreach (ulong player in await db.GetPlayers(Context.Guild.Id))
                     {
