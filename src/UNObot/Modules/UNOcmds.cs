@@ -153,37 +153,14 @@ namespace UNObot.Modules
                     if (await db.IsServerInGame(Context.Guild.Id))
                     {
                         List<Card> list = await db.GetCards(Context.User.Id);
+                        var sorted = list.OrderBy((arg) => arg.Color).ThenBy((arg) => arg.Value).ToList<Card>();
+                        await db.SetCards(Context.User.Id, sorted);
                         string response = $"Current card: {db.GetCurrentCard(Context.Guild.Id)}\nCards available:\n";
                         foreach (Card card in list)
                         {
                             response += card.Color + " " + card.Value + "\n";
                         }
                         await UserExtensions.SendMessageAsync(Context.Message.Author, response);
-                    }
-                    else
-                        await ReplyAsync("The game has not started!");
-                }
-                else
-                    await ReplyAsync("The game has not started, or you are not in the right server!");
-            }
-            else
-                await ReplyAsync("You are not in any game!");
-        }
-        [Command("sort")]
-        public async Task Sort()
-        {
-            await db.AddGame(Context.Guild.Id);
-            await db.AddUser(Context.User.Id, Context.User.Username);
-            if (await db.IsPlayerInGame(Context.User.Id))
-            {
-                if (await db.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
-                {
-                    if (await db.IsServerInGame(Context.Guild.Id))
-                    {
-                        List<Card> list = await db.GetCards(Context.User.Id);
-                        var sorted = list.OrderBy((arg) => arg.Color).ThenBy((arg) => arg.Value).ToList<Card>();
-                        await db.SetCards(Context.User.Id, sorted);
-                        await UserExtensions.SendMessageAsync(Context.Message.Author, "Sorted cards!");
                     }
                     else
                         await ReplyAsync("The game has not started!");
