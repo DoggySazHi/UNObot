@@ -42,7 +42,7 @@ namespace UNObot.Modules
         }
         public async Task AddGame(ulong server)
         {
-            if(conn == null)
+            if (conn == null)
                 GetConnectionString();
             MySqlCommand Cmd = new MySqlCommand
             {
@@ -70,7 +70,7 @@ namespace UNObot.Modules
         }
         public async Task ResetGame(ulong server)
         {
-            if(conn == null)
+            if (conn == null)
                 GetConnectionString();
             MySqlCommand Cmd = new MySqlCommand
             {
@@ -125,7 +125,7 @@ namespace UNObot.Modules
             };
             Cmd.Parameters.Add(p1);
             await conn.OpenAsync();
-            using (MySqlDataReader dr = (MySqlDataReader) await Cmd.ExecuteReaderAsync())
+            using (MySqlDataReader dr = (MySqlDataReader)await Cmd.ExecuteReaderAsync())
             {
                 try
                 {
@@ -280,7 +280,7 @@ namespace UNObot.Modules
             finally
             {
                 await conn.CloseAsync();
-            }          
+            }
         }
         public async Task CleanAll()
         {
@@ -340,7 +340,7 @@ namespace UNObot.Modules
                 GetConnectionString();
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
-            Cmd.CommandText = "INSERT INTO Games (server, inGame) VALUES(?, 0) ON DUPLICATE KEY UPDATE inGame = ?";
+            Cmd.CommandText = "INSERT INTO Games (server, inGame) VALUES(?, ?) ON DUPLICATE KEY UPDATE inGame = ?";
             MySqlParameter p1 = new MySqlParameter
             {
                 Value = Guild
@@ -352,6 +352,12 @@ namespace UNObot.Modules
                 Value = ingame
             };
             Cmd.Parameters.Add(p2);
+
+            MySqlParameter p3 = new MySqlParameter
+            {
+                Value = ingame
+            };
+            Cmd.Parameters.Add(p3);
             try
             {
                 await conn.OpenAsync();
@@ -365,9 +371,62 @@ namespace UNObot.Modules
             {
                 await conn.CloseAsync();
             }
-            
+
         }
-        //NOTE THAT THIS GETS DIRECTLY FROM SERVER; YOU MUST ADD PLAYERS TO SERVER AddPlayersToServer
+        public async Task AddGuild(ulong Guild, ushort ingame, ushort gamemode)
+        {
+            /* 0 - Not in a game.
+             * 1 - In a regular game.
+             * 2 - In a game that prevents seeing other players' cards.
+             * 3 (maybe?) - Allows skipping of a turn after drawing 2 cards.
+            */
+            if (conn == null)
+                GetConnectionString();
+            MySqlCommand Cmd = new MySqlCommand();
+            Cmd.Connection = conn;
+            Cmd.CommandText = "INSERT INTO Games (server, inGame, gameMode) VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE inGame = ?, gameMode = ?";
+            MySqlParameter p1 = new MySqlParameter
+            {
+                Value = Guild
+            };
+            Cmd.Parameters.Add(p1);
+
+            MySqlParameter p2 = new MySqlParameter
+            {
+                Value = ingame
+            };
+            Cmd.Parameters.Add(p2);
+            MySqlParameter p3 = new MySqlParameter
+            {
+                Value = gamemode
+            };
+            Cmd.Parameters.Add(p3);
+            MySqlParameter p4 = new MySqlParameter
+            {
+                Value = ingame
+            };
+            Cmd.Parameters.Add(p4);
+            MySqlParameter p5 = new MySqlParameter
+            {
+                Value = gamemode
+            };
+            Cmd.Parameters.Add(p5);
+            try
+            {
+                await conn.OpenAsync();
+                await Cmd.ExecuteNonQueryAsync();
+            }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            finally
+            {
+                await conn.CloseAsync();
+            }
+
+        }
+        //NOTE THAT THIS GETS DIRECTLY FROM SERVER; YOU MUST AddPlayersToServer
         public async Task<Queue<ulong>> GetPlayers(ulong server)
         {
             if (conn == null)
@@ -524,7 +583,7 @@ namespace UNObot.Modules
                 {
                     while (dr.Read())
                     {
-                        if(!await dr.IsDBNullAsync(0))
+                        if (!await dr.IsDBNullAsync(0))
                             player = dr.GetUInt64(0);
                         await dr.NextResultAsync();
                     }
@@ -649,7 +708,7 @@ namespace UNObot.Modules
             };
             Cmd.Parameters.Add(p1);
             await conn.OpenAsync();
-            using (MySqlDataReader dr = (MySqlDataReader) await Cmd.ExecuteReaderAsync())
+            using (MySqlDataReader dr = (MySqlDataReader)await Cmd.ExecuteReaderAsync())
             {
                 try
                 {
@@ -683,7 +742,7 @@ namespace UNObot.Modules
             };
             Cmd.Parameters.Add(p1);
             await conn.OpenAsync();
-            using (MySqlDataReader dr = (MySqlDataReader) await Cmd.ExecuteReaderAsync())
+            using (MySqlDataReader dr = (MySqlDataReader)await Cmd.ExecuteReaderAsync())
             {
                 try
                 {
@@ -784,7 +843,7 @@ namespace UNObot.Modules
             p1.Value = player;
             Cmd.Parameters.Add(p1);
             await conn.OpenAsync();
-            using (MySqlDataReader dr = (MySqlDataReader) await Cmd.ExecuteReaderAsync())
+            using (MySqlDataReader dr = (MySqlDataReader)await Cmd.ExecuteReaderAsync())
             {
                 try
                 {
@@ -819,7 +878,7 @@ namespace UNObot.Modules
             p1.Value = server;
             Cmd.Parameters.Add(p1);
             await conn.OpenAsync();
-            using (MySqlDataReader dr = (MySqlDataReader) await Cmd.ExecuteReaderAsync())
+            using (MySqlDataReader dr = (MySqlDataReader)await Cmd.ExecuteReaderAsync())
             {
                 try
                 {
@@ -837,7 +896,7 @@ namespace UNObot.Modules
                 {
                     await conn.CloseAsync();
                 }
-                if(players.Contains(player))
+                if (players.Contains(player))
                     return true;
                 else
                     return false;
@@ -857,7 +916,7 @@ namespace UNObot.Modules
             Cmd.Parameters.Add(p1);
             List<Card> cards = new List<Card>();
             await conn.OpenAsync();
-            using (MySqlDataReader dr = (MySqlDataReader) await Cmd.ExecuteReaderAsync())
+            using (MySqlDataReader dr = (MySqlDataReader)await Cmd.ExecuteReaderAsync())
             {
                 try
                 {
@@ -891,7 +950,7 @@ namespace UNObot.Modules
             p1.Value = player;
             Cmd.Parameters.Add(p1);
             await conn.OpenAsync();
-            using (MySqlDataReader dr = (MySqlDataReader) await Cmd.ExecuteReaderAsync())
+            using (MySqlDataReader dr = (MySqlDataReader)await Cmd.ExecuteReaderAsync())
             {
                 try
                 {
@@ -918,7 +977,9 @@ namespace UNObot.Modules
             if (conn == null)
                 GetConnectionString();
             Queue<ulong> players = await GetUsersWithServer(server);
-            if(players.Count == 0)
+            for (int i = 0; i < UNOcore.r.Next(0, players.Count - 1); i++)
+                players.Enqueue(players.Dequeue());
+            if (players.Count == 0)
                 ColorConsole.WriteLine("[WARN] Why is the list empty whem I'm getting players?", ConsoleColor.Yellow);
             string json = JsonConvert.SerializeObject(players);
             MySqlCommand Cmd = new MySqlCommand();
@@ -949,7 +1010,7 @@ namespace UNObot.Modules
             Queue<ulong> players = await GetPlayers(server);
             foreach (ulong player in players)
             {
-                for(int i = 0; i < 7; i++)
+                for (int i = 0; i < 7; i++)
                 {
                     await AddCard(player, UNOcore.RandomCard());
                 }
@@ -965,10 +1026,9 @@ namespace UNObot.Modules
             MySqlParameter p1 = new MySqlParameter();
             p1.Value = player;
             Cmd.Parameters.Add(p1);
-            int[] stats = {0, 0, 0};
+            int[] stats = { 0, 0, 0 };
             await conn.OpenAsync();
-            //TODO replace all cases
-            using (MySqlDataReader dr = (MySqlDataReader) await Cmd.ExecuteReaderAsync())
+            using (MySqlDataReader dr = (MySqlDataReader)await Cmd.ExecuteReaderAsync())
             {
                 try
                 {
@@ -1003,14 +1063,13 @@ namespace UNObot.Modules
             Cmd.Parameters.Add(p1);
             await conn.OpenAsync();
             String message = null;
-            //TODO replace all cases
-            using (MySqlDataReader dr = (MySqlDataReader) await Cmd.ExecuteReaderAsync())
+            using (MySqlDataReader dr = (MySqlDataReader)await Cmd.ExecuteReaderAsync())
             {
                 try
                 {
                     while (dr.Read())
                     {
-                        if(!await dr.IsDBNullAsync(0))
+                        if (!await dr.IsDBNullAsync(0))
                             message = dr.GetString(0);
                     }
                 }
@@ -1032,10 +1091,10 @@ namespace UNObot.Modules
             //3 is gamesWon
             if (conn == null)
                 GetConnectionString();
-                
+
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
-            switch(mode)
+            switch (mode)
             {
                 case 1:
                     Cmd.CommandText = "UPDATE UNObot.Players SET gamesJoined = gamesJoined + 1 WHERE userid = ?";
@@ -1064,16 +1123,49 @@ namespace UNObot.Modules
             {
                 await conn.CloseAsync();
             }
-         }
+        }
         public async Task AddCard(ulong player, Card card)
         {
             if (conn == null)
                 GetConnectionString();
-                
+
             List<Card> cards = await GetCards(player);
             if (cards == null)
                 cards = new List<Card>();
             cards.Add(card);
+            string json = JsonConvert.SerializeObject(cards);
+            MySqlCommand Cmd = new MySqlCommand();
+            Cmd.Connection = conn;
+            Cmd.CommandText = "UPDATE UNObot.Players SET cards = ? WHERE userid = ?";
+
+            MySqlParameter p1 = new MySqlParameter();
+            p1.Value = json;
+            Cmd.Parameters.Add(p1);
+
+            MySqlParameter p2 = new MySqlParameter();
+            p2.Value = player;
+            Cmd.Parameters.Add(p2);
+            try
+            {
+                await conn.OpenAsync();
+                await Cmd.ExecuteNonQueryAsync();
+            }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            finally
+            {
+                await conn.CloseAsync();
+            }
+        }
+        public async Task SetCards(ulong player, List<Card> cards)
+        {
+            if (conn == null)
+                GetConnectionString();
+
+            if (cards == null)
+                cards = new List<Card>();
             string json = JsonConvert.SerializeObject(cards);
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
@@ -1171,8 +1263,10 @@ namespace UNObot.Modules
 
             List<Card> cards = await GetCards(player);
             int currentPlace = 0;
-            foreach (Card cardindeck in cards){
-                if(card.Equals(cardindeck)){
+            foreach (Card cardindeck in cards)
+            {
+                if (card.Equals(cardindeck))
+                {
                     cards.RemoveAt(currentPlace);
                     foundCard = true;
                     break;

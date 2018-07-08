@@ -55,9 +55,9 @@ namespace UNObot.Modules
             }
             else
                 value = output.ToString();
-            if(wild != null)
+            if (wild != null)
             {
-                switch(wild.ToLower())
+                switch (wild.ToLower())
                 {
                     case "red":
                         wild = "Red";
@@ -85,16 +85,16 @@ namespace UNObot.Modules
                 Value = value
             };
             bool existing = false;
-            foreach(Card card in await db.GetCards(player))
+            foreach (Card card in await db.GetCards(player))
             {
                 existing |= card.Equals(playCard);
             }
-            if(!existing)
+            if (!existing)
             {
                 return "You do not have this card!";
             }
             Card currentCard = await db.GetCurrentCard(server);
-            if(!(playCard.Color == currentCard.Color || playCard.Value == currentCard.Value || playCard.Color == "Wild"))
+            if (!(playCard.Color == currentCard.Color || playCard.Value == currentCard.Value || playCard.Color == "Wild"))
             {
                 return "This is illegal you know. Your card must match in color/value, or be a wild card.";
             }
@@ -111,14 +111,14 @@ namespace UNObot.Modules
             await db.SetCurrentCard(server, playCard);
             //time to check if someone won or set uno player
             List<Card> checkCards = await db.GetCards(player);
-            if(checkCards.Count == 0)
+            if (checkCards.Count == 0)
             {
                 //woah person won
                 Response += $"<@{player}> has won!\n";
                 await db.UpdateStats(player, 3);
-                
+
                 string response = "";
-                foreach(ulong getplayer in await db.GetPlayers(server))
+                foreach (ulong getplayer in await db.GetPlayers(server))
                 {
                     List<Card> loserlist = await db.GetCards(getplayer);
                     response += $"- <@{getplayer}> had {loserlist.Count} cards left.\n";
@@ -129,16 +129,17 @@ namespace UNObot.Modules
                 await db.ResetGame(server);
                 Response += "Game is over. You may rejoin now.";
                 return Response;
-            } else if (checkCards.Count == 1)
+            }
+            else if (checkCards.Count == 1)
                 await db.SetUNOPlayer(server, player);
             //keeps on going if nobody won
             await queueHandler.NextPlayer(server);
-            if(playCard.Color == "Wild")
+            if (playCard.Color == "Wild")
             {
-                if(playCard.Value == "+4")
+                if (playCard.Value == "+4")
                 {
                     Response += $"<@{await queueHandler.GetCurrentPlayer(server)}> has recieved four cards from the action.\n";
-                    for(int i = 0; i < 4; i++)
+                    for (int i = 0; i < 4; i++)
                         await db.AddCard(await queueHandler.GetCurrentPlayer(server), UNOcore.RandomCard());
                 }
                 Response += $"Due to the wild card, the current card is now {wild}.\n";
