@@ -155,7 +155,7 @@ namespace UNObot.Modules
                         List<Card> list = await db.GetCards(Context.User.Id);
                         var sorted = list.OrderBy((arg) => arg.Color).ThenBy((arg) => arg.Value).ToList<Card>();
                         await db.SetCards(Context.User.Id, sorted);
-                        string response = $"Current card: {db.GetCurrentCard(Context.Guild.Id)}\nCards available:\n";
+                        string response = $"Current card: {await db.GetCurrentCard(Context.Guild.Id)}\nCards available:\n";
                         foreach (Card card in list)
                         {
                             response += card.Color + " " + card.Value + "\n";
@@ -212,7 +212,7 @@ namespace UNObot.Modules
             else
                 await ReplyAsync("You are not in any game!");
         }
-        [Command("quickplay")]
+        [Command("quickplay"), Alias("quickdraw")]
         public async Task QuickPlay()
         {
             if (await db.IsPlayerInGame(Context.User.Id))
