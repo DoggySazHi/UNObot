@@ -218,11 +218,12 @@ namespace UNObot.Modules
                                 if (found)
                                 {
                                     await ReplyAsync("You cannot skip because you have a card that matches the criteria!");
+                                    return;
                                 }
                                 await queueHandler.NextPlayer(Context.Guild.Id);
                                 await db.AddCard(Context.User.Id, UNOcore.RandomCard());
                                 await db.AddCard(Context.User.Id, UNOcore.RandomCard());
-                                await ReplyAsync($"You have drawn two cards. It is now {await queueHandler.GetCurrentPlayer(Context.Guild.Id)}'s turn.");
+                                await ReplyAsync($"You have drawn two cards. It is now <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
                                 AFKtimer.ResetTimer(Context.Guild.Id);
                             }
                             else
@@ -346,7 +347,7 @@ namespace UNObot.Modules
                         foreach (ulong player in await db.GetPlayers(Context.Guild.Id))
                         {
                             List<Card> loserlist = await db.GetCards(player);
-                            if (gameMode == 1)
+                            if (gameMode == 2)
                             {
                                 int random = 0;
                                 while (random == 0)
