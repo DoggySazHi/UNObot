@@ -7,7 +7,7 @@ namespace UNOBot.Modules
 {
     public class Testingcmds : ModuleBase<SocketCommandContext>
     {
-        [Command("purge"),RequireUserPermission(GuildPermission.Administrator), RequireBotPermission(ChannelPermission.ManageMessages)]
+        [Command("purge"), RequireUserPermission(GuildPermission.Administrator), RequireBotPermission(ChannelPermission.ManageMessages)]
         public async Task Purge(int length)
         {
             var messages = await Context.Channel.GetMessagesAsync(length + 1).FlattenAsync();
@@ -23,10 +23,16 @@ namespace UNOBot.Modules
         [Command("exit")]
         public async Task Exit()
         {
-            if(Context.User.Id != 191397590946807809)
+            switch (Context.User.Id)
             {
-                await ReplyAsync("You can only exit if you're DoggySazHi.");
-                return;
+                case 191397590946807809:
+                    break;
+                case 278524552462598145:
+                    await ReplyAsync("Wait, this isn't Doggy... eh who cares?");
+                    break;
+                default:
+                    await ReplyAsync("You can only exit if you're DoggySazHi.");
+                    return;
             }
             await ReplyAsync("Sorry to be a hassle. Goodbye world!");
             Environment.Exit(0);
@@ -35,7 +41,7 @@ namespace UNOBot.Modules
         public async Task UBOWS()
         {
             bool success = UNObot.Modules.QueryHandler.GetInfo("108.61.100.48", 25445, out UNObot.Modules.A2S_INFO response);
-            if(!success)
+            if (!success)
             {
                 await ReplyAsync("Error: Apparently we couldn't get any information about UBOWS.");
                 return;
