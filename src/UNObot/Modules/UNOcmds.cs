@@ -189,6 +189,57 @@ namespace UNObot.Modules
             else
                 await ReplyAsync("You are not in any game!");
         */
+
+        [Command("skip")]
+        public async Task Skip()
+        {
+            if (await db.IsPlayerInGame(Context.User.Id))
+            {
+                if (await db.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
+                {
+                    if (await db.IsServerInGame(Context.Guild.Id))
+                    {
+                        if (Context.User.Id == await queueHandler.GetCurrentPlayer(Context.Guild.Id))
+                        {
+                            if (await db.GetGamemode(Context.Guild.Id) == 3)
+                            {
+                                List<Card> playerCards = await db.GetCards(Context.User.Id);
+                                Card currentCard = await db.GetCurrentCard(Context.Guild.Id);
+                                bool found = false;
+                                foreach (Card c in playerCards)
+                                {
+                                    if (c.Color == currentCard.Color || c.Value == currentCard.Value)
+                                    {
+                                        found = true;
+                                        break;
+                                    }
+                                }
+
+                                if (found)
+                                {
+                                    await ReplyAsync("You cannot skip because you have a card that matches the criteria!");
+                                }
+                                await queueHandler.NextPlayer(Context.Guild.Id);
+                                await db.AddCard(Context.User.Id, UNOcore.RandomCard());
+                                await db.AddCard(Context.User.Id, UNOcore.RandomCard());
+                                await ReplyAsync($"You have drawn two cards. It is now {await queueHandler.GetCurrentPlayer(Context.Guild.Id)}'s turn.");
+                                AFKtimer.ResetTimer(Context.Guild.Id);
+                            }
+                            else
+                                await ReplyAsync("The current game doesn't allow skipping!");
+                        }
+                        else
+                            await ReplyAsync("It is not your turn!");
+                    }
+                    else
+                        await ReplyAsync("The game has not started!");
+                }
+                else
+                    await ReplyAsync("You are in a game, however you are not in the right server!");
+            }
+            else
+                await ReplyAsync("You are not in any game!");
+        }
         [Command("card"), Alias("top")]
         public async Task Card()
         {
@@ -212,7 +263,7 @@ namespace UNObot.Modules
             else
                 await ReplyAsync("You are not in any game!");
         }
-        [Command("quickplay"), Alias("quickdraw")]
+        [Command("quickplay"), Alias("quickdraw", "autoplay", "autodraw")]
         public async Task QuickPlay()
         {
             if (await db.IsPlayerInGame(Context.User.Id))
@@ -287,6 +338,7 @@ namespace UNObot.Modules
                 {
                     if (await db.IsServerInGame(Context.Guild.Id))
                     {
+                        ushort gameMode = await db.GetGamemode(Context.Guild.Id);
                         ulong currentPlayer = await queueHandler.GetCurrentPlayer(Context.Guild.Id);
                         string response = $"Current player: <@{currentPlayer}>\n";
                         Card currentCard = await db.GetCurrentCard(Context.Guild.Id);
@@ -294,7 +346,17 @@ namespace UNObot.Modules
                         foreach (ulong player in await db.GetPlayers(Context.Guild.Id))
                         {
                             List<Card> loserlist = await db.GetCards(player);
-                            response += $"- <@{player}> has {loserlist.Count} cards left.\n";
+                            if (gameMode == 1)
+                            {
+                                int random = 0;
+                                while (random == 0)
+                                    random = Math.Abs(loserlist.Count + UNOcore.r.Next(-10, 10));
+                                response += $"- <@{player}> has {random} (?) cards left.\n";
+                            }
+                            else
+                            {
+                                response += $"- <@{player}> has {loserlist.Count} cards left.\n";
+                            }
                         }
                         await ReplyAsync(response);
                     }

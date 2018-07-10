@@ -335,47 +335,10 @@ namespace UNObot.Modules
         }
 
         public async Task AddGuild(ulong Guild, ushort ingame)
-        {
-            if (conn == null)
-                GetConnectionString();
-            MySqlCommand Cmd = new MySqlCommand();
-            Cmd.Connection = conn;
-            Cmd.CommandText = "INSERT INTO Games (server, inGame) VALUES(?, ?) ON DUPLICATE KEY UPDATE inGame = ?";
-            MySqlParameter p1 = new MySqlParameter
-            {
-                Value = Guild
-            };
-            Cmd.Parameters.Add(p1);
-
-            MySqlParameter p2 = new MySqlParameter
-            {
-                Value = ingame
-            };
-            Cmd.Parameters.Add(p2);
-
-            MySqlParameter p3 = new MySqlParameter
-            {
-                Value = ingame
-            };
-            Cmd.Parameters.Add(p3);
-            try
-            {
-                await conn.OpenAsync();
-                await Cmd.ExecuteNonQueryAsync();
-            }
-            catch (MySqlException ex)
-            {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
-            }
-            finally
-            {
-                await conn.CloseAsync();
-            }
-
-        }
+        => await AddGuild(Guild, ingame, 1);
         public async Task AddGuild(ulong Guild, ushort ingame, ushort gamemode)
         {
-            /* 0 - Not in a game.
+            /* 
              * 1 - In a regular game.
              * 2 - In a game that prevents seeing other players' cards.
              * 3 (maybe?) - Allows skipping of a turn after drawing 2 cards.
@@ -425,6 +388,42 @@ namespace UNObot.Modules
                 await conn.CloseAsync();
             }
 
+        }
+        public async Task<ushort> GetGamemode(ulong server)
+        {
+            if (conn == null)
+                GetConnectionString();
+            ushort gamemode = 1;
+            MySqlCommand Cmd = new MySqlCommand
+            {
+                Connection = conn,
+                CommandText = "SELECT gameMode FROM UNObot.Games WHERE server = ?"
+            };
+            MySqlParameter p1 = new MySqlParameter
+            {
+                Value = server
+            };
+            Cmd.Parameters.Add(p1);
+            await conn.OpenAsync();
+            using (MySqlDataReader dr = (MySqlDataReader)await Cmd.ExecuteReaderAsync())
+            {
+                try
+                {
+                    while (dr.Read())
+                    {
+                        gamemode = dr.GetUInt16(0);
+                    }
+                }
+                catch (MySqlException ex)
+                {
+                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                }
+                finally
+                {
+                    await conn.CloseAsync();
+                }
+                return gamemode;
+            }
         }
         //NOTE THAT THIS GETS DIRECTLY FROM SERVER; YOU MUST AddPlayersToServer
         public async Task<Queue<ulong>> GetPlayers(ulong server)
