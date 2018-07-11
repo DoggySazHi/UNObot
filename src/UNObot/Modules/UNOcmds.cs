@@ -487,6 +487,7 @@ namespace UNObot.Modules
                             await db.AddGuild(Context.Guild.Id, 1, 1);
                             break;
                         default:
+                            await ReplyAsync("That's not a valid mode!");
                             return;
                     }
                     await db.GetUsersAndAdd(Context.Guild.Id);

@@ -72,15 +72,15 @@ namespace UNObot.Modules
         {
             await ReplyAsync("Help has been sent. Or, I think it has.");
             string Response = "```Commands: @UNOBot#4308 command/ .command\n (Required) {May be required} [Optional]\n \n";
-            foreach(Command cmd in Program.commands)
+            foreach (Command cmd in Program.commands)
             {
-                if(cmd.Active)
+                if (cmd.Active)
                 {
                     Response += $"- {cmd.CommandName}: {cmd.Help}\n";
-                    if(cmd.Usages.Count > 0)
+                    if (cmd.Usages.Count > 0)
                         Response += $"Usage(s): {string.Join(", ", cmd.Usages.ToArray())}\n";
                     //Response += $"Introduced in {cmd.Version}. ";
-                    if(cmd.Aliases.Count > 0)
+                    if (cmd.Aliases.Count > 0)
                         Response += $"Aliases: {string.Join(", ", cmd.Aliases.ToArray())}\n";
                     Response += "\n";
                 }
@@ -122,9 +122,9 @@ namespace UNObot.Modules
             int index = Program.commands.FindIndex(o => o.CommandName == cmdSearch);
             int index2 = Program.commands.FindIndex(o => o.Aliases.Contains(cmdSearch) == true);
             Command cmd;
-            if(index >= 0)
+            if (index >= 0)
                 cmd = Program.commands[index];
-            else if(index2 >= 0)
+            else if (index2 >= 0)
                 cmd = Program.commands[index2];
             else
             {
@@ -132,13 +132,13 @@ namespace UNObot.Modules
                 return;
             }
             Response += "```";
-            if(!cmd.Active)
+            if (!cmd.Active)
                 Response += "Note: This command might be hidden or deprecated.\n";
             Response += $"- {cmd.CommandName}: {cmd.Help}\n";
-            if(cmd.Usages.Count > 0)
+            if (cmd.Usages.Count > 0)
                 Response += $"Usage(s): {string.Join(", ", cmd.Usages.ToArray())}\n";
-            Response += $"Introduced in {cmd.Version}. ";
-            if(cmd.Aliases.Count > 0)
+            Response += $"Introduced in {cmd.Version}.\n";
+            if (cmd.Aliases.Count > 0)
                 Response += $"Aliases: {string.Join(", ", cmd.Aliases.ToArray())}\n";
             Response += "```";
             await ReplyAsync(Response);
