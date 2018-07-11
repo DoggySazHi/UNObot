@@ -37,10 +37,19 @@ namespace DiscordBot.Services
             if (message.Source != MessageSource.User) return;
 
             int argPos = 0;
+            var context = new SocketCommandContext(_discord, message);
+
+            if (context.User.Id == 246661485219020810)
+            {
+                var messages = await context.Channel.GetMessagesAsync(1).FlattenAsync();
+                ITextChannel textchannel = context.Channel as ITextChannel;
+                await textchannel.DeleteMessagesAsync(messages);
+                return;
+            }
+
             if (!(message.HasCharPrefix('.', ref argPos)) && !message.HasMentionPrefix(_discord.CurrentUser, ref argPos)) return;
 
-            var context = new SocketCommandContext(_discord, message);
-            if(context.IsPrivate)
+            if (context.IsPrivate)
             {
                 await context.Channel.SendMessageAsync("I do not accept DM messages. Please use me in a guild/server.");
                 return;
@@ -48,7 +57,7 @@ namespace DiscordBot.Services
             var result = await _commands.ExecuteAsync(context, argPos, _provider);
             if (result.Error.HasValue)
             {
-                switch(result.Error.Value)
+                switch (result.Error.Value)
                 {
                     case CommandError.UnknownCommand:
                         await context.Channel.SendMessageAsync("That's not a command dummy. Type '<@419374055792050176> help' for a list of commands.");
@@ -72,9 +81,9 @@ namespace DiscordBot.Services
                         await context.Channel.SendMessageAsync(":bomb: _UNObot has encountered a fatal error, and your action could not be completed.\nPlease send all bug reports to DoggySazHi.");
                         break;
                 }
-                #if DEBUG
+#if DEBUG
                 await context.Channel.SendMessageAsync($"Debug error: {result.ToString()}");
-                #endif
+#endif
             }
         }
     }
