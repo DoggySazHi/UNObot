@@ -75,10 +75,10 @@ namespace DiscordBot.Services
                         await context.Channel.SendMessageAsync("You do not have the **power** to run this command!");
                         break;
                     case CommandError.Exception:
-                        await context.Channel.SendMessageAsync(":bomb: _UNObot has encountered a fatal error, but luckily, we have caught the error.\nPlease send all bug reports to DoggySazHi.");
+                        await context.Channel.SendMessageAsync(":bomb: UNObot has encountered a fatal error, but luckily, we have caught the error.\nPlease send all bug reports to DoggySazHi.");
                         break;
                     default:
-                        await context.Channel.SendMessageAsync(":bomb: _UNObot has encountered a fatal error, and your action could not be completed.\nPlease send all bug reports to DoggySazHi.");
+                        await context.Channel.SendMessageAsync(":bomb: UNObot has encountered a fatal error, and your action could not be completed.\nPlease send all bug reports to DoggySazHi.");
                         break;
                 }
 #if DEBUG
