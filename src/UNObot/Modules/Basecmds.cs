@@ -72,48 +72,32 @@ namespace UNObot.Modules
         {
             await ReplyAsync("Help has been sent. Or, I think it has.");
             string Response = "```Commands: @UNOBot#4308 command/ .command\n (Required) {May be required} [Optional]\n \n";
+            string OldResponse = "";
             foreach (Command cmd in Program.commands)
             {
                 if (cmd.Active)
                 {
+                    OldResponse = Response;
                     Response += $"- {cmd.CommandName}: {cmd.Help}\n";
                     if (cmd.Usages.Count > 0)
                         Response += $"Usage(s): {string.Join(", ", cmd.Usages.ToArray())}\n";
-                    //Response += $"Introduced in {cmd.Version}. ";
                     if (cmd.Aliases.Count > 0)
                         Response += $"Aliases: {string.Join(", ", cmd.Aliases.ToArray())}\n";
+                    if(Response.Length > 1996)
+                    {
+                        await UserExtensions.SendMessageAsync(Context.Message.Author, OldResponse);
+                        Response = "";
+                        Response += $"- {cmd.CommandName}: {cmd.Help}\n";
+                        if (cmd.Usages.Count > 0)
+                            Response += $"Usage(s): {string.Join(", ", cmd.Usages.ToArray())}\n";
+                        if (cmd.Aliases.Count > 0)
+                            Response += $"Aliases: {string.Join(", ", cmd.Aliases.ToArray())}\n";
+                    }
                     Response += "\n";
                 }
             }
             Response += "```";
             await UserExtensions.SendMessageAsync(Context.Message.Author, Response);
-            /*await UserExtensions.SendMessageAsync(Context.Message.Author, "Commands: @UNOBot#4308 (Required) {Required in certain conditions} [Optional] " +
-                               "- Join\n" +
-                               "Join the queue.\n" +
-                               "- Leave" +
-                               "Leave the queue.\n" +
-                               "- Start\n" +
-                               "Start the game. Game only starts when 2 or more players are available.\n" +
-                               "- Draw\n" +
-                               "Get a card. This is randomized. Does not follow the 108 deck, but uses the probablity instead.\n" +
-                               "- Play (Color/Wild) (#/Reverse/Skip/+2/+4/Color) {Wild color change}\n" +
-                               "Play a card. You must have the card in your deck. Also, if you are placing a wildcard, type in the color as the next parameter.\n" +
-                               "- Card\n" +
-                               "See the last placed card.\n" +
-                               "- Deck See the cards you have currently.\n" +
-                               "- Uno\n" +
-                               "Don't forget to say this when you end up with one card left!\n" +
-                               "- Help\n" +
-                               "Get a help list. But you probably knew this.\n" +
-                              "- Seed (seed)\n" +
-                              "Possibly increases your chance of winning.\n" +
-                              "- Players\n" +
-                              "See who is playing and who's turn is it.\n" +
-                              "- Stats [player by mention]\n" +
-                              "See if you or somebody else is a pro or a noob at UNO. It's probably the former.\n" +
-                              "- Info\n" +
-                              "See the current version and other stuff about UNObot.");
-                              */
         }
         [Command("help")]
         public async Task Help(string cmdSearch)
