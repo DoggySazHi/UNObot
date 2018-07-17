@@ -85,7 +85,7 @@ namespace UNObot.Modules
                         Response += $"Aliases: {string.Join(", ", cmd.Aliases.ToArray())}\n";
                     if(Response.Length > 1996)
                     {
-                        Response += "```";
+                        OldResponse += "```";
                         await UserExtensions.SendMessageAsync(Context.Message.Author, OldResponse);
                         Response = "```";
                         Response += $"- {cmd.CommandName}: {cmd.Help}\n";
