@@ -109,7 +109,7 @@ namespace UNObot.Modules
                                 + $"Games fully played: {stats[1]}\n"
                                 + $"Games won: {stats[2]}");
         }
-        [Command("draw"), Alias("take")]
+        [Command("draw"), Alias("take", "dr", "tk")]
         public async Task Draw()
         {
             await db.AddGame(Context.Guild.Id);
@@ -141,7 +141,7 @@ namespace UNObot.Modules
                 await ReplyAsync("You are not in any game!");
         }
 
-        [Command("deck"), Alias("hand", "cards")]
+        [Command("deck"), Alias("hand", "cards", "d", "h")]
         public async Task Deck()
         {
             await db.AddGame(Context.Guild.Id);
@@ -190,7 +190,7 @@ namespace UNObot.Modules
                 await ReplyAsync("You are not in any game!");
         */
 
-        [Command("skip")]
+        [Command("skip"), Alias("s")]
         public async Task Skip()
         {
             if (await db.IsPlayerInGame(Context.User.Id))
@@ -241,7 +241,7 @@ namespace UNObot.Modules
             else
                 await ReplyAsync("You are not in any game!");
         }
-        [Command("card"), Alias("top")]
+        [Command("card"), Alias("top", "c")]
         public async Task Card()
         {
             await db.AddGame(Context.Guild.Id);
@@ -264,7 +264,7 @@ namespace UNObot.Modules
             else
                 await ReplyAsync("You are not in any game!");
         }
-        [Command("quickplay"), Alias("quickdraw", "autoplay", "autodraw")]
+        [Command("quickplay"), Alias("quickdraw", "autoplay", "autodraw", "qp", "qd", "ap", "ad")]
         public async Task QuickPlay()
         {
             if (await db.IsPlayerInGame(Context.User.Id))
@@ -328,47 +328,59 @@ namespace UNObot.Modules
             else
                 await ReplyAsync("You are not in any game!");
         }
-        [Command("players"), Alias("users")]
+        [Command("players"), Alias("users", "pl")]
         public async Task Players()
         {
             await db.AddGame(Context.Guild.Id);
             await db.AddUser(Context.User.Id, Context.User.Username);
-            if (await db.IsPlayerInGame(Context.User.Id))
+            if (await db.IsServerInGame(Context.Guild.Id))
             {
-                if (await db.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
+                ushort gameMode = await db.GetGamemode(Context.Guild.Id);
+                ulong currentPlayer = await queueHandler.GetCurrentPlayer(Context.Guild.Id);
+                string response = $"Current player: <@{currentPlayer}>\n";
+                Card currentCard = await db.GetCurrentCard(Context.Guild.Id);
+                response += $"Current card: {currentCard}\n";
+                foreach (ulong player in await db.GetPlayers(Context.Guild.Id))
                 {
-                    if (await db.IsServerInGame(Context.Guild.Id))
+                    List<Card> loserlist = await db.GetCards(player);
+                    if (gameMode == 2)
                     {
-                        ushort gameMode = await db.GetGamemode(Context.Guild.Id);
-                        ulong currentPlayer = await queueHandler.GetCurrentPlayer(Context.Guild.Id);
-                        string response = $"Current player: <@{currentPlayer}>\n";
-                        Card currentCard = await db.GetCurrentCard(Context.Guild.Id);
-                        response += $"Current card: {currentCard}\n";
-                        foreach (ulong player in await db.GetPlayers(Context.Guild.Id))
-                        {
-                            List<Card> loserlist = await db.GetCards(player);
-                            if (gameMode == 2)
-                            {
-                                int random = 0;
-                                while (random == 0)
-                                    random = Math.Abs(loserlist.Count + UNOcore.r.Next(-10, 10));
-                                response += $"- <@{player}> has {random} (?) cards left.\n";
-                            }
-                            else
-                            {
-                                response += $"- <@{player}> has {loserlist.Count} cards left.\n";
-                            }
-                        }
-                        await ReplyAsync(response);
+                        int random = 0;
+                        while (random == 0)
+                            random = Math.Abs(loserlist.Count + UNOcore.r.Next(-10, 10));
+                        response += $"- <@{player}> has {random} (?) cards left.\n";
                     }
                     else
-                        await ReplyAsync("The game has not started!");
+                    {
+                        response += $"- <@{player}> has {loserlist.Count} cards left.\n";
+                    }
                 }
-                else
-                    await ReplyAsync("You are in a game, however you are not in the right server!");
+                await ReplyAsync(response);
             }
             else
-                await ReplyAsync("You are not in any game!");
+                await ReplyAsync("The game has not started!");
+        }
+        [Command("queue"), Alias("q")]
+        public async Task Queue()
+        {
+            await db.AddGame(Context.Guild.Id);
+            await db.AddUser(Context.User.Id, Context.User.Username);
+            Queue<ulong> currqueue = await db.GetUsersWithServer(Context.Guild.Id);
+            if (await db.IsServerInGame(Context.Guild.Id))
+            {
+                await ReplyAsync("Since the server is already in a game, you can also use .players!");
+                await Players();
+                return;
+            }
+            if(currqueue.Count <= 0)
+            {
+                await ReplyAsync("There is nobody in the queue. Join with .join!");
+                return;
+            }
+            string Response = "Current queue players:\n";
+            foreach(ulong player in currqueue)
+                Response += $"- <@{player}>\n";
+            await ReplyAsync(Response);
         }
         [Command("uno")]
         public async Task UNOcmd()
@@ -509,7 +521,7 @@ namespace UNObot.Modules
             else
                 await ReplyAsync("You have not joined a game!");
         }
-        [Command("play"), Priority(2), Alias("put", "place")]
+        [Command("play"), Priority(2), Alias("put", "place", "p")]
         public async Task Play(string color, string value)
         {
             if (await db.IsPlayerInGame(Context.User.Id))
@@ -542,7 +554,7 @@ namespace UNObot.Modules
             else
                 await ReplyAsync("You are not in any game!");
         }
-        [Command("play"), Priority(1), Alias("put", "place")]
+        [Command("play"), Priority(1), Alias("put", "place", "p")]
         public async Task PlayWild(string color, string value, string wild)
         {
             if (await db.IsPlayerInGame(Context.User.Id))
