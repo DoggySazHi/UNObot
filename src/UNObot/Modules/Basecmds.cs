@@ -50,7 +50,7 @@ namespace UNObot.Modules
         {
             await ReplyAsync($"I claim that <@{Context.User.Id}> is triple gay. Say \"No U\" again, u ded m8.");
         }
-        [Command("doggyisthebest"), RequireBotPermission(ChannelPermission.ManageMessages)]
+        [Command("blamelocaldisk"), RequireBotPermission(ChannelPermission.ManageMessages)]
         public async Task Easteregg2(string response)
         {
             var messages = await Context.Channel.GetMessagesAsync(1).FlattenAsync();
@@ -84,7 +84,7 @@ namespace UNObot.Modules
                         Response += $"Usage(s): {string.Join(", ", cmd.Usages.ToArray())}\n";
                     if (cmd.Aliases.Count > 0)
                         Response += $"Aliases: {string.Join(", ", cmd.Aliases.ToArray())}\n";
-                    if(Response.Length > 1996)
+                    if (Response.Length > 1996)
                     {
                         OldResponse += "```";
                         await UserExtensions.SendMessageAsync(Context.Message.Author, OldResponse);
