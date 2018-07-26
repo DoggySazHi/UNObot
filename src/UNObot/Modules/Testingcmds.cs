@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using UNObot.Modules;
 
 namespace UNOBot.Modules
 {
@@ -40,7 +41,7 @@ namespace UNOBot.Modules
         [Command("ubows"), Alias("ubow")]
         public async Task UBOWS()
         {
-            bool success = UNObot.Modules.QueryHandler.GetInfo("108.61.100.48", 25445, out UNObot.Modules.A2S_INFO response);
+            bool success = QueryHandler.GetInfo("108.61.100.48", 25445, out UNObot.Modules.A2S_INFO response);
             if (!success)
             {
                 await ReplyAsync("Error: Apparently we couldn't get any information about UBOWS.");
@@ -50,5 +51,19 @@ namespace UNOBot.Modules
                              $"Players: {Convert.ToInt32(response.Players)}/{Convert.ToInt32(response.MaxPlayers)}\n" +
                              $"Map: {response.Map}");
         }
+        /*
+        [Command("slamc")]
+        public async Task SLAMC()
+        {
+            var response = QueryHandler.GetInfoMC("23.243.79.108");
+            await ReplyAsync($"Current players: {response.NumPlayers}/{response.MaxPlayers}");
+        }
+
+        [Command("psurvival")]
+        public async Task PSurvival()
+        {
+            var response = QueryHandler.GetInfoMC("23.243.79.108", 25432);
+            await ReplyAsync($"Current players: {response.NumPlayers}/{response.MaxPlayers}");
+        }*/
     }
 }

@@ -60,7 +60,7 @@ namespace DiscordBot.Services
                 switch (result.Error.Value)
                 {
                     case CommandError.UnknownCommand:
-                        await context.Channel.SendMessageAsync("That's not a command dummy. Type '<@419374055792050176> help' for a list of commands.");
+                        //await context.Channel.SendMessageAsync("That's not a command dummy. Type '<@419374055792050176> help' for a list of commands.");
                         break;
                     case CommandError.BadArgCount:
                         await context.Channel.SendMessageAsync("Hmm, that's not how it works. Type '<@419374055792050176> help' for the parameters of your command.");
