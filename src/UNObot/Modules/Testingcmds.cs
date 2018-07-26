@@ -65,5 +65,19 @@ namespace UNOBot.Modules
             var response = QueryHandler.GetInfoMC("23.243.79.108", 25432);
             await ReplyAsync($"Current players: {response.NumPlayers}/{response.MaxPlayers}");
         }*/
+
+        [Command("unofficialwiki"), Alias("unwiki")]
+        public async Task UnoffWiki()
+        {
+            bool success = UNObot.Modules.QueryHandler.GetInfo("23.243.79.108", 27041, out UNObot.Modules.A2S_INFO response);
+            if (!success)
+            {
+                await ReplyAsync("Error: Apparently we couldn't get any information about the Unofficial Wiki Server.");
+                return;
+            }
+            await ReplyAsync($"Name: {response.Name}\n" +
+                             $"Players: {Convert.ToInt32(response.Players)}/{Convert.ToInt32(response.MaxPlayers)}\n" +
+                             $"Map: {response.Map}");
+        }
     }
 }
