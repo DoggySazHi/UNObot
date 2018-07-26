@@ -78,12 +78,23 @@ namespace UNObot.Modules
                 OldResponse = Response;
                 if (cmd.Active)
                 {
+                    OldResponse = Response;
                     Response += $"- {cmd.CommandName}: {cmd.Help}\n";
                     if (cmd.Usages.Count > 0)
                         Response += $"Usage(s): {string.Join(", ", cmd.Usages.ToArray())}\n";
-                    //Response += $"Introduced in {cmd.Version}. ";
                     if (cmd.Aliases.Count > 0)
                         Response += $"Aliases: {string.Join(", ", cmd.Aliases.ToArray())}\n";
+                    if(Response.Length > 1996)
+                    {
+                        OldResponse += "```";
+                        await UserExtensions.SendMessageAsync(Context.Message.Author, OldResponse);
+                        Response = "```";
+                        Response += $"- {cmd.CommandName}: {cmd.Help}\n";
+                        if (cmd.Usages.Count > 0)
+                            Response += $"Usage(s): {string.Join(", ", cmd.Usages.ToArray())}\n";
+                        if (cmd.Aliases.Count > 0)
+                            Response += $"Aliases: {string.Join(", ", cmd.Aliases.ToArray())}\n";
+                    }
                     Response += "\n";
                 }
                 if (Response.Length > 1996)

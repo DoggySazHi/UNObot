@@ -527,7 +527,7 @@ namespace UNObot.Modules
                 await conn.CloseAsync();
             }
         }
-        async Task<Queue<ulong>> GetUsersWithServer(ulong server)
+        public async Task<Queue<ulong>> GetUsersWithServer(ulong server)
         {
             Queue<ulong> players = new Queue<ulong>();
             if (conn == null)
@@ -976,8 +976,10 @@ namespace UNObot.Modules
             if (conn == null)
                 GetConnectionString();
             Queue<ulong> players = await GetUsersWithServer(server);
+            //slight randomization of order
             for (int i = 0; i < UNOcore.r.Next(0, players.Count - 1); i++)
                 players.Enqueue(players.Dequeue());
+
             if (players.Count == 0)
                 ColorConsole.WriteLine("[WARN] Why is the list empty whem I'm getting players?", ConsoleColor.Yellow);
             string json = JsonConvert.SerializeObject(players);
