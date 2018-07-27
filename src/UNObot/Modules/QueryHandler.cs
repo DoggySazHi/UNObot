@@ -150,184 +150,66 @@ namespace UNObot.Modules
     //Credit to https://github.com/maxime-paquatte/csharp-minecraft-query/blob/master/src/Status.cs
     public class MCStatus
     {
-        const Byte Statistic = 0x00;
-        const Byte Handshake = 0x09;
+        const ushort dataSize = 512; // this will hopefully suffice since the MotD should be <=59 characters
+        const ushort numFields = 6;  // number of values expected from server
 
-        private readonly Dictionary<string, string> _keyValues;
-        private List<string> _players;
+        public string Address { get; set; }
+        public ushort Port { get; set; }
+        public string Motd { get; set; }
+        public string Version { get; set; }
+        public string CurrentPlayers { get; set; }
+        public string MaximumPlayers { get; set; }
+        public bool ServerUp { get; set; }
+        public long Delay { get; set; }
 
-        public string MessageOfTheDay
+        public MCStatus(string address, ushort port)
         {
-            get { return _keyValues["hostname"]; }
-        }
+            var rawServerData = new byte[dataSize];
 
-        public string Gametype
-        {
-            get { return _keyValues["gametype"]; }
-        }
+            Address = address;
+            Port = port;
 
-        public string GameId
-        {
-            get { return _keyValues["game_id"]; }
-        }
-
-        public string Version
-        {
-            get { return _keyValues["version"]; }
-        }
-
-        public string Plugins
-        {
-            get { return _keyValues["plugins"]; }
-        }
-
-        public string Map
-        {
-            get { return _keyValues["map"]; }
-        }
-        public string NumPlayers
-        {
-            get { return _keyValues["numplayers"]; }
-        }
-        public string MaxPlayers
-        {
-            get { return _keyValues["maxplayers"]; }
-        }
-        public string HostPort
-        {
-            get { return _keyValues["hostport"]; }
-        }
-        public string HostIp
-        {
-            get { return _keyValues["hostip"]; }
-        }
-
-        public IEnumerable<string> Players
-        {
-            get { return _players; }
-        }
-
-        internal MCStatus(byte[] message)
-        {
-            _keyValues = new Dictionary<string, string>();
-            _players = new List<string>();
-
-            var buffer = new byte[256];
-            Stream stream = new MemoryStream(message);
-
-            stream.Read(buffer, 0, 5);// Read Type + SessionID
-            stream.Read(buffer, 0, 11); // Padding: 11 bytes constant
-            var constant1 = new byte[] { 0x73, 0x70, 0x6C, 0x69, 0x74, 0x6E, 0x75, 0x6D, 0x00, 0x80, 0x00 };
-            for (int i = 0; i < constant1.Length; i++) Debug.Assert(constant1[i] == buffer[i], "Byte mismatch at " + i + " Val :" + buffer[i]);
-
-            var sb = new StringBuilder();
-            string lastKey = string.Empty;
-            int currentByte;
-            while ((currentByte = stream.ReadByte()) != -1)
+            try
             {
-                if (currentByte == 0x00)
-                {
-                    if (!string.IsNullOrEmpty(lastKey))
-                    {
-                        _keyValues.Add(lastKey, sb.ToString());
-                        lastKey = string.Empty;
-                    }
-                    else
-                    {
-                        lastKey = sb.ToString();
-                        if (string.IsNullOrEmpty(lastKey)) break;
-                    }
-                    sb.Clear();
-                }
-                else sb.Append((char)currentByte);
+                // ToDo: Add timeout
+                var stopWatch = new Stopwatch();
+                var tcpclient = new TcpClient();
+                stopWatch.Start();
+                tcpclient.Connect(address, port);
+                stopWatch.Stop();
+                var stream = tcpclient.GetStream();
+                var payload = new byte[] { 0xFE, 0x01 };
+                stream.Write(payload, 0, payload.Length);
+                stream.Read(rawServerData, 0, dataSize);
+                tcpclient.Close();
+                Delay = stopWatch.ElapsedMilliseconds;
+            }
+            catch (Exception)
+            {
+                ServerUp = false;
+                return;
             }
 
-            stream.Read(buffer, 0, 10); // Padding: 10 bytes constant
-            var constant2 = new byte[] { 0x01, 0x70, 0x6C, 0x61, 0x79, 0x65, 0x72, 0x5F, 0x00, 0x00 };
-            for (int i = 0; i < constant2.Length; i++) Debug.Assert(constant2[i] == buffer[i], "Byte mismatch at " + i + " Val :" + buffer[i]);
-
-            while ((currentByte = stream.ReadByte()) != -1)
+            if (rawServerData == null || rawServerData.Length == 0)
             {
-                if (currentByte == 0x00)
-                {
-                    var player = sb.ToString();
-                    if (string.IsNullOrEmpty(player)) break;
-                    _players.Add(player);
-                    sb.Clear();
-                }
-                else sb.Append((char)currentByte);
+                ServerUp = false;
             }
-        }
-
-
-        /// <summary>
-        /// Get the status of the given host and optional port
-        /// </summary>
-        /// <param name="host">The host name or address (monserver.com or 123.123.123.123)</param>
-        /// <param name="port">The query port, by default is 25565</param>
-        public static MCStatus GetStatus(string host, int port = 25565)
-        {
-            var e = new IPEndPoint(IPAddress.Any, port);
-            using (var u = new UdpClient(e))
+            else
             {
-                try
+                var serverData = Encoding.Unicode.GetString(rawServerData).Split("\u0000\u0000\u0000".ToCharArray());
+                if (serverData != null && serverData.Length >= numFields)
                 {
-                    var s = new UdpState { EndPoint = e, Client = u };
-                    u.Connect(host, port);
-                    var status = GetStatus(s);
-                    return new MCStatus(status);
+                    ServerUp = true;
+                    Version = serverData[2];
+                    Motd = serverData[3];
+                    CurrentPlayers = serverData[4];
+                    MaximumPlayers = serverData[5];
                 }
-                finally
+                else
                 {
-                    u.Close();
+                    ServerUp = false;
                 }
             }
-        }
-
-
-        static byte[] GetStatus(UdpState s)
-        {
-            var challengeToken = GetChallengeToken(s);
-
-            //append 4 bytes to obtains the Full status
-            WriteData(s, Statistic, challengeToken, new byte[] { 0x00, 0x00, 0x00, 0x00 });
-            return ReceiveMessages(s);
-        }
-
-        static byte[] GetChallengeToken(UdpState s)
-        {
-            WriteData(s, Handshake);
-
-            var message = ReceiveMessages(s);
-
-            var challangeBytes = new byte[16];
-            Array.Copy(message, 5, challangeBytes, 0, message.Length - 5);
-            var challengeInt = int.Parse(Encoding.ASCII.GetString(challangeBytes));
-            return BitConverter.GetBytes(challengeInt).Reverse().ToArray();
-
-        }
-
-
-        static void WriteData(UdpState s, byte cmd, byte[] append = null, byte[] append2 = null)
-        {
-            var cmdData = new byte[] { 0xFE, 0xFD, cmd, 0x01, 0x02, 0x03, 0x04 };
-            var dataLength = cmdData.Length + (append != null ? append.Length : 0) + (append2 != null ? append2.Length : 0);
-            var data = new byte[dataLength];
-            cmdData.CopyTo(data, 0);
-            if (append != null) append.CopyTo(data, cmdData.Length);
-            if (append2 != null) append2.CopyTo(data, cmdData.Length + (append != null ? append.Length : 0));
-            s.Client.Send(data, data.Length);
-        }
-
-        static byte[] ReceiveMessages(UdpState s)
-        {
-            return s.Client.Receive(ref s.EndPoint);
-        }
-
-        class UdpState
-        {
-            public UdpClient Client;
-            public IPEndPoint EndPoint;
         }
     }
 
@@ -346,7 +228,7 @@ namespace UNObot.Modules
             return true;
         }
 
-        public static MCStatus GetInfoMC(string ip, int port = 25565)
-            => MCStatus.GetStatus(ip, port);
+        public static MCStatus GetInfoMC(string ip, ushort port = 25565)
+            => new MCStatus(ip, port);
     }
 }

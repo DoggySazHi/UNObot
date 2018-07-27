@@ -51,20 +51,35 @@ namespace UNOBot.Modules
                              $"Players: {Convert.ToInt32(response.Players)}/{Convert.ToInt32(response.MaxPlayers)}\n" +
                              $"Map: {response.Map}");
         }
-        /*
+
         [Command("slamc")]
         public async Task SLAMC()
         {
             var response = QueryHandler.GetInfoMC("23.243.79.108");
-            await ReplyAsync($"Current players: {response.NumPlayers}/{response.MaxPlayers}");
+            if (response.ServerUp)
+                await ReplyAsync($"Current players: {response.CurrentPlayers}/{response.MaximumPlayers}\nCurrently running on {response.Version}.");
+            else
+                await ReplyAsync("The server seems to be down from here...");
         }
 
         [Command("psurvival")]
         public async Task PSurvival()
         {
             var response = QueryHandler.GetInfoMC("23.243.79.108", 25432);
-            await ReplyAsync($"Current players: {response.NumPlayers}/{response.MaxPlayers}");
-        }*/
+            if (response.ServerUp)
+                await ReplyAsync($"Current players: {response.CurrentPlayers}/{response.MaximumPlayers}\nCurrently running on {response.Version}.");
+            else
+                await ReplyAsync("The server seems to be down from here...");
+        }
+        [Command("checkmc")]
+        public async Task CheckMC(string ip, ushort port)
+        {
+            var response = QueryHandler.GetInfoMC(ip, port);
+            if (response.ServerUp)
+                await ReplyAsync($"Current players: {response.CurrentPlayers}/{response.MaximumPlayers}\nCurrently running on {response.Version}.");
+            else
+                await ReplyAsync("The server seems to be down from here...");
+        }
 
         [Command("unofficialwiki"), Alias("unwiki")]
         public async Task UnoffWiki()
