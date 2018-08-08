@@ -1,6 +1,5 @@
-﻿This is UNObot.
-(C) William Le 2018
-Released under the GNU AGPL License.
+This is UNObot.
+By William Le 2018
 
 Commands: @UNOBot#4308 (Required) {Required in certain conditions} [Optional]
 
@@ -19,10 +18,4 @@ See the last placed card.
 - Deck
 See the cards you have currently.
 
-Coming soon:
-- Players
-See who is playing and who's turn is it.
-- Uno (WORKING?)
-Don't forget to say this when you end up with one card left!
-- Help
-Get a help list. It is just a copy of this readme, minus the header.
+This README is probably outdated; I recommend you to use the bot and use the help command.
