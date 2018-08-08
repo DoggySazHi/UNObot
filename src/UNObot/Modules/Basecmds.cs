@@ -50,7 +50,7 @@ namespace UNObot.Modules
         {
             await ReplyAsync($"I claim that <@{Context.User.Id}> is triple gay. Say \"No U\" again, u ded m8.");
         }
-        [Command("blamelocaldisk"), RequireBotPermission(ChannelPermission.ManageMessages)]
+        [Command("doggysaz"), RequireBotPermission(ChannelPermission.ManageMessages)]
         public async Task Easteregg2(string response)
         {
             var messages = await Context.Channel.GetMessagesAsync(1).FlattenAsync();
@@ -63,7 +63,6 @@ namespace UNObot.Modules
             await textchannel.DeleteMessagesAsync(messages);
             await ReplyAsync(response);
         }
-        //Ignore unused variable, forces random input
         [Command("upupdowndownleftrightleftrightbastart")]
         public async Task OldEasterEgg()
             => await ReplyAsync("lol, that's outdated");

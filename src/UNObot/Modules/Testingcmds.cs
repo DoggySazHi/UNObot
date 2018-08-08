@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using System.Timers;
 using Discord;
 using Discord.Commands;
 using UNObot.Modules;
@@ -41,12 +42,14 @@ namespace UNOBot.Modules
         [Command("ubows"), Alias("ubow")]
         public async Task UBOWS()
         {
-            bool success = QueryHandler.GetInfo("108.61.100.48", 25445, out UNObot.Modules.A2S_INFO response);
+            bool success = QueryHandler.GetInfo("108.61.100.48", 25445, out A2S_INFO response);
             if (!success)
             {
                 await ReplyAsync("Error: Apparently we couldn't get any information about UBOWS.");
                 return;
             }
+            if (response.Map == "Carpat")
+                response.Map = "~~Carpat~~ **Carpet**";
             await ReplyAsync($"Name: {response.Name}\n" +
                              $"Players: {Convert.ToInt32(response.Players)}/{Convert.ToInt32(response.MaxPlayers)}\n" +
                              $"Map: {response.Map}");
@@ -84,7 +87,7 @@ namespace UNOBot.Modules
         [Command("unofficialwiki"), Alias("unwiki")]
         public async Task UnoffWiki()
         {
-            bool success = UNObot.Modules.QueryHandler.GetInfo("23.243.79.108", 27041, out UNObot.Modules.A2S_INFO response);
+            bool success = QueryHandler.GetInfo("23.243.79.108", 27041, out UNObot.Modules.A2S_INFO response);
             if (!success)
             {
                 await ReplyAsync("Error: Apparently we couldn't get any information about the Unofficial Wiki Server.");
@@ -94,5 +97,59 @@ namespace UNOBot.Modules
                              $"Players: {Convert.ToInt32(response.Players)}/{Convert.ToInt32(response.MaxPlayers)}\n" +
                              $"Map: {response.Map}");
         }
+        [Command("helpme"), RequireOwner]
+        public async Task TestPerm1()
+        {
+            var messages = await Context.Channel.GetMessagesAsync(1000).FlattenAsync();
+
+            ITextChannel textchannel = Context.Channel as ITextChannel;
+            if (textchannel == null)
+            {
+                Console.WriteLine("error cast");
+                return;
+            }
+            await textchannel.DeleteMessagesAsync(messages);
+        }
+
+        [Command("helpmeplz"), RequireOwner]
+        public async Task HelpmePlz(int length)
+        {
+            var messages = await Context.Channel.GetMessagesAsync(length + 1).FlattenAsync();
+
+            ITextChannel textchannel = Context.Channel as ITextChannel;
+            if (textchannel == null)
+            {
+                Console.WriteLine("error cast");
+                return;
+            }
+            await textchannel.DeleteMessagesAsync(messages);
+        }
+
+        /*
+        Timer spamTimer = new Timer();
+        ulong server = 0;
+
+        [Command("enablespam")]
+        public async Task StartSpam()
+        {
+            spamTimer = new Timer
+            {
+                Interval = 60000,
+                AutoReset = true,
+            };
+            spamTimer.Elapsed += Spam;
+            spamTimer.Start();
+            server = Context.Guild.Id;
+            await ReplyAsync("Started timer!");
+        }
+
+        async void Spam(object sender, ElapsedEventArgs e)
+        {
+            if (server == 0)
+                spamTimer.Dispose();
+            else
+                await UNObot.Program.SendMessage("AHHHHHHH", server);
+        }
+        */
     }
 }
