@@ -74,7 +74,6 @@ namespace UNObot.Modules
             foreach (ChannelPermission c in Perms.ToList())
             {
                 //todo: copy, lol
-                Console.WriteLine(c.ToString());
                 response += c.ToString() + "\n";
             }
             await ReplyAsync(response);
@@ -88,7 +87,6 @@ namespace UNObot.Modules
             foreach (ChannelPermission c in Perms.ToList())
             {
                 //TODO: Make a warning for admin/harmful perms
-                Console.WriteLine(c.ToString());
                 response += $"- c.ToString() | \n";
             }
             await ReplyAsync(response);
