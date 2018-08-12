@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
@@ -47,6 +49,29 @@ namespace DiscordBot.Services
                 return;
             }
 
+            if (await db.EnforceChannel(context.Guild.Id))
+            {
+                //start check
+                var allowedChannels = await db.GetAllowedChannels(context.Guild.Id);
+                var currentChannels = context.Guild.TextChannels.ToList();
+                var currentChannelsIDs = new List<ulong>();
+                foreach (var channel in currentChannels)
+                    currentChannelsIDs.Add(channel.Id);
+                if (allowedChannels.Except(currentChannelsIDs).Any())
+                {
+                    foreach (var toRemove in allowedChannels.Except(currentChannelsIDs))
+                        allowedChannels.Remove(toRemove);
+                    await db.SetAllowedChannels(context.Guild.Id, allowedChannels);
+                }
+                //end check
+                if (allowedChannels.Count == 0)
+                {
+                    await context.Channel.SendMessageAsync("Warning: Since there are no channels that allow UNObot to speak normally, enforcechannels has been disabled.");
+                    await db.SetEnforceChannel(context.Guild.Id, false);
+                }
+                else if (!(allowedChannels.Contains(context.Channel.Id)))
+                    return;
+            }
             if (!(message.HasCharPrefix('.', ref argPos)) && !message.HasMentionPrefix(_discord.CurrentUser, ref argPos)) return;
 
             if (context.IsPrivate)

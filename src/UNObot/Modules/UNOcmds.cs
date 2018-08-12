@@ -600,9 +600,9 @@ namespace UNObot.Modules
             bool enforce = await db.EnforceChannel(Context.Guild.Id);
             await db.SetEnforceChannel(Context.Guild.Id, !enforce);
             if (!enforce)
-                await ReplyAsync($":white_check_mark: Currently allowing UNObot to respond to messages from anywhere.");
-            else
                 await ReplyAsync($":white_check_mark: Currently enforcing UNObot to only respond to messages in the filter.");
+            else
+                await ReplyAsync($":white_check_mark: Currently allowing UNObot to respond to messages from anywhere.");
         }
         [Command("addallowedchannel"), RequireUserPermission(GuildPermission.ManageChannels)]
         public async Task AddAllowedChannel()
@@ -615,7 +615,8 @@ namespace UNObot.Modules
             {
                 var currentChannels = await db.GetAllowedChannels(Context.Guild.Id);
                 currentChannels.Add(Context.Channel.Id);
-                await db.SetAllowedChannels(Context.Guild.Id, );
+                await db.SetAllowedChannels(Context.Guild.Id, currentChannels);
+                await ReplyAsync($"Added #{Context.Channel.Name} to the list of allowed channels. Make sure you .enforcechannels for this to work.");
             }
         }
         [Command("listallowedchannels"), RequireUserPermission(GuildPermission.ManageChannels)]
@@ -634,20 +635,42 @@ namespace UNObot.Modules
                 await db.SetAllowedChannels(Context.Guild.Id, allowedChannels);
             }
             //end check
-            string response = "Current channels allowed: \n";
+            bool enforced = await db.EnforceChannel(Context.Guild.Id);
+            string yesno = enforced ? "Currently enforcing channels." : "Not enforcing channels.";
+            string response = $"{yesno}\nCurrent channels allowed: \n";
             if (allowedChannels.Count == 0)
             {
-                await ReplyAsync("There are no channels that are currently allowed. Add them with .");
+                await ReplyAsync("There are no channels that are currently allowed. Add them with .addallowedchannel, and .enforcechannels.");
+                return;
             }
             foreach (ulong id in allowedChannels)
-            {
-
-            }
+                response += $"- <#{id}>\n";
+            await ReplyAsync(response);
         }
-        [Command("removedallowedchannel"), RequireUserPermission(GuildPermission.ManageChannels)]
-        public async Task RemovedAllowedChannel()
+        [Command("removeallowedchannel"), RequireUserPermission(GuildPermission.ManageChannels)]
+        public async Task RemoveAllowedChannel()
         {
-
+            //start check
+            var allowedChannels = await db.GetAllowedChannels(Context.Guild.Id);
+            var currentChannels = Context.Guild.TextChannels.ToList();
+            var currentChannelsIDs = new List<ulong>();
+            foreach (var channel in currentChannels)
+                currentChannelsIDs.Add(channel.Id);
+            if (allowedChannels.Except(currentChannelsIDs).Any())
+            {
+                foreach (var toRemove in allowedChannels.Except(currentChannelsIDs))
+                    allowedChannels.Remove(toRemove);
+                await db.SetAllowedChannels(Context.Guild.Id, allowedChannels);
+            }
+            //end check
+            if (allowedChannels.Contains(Context.Channel.Id))
+            {
+                allowedChannels.Remove(Context.Channel.Id);
+                await db.SetAllowedChannels(Context.Guild.Id, allowedChannels);
+                await ReplyAsync($"Removed <#{Context.Channel.Id}> from the allowed channels!");
+            }
+            else
+                await ReplyAsync("This channel was never an allowed channel.");
         }
         [Command("emergency"), RequireUserPermission(GuildPermission.ManageMessages), Alias("em", "leaveserver")]
         public async Task Emergency()
@@ -655,7 +678,7 @@ namespace UNObot.Modules
             //todo add link
             await ReplyAsync("If a rogue bot has taken over this account, it will be disabled with the use of this command.\n" +
                              $"Currently on **{Context.Guild.Name}**, goodbye world!\n" +
-                             "To reinvite the bot, please use this link: ");
+                             "To reinvite the bot, please use this link: https://discordapp.com/api/oauth2/authorize?client_id=477616287997231105&permissions=8192&scope=bot");
             await Context.Guild.LeaveAsync();
         }
     }
