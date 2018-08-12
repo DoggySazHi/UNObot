@@ -15,7 +15,7 @@ namespace UNObot.Modules
         public string Help { get; set; }
         public bool Active { get; set; }
         public string Version { get; set; }
-        
+
         [Obsolete("Added for compatability. Avoid usage.")]
         public Command(string CommandName, string Help)
         {
@@ -74,7 +74,7 @@ namespace UNObot.Modules
             object lockObject = new object();
             int myColor = 1;
             int myCard = 0;
-            lock(lockObject)
+            lock (lockObject)
             {
                 //0-9 is number, 10 is actioncard
                 myCard = r.Next(0, 11);
@@ -137,23 +137,29 @@ namespace UNObot.Modules
         {
             ConsoleColor[] colors = (ConsoleColor[])Enum.GetValues(typeof(ConsoleColor));
             //Ignore warning; debug mode.
+#if DEBUG
             bool colorFound = false;
-            foreach(var color in colors)
+#endif
+            foreach (var color in colors)
             {
-                if(color.ToString() == Color)
+                if (color.ToString() == Color)
                 {
                     Console.BackgroundColor = ConsoleColor.Black;
                     Console.ForegroundColor = color;
+#if DEBUG
                     colorFound = true;
+#endif
                     break;
                 }
             }
             Console.WriteLine(Text);
             Console.ResetColor();
-            #if DEBUG
-            if(!colorFound)
+#if DEBUG
+            if (!colorFound)
+            {
                 WriteLine("[WARN] Attempted to WriteLine with a color that doesn't exist!", ConsoleColor.Yellow);
-            #endif
+            }
+#endif
         }
         public static void WriteLine(string Text, ConsoleColor color)
         {
@@ -165,7 +171,7 @@ namespace UNObot.Modules
     }
     public class AFKtimer
     {
-        public static Dictionary<ulong,Timer> playTimers = new Dictionary<ulong,Timer>();
+        public static Dictionary<ulong, Timer> playTimers = new Dictionary<ulong, Timer>();
 
         UNOdb db = new UNOdb();
 
@@ -173,7 +179,7 @@ namespace UNObot.Modules
 
         public void ResetTimer(ulong server)
         {
-            if(!playTimers.ContainsKey(server))
+            if (!playTimers.ContainsKey(server))
                 ColorConsole.WriteLine("ERROR: Attempted to reset timer that doesn't exist!", ConsoleColor.Red);
             else
             {
@@ -184,7 +190,7 @@ namespace UNObot.Modules
         public void StartTimer(ulong server)
         {
             Console.WriteLine("Starting timer!");
-            if(playTimers.ContainsKey(server))
+            if (playTimers.ContainsKey(server))
                 ColorConsole.WriteLine("WARNING: Attempted to start timer that already existed!", ConsoleColor.Yellow);
             else
             {
@@ -201,13 +207,13 @@ namespace UNObot.Modules
         {
             Console.WriteLine("Timer over!");
             ulong serverID = 0;
-            foreach(ulong server in playTimers.Keys)
+            foreach (ulong server in playTimers.Keys)
             {
                 Timer timer = (Timer)source;
                 if (timer.Equals(playTimers[server]))
                     serverID = server;
             }
-            if(serverID == 0)
+            if (serverID == 0)
             {
                 ColorConsole.WriteLine("ERROR: Couldn't figure out what server timer belonged to!", ConsoleColor.Yellow);
                 return;

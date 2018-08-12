@@ -597,6 +597,24 @@ namespace UNObot.Modules
         [Command("enforcechannels"), RequireUserPermission(GuildPermission.ManageChannels), Alias("forcechannels")]
         public async Task EnforceChannel()
         {
+            //start check
+            var allowedChannels = await db.GetAllowedChannels(Context.Guild.Id);
+            var currentChannels = Context.Guild.TextChannels.ToList();
+            var currentChannelsIDs = new List<ulong>();
+            foreach (var channel in currentChannels)
+                currentChannelsIDs.Add(channel.Id);
+            if (allowedChannels.Except(currentChannelsIDs).Any())
+            {
+                foreach (var toRemove in allowedChannels.Except(currentChannelsIDs))
+                    allowedChannels.Remove(toRemove);
+                await db.SetAllowedChannels(Context.Guild.Id, allowedChannels);
+            }
+            //end check
+            if (allowedChannels.Count == 0)
+            {
+                await Context.Channel.SendMessageAsync("Error: Cannot enable enforcechannels if there are no allowed channels!");
+                return;
+            }
             bool enforce = await db.EnforceChannel(Context.Guild.Id);
             await db.SetEnforceChannel(Context.Guild.Id, !enforce);
             if (!enforce)
