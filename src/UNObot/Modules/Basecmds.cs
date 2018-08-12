@@ -65,6 +65,43 @@ namespace UNObot.Modules
             await ReplyAsync(response);
         }
         */
+        [Command("testperms"), RequireUserPermission(GuildPermission.ManageGuild)]
+        public async Task TestPerms()
+        {
+            string response = "Permissions:\n";
+            var User = Context.Guild.GetUser(Context.Client.CurrentUser.Id);
+            var Perms = User.GetPermissions(Context.Channel as IGuildChannel);
+            foreach (ChannelPermission c in Perms.ToList())
+            {
+                //todo: copy, lol
+                Console.WriteLine(c.ToString());
+                response += c.ToString() + "\n";
+            }
+            await ReplyAsync(response);
+        }
+        [Command("dogtestperms"), RequireOwner]
+        public async Task TestPerms2()
+        {
+            string response = "Permissions:\n";
+            var User = Context.Guild.GetUser(Context.Client.CurrentUser.Id);
+            var Perms = User.GetPermissions(Context.Channel as IGuildChannel);
+            foreach (ChannelPermission c in Perms.ToList())
+            {
+                //TODO: Make a warning for admin/harmful perms
+                Console.WriteLine(c.ToString());
+                response += $"- c.ToString() | \n";
+            }
+            await ReplyAsync(response);
+        }
+        [Command("nick"), RequireOwner]
+        public async Task ChangeNick(string newnick)
+        {
+            var User = Context.Guild.GetUser(Context.Client.CurrentUser.Id);
+            await User.ModifyAsync(x =>
+            {
+                x.Nickname = newnick;
+            });
+        }
         [Command("upupdowndownleftrightleftrightbastart")]
         public async Task OldEasterEgg()
             => await ReplyAsync("lol, that's outdated");

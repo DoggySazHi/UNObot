@@ -725,6 +725,71 @@ namespace UNObot.Modules
                 return yesorno;
             }
         }
+        public async Task<bool> EnforceChannel(ulong server)
+        {
+            if (conn == null)
+                GetConnectionString();
+            bool yesorno = false;
+            MySqlCommand Cmd = new MySqlCommand
+            {
+                Connection = conn,
+                CommandText = "SELECT enforceChannel FROM UNObot.Games WHERE server = ?"
+            };
+            MySqlParameter p1 = new MySqlParameter
+            {
+                Value = server
+            };
+            Cmd.Parameters.Add(p1);
+            await conn.OpenAsync();
+            using (MySqlDataReader dr = (MySqlDataReader)await Cmd.ExecuteReaderAsync())
+            {
+                try
+                {
+                    while (dr.Read())
+                        yesorno |= dr.GetByte(0) == 1;
+                }
+                catch (MySqlException ex)
+                {
+                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                }
+                finally
+                {
+                    await conn.CloseAsync();
+                }
+                return yesorno;
+            }
+        }
+        public async Task SetEnforceChannel(ulong server, bool enforce)
+        {
+            if (conn == null)
+                GetConnectionString();
+            MySqlCommand Cmd = new MySqlCommand();
+            Cmd.Connection = conn;
+            Cmd.CommandText = "UPDATE Games SET enforceChannel = ? WHERE server = ?";
+            MySqlParameter p1 = new MySqlParameter
+            {
+                Value = enforce
+            };
+            Cmd.Parameters.Add(p1);
+            MySqlParameter p2 = new MySqlParameter
+            {
+                Value = server
+            };
+            Cmd.Parameters.Add(p2);
+            try
+            {
+                await conn.OpenAsync();
+                await Cmd.ExecuteNonQueryAsync();
+            }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            finally
+            {
+                await conn.CloseAsync();
+            }
+        }
         public async Task<ulong> GetDefaultChannel(ulong server)
         {
             if (conn == null)
@@ -760,6 +825,71 @@ namespace UNObot.Modules
                     await conn.CloseAsync();
                 }
                 return channel;
+            }
+        }
+        public async Task<List<ulong>> GetAllowedChannels(ulong server)
+        {
+            if (conn == null)
+                GetConnectionString();
+            List<ulong> allowedChannels = new List<ulong>();
+            MySqlCommand Cmd = new MySqlCommand
+            {
+                Connection = conn,
+                CommandText = "SELECT allowedChannels FROM UNObot.Games WHERE server = ?"
+            };
+            MySqlParameter p1 = new MySqlParameter
+            {
+                Value = server
+            };
+            Cmd.Parameters.Add(p1);
+            await conn.OpenAsync();
+            using (MySqlDataReader dr = (MySqlDataReader)await Cmd.ExecuteReaderAsync())
+            {
+                try
+                {
+                    while (dr.Read())
+                        allowedChannels = JsonConvert.DeserializeObject<List<ulong>>(dr.GetString(0));
+                }
+                catch (MySqlException ex)
+                {
+                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                }
+                finally
+                {
+                    await conn.CloseAsync();
+                }
+                return allowedChannels;
+            }
+        }
+        public async Task SetAllowedChannels(ulong server, List<ulong> allowedChannels)
+        {
+            if (conn == null)
+                GetConnectionString();
+            MySqlCommand Cmd = new MySqlCommand();
+            Cmd.Connection = conn;
+            Cmd.CommandText = "UPDATE Games SET allowedChannels = ? WHERE server = ?";
+            MySqlParameter p1 = new MySqlParameter
+            {
+                Value = JsonConvert.SerializeObject(allowedChannels)
+            };
+            Cmd.Parameters.Add(p1);
+            MySqlParameter p2 = new MySqlParameter
+            {
+                Value = server
+            };
+            Cmd.Parameters.Add(p2);
+            try
+            {
+                await conn.OpenAsync();
+                await Cmd.ExecuteNonQueryAsync();
+            }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            finally
+            {
+                await conn.CloseAsync();
             }
         }
         public async Task<Card> GetCurrentCard(ulong server)
