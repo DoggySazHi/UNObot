@@ -97,6 +97,7 @@ namespace UNOBot.Modules
                              $"Players: {Convert.ToInt32(response.Players)}/{Convert.ToInt32(response.MaxPlayers)}\n" +
                              $"Map: {response.Map}");
         }
+        /*
         [Command("helpme"), RequireOwner]
         public async Task TestPerm1()
         {
@@ -110,7 +111,7 @@ namespace UNOBot.Modules
             }
             await textchannel.DeleteMessagesAsync(messages);
         }
-
+        */
         [Command("helpmeplz"), RequireOwner]
         public async Task HelpmePlz(int length)
         {
