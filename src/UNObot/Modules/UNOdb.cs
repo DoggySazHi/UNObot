@@ -1215,6 +1215,59 @@ namespace UNObot.Modules
             }
             return message;
         }
+        public async Task SetNote(ulong player, string note)
+        {
+            if (conn == null)
+                GetConnectionString();
+
+            MySqlCommand Cmd = new MySqlCommand();
+            Cmd.Connection = conn;
+            Cmd.CommandText = "UPDATE UNObot.Players SET note = ? WHERE userid = ?";
+            MySqlParameter p1 = new MySqlParameter();
+            p1.Value = note;
+            Cmd.Parameters.Add(p1);
+            MySqlParameter p2 = new MySqlParameter();
+            p2.Value = player;
+            Cmd.Parameters.Add(p2);
+            try
+            {
+                await conn.OpenAsync();
+                await Cmd.ExecuteNonQueryAsync();
+            }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            finally
+            {
+                await conn.CloseAsync();
+            }
+        }
+        public async Task RemoveNote(ulong player)
+        {
+            if (conn == null)
+                GetConnectionString();
+
+            MySqlCommand Cmd = new MySqlCommand();
+            Cmd.Connection = conn;
+            Cmd.CommandText = "UPDATE UNObot.Players SET note = NULL WHERE userid = ?";
+            MySqlParameter p1 = new MySqlParameter();
+            p1.Value = player;
+            Cmd.Parameters.Add(p1);
+            try
+            {
+                await conn.OpenAsync();
+                await Cmd.ExecuteNonQueryAsync();
+            }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            finally
+            {
+                await conn.CloseAsync();
+            }
+        }
         public async Task UpdateStats(ulong player, int mode)
         {
             //1 is gamesJoined

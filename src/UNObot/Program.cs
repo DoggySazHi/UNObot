@@ -26,7 +26,11 @@ namespace UNObot
         public static ulong onecardleft;
         */
         static void Main()
-            => new Program().MainAsync().GetAwaiter().GetResult();
+        {
+            Console.WriteLine("UNObot Launcher 1.0");
+            //TODO generate new config if it doesn't exist
+            new Program().MainAsync().GetAwaiter().GetResult();
+        }
 
         public static DiscordSocketClient _client;
         IConfiguration _config;
@@ -74,7 +78,7 @@ namespace UNObot
 
         static async Task LoadHelp()
         {
-            if(File.Exists("help.json"))
+            if (File.Exists("help.json"))
             {
                 Console.WriteLine("Loading help.json into memory...");
 
@@ -98,7 +102,7 @@ namespace UNObot
             ulong channel = 0;
             channel = _client.GetGuild(server).DefaultChannel.Id;
             Console.WriteLine($"Channel: {channel}");
-            if(await db.HasDefaultChannel(server))
+            if (await db.HasDefaultChannel(server))
                 channel = await db.GetDefaultChannel(server);
             Console.WriteLine($"Channel: {channel}");
             await _client.GetGuild(server).GetTextChannel(channel).SendMessageAsync(text);

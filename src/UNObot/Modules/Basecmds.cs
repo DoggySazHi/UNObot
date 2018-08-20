@@ -30,21 +30,10 @@ namespace UNObot.Modules
         {
             await ReplyAsync($"You got me there at \"nep\".");
         }
-        [Command("ugay")]
+        [Command("ugay"), Alias("u gay", "you gay", "you're gay")]
         public async Task Ugay()
             => await ReplyAsync(
                 $"<@{Context.User.Id}> no u\n");
-
-        [Command("u gay")]
-        public async Task Ugay2()
-            => await ReplyAsync(
-                $"<@{Context.User.Id}> no u\n");
-
-        [Command("you gay")]
-        public async Task Ugay3()
-            => await ReplyAsync(
-                $"<@{Context.User.Id}> no u\n");
-
         [Command("no u")]
         public async Task Easteregg1()
         {
