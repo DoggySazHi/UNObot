@@ -15,7 +15,7 @@ namespace UNObot.Modules
         readonly PlayCard playCard = new PlayCard();
 
         [Command("seed")]
-        public async Task Seed(string seed)
+        public async Task Seed([Remainder]string seed)
         {
             UNOcore.r = new Random(seed.GetHashCode());
             await ReplyAsync("Seed has been updated. I do not guarantee 100% Wild cards.");
@@ -30,7 +30,7 @@ namespace UNObot.Modules
                 await ReplyAsync($"The game has already started in this server!\n");
                 return;
             }
-            else if (await db.IsPlayerInGame(Context.User.Id))
+            if (await db.IsPlayerInGame(Context.User.Id))
             {
                 await ReplyAsync($"{Context.User.Username}, you are already in a game!\n");
                 return;
@@ -109,6 +109,45 @@ namespace UNObot.Modules
                                 + $"Games fully played: {stats[1]}\n"
                                 + $"Games won: {stats[2]}");
         }
+        [Command("setnote")]
+        public async Task SetNote()
+        {
+            await db.RemoveNote(Context.User.Id);
+            await ReplyAsync("Successfully removed note!");
+        }
+        [Command("setnote")]
+        public async Task SetNote([Remainder]string text)
+        {
+            if (text.Trim().Normalize() == "")
+                text = "???";
+            await db.SetNote(Context.User.Id, text);
+            await ReplyAsync("Successfully set note!");
+        }
+        [Command("setusernote"), RequireOwner]
+        public async Task SetNote(string user, [Remainder]string text)
+        {
+            user = user.Trim(new Char[] { ' ', '<', '>', '!', '@' });
+            if (!UInt64.TryParse(user, out ulong userid))
+            {
+                await ReplyAsync("Mention the player with this command to see their stats.");
+                return;
+            }
+            if (!await db.UserExists(userid))
+            {
+                await ReplyAsync($"The user does not exist; either you have typed it wrong, or that user doesn't exist in the UNObot database.");
+                return;
+            }
+            if (text.Trim().Normalize() == "")
+                text = "???";
+            await db.SetNote(userid, text);
+            await ReplyAsync("Successfully set note!");
+        }
+        [Command("removenote")]
+        public async Task RemoveNote()
+        {
+            await db.RemoveNote(Context.User.Id);
+            await ReplyAsync("Successfully removed note!");
+        }
         [Command("draw"), Alias("take", "dr", "tk")]
         public async Task Draw()
         {
@@ -156,7 +195,7 @@ namespace UNObot.Modules
                         var sorted = list.OrderBy((arg) => arg.Color).ThenBy((arg) => arg.Value).ToList<Card>();
                         await db.SetCards(Context.User.Id, sorted);
                         string response = $"Current card: {await db.GetCurrentCard(Context.Guild.Id)}\nCards available:\n";
-                        foreach (Card card in list)
+                        foreach (Card card in sorted)
                         {
                             response += card.Color + " " + card.Value + "\n";
                         }

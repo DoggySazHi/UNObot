@@ -79,6 +79,8 @@ namespace DiscordBot.Services
                 await context.Channel.SendMessageAsync("I do not accept DM messages. Please use me in a guild/server.");
                 return;
             }
+            await db.AddGame(context.Guild.Id);
+            await db.AddUser(context.User.Id, context.User.Username);
             var result = await _commands.ExecuteAsync(context, argPos, _provider);
             if (result.Error.HasValue)
             {
