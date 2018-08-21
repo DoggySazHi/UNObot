@@ -118,8 +118,14 @@ namespace UNObot.Modules
         [Command("setnote")]
         public async Task SetNote([Remainder]string text)
         {
-            if (text.Trim().Normalize() == "")
+            text = text.Trim().Normalize();
+            if (text == "")
                 text = "???";
+            else if (text.ToLower().Contains("discord") && text.ToLower().Contains("gg"))
+            {
+                await ReplyAsync("You are not allowed to put invites!");
+                return;
+            }
             await db.SetNote(Context.User.Id, text);
             await ReplyAsync("Successfully set note!");
         }
