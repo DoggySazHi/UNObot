@@ -482,13 +482,8 @@ namespace UNObot.Modules
                             "Remember; you have 1 minute and 30 seconds to place a card.\n" +
                             $"The first player is <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>.\n");
                     Card currentCard = UNOcore.RandomCard();
-                    while (true)
-                    {
-                        if (currentCard.Color == "Wild")
-                            currentCard = UNOcore.RandomCard();
-                        else
-                            break;
-                    }
+                    while (currentCard.Color == "Wild")
+                        currentCard = UNOcore.RandomCard();
                     switch (currentCard.Value)
                     {
                         case "+2":
