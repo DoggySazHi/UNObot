@@ -552,6 +552,24 @@ namespace UNObot.Modules
                             "Remember; you have 1 minute and 30 seconds to place a card.\n" +
                             $"The first player is <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>.\n");
                     Card currentCard = UNOcore.RandomCard();
+                    while (currentCard.Color == "Wild")
+                        currentCard = UNOcore.RandomCard();
+                    switch (currentCard.Value)
+                    {
+                        case "+2":
+                            var curuser = await queueHandler.GetCurrentPlayer(Context.Guild.Id);
+                            await db.AddCard(curuser, UNOcore.RandomCard());
+                            await db.AddCard(curuser, UNOcore.RandomCard());
+                            break;
+                        case "Reverse":
+                            await queueHandler.ReversePlayers(Context.Guild.Id);
+                            await ReplyAsync($"What? The order has been reversed! Now, it's <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
+                            break;
+                        case "Skip":
+                            await queueHandler.NextPlayer(Context.Guild.Id);
+                            await ReplyAsync($"What's this? A skip? Oh well, now it's <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
+                            break;
+                    }
                     await db.SetCurrentCard(Context.Guild.Id, currentCard);
                     await ReplyAsync($"Current card: {currentCard.ToString()}\n");
                     await db.StarterCard(Context.Guild.Id);
