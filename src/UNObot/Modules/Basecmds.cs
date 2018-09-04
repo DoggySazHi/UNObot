@@ -92,6 +92,7 @@ namespace UNObot.Modules
         [Command("upupdowndownleftrightleftrightbastart")]
         public async Task OldEasterEgg()
             => await ReplyAsync("lol, that's outdated");
+
         [Command("help"), Alias("ahh", "ahhh", "ahhhh")]
         public async Task Help()
         {
@@ -133,7 +134,7 @@ namespace UNObot.Modules
             Response += "```";
             await UserExtensions.SendMessageAsync(Context.Message.Author, Response);
         }
-        [Command("help")]
+        [Command("help"), Alias("ahh", "ahhh", "ahhhh")]
         public async Task Help(string cmdSearch)
         {
             string Response = "";

@@ -1,8 +1,10 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
 using Discord;
 using Discord.Commands;
+using Discord.WebSocket;
 using UNObot.Modules;
 
 namespace UNOBot.Modules
@@ -117,15 +119,59 @@ namespace UNOBot.Modules
         {
             var messages = await Context.Channel.GetMessagesAsync(length + 1).FlattenAsync();
 
-            ITextChannel textchannel = Context.Channel as ITextChannel;
-            if (textchannel == null)
+            if (!(Context.Channel is ITextChannel textchannel))
             {
                 Console.WriteLine("error cast");
                 return;
             }
             await textchannel.DeleteMessagesAsync(messages);
         }
+        [Command("moltthink")]
+        public async Task MoltThink()
+        {
+            await ReplyAsync("<:moltthink:471842854591791104>");
+        }
+        [Command("moltthinkreact")]
+        public async Task MoltThinkReact()
+            => await MoltThinkReact(1);
+        [Command("moltthinkreact")]
+        public async Task MoltThinkReact(int numMessages)
+        {
+            IEmote emote = await Context.Client.GetGuild(420005591155605535).GetEmoteAsync(471842854591791104);
+            await BaseReact(numMessages, emote);
+        }
 
+        [Command("oof")]
+        public async Task OOF()
+        {
+            await ReplyAsync("<:oof:443773918319476757>");
+        }
+        [Command("oofreact")]
+        public async Task OOFReact()
+            => await OOFReact(1);
+        [Command("oofreact")]
+        public async Task OOFReact(int numMessages)
+        {
+            IEmote emote = await Context.Client.GetGuild(420005591155605535).GetEmoteAsync(443773918319476757);
+            await BaseReact(numMessages, emote);
+        }
+
+        public async Task BaseReact(int numMessages, IEmote emote)
+        {
+            var messages = await Context.Channel.GetMessagesAsync(numMessages + 1).FlattenAsync();
+            var message = messages.Last();
+
+            if (!(message is IUserMessage updatedMessage))
+            {
+                await ReplyAsync("Couldn't add reaction!");
+                return;
+            }
+            //IEmote emote = await Context.Client.GetGuild(420005591155605535).GetEmoteAsync(471842854591791104);
+            //Emote emote = Emote emote = Emote.Parse("<:dotnet:232902710280716288>");
+            //Emoji emoji = new Emoji("👍");
+            await updatedMessage.AddReactionAsync(emote);
+            await Purge(0);
+        }
         /*
         Timer spamTimer = new Timer();
         ulong server = 0;
