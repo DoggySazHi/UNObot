@@ -7,7 +7,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 
-namespace DiscordBot.Services
+namespace UNObot.Services
 {
     public class CommandHandlingService
     {
@@ -87,16 +87,16 @@ namespace DiscordBot.Services
                 switch (result.Error.Value)
                 {
                     case CommandError.UnknownCommand:
-                        //await context.Channel.SendMessageAsync("That's not a command dummy. Type '<@419374055792050176> help' for a list of commands.");
+                        //await context.Channel.SendMessageAsync($"That's not a command dummy. Type '<@{context.Client.CurrentUser.Id}> help' for a list of commands.");
                         break;
                     case CommandError.BadArgCount:
-                        await context.Channel.SendMessageAsync("Hmm, that's not how it works. Type '<@419374055792050176> help' for the parameters of your command.");
+                        await context.Channel.SendMessageAsync($"Hmm, that's not how it works. Type '<@{context.Client.CurrentUser.Id}> help' for the parameters of your command.");
                         break;
                     case CommandError.ParseFailed:
                         await context.Channel.SendMessageAsync("You dun goof. If it asks for numbers, type an actual number. If it asks for words, make sure to double quote around it.");
                         break;
                     case CommandError.MultipleMatches:
-                        await context.Channel.SendMessageAsync("There are multiple commands with the same name. Type '<@419374055792050176> help' to see which one you need.");
+                        await context.Channel.SendMessageAsync($"There are multiple commands with the same name. Type '<@{context.Client.CurrentUser.Id}> help' to see which one you need.");
                         break;
                     case CommandError.UnmetPrecondition:
                         await context.Channel.SendMessageAsync("You do not have the **power** to run this command!");

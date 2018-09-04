@@ -9,6 +9,8 @@ using Discord.Commands;
 using Discord.WebSocket;
 using DiscordBot.Services;
 using Newtonsoft.Json;
+using System.Reflection;
+using System.Linq;
 
 namespace UNObot
 {
@@ -25,11 +27,11 @@ namespace UNObot
         public static Modules.Card currentcard;
         public static ulong onecardleft;
         */
-        static void Main()
+        static async Task Main()
         {
             Console.WriteLine("UNObot Launcher 1.0");
             //TODO generate new config if it doesn't exist
-            new Program().MainAsync().GetAwaiter().GetResult();
+            await new Program().MainAsync();
         }
 
         public static DiscordSocketClient _client;
@@ -42,13 +44,13 @@ namespace UNObot
 
             var services = ConfigureServices();
             services.GetRequiredService<LogService>();
-            await services.GetRequiredService<CommandHandlingService>().InitializeAsync(services);
+            await services.GetRequiredService<Services.CommandHandlingService>().InitializeAsync(services);
 
             await _client.LoginAsync(TokenType.Bot, _config["token"]);
             await _client.StartAsync();
             await db.CleanAll();
             await _client.SetGameAsync($"UNObot {version}");
-            await LoadHelp();
+            LoadHelp();
             await Task.Delay(-1);
         }
 
@@ -58,7 +60,7 @@ namespace UNObot
                 // Base
                 .AddSingleton(_client)
                 .AddSingleton<CommandService>()
-                .AddSingleton<CommandHandlingService>()
+                .AddSingleton<Services.CommandHandlingService>()
                 // Logging
                 .AddLogging()
                 .AddSingleton<LogService>()
@@ -75,9 +77,57 @@ namespace UNObot
                 .AddJsonFile("config.json")
                 .Build();
         }
-
-        static async Task LoadHelp()
+        static void LoadHelp()
         {
+            var types = from c in Assembly.GetExecutingAssembly().GetTypes()
+                        where c.IsClass
+                        select c;
+            foreach (var type in types)
+            {
+                foreach (var module in type.GetMethods())
+                {
+                    var helpatt = module.GetCustomAttribute(typeof(Modules.Help)) as Modules.Help;
+                    var aliasatt = module.GetCustomAttributes(typeof(AliasAttribute)) as AliasAttribute;
+                    var owneronlyatt = module.GetCustomAttributes(typeof(AliasAttribute)) as AliasAttribute;
+                    var userpermsatt = module.GetCustomAttributes(typeof(AliasAttribute)) as AliasAttribute;
+                    var remainder = module.GetCustomAttributes(typeof(AliasAttribute)) as AliasAttribute;
+
+
+                    var aliases = new List<string>();
+                    //check if it is a command
+                    if (module.GetCustomAttribute(typeof(CommandAttribute)) is CommandAttribute nameatt)
+                    {
+                        string foundHelp = helpatt == null ? "Missing help." : "Found help.";
+                        Console.WriteLine($"Loaded \"{nameatt.Text}\". {foundHelp}");
+                        int positioncmd = commands.FindIndex(o => o.CommandName == nameatt.Text);
+                        if (aliasatt != null && aliasatt.Aliases != null)
+                            aliases = aliasatt.Aliases.ToList();
+                        if (positioncmd < 0)
+                        {
+                            if (helpatt != null)
+                                commands.Add(new Modules.Command(nameatt.Text, aliases, helpatt.Usages, helpatt.HelpMsg, helpatt.Active, helpatt.Version));
+                            else
+                                commands.Add(new Modules.Command(nameatt.Text, aliases, new List<string> { $".{nameatt.Text}" }, "No help is given for this command.", true, "Unknown Version"));
+                        }
+                        else
+                        {
+                            if (helpatt != null)
+                            {
+                                if (commands[positioncmd].Help == "No help is given for this command.")
+                                    commands[positioncmd].Help = helpatt.HelpMsg;
+                                commands[positioncmd].Usages = commands[positioncmd].Usages.Union(helpatt.Usages.ToList()).ToList();
+                                commands[positioncmd].Active |= helpatt.Active;
+                                if (commands[positioncmd].Version == "Unknown Version")
+                                    commands[positioncmd].Version = helpatt.Version;
+                            }
+                            if (aliasatt != null)
+                                commands[positioncmd].Aliases = commands[positioncmd].Aliases.Union(aliasatt.Aliases.ToList()).ToList();
+                        }
+                    }
+                }
+            }
+            Console.WriteLine($"Loaded {commands.Count} commands!");
+            /* Old help.json method
             if (File.Exists("help.json"))
             {
                 Console.WriteLine("Loading help.json into memory...");
@@ -96,6 +146,7 @@ namespace UNObot
                     await sw.WriteLineAsync("[]");
                 Console.WriteLine("File created! Please generate your own via the help tool.");
             }
+            */
         }
         public static async Task SendMessage(string text, ulong server)
         {
