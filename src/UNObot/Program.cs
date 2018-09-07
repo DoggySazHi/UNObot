@@ -88,11 +88,13 @@ namespace UNObot
                 {
                     var helpatt = module.GetCustomAttribute(typeof(Modules.Help)) as Modules.Help;
                     var aliasatt = module.GetCustomAttributes(typeof(AliasAttribute)) as AliasAttribute;
-                    var owneronlyatt = module.GetCustomAttributes(typeof(AliasAttribute)) as AliasAttribute;
-                    var userpermsatt = module.GetCustomAttributes(typeof(AliasAttribute)) as AliasAttribute;
-                    var remainder = module.GetCustomAttributes(typeof(AliasAttribute)) as AliasAttribute;
-
-
+                    var owneronlyatt = module.GetCustomAttribute(typeof(RequireOwnerAttribute)) as RequireOwnerAttribute;
+                    var userpermsatt = module.GetCustomAttributes(typeof(RequireUserPermissionAttribute)) as RequireUserPermissionAttribute;
+                    var remainder = module.GetCustomAttribute(typeof(RemainderAttribute)) as RemainderAttribute;
+                    foreach (var pinfo in module.GetParameters())
+                    {
+                        var name = pinfo.Name;
+                    }
                     var aliases = new List<string>();
                     //check if it is a command
                     if (module.GetCustomAttribute(typeof(CommandAttribute)) is CommandAttribute nameatt)
