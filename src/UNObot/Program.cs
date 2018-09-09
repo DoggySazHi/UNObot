@@ -19,14 +19,7 @@ namespace UNObot
         static Modules.UNOdb db = new Modules.UNOdb();
         public static string version = "Unknown Version";
         public static List<Modules.Command> commands = new List<Modules.Command>();
-        /*
-        public static int currentPlayer;
-        //1: Clockwise 2: Counter-Clockwise
-        public static byte order = 1;
-        public static bool gameStarted;
-        public static Modules.Card currentcard;
-        public static ulong onecardleft;
-        */
+
         static async Task Main()
         {
             Console.WriteLine("UNObot Launcher 1.0");
@@ -107,7 +100,7 @@ namespace UNObot
                         if (positioncmd < 0)
                         {
                             if (helpatt != null)
-                                commands.Add(new Modules.Command(nameatt.Text, aliases, helpatt.Usages, helpatt.HelpMsg, helpatt.Active, helpatt.Version));
+                                commands.Add(new Modules.Command(nameatt.Text, aliases, helpatt.Usages.ToList(), helpatt.HelpMsg, helpatt.Active, helpatt.Version));
                             else
                                 commands.Add(new Modules.Command(nameatt.Text, aliases, new List<string> { $".{nameatt.Text}" }, "No help is given for this command.", true, "Unknown Version"));
                         }

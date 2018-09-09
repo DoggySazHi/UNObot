@@ -10,13 +10,13 @@ namespace UNObot.Modules
     [AttributeUsage(AttributeTargets.Method)]
     public class Help : Attribute
     {
-        public List<string> Usages { get; set; }
+        public string[] Usages { get; set; }
         public string HelpMsg { get; set; }
         public bool Active { get; set; }
         public string Version { get; set; }
 
         [JsonConstructor]
-        public Help(List<string> Usages, string HelpMsg, bool Active, string Version)
+        public Help(string[] Usages, string HelpMsg, bool Active, string Version)
         {
             this.Usages = Usages;
             this.HelpMsg = HelpMsg;

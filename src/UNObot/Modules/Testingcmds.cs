@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
@@ -12,6 +13,7 @@ namespace UNOBot.Modules
     public class Testingcmds : ModuleBase<SocketCommandContext>
     {
         [Command("purge"), RequireUserPermission(GuildPermission.Administrator), RequireBotPermission(ChannelPermission.ManageMessages)]
+        [Help(new string[] { ".purge (number of messages)" }, "Delete messages via a range. Testing command; do not rely on forever.", false, "UNObot 1.4")]
         public async Task Purge(int length)
         {
             var messages = await Context.Channel.GetMessagesAsync(length + 1).FlattenAsync();
@@ -25,6 +27,7 @@ namespace UNOBot.Modules
             await textchannel.DeleteMessagesAsync(messages);
         }
         [Command("exit")]
+        [Help(new string[] { ".exit" }, "Kill UNObot when he's being a bad bot. Only Doggy and other \"special\" people can do it.", false, "UNObot 1.4")]
         public async Task Exit()
         {
             switch (Context.User.Id)
@@ -42,6 +45,7 @@ namespace UNOBot.Modules
             Environment.Exit(0);
         }
         [Command("ubows"), Alias("ubow")]
+        [Help(new string[] { ".ubows" }, "Get basic server information about the Unturned Bunker Official Wikia Server.", true, "UNObot 2.4")]
         public async Task UBOWS()
         {
             bool success = QueryHandler.GetInfo("108.61.100.48", 25445, out A2S_INFO response);
