@@ -86,9 +86,6 @@ namespace UNObot.Services
             {
                 switch (result.Error.Value)
                 {
-                    case CommandError.UnknownCommand:
-                        //await context.Channel.SendMessageAsync($"That's not a command dummy. Type '<@{context.Client.CurrentUser.Id}> help' for a list of commands.");
-                        break;
                     case CommandError.BadArgCount:
                         await context.Channel.SendMessageAsync($"Hmm, that's not how it works. Type '<@{context.Client.CurrentUser.Id}> help' for the parameters of your command.");
                         break;
@@ -100,12 +97,6 @@ namespace UNObot.Services
                         break;
                     case CommandError.UnmetPrecondition:
                         await context.Channel.SendMessageAsync("You do not have the **power** to run this command!");
-                        break;
-                    case CommandError.Exception:
-                        await context.Channel.SendMessageAsync(":bomb: UNObot has encountered a fatal error, but luckily, we have caught the error.\nPlease send all bug reports to DoggySazHi.");
-                        break;
-                    default:
-                        await context.Channel.SendMessageAsync(":bomb: UNObot has encountered a fatal error, and your action could not be completed.\nPlease send all bug reports to DoggySazHi.");
                         break;
                 }
 #if DEBUG

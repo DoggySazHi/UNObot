@@ -37,10 +37,10 @@ namespace DiscordBot.Services
         private Task LogDiscord(LogMessage message)
         {
             _discordLogger.Log(
-                LogLevelFromSeverity(message.Severity), 
-                0, 
+                LogLevelFromSeverity(message.Severity),
+                0,
                 message,
-                message.Exception, 
+                message.Exception,
                 (_1, _2) => message.ToString(prependTimestamp: false));
             return Task.CompletedTask;
         }
@@ -48,11 +48,13 @@ namespace DiscordBot.Services
         private Task LogCommand(LogMessage message)
         {
             // Return an error message for async commands
+            /*
             if (message.Exception is CommandException command)
             {
                 // Don't risk blocking the logging task by awaiting a message send; ratelimits!?
                 var _ = command.Context.Channel.SendMessageAsync($"Error: {command.Message}");
             }
+            */
 
             _commandsLogger.Log(
                 LogLevelFromSeverity(message.Severity),
@@ -65,6 +67,6 @@ namespace DiscordBot.Services
 
         private static LogLevel LogLevelFromSeverity(LogSeverity severity)
             => (LogLevel)(Math.Abs((int)severity - 5));
-        
+
     }
 }
