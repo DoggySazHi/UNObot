@@ -8,53 +8,51 @@ namespace UNObot.Modules
     public class Basecmds : ModuleBase<SocketCommandContext>
     {
         [Command("info")]
+        [Help(new string[] { ".info" }, "Get the current version of UNObot.", true, "UNObot 1.0")]
         public async Task Info()
         {
             await ReplyAsync(
-                $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {Program.version}\nblame Aragami and FM for the existance of this");
+                $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {Program.version}\nCurrent Time (UTC): {DateTime.Now.ToUniversalTime().ToString()}");
         }
+
         [Command("gulag")]
+        [Help(new string[] { ".gulag" }, "Blyat.", false, "UNObot 1.4")]
         public async Task Gulag()
         {
             await ReplyAsync($"<@{Context.User.Id}> has been sent to gulag and has all of his cards converted to red blyats.");
         }
+
         [Command("gulag")]
+        [Help(new string[] { ".gulag (user)" }, "Blyat.", false, "UNObot 1.4")]
         public async Task Gulag2(string user)
         {
             //extraclean
             user = user.Trim(new Char[] { ' ', '<', '>', '!', '@' });
             await ReplyAsync($"<@{user}> has been sent to gulag and has all of his cards converted to red blyats.");
         }
+
         [Command("nepnep")]
+        [Help(new string[] { ".nepnep" }, "Wait, how did this command get in here?", false, "UNObot 1.4")]
         public async Task Nep()
         {
             await ReplyAsync($"You got me there at \"nep\".");
         }
+
         [Command("ugay"), Alias("u gay", "you gay", "you're gay")]
+        [Help(new string[] { ".ugay" }, "That's not very nice. >:[", false, "UNObot 0.1")]
         public async Task Ugay()
             => await ReplyAsync(
                 $"<@{Context.User.Id}> no u\n");
-        [Command("no u")]
+
+        [Command("no u"), Alias("nou")]
+        [Help(new string[] { ".no u" }, "Fite me m8", false, "UNObot 1.0")]
         public async Task Easteregg1()
         {
-            await ReplyAsync($"I claim that <@{Context.User.Id}> is triple gay. Say \"No U\" again, u ded m8.");
+            await ReplyAsync($"I claim that <@{Context.User.Id}> is triple gay. Say \"No U\" again, uh...");
         }
-        /*
-        [Command("doggysaz"), RequireBotPermission(ChannelPermission.ManageMessages)]
-        public async Task Easteregg2(string response)
-        {
-            var messages = await Context.Channel.GetMessagesAsync(1).FlattenAsync();
 
-            if (!(Context.Channel is ITextChannel textchannel))
-            {
-                Console.WriteLine("error cast");
-                return;
-            }
-            await textchannel.DeleteMessagesAsync(messages);
-            await ReplyAsync(response);
-        }
-        */
         [Command("testperms"), RequireUserPermission(GuildPermission.ManageGuild)]
+        [Help(new string[] { ".testperms" }, "Show all permissions that UNObot has. Added for security reasons.", true, "UNObot 1.4")]
         public async Task TestPerms()
         {
             string response = "Permissions:\n";
@@ -62,7 +60,7 @@ namespace UNObot.Modules
             var Perms = User.GetPermissions(Context.Channel as IGuildChannel);
             foreach (ChannelPermission c in Perms.ToList())
             {
-                //todo: copy, lol
+                //todo: copy, lol (see dogtestperms)
                 response += c.ToString() + "\n";
             }
             await ReplyAsync(response);
@@ -81,6 +79,7 @@ namespace UNObot.Modules
             await ReplyAsync(response);
         }
         [Command("nick"), RequireOwner]
+        [Help(new string[] { ".nick (nickname)" }, "Change the nickname of UNObot.", false, "UNObot 2.0")]
         public async Task ChangeNick(string newnick)
         {
             var User = Context.Guild.GetUser(Context.Client.CurrentUser.Id);
@@ -89,11 +88,14 @@ namespace UNObot.Modules
                 x.Nickname = newnick;
             });
         }
+
         [Command("upupdowndownleftrightleftrightbastart")]
+        [Help(new string[] { ".upupdowndownleftrightleftrightbastart" }, "Wow, an ancient easter egg. It's still ancient.", false, "UNObot 1.4")]
         public async Task OldEasterEgg()
             => await ReplyAsync("lol, that's outdated");
 
         [Command("help"), Alias("ahh", "ahhh", "ahhhh")]
+        [Help(new string[] { ".help" }, "If you need help using help, you're truly lost.", true, "UNObot 1.0")]
         public async Task Help()
         {
             await ReplyAsync("Help has been sent. Or, I think it has.");
@@ -134,7 +136,9 @@ namespace UNObot.Modules
             Response += "```";
             await UserExtensions.SendMessageAsync(Context.Message.Author, Response);
         }
+
         [Command("help"), Alias("ahh", "ahhh", "ahhhh")]
+        [Help(new string[] { ".help (command)" }, "If you need help using help, you're truly lost.", true, "UNObot 1.0")]
         public async Task Help(string cmdSearch)
         {
             string Response = "";
@@ -162,11 +166,13 @@ namespace UNObot.Modules
             Response += "```";
             await ReplyAsync(Response);
         }
+
         [Command("credits"), Alias("asdf")]
+        [Help(new string[] { ".credits" }, "Wow, look at all of the victims during the making of this bot.", true, "UNObot 1.0")]
         public async Task Credits()
         {
             await ReplyAsync("UNObot: Programmed by DoggySazHi\n" +
-                "Tested by Aragami and Fm\n" +
+                "Tested by Aragami and Fm (ish)\n" +
                 "Created for the UBOWS server\n\n" +
                 "Stickerz was here.\n" +
                 "Blame LocalDisk and Harvest for any bugs.");

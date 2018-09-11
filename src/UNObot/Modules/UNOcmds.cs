@@ -15,6 +15,7 @@ namespace UNObot.Modules
         readonly PlayCard playCard = new PlayCard();
 
         [Command("seed")]
+        [Help(new string[] { ".seed" }, "Cheat like Aragami and hope the RNG favors you.", true, "UNObot 1.0")]
         public async Task Seed([Remainder]string seed)
         {
             UNOcore.r = new Random(seed.GetHashCode());
@@ -40,6 +41,7 @@ namespace UNObot.Modules
             await ReplyAsync($"{Context.User.Username} has been added to the queue.\n");
         }
         [Command("leave")]
+        [Help(new string[] { ".leave" }, "Leave the queue (or game) in the current server.", true, "UNObot 0.2")]
         public async Task Leave()
         {
             await db.AddGame(Context.Guild.Id);
@@ -67,6 +69,7 @@ namespace UNObot.Modules
             }
         }
         [Command("stats")]
+        [Help(new string[] { ".stats" }, "Get the statistics of you or another player to see if they are a noob, pro, or hacker.", true, "UNObot 1.4")]
         public async Task Stats()
         {
             int[] stats = await db.GetStats(Context.User.Id);
@@ -85,6 +88,7 @@ namespace UNObot.Modules
                                 + $"Games won: {stats[2]}");
         }
         [Command("stats")]
+        [Help(new string[] { ".stats (ping another player)" }, "Get the statistics of you or another player to see if they are a noob, pro, or hacker.", true, "UNObot 1.4")]
         public async Task Stats2(string user)
         {
             user = user.Trim(new Char[] { ' ', '<', '>', '!', '@' });
@@ -110,12 +114,14 @@ namespace UNObot.Modules
                                 + $"Games won: {stats[2]}");
         }
         [Command("setnote")]
+        [Help(new string[] { ".setnote" }, "Set a note about yourself. Write nothing to delete your message", true, "UNObot 2.1")]
         public async Task SetNote()
         {
             await db.RemoveNote(Context.User.Id);
             await ReplyAsync("Successfully removed note!");
         }
         [Command("setnote")]
+        [Help(new string[] { ".setnote" }, "Set a note about yourself. Write nothing to delete your message", true, "UNObot 2.1")]
         public async Task SetNote([Remainder]string text)
         {
             text = text.Trim().Normalize();
@@ -130,6 +136,7 @@ namespace UNObot.Modules
             await ReplyAsync("Successfully set note!");
         }
         [Command("setusernote"), RequireOwner]
+        [Help(new string[] { ".setusernote" }, "Set a note about others. This command can only be ran by DoggySazHi.", false, "UNObot 2.1")]
         public async Task SetNote(string user, [Remainder]string text)
         {
             user = user.Trim(new Char[] { ' ', '<', '>', '!', '@' });
@@ -149,6 +156,7 @@ namespace UNObot.Modules
             await ReplyAsync("Successfully set note!");
         }
         [Command("removenote")]
+        [Help(new string[] { ".removenote" }, "Remove your current note.", true, "UNObot 2.1")]
         public async Task RemoveNote()
         {
             await db.RemoveNote(Context.User.Id);

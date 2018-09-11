@@ -62,6 +62,7 @@ namespace UNOBot.Modules
         }
 
         [Command("slamc")]
+        [Help(new string[] { ".slamc" }, "Get basic server information about the Slightly Less Average Minecraft server.", true, "UNObot 2.4")]
         public async Task SLAMC()
         {
             var response = QueryHandler.GetInfoMC("23.243.79.108");
@@ -72,6 +73,7 @@ namespace UNOBot.Modules
         }
 
         [Command("psurvival")]
+        [Help(new string[] { ".psurvival" }, "Get basic server information about the pSurvival Minecraft server.", true, "UNObot 2.4")]
         public async Task PSurvival()
         {
             var response = QueryHandler.GetInfoMC("23.243.79.108", 25432);
@@ -81,6 +83,7 @@ namespace UNOBot.Modules
                 await ReplyAsync("The server seems to be down from here...");
         }
         [Command("checkmc")]
+        [Help(new string[] { ".checkmc (ip) (port)" }, "Get basic server information about any Minecraft server.", true, "UNObot 2.4")]
         public async Task CheckMC(string ip, ushort port)
         {
             var response = QueryHandler.GetInfoMC(ip, port);
@@ -91,6 +94,7 @@ namespace UNOBot.Modules
         }
 
         [Command("unofficialwiki"), Alias("unwiki")]
+        [Help(new string[] { ".unofficialwiki" }, "Get basic server information about the Unofficial Wikia Server.", true, "UNObot 2.4")]
         public async Task UnoffWiki()
         {
             bool success = QueryHandler.GetInfo("23.243.79.108", 27041, out UNObot.Modules.A2S_INFO response);
@@ -103,21 +107,7 @@ namespace UNOBot.Modules
                              $"Players: {Convert.ToInt32(response.Players)}/{Convert.ToInt32(response.MaxPlayers)}\n" +
                              $"Map: {response.Map}");
         }
-        /*
-        [Command("helpme"), RequireOwner]
-        public async Task TestPerm1()
-        {
-            var messages = await Context.Channel.GetMessagesAsync(1000).FlattenAsync();
 
-            ITextChannel textchannel = Context.Channel as ITextChannel;
-            if (textchannel == null)
-            {
-                Console.WriteLine("error cast");
-                return;
-            }
-            await textchannel.DeleteMessagesAsync(messages);
-        }
-        */
         [Command("helpmeplz"), RequireOwner]
         public async Task HelpmePlz(int length)
         {
@@ -130,15 +120,20 @@ namespace UNOBot.Modules
             }
             await textchannel.DeleteMessagesAsync(messages);
         }
+
         [Command("moltthink")]
+        [Help(new string[] { ".moltthink" }, "Think like Molt.", true, "UNObot 3.0 Beta 1")]
         public async Task MoltThink()
         {
             await ReplyAsync("<:moltthink:471842854591791104>");
         }
         [Command("moltthinkreact")]
+        [Help(new string[] { ".moltthinkreact" }, "React by thinking as Molt.", true, "UNObot 3.0 Beta 1")]
         public async Task MoltThinkReact()
             => await MoltThinkReact(1);
+
         [Command("moltthinkreact")]
+        [Help(new string[] { ".moltthinkreact (number of messages)" }, "React by thinking as Molt.", true, "UNObot 3.0 Beta 1")]
         public async Task MoltThinkReact(int numMessages)
         {
             IEmote emote = await Context.Client.GetGuild(420005591155605535).GetEmoteAsync(471842854591791104);
@@ -146,14 +141,19 @@ namespace UNOBot.Modules
         }
 
         [Command("oof")]
+        [Help(new string[] { ".oof" }, "Oof.", true, "UNObot 3.0 Beta 1")]
         public async Task OOF()
         {
             await ReplyAsync("<:oof:443773918319476757>");
         }
+
         [Command("oofreact")]
+        [Help(new string[] { ".oofreact" }, "Damn, oof.", true, "UNObot 3.0 Beta 1")]
         public async Task OOFReact()
             => await OOFReact(1);
+
         [Command("oofreact")]
+        [Help(new string[] { ".oofreact (number of messages)" }, "Damn, oof.", true, "UNObot 3.0 Beta 1")]
         public async Task OOFReact(int numMessages)
         {
             IEmote emote = await Context.Client.GetGuild(420005591155605535).GetEmoteAsync(443773918319476757);

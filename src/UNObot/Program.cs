@@ -121,7 +121,9 @@ namespace UNObot
                     }
                 }
             }
+            commands = commands.OrderBy(o => o.CommandName).ToList();
             Console.WriteLine($"Loaded {commands.Count} commands!");
+            //TODO Fallback to help.json if existing
             /* Old help.json method
             if (File.Exists("help.json"))
             {
