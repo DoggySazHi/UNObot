@@ -12,7 +12,7 @@ namespace UNObot.Modules
         public async Task Info()
         {
             await ReplyAsync(
-                $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {Program.version}\nCurrent Time (UTC): {DateTime.Now.ToUniversalTime().ToString()}");
+                $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {Program.version}\nCurrent Time (PST): {DateTime.Now.ToString()}");
         }
 
         [Command("gulag")]
