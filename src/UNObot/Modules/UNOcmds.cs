@@ -21,7 +21,7 @@ namespace UNObot.Modules
             UNOcore.r = new Random(seed.GetHashCode());
             await ReplyAsync("Seed has been updated. I do not guarantee 100% Wild cards.");
         }
-        [Command("join")]
+        [Command("join"), Help(new string[] { ".join" }, "Join the queue in the current server.", true, "UNObot 0.1")]
         public async Task Join()
         {
             await db.AddGame(Context.Guild.Id);
@@ -325,6 +325,7 @@ namespace UNObot.Modules
         [Help(new string[] { ".quickplay" }, "Autodraw/play the first card possible. This is very inefficient, and should only be used if you are saving a wild card, or you don't have usable cards left.", true, "UNObot 2.4")]
         public async Task QuickPlay()
         {
+            //TODO stop on wild, just in case
             if (await db.IsPlayerInGame(Context.User.Id))
             {
                 if (await db.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
@@ -479,6 +480,7 @@ namespace UNObot.Modules
         [Help(new string[] { ".start" }, "Start the game you have joined in the current server. Now, you can also add an option to it, which currently include \"fast\", which allows the skip command, and \"private\", preventing others to see the exact amount of cards you have.", true, "UNObot 0.2")]
         public async Task Start()
         {
+            //TODO random first player
             if (await db.IsPlayerInGame(Context.User.Id))
             {
                 await db.AddGame(Context.Guild.Id);
@@ -530,6 +532,7 @@ namespace UNObot.Modules
 
         public async Task Start(string mode)
         {
+            //TODO random first player
             if (await db.IsPlayerInGame(Context.User.Id))
             {
                 await db.AddGame(Context.Guild.Id);

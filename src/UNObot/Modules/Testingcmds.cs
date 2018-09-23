@@ -6,12 +6,13 @@ using System.Timers;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using UNObot.Modules;
 
-namespace UNOBot.Modules
+namespace UNObot.Modules
 {
     public class Testingcmds : ModuleBase<SocketCommandContext>
     {
+        UNOdb db = new UNOdb();
+
         [Command("purge"), RequireUserPermission(GuildPermission.Administrator), RequireBotPermission(ChannelPermission.ManageMessages)]
         [Help(new string[] { ".purge (number of messages)" }, "Delete messages via a range. Testing command; do not rely on forever.", false, "UNObot 1.4")]
         public async Task Purge(int length)
@@ -44,6 +45,7 @@ namespace UNOBot.Modules
             await ReplyAsync("Sorry to be a hassle. Goodbye world!");
             Environment.Exit(0);
         }
+        //TODO add IP and port to command
         [Command("ubows"), Alias("ubow")]
         [Help(new string[] { ".ubows" }, "Get basic server information about the Unturned Bunker Official Wikia Server.", true, "UNObot 2.4")]
         public async Task UBOWS()
@@ -97,7 +99,7 @@ namespace UNOBot.Modules
         [Help(new string[] { ".unofficialwiki" }, "Get basic server information about the Unofficial Wikia Server.", true, "UNObot 2.4")]
         public async Task UnoffWiki()
         {
-            bool success = QueryHandler.GetInfo("23.243.79.108", 27041, out UNObot.Modules.A2S_INFO response);
+            bool success = QueryHandler.GetInfo("23.243.79.108", 27041, out A2S_INFO response);
             if (!success)
             {
                 await ReplyAsync("Error: Apparently we couldn't get any information about the Unofficial Wiki Server.");
@@ -202,5 +204,16 @@ namespace UNOBot.Modules
                 await UNObot.Program.SendMessage("AHHHHHHH", server);
         }
         */
+        [Command("displayembed"), Help(new string[] { ".displayembed" }, "Display all information about the current game.", true, "UNObot 3.0")]
+        public async Task DisplayEmbed()
+        {
+            QueueHandler qh = new QueueHandler();
+            await db.AddGame(Context.Guild.Id);
+            await db.AddUser(Context.User.Id, Context.User.Username);
+            if (await db.IsServerInGame(Context.Guild.Id))
+                await ReplyAsync($"It is now <@{await qh.GetCurrentPlayer(Context.Guild.Id)}>'s turn.", false, await Modules.DisplayEmbed.DisplayGame(Context.Guild.Id));
+            else
+                await ReplyAsync("The game has not started!");
+        }
     }
 }

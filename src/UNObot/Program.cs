@@ -43,7 +43,7 @@ namespace UNObot
             await _client.StartAsync();
             await db.CleanAll();
             await _client.SetGameAsync($"UNObot {version}");
-            LoadHelp();
+            await LoadHelp();
             await Task.Delay(-1);
         }
 
@@ -70,7 +70,7 @@ namespace UNObot
                 .AddJsonFile("config.json")
                 .Build();
         }
-        static void LoadHelp()
+        static async Task LoadHelp()
         {
             var types = from c in Assembly.GetExecutingAssembly().GetTypes()
                         where c.IsClass
@@ -123,8 +123,9 @@ namespace UNObot
             }
             commands = commands.OrderBy(o => o.CommandName).ToList();
             Console.WriteLine($"Loaded {commands.Count} commands!");
-            //TODO Fallback to help.json if existing
-            /* Old help.json method
+
+            //Fallback to help.json
+            //TODO make act as override???
             if (File.Exists("help.json"))
             {
                 Console.WriteLine("Loading help.json into memory...");
@@ -132,18 +133,21 @@ namespace UNObot
                 using (StreamReader r = new StreamReader("help.json"))
                 {
                     string json = await r.ReadToEndAsync();
-                    commands = JsonConvert.DeserializeObject<List<Modules.Command>>(json);
+                    foreach (Modules.Command c in JsonConvert.DeserializeObject<List<Modules.Command>>(json))
+                    {
+                        var index = commands.FindIndex(o => o.CommandName == c.CommandName);
+                        if (index >= 0 && commands[index].Help == "No help is given for this command.")
+                            commands[index] = c;
+                        else if (index < 0)
+                        {
+                            //TODO should never run, remove?
+                            Console.WriteLine("This shouldn't happen...");
+                            commands.Add(c);
+                        }
+                    }
                 }
-                Console.WriteLine($"Loaded {commands.Count} commands!");
+                Console.WriteLine($"Loaded {commands.Count} commands including from help.json!");
             }
-            else
-            {
-                Console.WriteLine("WARNING: help.json didn't exist! Creating help.json...");
-                using (StreamWriter sw = File.CreateText("help.json"))
-                    await sw.WriteLineAsync("[]");
-                Console.WriteLine("File created! Please generate your own via the help tool.");
-            }
-            */
         }
         public static async Task SendMessage(string text, ulong server)
         {
