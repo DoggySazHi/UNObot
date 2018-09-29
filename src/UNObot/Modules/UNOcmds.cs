@@ -207,15 +207,10 @@ namespace UNObot.Modules
                 {
                     if (await db.IsServerInGame(Context.Guild.Id))
                     {
-                        List<Card> list = await db.GetCards(Context.User.Id);
-                        var sorted = list.OrderBy((arg) => arg.Color).ThenBy((arg) => arg.Value).ToList<Card>();
-                        await db.SetCards(Context.User.Id, sorted);
-                        string response = $"Current card: {await db.GetCurrentCard(Context.Guild.Id)}\nCards available:\n";
-                        foreach (Card card in sorted)
-                        {
-                            response += card.Color + " " + card.Value + "\n";
-                        }
-                        await UserExtensions.SendMessageAsync(Context.Message.Author, response);
+                        int num = (await db.GetCards(Context.User.Id)).Count;
+                        await UserExtensions.SendMessageAsync(Context.Message.Author,
+                            $"You have {num} {(num == 1 ? "card" : "cards")} left.", false,
+                            await DisplayEmbed.DisplayCards(Context.User.Id, Context.Guild.Id));
                     }
                     else
                         await ReplyAsync("The game has not started!");
@@ -371,6 +366,17 @@ namespace UNObot.Modules
                                         await ReplyAsync(await playCard.Play(rngcard.Color, rngcard.Value, null, Context.User.Id, Context.Guild.Id));
                                         break;
                                     }
+                                    if (rngcard.Color == "Wild")
+                                    {
+                                        foreach (Card cardTake in cardsTaken)
+                                        {
+                                            response += cardTake + "\n";
+                                        }
+                                        await ReplyAsync($"You have drawn {cardsDrawn} cards, however the autodrawer has stopped at a Wild card.\nIf" +
+                                                         " you want to draw for a regular card, run the command again.");
+                                        await UserExtensions.SendMessageAsync(Context.Message.Author, response);
+                                        break;
+                                    }
                                 }
                             }
                             AFKtimer.ResetTimer(Context.Guild.Id);
@@ -388,35 +394,20 @@ namespace UNObot.Modules
                 await ReplyAsync("You are not in any game!");
         }
         [Command("players"), Alias("users", "pl")]
-        [Help(new string[] { ".players" }, "See all players in the game, as well as the amount of cards they have. Note however that if the server is running in private mode, it will not show the exact amount of cards that they have.", true, "UNObot 1.0")]
+        [Help(new string[] { ".players" }, "See all players in the game, as well as the amount of cards they have. Note however that if the server is running in private mode, it will not show the exact amount of cards that they have.", false, "UNObot 1.0")]
         public async Task Players()
         {
+            await ReplyAsync(".players has been deprecated and has been replaced with .game.");
+            await Game();
+        }
+        [Command("game"), Help(new string[] { ".displayembed" }, "Display all information about the current game.", true, "UNObot 3.0")]
+        public async Task Game()
+        {
+            QueueHandler qh = new QueueHandler();
             await db.AddGame(Context.Guild.Id);
             await db.AddUser(Context.User.Id, Context.User.Username);
             if (await db.IsServerInGame(Context.Guild.Id))
-            {
-                ushort gameMode = await db.GetGamemode(Context.Guild.Id);
-                ulong currentPlayer = await queueHandler.GetCurrentPlayer(Context.Guild.Id);
-                string response = $"Current player: <@{currentPlayer}>\n";
-                Card currentCard = await db.GetCurrentCard(Context.Guild.Id);
-                response += $"Current card: {currentCard}\n";
-                foreach (ulong player in await db.GetPlayers(Context.Guild.Id))
-                {
-                    List<Card> loserlist = await db.GetCards(player);
-                    if (gameMode == 2)
-                    {
-                        int random = 0;
-                        while (random == 0)
-                            random = Math.Abs(loserlist.Count + UNOcore.r.Next(-10, 10));
-                        response += $"- <@{player}> has {random} (?) cards left.\n";
-                    }
-                    else
-                    {
-                        response += $"- <@{player}> has {loserlist.Count} cards left.\n";
-                    }
-                }
-                await ReplyAsync(response);
-            }
+                await ReplyAsync($"It is now <@{await qh.GetCurrentPlayer(Context.Guild.Id)}>'s turn.", false, await Modules.DisplayEmbed.DisplayGame(Context.Guild.Id));
             else
                 await ReplyAsync("The game has not started!");
         }
@@ -480,52 +471,7 @@ namespace UNObot.Modules
         [Help(new string[] { ".start" }, "Start the game you have joined in the current server. Now, you can also add an option to it, which currently include \"fast\", which allows the skip command, and \"private\", preventing others to see the exact amount of cards you have.", true, "UNObot 0.2")]
         public async Task Start()
         {
-            //TODO random first player
-            if (await db.IsPlayerInGame(Context.User.Id))
-            {
-                await db.AddGame(Context.Guild.Id);
-                await db.AddUser(Context.User.Id, Context.User.Username);
-                if (await db.IsServerInGame(Context.Guild.Id))
-                    await ReplyAsync("The game has already started!");
-                else
-                {
-                    await db.AddGuild(Context.Guild.Id, 1, 1);
-                    await db.GetUsersAndAdd(Context.Guild.Id);
-                    foreach (ulong player in await db.GetPlayers(Context.Guild.Id))
-                    {
-                        await db.UpdateStats(player, 1);
-                    }
-                    await ReplyAsync("Game has started. All information about your cards will be PMed.\n" +
-                            "You have been given 7 cards; PM \"deck\" to view them.\n" +
-                            "Remember; you have 1 minute and 30 seconds to place a card.\n" +
-                            $"The first player is <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>.\n");
-                    Card currentCard = UNOcore.RandomCard();
-                    while (currentCard.Color == "Wild")
-                        currentCard = UNOcore.RandomCard();
-                    switch (currentCard.Value)
-                    {
-                        case "+2":
-                            var curuser = await queueHandler.GetCurrentPlayer(Context.Guild.Id);
-                            await db.AddCard(curuser, UNOcore.RandomCard());
-                            await db.AddCard(curuser, UNOcore.RandomCard());
-                            break;
-                        case "Reverse":
-                            await queueHandler.ReversePlayers(Context.Guild.Id);
-                            await ReplyAsync($"What? The order has been reversed! Now, it's <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
-                            break;
-                        case "Skip":
-                            await queueHandler.NextPlayer(Context.Guild.Id);
-                            await ReplyAsync($"What's this? A skip? Oh well, now it's <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
-                            break;
-                    }
-                    await db.SetCurrentCard(Context.Guild.Id, currentCard);
-                    await ReplyAsync($"Current card: {currentCard.ToString()}\n");
-                    await db.StarterCard(Context.Guild.Id);
-                    AFKtimer.StartTimer(Context.Guild.Id);
-                }
-            }
-            else
-                await ReplyAsync("You have not joined a game!");
+            await Start("normal");
         }
         [Command("start")]
         [Help(new string[] { ".start (gamemode)" }, "Start the game you have joined in the current server. Now, you can also add an option to it, which currently include \"fast\", which allows the skip command, and \"private\", preventing others to see the exact amount of cards you have.", true, "UNObot 0.2")]
@@ -543,14 +489,11 @@ namespace UNObot.Modules
                 {
                     switch (mode)
                     {
-                        //TODO - Modify addguild cmd 
                         case "private":
                             await ReplyAsync("Playing in privacy!");
                             await db.AddGuild(Context.Guild.Id, 1, 2);
                             break;
                         case "fast":
-                            //TODO - Add skip command. Check if fast mode is on.
-                            //Skip only when you can't play.
                             await ReplyAsync("Playing in fast mode!");
                             await db.AddGuild(Context.Guild.Id, 1, 3);
                             break;
@@ -567,6 +510,10 @@ namespace UNObot.Modules
                     {
                         await db.UpdateStats(player, 1);
                     }
+                    //randomize start
+                    for (int i = 0; i < UNOcore.r.Next(0, await queueHandler.PlayerCount(Context.Guild.Id)); i++)
+                        await queueHandler.NextPlayer(Context.Guild.Id);
+
                     await ReplyAsync("Game has started. All information about your cards will be PMed.\n" +
                             "You have been given 7 cards; PM \"deck\" to view them.\n" +
                             "Remember; you have 1 minute and 30 seconds to place a card.\n" +

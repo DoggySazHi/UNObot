@@ -60,7 +60,9 @@ namespace UNObot.Modules
                 response.Map = "~~Carpat~~ **Carpet**";
             await ReplyAsync($"Name: {response.Name}\n" +
                              $"Players: {Convert.ToInt32(response.Players)}/{Convert.ToInt32(response.MaxPlayers)}\n" +
-                             $"Map: {response.Map}");
+                             $"Map: {response.Map}\n" +
+                             $"IP: 108.61.100.48" +
+                             $"Port: {response.Port}");
         }
 
         [Command("slamc")]
@@ -204,16 +206,5 @@ namespace UNObot.Modules
                 await UNObot.Program.SendMessage("AHHHHHHH", server);
         }
         */
-        [Command("displayembed"), Help(new string[] { ".displayembed" }, "Display all information about the current game.", true, "UNObot 3.0")]
-        public async Task DisplayEmbed()
-        {
-            QueueHandler qh = new QueueHandler();
-            await db.AddGame(Context.Guild.Id);
-            await db.AddUser(Context.User.Id, Context.User.Username);
-            if (await db.IsServerInGame(Context.Guild.Id))
-                await ReplyAsync($"It is now <@{await qh.GetCurrentPlayer(Context.Guild.Id)}>'s turn.", false, await Modules.DisplayEmbed.DisplayGame(Context.Guild.Id));
-            else
-                await ReplyAsync("The game has not started!");
-        }
     }
 }
