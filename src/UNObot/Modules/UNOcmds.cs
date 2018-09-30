@@ -537,7 +537,7 @@ namespace UNObot.Modules
                     }
                     await db.SetCurrentCard(Context.Guild.Id, currentCard);
                     Response += $"\nCurrent card: {currentCard.ToString()}\n";
-                    await db.UpdateDescription(Context.Guild.Id, Response);
+                    await db.UpdateDescription(Context.Guild.Id, "The game has just started!");
                     await ReplyAsync(Response);
                     await db.StarterCard(Context.Guild.Id);
                     AFKtimer.StartTimer(Context.Guild.Id);

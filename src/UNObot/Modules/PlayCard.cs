@@ -99,7 +99,8 @@ namespace UNObot.Modules
                 return "This is illegal you know. Your card must match in color/value, or be a wild card.";
             }
             string Response = "";
-            Response += $"<@{player}> has placed an {playCard.ToString()}.\n";
+            string UsernamePlayer = Program._client.GetUser(player).Username;
+            Response += $"{UsernamePlayer} has placed an {playCard.ToString()}.\n";
             if (await db.GetUNOPlayer(server) != 0)
             {
                 Response += $"<@{await db.GetUNOPlayer(server)}> has forgotten to say UNO! They have been given 2 cards.\n";
@@ -170,8 +171,8 @@ namespace UNObot.Modules
                     break;
             }
 
-            Response += $"It is now <@{await queueHandler.GetCurrentPlayer(server)}>'s turn.";
             await db.UpdateDescription(server, Response);
+            Response += $"It is now <@{await queueHandler.GetCurrentPlayer(server)}>'s turn.";
             return Response;
         }
     }
