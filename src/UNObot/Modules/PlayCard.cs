@@ -171,6 +171,7 @@ namespace UNObot.Modules
             }
 
             Response += $"It is now <@{await queueHandler.GetCurrentPlayer(server)}>'s turn.";
+            await db.UpdateDescription(server, Response);
             return Response;
         }
     }

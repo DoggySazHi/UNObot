@@ -68,6 +68,76 @@ namespace UNObot.Modules
                 await conn.CloseAsync();
             }
         }
+        public async Task UpdateDescription(ulong server, string text)
+        {
+            if (conn == null)
+                GetConnectionString();
+            MySqlCommand Cmd = new MySqlCommand
+            {
+                Connection = conn,
+                CommandText = "UPDATE Games SET description = ? WHERE server = ?"
+            };
+            MySqlParameter p1 = new MySqlParameter()
+            {
+                Value = text
+            };
+            Cmd.Parameters.Add(p1);
+            MySqlParameter p2 = new MySqlParameter
+            {
+                Value = server
+            };
+            Cmd.Parameters.Add(p2);
+            try
+            {
+                await conn.OpenAsync();
+                await Cmd.ExecuteNonQueryAsync();
+            }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            finally
+            {
+                await conn.CloseAsync();
+            }
+        }
+        public async Task<string> GetDescription(ulong server)
+        {
+            if (conn == null)
+                GetConnectionString();
+            string description = "";
+            MySqlCommand Cmd = new MySqlCommand
+            {
+                Connection = conn,
+                CommandText = "SELECT description FROM UNObot.Games WHERE server = ?"
+            };
+            MySqlParameter p1 = new MySqlParameter
+            {
+                Value = server
+            };
+            Cmd.Parameters.Add(p1);
+            await conn.OpenAsync();
+            using (MySqlDataReader dr = (MySqlDataReader)await Cmd.ExecuteReaderAsync())
+            {
+                try
+                {
+                    while (dr.Read())
+                    {
+                        if (!await dr.IsDBNullAsync(0))
+                            description = dr.GetString(0);
+                    }
+                }
+                catch (MySqlException ex)
+                {
+                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                }
+                finally
+                {
+                    await conn.CloseAsync();
+                }
+                return description;
+            }
+        }
         public async Task ResetGame(ulong server)
         {
             if (conn == null)
@@ -75,7 +145,7 @@ namespace UNObot.Modules
             MySqlCommand Cmd = new MySqlCommand
             {
                 Connection = conn,
-                CommandText = "UPDATE Games SET inGame = 0, currentCard = ?, `order` = 1, oneCardLeft = 0, queue = ? WHERE server = ?"
+                CommandText = "UPDATE Games SET inGame = 0, currentCard = ?, `order` = 1, oneCardLeft = 0, queue = ?, description = null WHERE server = ?"
             };
             AFKtimer afkTimer = new AFKtimer();
             //suspisous code
@@ -132,7 +202,6 @@ namespace UNObot.Modules
                     while (dr.Read())
                     {
                         yesorno |= dr.GetByte(0) == 1;
-                        await dr.NextResultAsync();
                     }
                 }
                 catch (MySqlException ex)
@@ -301,7 +370,7 @@ namespace UNObot.Modules
             MySqlCommand Cmd = new MySqlCommand
             {
                 Connection = conn,
-                CommandText = "SET SQL_SAFE_UPDATES = 0; UPDATE UNObot.Players SET cards = ?, inGame = 0, server = null, gameName = null; UPDATE Games SET inGame = 0, currentCard = ?, `order` = 1, oneCardLeft = 0, queue = ?; SET SQL_SAFE_UPDATES = 1;"
+                CommandText = "SET SQL_SAFE_UPDATES = 0; UPDATE UNObot.Players SET cards = ?, inGame = 0, server = null, gameName = null; UPDATE Games SET inGame = 0, currentCard = ?, `order` = 1, oneCardLeft = 0, queue = ?, description = null; SET SQL_SAFE_UPDATES = 1;"
             };
             JArray empty = new JArray();
             MySqlParameter p1 = new MySqlParameter()
@@ -447,7 +516,6 @@ namespace UNObot.Modules
                     while (dr.Read())
                     {
                         players = JsonConvert.DeserializeObject<Queue<ulong>>(dr.GetString(0));
-                        await dr.NextResultAsync();
                     }
                 }
                 catch (MySqlException ex)
@@ -584,7 +652,7 @@ namespace UNObot.Modules
                     {
                         if (!await dr.IsDBNullAsync(0))
                             player = dr.GetUInt64(0);
-                        await dr.NextResultAsync();
+
                     }
                 }
                 catch (MySqlException ex)
@@ -813,7 +881,7 @@ namespace UNObot.Modules
                     while (dr.Read())
                     {
                         channel = dr.GetUInt64(0);
-                        await dr.NextResultAsync();
+
                     }
                 }
                 catch (MySqlException ex)
@@ -913,7 +981,7 @@ namespace UNObot.Modules
                     while (dr.Read())
                     {
                         card = JsonConvert.DeserializeObject<Card>(dr.GetString(0));
-                        await dr.NextResultAsync();
+
                     }
                 }
                 catch (MySqlException ex)
@@ -980,7 +1048,7 @@ namespace UNObot.Modules
                     {
                         if (dr.GetByte(0) == 1)
                             yesorno = true;
-                        await dr.NextResultAsync();
+
                     }
                 }
                 catch (MySqlException ex)
@@ -1014,7 +1082,7 @@ namespace UNObot.Modules
                     while (dr.Read())
                     {
                         players = JsonConvert.DeserializeObject<Queue<ulong>>(dr.GetString(0));
-                        await dr.NextResultAsync();
+
                     }
                 }
                 catch (MySqlException ex)
@@ -1052,7 +1120,7 @@ namespace UNObot.Modules
                     while (dr.Read())
                     {
                         jsonstring = dr.GetString(0);
-                        await dr.NextResultAsync();
+
                     }
                 }
                 catch (MySqlException ex)
@@ -1087,7 +1155,7 @@ namespace UNObot.Modules
                     {
                         if (dr.GetInt64(0) == 1)
                             exists = true;
-                        await dr.NextResultAsync();
+
                     }
                 }
                 catch (MySqlException ex)
@@ -1168,7 +1236,7 @@ namespace UNObot.Modules
                         stats[0] = dr.GetInt32(0);
                         stats[1] = dr.GetInt32(1);
                         stats[2] = dr.GetInt32(2);
-                        await dr.NextResultAsync();
+
                     }
                 }
                 catch (MySqlException ex)

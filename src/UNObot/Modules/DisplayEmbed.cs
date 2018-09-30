@@ -65,8 +65,7 @@ namespace UNObot.Modules
             }
             var builder = new EmbedBuilder()
             .WithTitle("Current Game")
-            //TODO description
-            .WithDescription("WIP")
+            .WithDescription(await db.GetDescription(serverid))
             .WithColor(new Color(cardColor))
             .WithTimestamp(DateTimeOffset.Now)
             .WithFooter(footer =>

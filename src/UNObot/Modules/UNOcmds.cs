@@ -369,7 +369,7 @@ namespace UNObot.Modules
                                         {
                                             response += cardTake + "\n";
                                         }
-                                        await ReplyAsync($"You have drawn {cardsDrawn} cards, however the autodrawer has stopped at a Wild card.\n" +
+                                        response += ($"\n\nYou have drawn {cardsDrawn} cards, however the autodrawer has stopped at a Wild card.\n" +
                                                          "If you want to draw for a regular card, run the command again.");
                                         await UserExtensions.SendMessageAsync(Context.Message.Author, response);
                                         break;
@@ -483,18 +483,19 @@ namespace UNObot.Modules
                     await ReplyAsync("The game has already started!");
                 else
                 {
+                    string Response = "";
                     switch (mode)
                     {
                         case "private":
-                            await ReplyAsync("Playing in privacy!");
+                            Response += "Playing in privacy!";
                             await db.AddGuild(Context.Guild.Id, 1, 2);
                             break;
                         case "fast":
-                            await ReplyAsync("Playing in fast mode!");
+                            Response += "Playing in fast mode!";
                             await db.AddGuild(Context.Guild.Id, 1, 3);
                             break;
                         case "normal":
-                            await ReplyAsync("Playing in normal mode!");
+                            Response += "Playing in normal mode!";
                             await db.AddGuild(Context.Guild.Id, 1, 1);
                             break;
                         default:
@@ -510,10 +511,10 @@ namespace UNObot.Modules
                     for (int i = 0; i < UNOcore.r.Next(0, await queueHandler.PlayerCount(Context.Guild.Id)); i++)
                         await queueHandler.NextPlayer(Context.Guild.Id);
 
-                    await ReplyAsync("Game has started. All information about your cards will be PMed.\n" +
+                    Response += "\n\nGame has started. All information about your cards will be PMed.\n" +
                             "You have been given 7 cards; PM \"deck\" to view them.\n" +
                             "Remember; you have 1 minute and 30 seconds to place a card.\n" +
-                            $"The first player is <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>.\n");
+                            $"The first player is <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>.\n";
                     Card currentCard = UNOcore.RandomCard();
                     while (currentCard.Color == "Wild")
                         currentCard = UNOcore.RandomCard();
@@ -523,18 +524,21 @@ namespace UNObot.Modules
                             var curuser = await queueHandler.GetCurrentPlayer(Context.Guild.Id);
                             await db.AddCard(curuser, UNOcore.RandomCard());
                             await db.AddCard(curuser, UNOcore.RandomCard());
+                            Response += $"\nToo bad <@{curuser}>, you just got two cards!";
                             break;
                         case "Reverse":
                             await queueHandler.ReversePlayers(Context.Guild.Id);
-                            await ReplyAsync($"What? The order has been reversed! Now, it's <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
+                            Response += $"\nWhat? The order has been reversed! Now, it's <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>'s turn.";
                             break;
                         case "Skip":
                             await queueHandler.NextPlayer(Context.Guild.Id);
-                            await ReplyAsync($"What's this? A skip? Oh well, now it's <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
+                            Response += $"\nWhat's this? A skip? Oh well, now it's <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>'s turn.";
                             break;
                     }
                     await db.SetCurrentCard(Context.Guild.Id, currentCard);
-                    await ReplyAsync($"Current card: {currentCard.ToString()}\n");
+                    Response += $"\nCurrent card: {currentCard.ToString()}\n";
+                    await db.UpdateDescription(Context.Guild.Id, Response);
+                    await ReplyAsync(Response);
                     await db.StarterCard(Context.Guild.Id);
                     AFKtimer.StartTimer(Context.Guild.Id);
                 }
