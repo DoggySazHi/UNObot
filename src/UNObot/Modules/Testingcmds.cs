@@ -61,7 +61,7 @@ namespace UNObot.Modules
             await ReplyAsync($"Name: {response.Name}\n" +
                              $"Players: {Convert.ToInt32(response.Players)}/{Convert.ToInt32(response.MaxPlayers)}\n" +
                              $"Map: {response.Map}\n" +
-                             $"IP: 108.61.100.48" +
+                             $"IP: 108.61.100.48\n" +
                              $"Port: {response.Port}");
         }
 
