@@ -60,7 +60,6 @@ namespace UNObot.Modules
             var Perms = User.GetPermissions(Context.Channel as IGuildChannel);
             foreach (ChannelPermission c in Perms.ToList())
             {
-                //todo: copy, lol (see dogtestperms)
                 response += c.ToString() + "\n";
             }
             await ReplyAsync(response);
@@ -73,7 +72,6 @@ namespace UNObot.Modules
             var Perms = User.GetPermissions(Context.Channel as IGuildChannel);
             foreach (ChannelPermission c in Perms.ToList())
             {
-                //TODO: Make a warning for admin/harmful perms
                 response += $"- c.ToString() | \n";
             }
             await ReplyAsync(response);

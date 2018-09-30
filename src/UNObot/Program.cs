@@ -11,6 +11,7 @@ using DiscordBot.Services;
 using Newtonsoft.Json;
 using System.Reflection;
 using System.Linq;
+using Newtonsoft.Json.Linq;
 
 namespace UNObot
 {
@@ -23,7 +24,6 @@ namespace UNObot
         static async Task Main()
         {
             Console.WriteLine("UNObot Launcher 1.0");
-            //TODO generate new config if it doesn't exist
             await new Program().MainAsync();
         }
 
@@ -65,10 +65,43 @@ namespace UNObot
 
         IConfiguration BuildConfig()
         {
+            if (!File.Exists("config.json"))
+            {
+                Console.WriteLine("Config doesn't exist! The file has been created, please edit all fields to be correct. Exiting.");
+                JObject obj = new JObject(new JProperty("token", "Replace With Private Key"),
+                                          new JProperty("connStr", "server=127.0.0.1;user=UNObot;database=UNObot;port=3306;password=DBPassword"),
+                                          new JProperty("version", "Unknown Version")
+                                         );
+                File.CreateText("config.json");
+                using (StreamWriter sr = new StreamWriter("config.json", false))
+                    sr.Write(obj);
+                Task.Delay(15000);
+                return null;
+            }
+            var json = JObject.Parse(File.ReadAllText("config.json"));
+            int errors = 0;
+            if (!json.ContainsKey("token") || json["token"].ToString() == "Replace With Private Key")
+            {
+                Console.WriteLine("Error: Config is missing Bot Token (token)! Please add the property, or update the property to have a token."); errors++;
+            }
+            if (!json.ContainsKey("connStr"))
+            {
+                Console.WriteLine("Error: Config is missing Database Connection String (connStr)!"); errors++;
+            }
+            if (!json.ContainsKey("version"))
+            {
+                Console.WriteLine("Error: Config is missing version (version)!"); errors++;
+            }
+            if (errors != 0)
+            {
+                Console.WriteLine("Please fix all of these errors. Exiting.");
+                Environment.Exit(1);
+                return null;
+            }
             return new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("config.json")
-                .Build();
+                        .SetBasePath(Directory.GetCurrentDirectory())
+                        .AddJsonFile("config.json")
+                        .Build();
         }
         static async Task LoadHelp()
         {
@@ -125,7 +158,6 @@ namespace UNObot
             Console.WriteLine($"Loaded {commands.Count} commands!");
 
             //Fallback to help.json
-            //TODO make act as override???
             if (File.Exists("help.json"))
             {
                 Console.WriteLine("Loading help.json into memory...");
@@ -140,9 +172,10 @@ namespace UNObot
                             commands[index] = c;
                         else if (index < 0)
                         {
-                            //TODO should never run, remove?
-                            Console.WriteLine("This shouldn't happen...");
-                            commands.Add(c);
+                            Console.WriteLine("A command was added that isn't in UNObot's code. It will be added to the help list, but will not be active.");
+                            var newcommand = c;
+                            newcommand.Active = false;
+                            commands.Add(newcommand);
                         }
                     }
                 }

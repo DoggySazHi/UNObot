@@ -45,7 +45,7 @@ namespace UNObot.Modules
             await ReplyAsync("Sorry to be a hassle. Goodbye world!");
             Environment.Exit(0);
         }
-        //TODO add IP and port to command
+
         [Command("ubows"), Alias("ubow")]
         [Help(new string[] { ".ubows" }, "Get basic server information about the Unturned Bunker Official Wikia Server.", true, "UNObot 2.4")]
         public async Task UBOWS()

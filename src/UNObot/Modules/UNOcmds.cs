@@ -320,7 +320,6 @@ namespace UNObot.Modules
         [Help(new string[] { ".quickplay" }, "Autodraw/play the first card possible. This is very inefficient, and should only be used if you are saving a wild card, or you don't have usable cards left.", true, "UNObot 2.4")]
         public async Task QuickPlay()
         {
-            //TODO stop on wild, just in case
             if (await db.IsPlayerInGame(Context.User.Id))
             {
                 if (await db.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
@@ -329,8 +328,6 @@ namespace UNObot.Modules
                     {
                         if (Context.User.Id == await queueHandler.GetCurrentPlayer(Context.Guild.Id))
                         {
-                            //TODO - kete
-                            //TODO - add the normal playcard check (ingame)
                             List<Card> playerCards = await db.GetCards(Context.User.Id);
                             Card currentCard = await db.GetCurrentCard(Context.Guild.Id);
                             bool found = false;
@@ -372,8 +369,8 @@ namespace UNObot.Modules
                                         {
                                             response += cardTake + "\n";
                                         }
-                                        await ReplyAsync($"You have drawn {cardsDrawn} cards, however the autodrawer has stopped at a Wild card.\nIf" +
-                                                         " you want to draw for a regular card, run the command again.");
+                                        await ReplyAsync($"You have drawn {cardsDrawn} cards, however the autodrawer has stopped at a Wild card.\n" +
+                                                         "If you want to draw for a regular card, run the command again.");
                                         await UserExtensions.SendMessageAsync(Context.Message.Author, response);
                                         break;
                                     }
@@ -478,7 +475,6 @@ namespace UNObot.Modules
 
         public async Task Start(string mode)
         {
-            //TODO random first player
             if (await db.IsPlayerInGame(Context.User.Id))
             {
                 await db.AddGame(Context.Guild.Id);
@@ -728,7 +724,6 @@ namespace UNObot.Modules
         [Help(new string[] { ".emergency" }, "Kick the bot from the server.", false, "UNObot 2.0")]
         public async Task Emergency()
         {
-            //todo add link
             await ReplyAsync("If a rogue bot has taken over this account, it will be disabled with the use of this command.\n" +
                              $"Currently on **{Context.Guild.Name}**, goodbye world!\n" +
                              "To reinvite the bot, please use this link: https://discordapp.com/api/oauth2/authorize?client_id=477616287997231105&permissions=8192&scope=bot");
