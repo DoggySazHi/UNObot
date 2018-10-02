@@ -60,7 +60,7 @@ namespace UNObot.Modules
             var Perms = User.GetPermissions(Context.Channel as IGuildChannel);
             foreach (ChannelPermission c in Perms.ToList())
             {
-                response += c.ToString() + "\n";
+                response += $"- {c.ToString()} | \n";
             }
             await ReplyAsync(response);
         }
@@ -72,7 +72,7 @@ namespace UNObot.Modules
             var Perms = User.GetPermissions(Context.Channel as IGuildChannel);
             foreach (ChannelPermission c in Perms.ToList())
             {
-                response += $"- c.ToString() | \n";
+                response += $"- {c.ToString()} | \n";
             }
             await ReplyAsync(response);
         }
