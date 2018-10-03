@@ -85,7 +85,7 @@ namespace UNObot.Modules
                 case 3:
                     card.Color = "Green";
                     break;
-                case 4:
+                default:
                     card.Color = "Blue";
                     break;
             }
@@ -116,6 +116,9 @@ namespace UNObot.Modules
                             card.Value = "Color";
                         else
                             card.Value = "+4";
+                        break;
+                    default:
+                        _ = 1;
                         break;
                 }
             }

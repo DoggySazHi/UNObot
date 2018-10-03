@@ -36,8 +36,7 @@ namespace UNObot.Modules
                 await ReplyAsync($"{Context.User.Username}, you are already in a game!\n");
                 return;
             }
-            else
-                await db.AddUser(Context.User.Id, Context.User.Username, Context.Guild.Id);
+            await db.AddUser(Context.User.Id, Context.User.Username, Context.Guild.Id);
             await ReplyAsync($"{Context.User.Username} has been added to the queue.\n");
         }
         [Command("leave")]
@@ -182,8 +181,7 @@ namespace UNObot.Modules
                             AFKtimer.ResetTimer(Context.Guild.Id);
                             return;
                         }
-                        else
-                            await ReplyAsync("Why draw now? Draw when it's your turn!");
+                        await ReplyAsync("Why draw now? Draw when it's your turn!");
                     }
                     else
                         await ReplyAsync("The game has not started!");
@@ -530,7 +528,7 @@ namespace UNObot.Modules
                             await queueHandler.ReversePlayers(Context.Guild.Id);
                             Response += $"\nWhat? The order has been reversed! Now, it's <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>'s turn.";
                             break;
-                        case "Skip":
+                        default:
                             await queueHandler.NextPlayer(Context.Guild.Id);
                             Response += $"\nWhat's this? A skip? Oh well, now it's <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>'s turn.";
                             break;

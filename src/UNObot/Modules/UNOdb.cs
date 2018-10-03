@@ -77,7 +77,7 @@ namespace UNObot.Modules
                 Connection = conn,
                 CommandText = "UPDATE Games SET description = ? WHERE server = ?"
             };
-            MySqlParameter p1 = new MySqlParameter()
+            MySqlParameter p1 = new MySqlParameter
             {
                 Value = text
             };
@@ -150,12 +150,12 @@ namespace UNObot.Modules
             AFKtimer afkTimer = new AFKtimer();
             //suspisous code
             afkTimer.DeleteTimer(server);
-            MySqlParameter p1 = new MySqlParameter()
+            MySqlParameter p1 = new MySqlParameter
             {
                 Value = "[]"
             };
             Cmd.Parameters.Add(p1);
-            MySqlParameter p2 = new MySqlParameter()
+            MySqlParameter p2 = new MySqlParameter
             {
                 Value = "[]"
             };
@@ -373,7 +373,7 @@ namespace UNObot.Modules
                 CommandText = "SET SQL_SAFE_UPDATES = 0; UPDATE UNObot.Players SET cards = ?, inGame = 0, server = null, gameName = null; UPDATE Games SET inGame = 0, currentCard = ?, `order` = 1, oneCardLeft = 0, queue = ?, description = null; SET SQL_SAFE_UPDATES = 1;"
             };
             JArray empty = new JArray();
-            MySqlParameter p1 = new MySqlParameter()
+            MySqlParameter p1 = new MySqlParameter
             {
                 Value = empty.ToString()
             };
@@ -1046,8 +1046,7 @@ namespace UNObot.Modules
                 {
                     while (dr.Read())
                     {
-                        if (dr.GetByte(0) == 1)
-                            yesorno = true;
+                        yesorno |= dr.GetByte(0) == 1;
 
                     }
                 }
@@ -1093,10 +1092,7 @@ namespace UNObot.Modules
                 {
                     await conn.CloseAsync();
                 }
-                if (players.Contains(player))
-                    return true;
-                else
-                    return false;
+                return players.Contains(player);
             }
         }
         //Done?
@@ -1153,8 +1149,7 @@ namespace UNObot.Modules
                 {
                     while (dr.Read())
                     {
-                        if (dr.GetInt64(0) == 1)
-                            exists = true;
+                        exists |= dr.GetInt64(0) == 1;
 
                     }
                 }
@@ -1356,6 +1351,9 @@ namespace UNObot.Modules
                     break;
                 case 3:
                     Cmd.CommandText = "UPDATE UNObot.Players SET gamesWon = gamesWon + 1 WHERE userid = ?";
+                    break;
+                default:
+                    _ = 1;
                     break;
             }
 

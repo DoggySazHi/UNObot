@@ -6,8 +6,8 @@ namespace UNObot.Modules
 {
     class PlayCard
     {
-        UNOdb db = new UNOdb();
-        QueueHandler queueHandler = new QueueHandler();
+        readonly UNOdb db = new UNOdb();
+        readonly QueueHandler queueHandler = new QueueHandler();
         public async Task<string> Play(string color, string value, string wild, ulong player, ulong server)
         {
             switch (color.ToLower())
@@ -131,7 +131,7 @@ namespace UNObot.Modules
                 Response += "Game is over. You may rejoin now.";
                 return Response;
             }
-            else if (checkCards.Count == 1)
+            if (checkCards.Count == 1)
                 await db.SetUNOPlayer(server, player);
             //keeps on going if nobody won
             await queueHandler.NextPlayer(server);
@@ -163,7 +163,7 @@ namespace UNObot.Modules
                     Response += $"<@{await queueHandler.GetCurrentPlayer(server)}> has been skipped!\n";
                     await queueHandler.NextPlayer(server);
                     break;
-                case "Reverse":
+                default:
                     Response += "The order has been reversed!\n";
                     await queueHandler.ReversePlayers(server);
                     if (await queueHandler.PlayerCount(server) != 2)

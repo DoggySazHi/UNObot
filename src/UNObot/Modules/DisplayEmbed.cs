@@ -16,7 +16,7 @@ namespace UNObot.Modules
     }
     public static class DisplayEmbed
     {
-        static UNOdb db = new UNOdb();
+        readonly static UNOdb db = new UNOdb();
         public static async Task<Embed> DisplayGame(ulong serverid)
         {
             uint cardColor = 0xFF0000;
@@ -33,7 +33,7 @@ namespace UNObot.Modules
                 case "Yellow":
                     cardColor = 0xFFFF00;
                     break;
-                case "Green":
+                default:
                     cardColor = 0x00FF00;
                     break;
             }
@@ -130,7 +130,7 @@ namespace UNObot.Modules
                         else
                             YellowCards += $"{c}\n";
                         break;
-                    case "Wild":
+                    default:
                         WildCards += $"{c}\n";
                         break;
                 }

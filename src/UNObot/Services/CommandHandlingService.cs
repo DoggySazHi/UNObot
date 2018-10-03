@@ -11,10 +11,10 @@ namespace UNObot.Services
 {
     public class CommandHandlingService
     {
-        UNObot.Modules.UNOdb db = new UNObot.Modules.UNOdb();
-        private readonly DiscordSocketClient _discord;
-        private readonly CommandService _commands;
-        private IServiceProvider _provider;
+        readonly Modules.UNOdb db = new Modules.UNOdb();
+        readonly DiscordSocketClient _discord;
+        readonly CommandService _commands;
+        IServiceProvider _provider;
 
         public CommandHandlingService(IServiceProvider provider, DiscordSocketClient discord, CommandService commands)
         {
@@ -32,7 +32,7 @@ namespace UNObot.Services
             // Add additional initialization code here...
         }
 
-        private async Task MessageReceived(SocketMessage rawMessage)
+        async Task MessageReceived(SocketMessage rawMessage)
         {
             // Ignore system messages and messages from bots
             if (!(rawMessage is SocketUserMessage message)) return;
@@ -97,6 +97,17 @@ namespace UNObot.Services
                         break;
                     case CommandError.UnmetPrecondition:
                         await context.Channel.SendMessageAsync("You do not have the **power** to run this command!");
+                        break;
+                    case CommandError.UnknownCommand:
+                        break;
+                    case CommandError.ObjectNotFound:
+                        break;
+                    case CommandError.Exception:
+                        break;
+                    case CommandError.Unsuccessful:
+                        break;
+                    default:
+                        _ = 1;
                         break;
                 }
 #if DEBUG
