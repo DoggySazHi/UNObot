@@ -58,9 +58,9 @@ namespace UNObot.Modules
                 else
                 {
                     if (id == (await db.GetPlayers(serverid)).Peek())
-                        response += $"**{user.Username}** - ??? cards";
+                        response += $"**{user.Username}** - ??? cards\n";
                     else
-                        response += $"{user.Username} - ??? cards";
+                        response += $"{user.Username} - ??? cards\n";
                 }
             }
             var builder = new EmbedBuilder()
