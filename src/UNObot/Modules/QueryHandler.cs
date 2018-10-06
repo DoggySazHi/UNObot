@@ -171,7 +171,6 @@ namespace UNObot.Modules
 
             try
             {
-                // ToDo: Add timeout
                 var stopWatch = new Stopwatch();
                 var tcpclient = new TcpClient();
                 stopWatch.Start();

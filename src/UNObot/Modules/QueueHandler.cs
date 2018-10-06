@@ -25,13 +25,10 @@ namespace UNObot.Modules
         {
             Queue<ulong> players = await db.GetPlayers(server);
             ulong player = 0;
-            if(players.TryPeek(out player))
+            if (players.TryPeek(out player))
                 return player;
-            else
-            {
-                ColorConsole.WriteLine("[ERR] No players!", ConsoleColor.Red);
-                return player;
-            }
+            ColorConsole.WriteLine("[ERR] No players!", ConsoleColor.Red);
+            return player;
         }
         async public Task<int> PlayerCount(ulong server)
         {
@@ -47,12 +44,12 @@ namespace UNObot.Modules
         {
             Queue<ulong> players = await db.GetPlayers(server);
             bool attemptPeek = players.TryPeek(out ulong result);
-            if(!attemptPeek)
+            if (!attemptPeek)
             {
                 ColorConsole.WriteLine("Error: Couldn't read first player!", ConsoleColor.Red);
                 await db.ResetGame(server);
             }
-            else if(player == result)
+            else if (player == result)
             {
                 players.Dequeue();
             }
@@ -61,7 +58,7 @@ namespace UNObot.Modules
                 ulong oldplayer = players.Peek();
                 for (int i = 0; i < players.Count; i++)
                 {
-                    if(player == players.Peek())
+                    if (player == players.Peek())
                     {
                         Console.WriteLine("RemovedPlayer");
                         players.Dequeue();
@@ -70,7 +67,7 @@ namespace UNObot.Modules
                     ulong sendToBack = players.Dequeue();
                     players.Enqueue(sendToBack);
                 }
-                while(true)
+                while (true)
                 {
                     ulong sendToBack = players.Dequeue();
                     players.Enqueue(sendToBack);

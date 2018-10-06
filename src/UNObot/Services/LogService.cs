@@ -9,11 +9,11 @@ namespace DiscordBot.Services
 {
     public class LogService
     {
-        private readonly DiscordSocketClient _discord;
-        private readonly CommandService _commands;
-        private readonly ILoggerFactory _loggerFactory;
-        private readonly ILogger _discordLogger;
-        private readonly ILogger _commandsLogger;
+        readonly DiscordSocketClient _discord;
+        readonly CommandService _commands;
+        readonly ILoggerFactory _loggerFactory;
+        readonly ILogger _discordLogger;
+        readonly ILogger _commandsLogger;
 
         public LogService(DiscordSocketClient discord, CommandService commands, ILoggerFactory loggerFactory)
         {
@@ -28,31 +28,33 @@ namespace DiscordBot.Services
             _commands.Log += LogCommand;
         }
 
-        private ILoggerFactory ConfigureLogging(ILoggerFactory factory)
+        ILoggerFactory ConfigureLogging(ILoggerFactory factory)
         {
             factory.AddConsole();
             return factory;
         }
 
-        private Task LogDiscord(LogMessage message)
+        Task LogDiscord(LogMessage message)
         {
             _discordLogger.Log(
-                LogLevelFromSeverity(message.Severity), 
-                0, 
+                LogLevelFromSeverity(message.Severity),
+                0,
                 message,
-                message.Exception, 
+                message.Exception,
                 (_1, _2) => message.ToString(prependTimestamp: false));
             return Task.CompletedTask;
         }
 
-        private Task LogCommand(LogMessage message)
+        Task LogCommand(LogMessage message)
         {
             // Return an error message for async commands
+            /*
             if (message.Exception is CommandException command)
             {
                 // Don't risk blocking the logging task by awaiting a message send; ratelimits!?
                 var _ = command.Context.Channel.SendMessageAsync($"Error: {command.Message}");
             }
+            */
 
             _commandsLogger.Log(
                 LogLevelFromSeverity(message.Severity),
@@ -63,8 +65,8 @@ namespace DiscordBot.Services
             return Task.CompletedTask;
         }
 
-        private static LogLevel LogLevelFromSeverity(LogSeverity severity)
+        static LogLevel LogLevelFromSeverity(LogSeverity severity)
             => (LogLevel)(Math.Abs((int)severity - 5));
-        
+
     }
 }

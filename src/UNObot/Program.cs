@@ -9,6 +9,9 @@ using Discord.Commands;
 using Discord.WebSocket;
 using DiscordBot.Services;
 using Newtonsoft.Json;
+using System.Reflection;
+using System.Linq;
+using Newtonsoft.Json.Linq;
 
 namespace UNObot
 {
@@ -17,19 +20,11 @@ namespace UNObot
         static Modules.UNOdb db = new Modules.UNOdb();
         public static string version = "Unknown Version";
         public static List<Modules.Command> commands = new List<Modules.Command>();
-        /*
-        public static int currentPlayer;
-        //1: Clockwise 2: Counter-Clockwise
-        public static byte order = 1;
-        public static bool gameStarted;
-        public static Modules.Card currentcard;
-        public static ulong onecardleft;
-        */
-        static void Main()
+
+        static async Task Main()
         {
             Console.WriteLine("UNObot Launcher 1.0");
-            //TODO generate new config if it doesn't exist
-            new Program().MainAsync().GetAwaiter().GetResult();
+            await new Program().MainAsync();
         }
 
         public static DiscordSocketClient _client;
@@ -42,7 +37,7 @@ namespace UNObot
 
             var services = ConfigureServices();
             services.GetRequiredService<LogService>();
-            await services.GetRequiredService<CommandHandlingService>().InitializeAsync(services);
+            await services.GetRequiredService<Services.CommandHandlingService>().InitializeAsync(services);
 
             await _client.LoginAsync(TokenType.Bot, _config["token"]);
             await _client.StartAsync();
@@ -58,7 +53,7 @@ namespace UNObot
                 // Base
                 .AddSingleton(_client)
                 .AddSingleton<CommandService>()
-                .AddSingleton<CommandHandlingService>()
+                .AddSingleton<Services.CommandHandlingService>()
                 // Logging
                 .AddLogging()
                 .AddSingleton<LogService>()
@@ -70,14 +65,99 @@ namespace UNObot
 
         IConfiguration BuildConfig()
         {
+            if (!File.Exists("config.json"))
+            {
+                Console.WriteLine("Config doesn't exist! The file has been created, please edit all fields to be correct. Exiting.");
+                JObject obj = new JObject(new JProperty("token", "Replace With Private Key"),
+                                          new JProperty("connStr", "server=127.0.0.1;user=UNObot;database=UNObot;port=3306;password=DBPassword"),
+                                          new JProperty("version", "Unknown Version")
+                                         );
+                File.CreateText("config.json");
+                using (StreamWriter sr = new StreamWriter("config.json", false))
+                    sr.Write(obj);
+                Task.Delay(15000);
+                return null;
+            }
+            var json = JObject.Parse(File.ReadAllText("config.json"));
+            int errors = 0;
+            if (!json.ContainsKey("token") || json["token"].ToString() == "Replace With Private Key")
+            {
+                Console.WriteLine("Error: Config is missing Bot Token (token)! Please add the property, or update the property to have a token."); errors++;
+            }
+            if (!json.ContainsKey("connStr"))
+            {
+                Console.WriteLine("Error: Config is missing Database Connection String (connStr)!"); errors++;
+            }
+            if (!json.ContainsKey("version"))
+            {
+                Console.WriteLine("Error: Config is missing version (version)!"); errors++;
+            }
+            if (errors != 0)
+            {
+                Console.WriteLine("Please fix all of these errors. Exiting.");
+                Environment.Exit(1);
+                return null;
+            }
             return new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("config.json")
-                .Build();
+                        .SetBasePath(Directory.GetCurrentDirectory())
+                        .AddJsonFile("config.json")
+                        .Build();
         }
-
         static async Task LoadHelp()
         {
+            var types = from c in Assembly.GetExecutingAssembly().GetTypes()
+                        where c.IsClass
+                        select c;
+            foreach (var type in types)
+            {
+                foreach (var module in type.GetMethods())
+                {
+                    var helpatt = module.GetCustomAttribute(typeof(Modules.Help)) as Modules.Help;
+                    var aliasatt = module.GetCustomAttributes(typeof(AliasAttribute)) as AliasAttribute;
+                    var owneronlyatt = module.GetCustomAttribute(typeof(RequireOwnerAttribute)) as RequireOwnerAttribute;
+                    var userpermsatt = module.GetCustomAttributes(typeof(RequireUserPermissionAttribute)) as RequireUserPermissionAttribute;
+                    var remainder = module.GetCustomAttribute(typeof(RemainderAttribute)) as RemainderAttribute;
+                    foreach (var pinfo in module.GetParameters())
+                    {
+                        var name = pinfo.Name;
+                    }
+                    var aliases = new List<string>();
+                    //check if it is a command
+                    if (module.GetCustomAttribute(typeof(CommandAttribute)) is CommandAttribute nameatt)
+                    {
+                        string foundHelp = helpatt == null ? "Missing help." : "Found help.";
+                        Console.WriteLine($"Loaded \"{nameatt.Text}\". {foundHelp}");
+                        int positioncmd = commands.FindIndex(o => o.CommandName == nameatt.Text);
+                        if (aliasatt != null && aliasatt.Aliases != null)
+                            aliases = aliasatt.Aliases.ToList();
+                        if (positioncmd < 0)
+                        {
+                            if (helpatt != null)
+                                commands.Add(new Modules.Command(nameatt.Text, aliases, helpatt.Usages.ToList(), helpatt.HelpMsg, helpatt.Active, helpatt.Version));
+                            else
+                                commands.Add(new Modules.Command(nameatt.Text, aliases, new List<string> { $".{nameatt.Text}" }, "No help is given for this command.", true, "Unknown Version"));
+                        }
+                        else
+                        {
+                            if (helpatt != null)
+                            {
+                                if (commands[positioncmd].Help == "No help is given for this command.")
+                                    commands[positioncmd].Help = helpatt.HelpMsg;
+                                commands[positioncmd].Usages = commands[positioncmd].Usages.Union(helpatt.Usages.ToList()).ToList();
+                                commands[positioncmd].Active |= helpatt.Active;
+                                if (commands[positioncmd].Version == "Unknown Version")
+                                    commands[positioncmd].Version = helpatt.Version;
+                            }
+                            if (aliasatt != null)
+                                commands[positioncmd].Aliases = commands[positioncmd].Aliases.Union(aliasatt.Aliases.ToList()).ToList();
+                        }
+                    }
+                }
+            }
+            commands = commands.OrderBy(o => o.CommandName).ToList();
+            Console.WriteLine($"Loaded {commands.Count} commands!");
+
+            //Fallback to help.json
             if (File.Exists("help.json"))
             {
                 Console.WriteLine("Loading help.json into memory...");
@@ -85,16 +165,21 @@ namespace UNObot
                 using (StreamReader r = new StreamReader("help.json"))
                 {
                     string json = await r.ReadToEndAsync();
-                    commands = JsonConvert.DeserializeObject<List<Modules.Command>>(json);
+                    foreach (Modules.Command c in JsonConvert.DeserializeObject<List<Modules.Command>>(json))
+                    {
+                        var index = commands.FindIndex(o => o.CommandName == c.CommandName);
+                        if (index >= 0 && commands[index].Help == "No help is given for this command.")
+                            commands[index] = c;
+                        else if (index < 0)
+                        {
+                            Console.WriteLine("A command was added that isn't in UNObot's code. It will be added to the help list, but will not be active.");
+                            var newcommand = c;
+                            newcommand.Active = false;
+                            commands.Add(newcommand);
+                        }
+                    }
                 }
-                Console.WriteLine($"Loaded {commands.Count} commands!");
-            }
-            else
-            {
-                Console.WriteLine("WARNING: help.json didn't exist! Creating help.json...");
-                using (StreamWriter sw = File.CreateText("help.json"))
-                    await sw.WriteLineAsync("[]");
-                Console.WriteLine("File created! Please generate your own via the help tool.");
+                Console.WriteLine($"Loaded {commands.Count} commands including from help.json!");
             }
         }
         public static async Task SendMessage(string text, ulong server)

@@ -6,8 +6,8 @@ namespace UNObot.Modules
 {
     class PlayCard
     {
-        UNOdb db = new UNOdb();
-        QueueHandler queueHandler = new QueueHandler();
+        readonly UNOdb db = new UNOdb();
+        readonly QueueHandler queueHandler = new QueueHandler();
         public async Task<string> Play(string color, string value, string wild, ulong player, ulong server)
         {
             switch (color.ToLower())
@@ -99,7 +99,8 @@ namespace UNObot.Modules
                 return "This is illegal you know. Your card must match in color/value, or be a wild card.";
             }
             string Response = "";
-            Response += $"<@{player}> has placed an {playCard.ToString()}.\n";
+            string UsernamePlayer = Program._client.GetUser(player).Username;
+            Response += $"{UsernamePlayer} has placed an {playCard.ToString()}.\n";
             if (await db.GetUNOPlayer(server) != 0)
             {
                 Response += $"<@{await db.GetUNOPlayer(server)}> has forgotten to say UNO! They have been given 2 cards.\n";
@@ -130,7 +131,7 @@ namespace UNObot.Modules
                 Response += "Game is over. You may rejoin now.";
                 return Response;
             }
-            else if (checkCards.Count == 1)
+            if (checkCards.Count == 1)
                 await db.SetUNOPlayer(server, player);
             //keeps on going if nobody won
             await queueHandler.NextPlayer(server);
@@ -162,7 +163,7 @@ namespace UNObot.Modules
                     Response += $"<@{await queueHandler.GetCurrentPlayer(server)}> has been skipped!\n";
                     await queueHandler.NextPlayer(server);
                     break;
-                case "Reverse":
+                default:
                     Response += "The order has been reversed!\n";
                     await queueHandler.ReversePlayers(server);
                     if (await queueHandler.PlayerCount(server) != 2)
@@ -170,6 +171,7 @@ namespace UNObot.Modules
                     break;
             }
 
+            await db.UpdateDescription(server, Response);
             Response += $"It is now <@{await queueHandler.GetCurrentPlayer(server)}>'s turn.";
             return Response;
         }

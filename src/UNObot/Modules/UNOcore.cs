@@ -7,6 +7,24 @@ using Newtonsoft.Json;
 
 namespace UNObot.Modules
 {
+    [AttributeUsage(AttributeTargets.Method)]
+    public class Help : Attribute
+    {
+        public string[] Usages { get; set; }
+        public string HelpMsg { get; set; }
+        public bool Active { get; set; }
+        public string Version { get; set; }
+
+        [JsonConstructor]
+        public Help(string[] Usages, string HelpMsg, bool Active, string Version)
+        {
+            this.Usages = Usages;
+            this.HelpMsg = HelpMsg;
+            this.Active = Active;
+            this.Version = Version;
+        }
+    }
+
     public class Command
     {
         public string CommandName { get; set; }
@@ -16,32 +34,6 @@ namespace UNObot.Modules
         public bool Active { get; set; }
         public string Version { get; set; }
 
-        [Obsolete("Added for compatability. Avoid usage.")]
-        public Command(string CommandName, string Help)
-        {
-            this.CommandName = CommandName;
-            this.Help = Help;
-            Active = true;
-            Version = "UNObot 1.0";
-        }
-        [Obsolete("Added for compatability. Avoid usage.")]
-        public Command(string CommandName, List<string> Aliases, string Help)
-        {
-            this.CommandName = CommandName;
-            this.Aliases = Aliases;
-            this.Help = Help;
-            Active = true;
-            Version = "UNObot 1.0";
-        }
-        [Obsolete("Added for compatability. Avoid usage.")]
-        public Command(string CommandName, List<string> Aliases, string Help, string Version)
-        {
-            this.CommandName = CommandName;
-            this.Aliases = Aliases;
-            this.Help = Help;
-            Active = true;
-            Version = "UNObot 1.0";
-        }
         [JsonConstructor]
         public Command(string CommandName, List<string> Aliases, List<string> Usages, string Help, bool Active, string Version)
         {
@@ -93,7 +85,7 @@ namespace UNObot.Modules
                 case 3:
                     card.Color = "Green";
                     break;
-                case 4:
+                default:
                     card.Color = "Blue";
                     break;
             }
@@ -124,6 +116,9 @@ namespace UNObot.Modules
                             card.Value = "Color";
                         else
                             card.Value = "+4";
+                        break;
+                    default:
+                        _ = 1;
                         break;
                 }
             }
