@@ -32,7 +32,14 @@ namespace UNObot
 
         public async Task MainAsync()
         {
-            _client = new DiscordSocketClient();
+            _client = new DiscordSocketClient(
+                new DiscordSocketConfig
+                {
+                    AlwaysDownloadUsers = true,
+                    DefaultRetryMode = RetryMode.AlwaysRetry,
+                    MessageCacheSize = 50
+                }
+            );
             _config = BuildConfig();
 
             var services = ConfigureServices();
@@ -41,6 +48,7 @@ namespace UNObot
 
             await _client.LoginAsync(TokenType.Bot, _config["token"]);
             await _client.StartAsync();
+            _client.ReactionAdded += Modules.InputHandler.ReactionAdded;
             await db.CleanAll();
             await _client.SetGameAsync($"UNObot {version}");
             await LoadHelp();

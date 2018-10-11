@@ -529,8 +529,7 @@ namespace UNObot.Modules
                             Response += $"\nWhat? The order has been reversed! Now, it's <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>'s turn.";
                             break;
                         default:
-                            await queueHandler.NextPlayer(Context.Guild.Id);
-                            Response += $"\nWhat's this? A skip? Oh well, now it's <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>'s turn.";
+                            _ = 1;
                             break;
                     }
                     await db.SetCurrentCard(Context.Guild.Id, currentCard);

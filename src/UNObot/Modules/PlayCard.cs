@@ -163,11 +163,14 @@ namespace UNObot.Modules
                     Response += $"<@{await queueHandler.GetCurrentPlayer(server)}> has been skipped!\n";
                     await queueHandler.NextPlayer(server);
                     break;
-                default:
+                case "Reverse":
                     Response += "The order has been reversed!\n";
                     await queueHandler.ReversePlayers(server);
                     if (await queueHandler.PlayerCount(server) != 2)
                         await queueHandler.NextPlayer(server);
+                    break;
+                default:
+                    _ = 1;
                     break;
             }
 
