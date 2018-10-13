@@ -10,49 +10,59 @@ namespace UNObot.Modules
 {
     public static class InputHandler
     {
-        static readonly Dictionary<string, string> reactions = new Dictionary<string, string>
+        static readonly Dictionary<IEmote, string> reactions = new Dictionary<IEmote, string>
         {
-            {"<:red:498252114972114999>", "Red"},
-            {"<:green:498252148094533633>", "Green"},
-            {"<:blue:498252191702843402>", "Blue"},
-            {"<:yellow:498252218089078785>", "Yellow"},
-            {"<:wild4:498258323108528129>", "Wild +4"},
-            {"<:wildcolor:498258323397804052>", "Wild Color"},
-            {"0⃣", "0"},
-            {"1⃣", "1"},
-            {"2⃣", "2"},
-            {"3⃣", "3"},
-            {"4⃣", "4"},
-            {"5⃣", "5"},
-            {"6⃣", "6"},
-            {"7⃣", "7"},
-            {"8⃣", "8"},
-            {"9⃣", "9"}
+            {Emote.Parse("<:red:498252114972114999>"), "Red"},
+            {Emote.Parse("<:green:498252148094533633>"), "Green"},
+            {Emote.Parse("<:blue:498252191702843402>"), "Blue"},
+            {Emote.Parse("<:yellow:498252218089078785>"), "Yellow"},
+            {Emote.Parse("<:wild4:498258323108528129>"), "Wild +4"},
+            {Emote.Parse("<:wildcolor:498258323397804052>"), "Wild Color"},
+            {new Emoji("0⃣"), "0"},
+            {new Emoji("1⃣"), "1"},
+            {new Emoji("2⃣"), "2"},
+            {new Emoji("3⃣"), "3"},
+            {new Emoji("4⃣"), "4"},
+            {new Emoji("5⃣"), "5"},
+            {new Emoji("6⃣"), "6"},
+            {new Emoji("7⃣"), "7"},
+            {new Emoji("8⃣"), "8"},
+            {new Emoji("9⃣"), "9"}
         };
-        public static async Task ReactionAdded(Cacheable<IUserMessage, ulong> before, ISocketMessageChannel after, SocketReaction channel)
+        public static async Task ReactionAdded(Cacheable<IUserMessage, ulong> reactmessage, ISocketMessageChannel channel, SocketReaction reaction)
         {
             //TODO add check for what type of message (kete)
-            string input;
-            var message = await before.GetOrDownloadAsync();
+            string input = "";
+            var message = await reactmessage.GetOrDownloadAsync();
+            var reacter = Program._client.GetUser(reaction.UserId);
+
+            if (reacter.IsBot || message.Author.Id != Program._client.CurrentUser.Id)
+                return;
+
             Dictionary<IEmote, IUser[]> messagereactions = new Dictionary<IEmote, IUser[]>();
 
-            foreach (var reaction in message.Reactions)
+            foreach (var react in message.Reactions)
             {
-                var users = await message.GetReactionUsersAsync(reaction.Key);
-                messagereactions.Add(reaction.Key, users.ToArray());
+                var users = await message.GetReactionUsersAsync(react.Key);
+                messagereactions.Add(react.Key, users.ToArray());
             }
 
-            await message.RemoveReactionAsync(channel.Emote, channel.User.Value);
-            if (reactions.ContainsKey(channel.Emote.Name))
-                input = reactions[channel.Emote.Name];
+#if(DEBUG)
+            if (reactions.ContainsKey(reaction.Emote))
+            {
+                input = reactions[reaction.Emote];
+                await message.RemoveReactionAsync(reaction.Emote, reaction.User.Value);
+                await channel.SendMessageAsync($"Recieved an {input} from {reacter.Username}");
+            }
             else
                 //probably a wrong icon
-                Console.WriteLine(channel.Emote.Name);
+                Console.WriteLine(reaction.Emote.Name);
+#endif
         }
-        public static async Task AddReactions(SocketUserMessage s)
+        public static async Task AddReactions(IUserMessage s)
         {
-            foreach (string emoji in reactions.Keys)
-                await s.AddReactionAsync(new Emoji("1"));
+            foreach (IEmote emoji in reactions.Keys)
+                await s.AddReactionAsync(emoji);
         }
     }
 }

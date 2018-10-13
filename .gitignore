@@ -17,6 +17,7 @@
 *.conf
 config.json
 src/UNObot/config.json
+*.sh
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

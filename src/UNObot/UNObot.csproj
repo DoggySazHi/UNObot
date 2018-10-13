@@ -12,6 +12,16 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <Optimize>true</Optimize>
+    <CustomCommands>
+      <CustomCommands>
+        <Command>
+          <type>Custom</type>
+          <name>Publish</name>
+          <command>dotnet build &amp;&amp; rm -rf src/UNObot/bin/Release/netcoreapp2.1/publish/ &amp;&amp; rm -rf src/UNObot/bin/Release/netcoreapp2.1/publish/ &amp;&amp; dotnet publish -c Release &amp;&amp; mv src/UNObot/bin/Release/netcoreapp2.1/publish/ src/UNObot/bin/Release/netcoreapp2.1/UNObot &amp;&amp; scp -r src/UNObot/bin/Release/netcoreapp2.1/UNObot doggysazhi@williamle.com:/mnt/backup/Projects/</command>
+          <workingdir>${SolutionDir}</workingdir>
+        </Command>
+      </CustomCommands>
+    </CustomCommands>
   </PropertyGroup>
 
   <ItemGroup>

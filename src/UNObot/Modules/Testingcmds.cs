@@ -180,6 +180,14 @@ namespace UNObot.Modules
             await updatedMessage.AddReactionAsync(emote);
             await Purge(0);
         }
+
+        [Command("getbuttons", RunMode = RunMode.Async)]
+        public async Task AddButtons()
+        {
+            var message = await ReplyAsync("Loading buttons...");
+            await InputHandler.AddReactions(message);
+            await message.ModifyAsync(o => o.Content = "Finished loading buttons!");
+        }
         /*
         Timer spamTimer = new Timer();
         ulong server = 0;

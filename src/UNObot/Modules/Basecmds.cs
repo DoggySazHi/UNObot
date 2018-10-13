@@ -171,7 +171,7 @@ namespace UNObot.Modules
         {
             await ReplyAsync("UNObot: Programmed by DoggySazHi\n" +
                 "Tested by Aragami and Fm (ish)\n" +
-                "UNO card images created by Dmitry Fomin (Wikipedia)" +
+                "UNO card images from Wikipedia\n" +
                 "Created for the UBOWS server\n\n" +
                 "Stickerz was here.\n" +
                 "Blame LocalDisk and Harvest for any bugs.");
