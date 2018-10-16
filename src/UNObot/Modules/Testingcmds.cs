@@ -19,31 +19,12 @@ namespace UNObot.Modules
         {
             var messages = await Context.Channel.GetMessagesAsync(length + 1).FlattenAsync();
 
-            ITextChannel textchannel = Context.Channel as ITextChannel;
-            if (textchannel == null)
+            if (!(Context.Channel is ITextChannel textchannel))
             {
                 Console.WriteLine("error cast");
                 return;
             }
             await textchannel.DeleteMessagesAsync(messages);
-        }
-        [Command("exit")]
-        [Help(new string[] { ".exit" }, "Kill UNObot when he's being a bad bot. Only Doggy and other \"special\" people can do it.", false, "UNObot 1.4")]
-        public async Task Exit()
-        {
-            switch (Context.User.Id)
-            {
-                case 191397590946807809:
-                    break;
-                case 278524552462598145:
-                    await ReplyAsync("Wait, this isn't Doggy... eh who cares?");
-                    break;
-                default:
-                    await ReplyAsync("You can only exit if you're DoggySazHi.");
-                    return;
-            }
-            await ReplyAsync("Sorry to be a hassle. Goodbye world!");
-            Environment.Exit(0);
         }
 
         [Command("ubows"), Alias("ubow")]
