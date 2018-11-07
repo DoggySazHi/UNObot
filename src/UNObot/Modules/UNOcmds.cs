@@ -730,5 +730,19 @@ namespace UNObot.Modules
                              "To reinvite the bot, please use this link: https://discordapp.com/api/oauth2/authorize?client_id=477616287997231105&permissions=8192&scope=bot");
             await Context.Guild.LeaveAsync();
         }
+
+        [Command("exit")]
+        public async Task Exit()
+        {
+            if (Context.User.Id == 278524552462598145)
+                await ReplyAsync("ERROR: detected idiot");
+            else if (Context.User.Id == 191397590946807809)
+            {
+                await ReplyAsync("Resetting!");
+                Environment.Exit(0);
+            }
+            else
+                await ReplyAsync("You do not have access to this command!");
+        }
     }
 }
