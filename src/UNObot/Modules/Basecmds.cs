@@ -92,9 +92,9 @@ namespace UNObot.Modules
         public async Task OldEasterEgg()
             => await ReplyAsync("lol, that's outdated");
 
-        [Command("help"), Alias("ahh", "ahhh", "ahhhh")]
-        [Help(new string[] { ".help" }, "If you need help using help, you're truly lost.", true, "UNObot 1.0")]
-        public async Task Help()
+        [Command("fullhelp")]
+        [Help(new string[] { ".fullhelp" }, "If you need help using help, you're truly lost.", true, "UNObot 1.0")]
+        public async Task FullHelp()
         {
             await ReplyAsync("Help has been sent. Or, I think it has.");
             string Response = "```Commands: @UNOBot#4308 command/ .command\n (Required) {May be required} [Optional]\n \n";
@@ -133,6 +133,30 @@ namespace UNObot.Modules
             }
             Response += "```";
             await UserExtensions.SendMessageAsync(Context.Message.Author, Response);
+        }
+        [Command("help"), Alias("ahh", "ahhh", "ahhhh")]
+        public async Task Help()
+        {
+            var builder = new EmbedBuilder()
+                .WithTitle("Quick-start guide to UNObot")
+                .WithColor(new Color(UNOcore.r.Next(0, 256), UNOcore.r.Next(0, 256), UNOcore.r.Next(0, 256)))
+                .WithTimestamp(DateTimeOffset.Now)
+                .WithFooter(footer =>
+                {
+                    footer
+                        .WithText("A somewhat helpful help message");
+                })
+                .AddField("Usages", "@UNOBot#4308 *commandtorun*\n.*commandtorun*")
+                .AddField(".join", "Join a game in the current server.", true)
+                .AddField(".start", "Start a game in the current server.\nYou must have joined beforehand.", true)
+                .AddField(".play (color) (value) [new color]", "Play a card, assuming if it's your turn.\nIf you are playing a Wild card, also\nadd the color to change to.", true)
+                .AddField(".hand", "See which cards you have, as well as\nwhich ones you can play.", true)
+                .AddField(".game", "See everything about the current game.\nThis also shows the current card.", true)
+                .AddField(".fullhelp", "See an extended listing of commands.\nNice!", true);
+            var embed = builder.Build();
+            await Context.Channel.SendMessageAsync(
+                ":+1: got cha fam",
+                embed: embed);
         }
 
         [Command("help"), Alias("ahh", "ahhh", "ahhhh")]
