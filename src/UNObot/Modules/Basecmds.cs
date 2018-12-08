@@ -152,6 +152,8 @@ namespace UNObot.Modules
                 .AddField(".play (color) (value) [new color]", "Play a card, assuming if it's your turn.\nIf you are playing a Wild card, also\nadd the color to change to.", true)
                 .AddField(".hand", "See which cards you have, as well as\nwhich ones you can play.", true)
                 .AddField(".game", "See everything about the current game.\nThis also shows the current card.", true)
+                .AddField(".draw", "Draw a card. Duh. Can be used indefinitely.", true)
+                .AddField(".quickplay", "Auto-magically draw and play the first valid card that comes out.", true)
                 .AddField(".fullhelp", "See an extended listing of commands.\nNice!", true);
             var embed = builder.Build();
             await Context.Channel.SendMessageAsync(
