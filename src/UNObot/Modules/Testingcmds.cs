@@ -27,7 +27,7 @@ namespace UNObot.Modules
             await textchannel.DeleteMessagesAsync(messages);
         }
 
-        [Command("ubows"), Alias("ubow")]
+        [Command("ubows", RunMode = RunMode.Async), Alias("ubow")]
         [Help(new string[] { ".ubows" }, "Get basic server information about the Unturned Bunker Official Wikia Server.", true, "UNObot 2.4")]
         public async Task UBOWS()
         {
@@ -46,7 +46,7 @@ namespace UNObot.Modules
                              $"Port: {response.Port}");
         }
 
-        [Command("slamc")]
+        [Command("slamc", RunMode = RunMode.Async)]
         [Help(new string[] { ".slamc" }, "Get basic server information about the Slightly Less Average Minecraft server.", true, "UNObot 2.4")]
         public async Task SLAMC()
         {
@@ -57,7 +57,7 @@ namespace UNObot.Modules
                 await ReplyAsync("The server seems to be down from here...");
         }
 
-        [Command("psurvival")]
+        [Command("psurvival", RunMode = RunMode.Async)]
         [Help(new string[] { ".psurvival" }, "Get basic server information about the pSurvival Minecraft server.", true, "UNObot 2.4")]
         public async Task PSurvival()
         {
@@ -67,7 +67,7 @@ namespace UNObot.Modules
             else
                 await ReplyAsync("The server seems to be down from here...");
         }
-        [Command("checkmc")]
+        [Command("checkmc", RunMode = RunMode.Async)]
         [Help(new string[] { ".checkmc (ip) (port)" }, "Get basic server information about any Minecraft server.", true, "UNObot 2.4")]
         public async Task CheckMC(string ip, ushort port)
         {
@@ -78,7 +78,7 @@ namespace UNObot.Modules
                 await ReplyAsync("The server seems to be down from here...");
         }
 
-        [Command("unofficialwiki"), Alias("unwiki")]
+        [Command("unofficialwiki", RunMode = RunMode.Async), Alias("unwiki")]
         [Help(new string[] { ".unofficialwiki" }, "Get basic server information about the Unofficial Wikia Server.", true, "UNObot 2.4")]
         public async Task UnoffWiki()
         {
