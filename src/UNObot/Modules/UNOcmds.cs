@@ -446,7 +446,7 @@ namespace UNObot.Modules
                 Response += $"- <@{player}>\n";
             await ReplyAsync(Response);
         }
-        [Command("uno")]
+        [Command("uno"), Alias("u")]
         [Help(new string[] { ".uno" }, "Quickly use this when you have one card left.", true, "UNObot 0.2")]
         public async Task UNOcmd()
         {
