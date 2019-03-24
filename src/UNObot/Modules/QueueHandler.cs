@@ -3,6 +3,9 @@ using System;
 using System.Threading.Tasks;
 using System.Linq;
 
+#pragma warning disable CS1701 // Assuming assembly reference matches identity
+#pragma warning disable CS1702 // Assuming assembly reference matches identity
+
 namespace UNObot.Modules
 {
     public class QueueHandler

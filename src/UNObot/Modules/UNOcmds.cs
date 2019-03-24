@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 
+#pragma warning disable CS1701 // Assuming assembly reference matches identity
+#pragma warning disable CS1702 // Assuming assembly reference matches identity
+
 namespace UNObot.Modules
 {
     public class UNOcmds : ModuleBase<SocketCommandContext>
@@ -134,6 +137,20 @@ namespace UNObot.Modules
             await db.SetNote(Context.User.Id, text);
             await ReplyAsync("Successfully set note!");
         }
+
+        [Command("welcome")]
+        public async Task Welcome()
+        {
+            string response = "Permissions:\n";
+            var User = Context.Guild.GetUser(Context.Client.CurrentUser.Id);
+            var Perms = User.GetPermissions(Context.Channel as IGuildChannel);
+            foreach (ChannelPermission c in Perms.ToList())
+            {
+                response += $"- {c.ToString()} | \n";
+            }
+            Console.WriteLine(response);
+        }
+
         [Command("setusernote"), RequireOwner]
         [Help(new string[] { ".setusernote" }, "Set a note about others. This command can only be ran by DoggySazHi.", false, "UNObot 2.1")]
         public async Task SetNote(string user, [Remainder]string text)

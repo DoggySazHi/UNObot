@@ -2,6 +2,9 @@ using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
 
+#pragma warning disable CS1701 // Assuming assembly reference matches identity
+#pragma warning disable CS1702 // Assuming assembly reference matches identity
+
 namespace UNObot.Modules
 {
     class PlayCard

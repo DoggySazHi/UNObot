@@ -3,6 +3,9 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 
+#pragma warning disable CS1701 // Assuming assembly reference matches identity
+#pragma warning disable CS1702 // Assuming assembly reference matches identity
+
 namespace UNObot.Modules
 {
     public class Basecmds : ModuleBase<SocketCommandContext>

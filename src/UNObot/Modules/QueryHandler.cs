@@ -7,6 +7,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
+#pragma warning disable CS1701 // Assuming assembly reference matches identity
+#pragma warning disable CS1702 // Assuming assembly reference matches identity
+
 namespace UNObot.Modules
 {
     //Adopted from Valve description: https://developer.valvesoftware.com/wiki/Server_queries#A2S_INFO

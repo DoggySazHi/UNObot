@@ -5,6 +5,9 @@ using System.Collections.Generic;
 using Discord.WebSocket;
 using Newtonsoft.Json;
 
+#pragma warning disable CS1701 // Assuming assembly reference matches identity
+#pragma warning disable CS1702 // Assuming assembly reference matches identity
+
 namespace UNObot.Modules
 {
     [AttributeUsage(AttributeTargets.Method)]
