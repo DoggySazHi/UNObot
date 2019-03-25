@@ -134,8 +134,6 @@ namespace UNObot.Modules
                 Response += "Game is over. You may rejoin now.";
                 return Response;
             }
-            if (checkCards.Count == 1)
-                await db.SetUNOPlayer(server, player);
             //keeps on going if nobody won
             await queueHandler.NextPlayer(server);
             if (playCard.Color == "Wild")
@@ -176,6 +174,9 @@ namespace UNObot.Modules
                     _ = 1;
                     break;
             }
+            checkCards = await db.GetCards(player);
+            if (checkCards.Count == 1)
+                await db.SetUNOPlayer(server, player);
 
             await db.UpdateDescription(server, Response);
             Response += $"It is now <@{await queueHandler.GetCurrentPlayer(server)}>'s turn.";

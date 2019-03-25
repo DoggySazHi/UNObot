@@ -18,6 +18,13 @@ namespace UNObot.Modules
         public bool Active { get; set; }
         public string Version { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:UNObot.Modules.Help"/> class.
+        /// </summary>
+        /// <param name="Usages">Usages of the command.</param>
+        /// <param name="HelpMsg">Help message.</param>
+        /// <param name="Active">Check if command should be displayed in the help list.</param>
+        /// <param name="Version">Version when the command was first introduced.</param>
         [JsonConstructor]
         public Help(string[] Usages, string HelpMsg, bool Active, string Version)
         {

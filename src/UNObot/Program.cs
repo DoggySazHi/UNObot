@@ -13,6 +13,9 @@ using System.Reflection;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 
+#pragma warning disable CS1701 // Assuming assembly reference matches identity
+#pragma warning disable CS1702 // Assuming assembly reference matches identity
+
 namespace UNObot
 {
     class Program

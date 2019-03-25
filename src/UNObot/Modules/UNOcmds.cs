@@ -78,7 +78,7 @@ namespace UNObot.Modules
             string note = await db.GetNote(Context.User.Id);
             if (!await db.UserExists(Context.User.Id))
             {
-                await ReplyAsync("You do not currently exist in the database.");
+                await ReplyAsync("You do not currently exist in the database. Maybe you should play a game.");
             }
             if (note != null)
             {
@@ -90,13 +90,21 @@ namespace UNObot.Modules
                                 + $"Games won: {stats[2]}");
         }
         [Command("stats")]
-        [Help(new string[] { ".stats (ping another player)" }, "Get the statistics of you or another player to see if they are a noob, pro, or hacker.", true, "UNObot 1.4")]
-        public async Task Stats2(string user)
+        [Help(new string[] { ".stats (ping another player, or their ID)" }, "Get the statistics of you or another player to see if they are a noob, pro, or hacker.", true, "UNObot 1.4")]
+        public async Task Stats2([Remainder] string user)
         {
-            user = user.Trim(new Char[] { ' ', '<', '>', '!', '@' });
-            if (!UInt64.TryParse(user, out ulong userid))
+            user = user.Trim();
+            //Style of Username#XXXX or Username XXXX
+            if ((user.Contains('#') || user.Contains(' ')) && user.Length >= 6 && int.TryParse(user.Substring(user.Length - 4), out int discriminator))
             {
-                await ReplyAsync("Mention the player with this command to see their stats.");
+                var userObj = Program._client.GetUser(user.Substring(0, user.Length - 5), discriminator.ToString());
+                //Negative one is only passed in because it cannot convert to ulong; it will fail the TryParse and give a "Mention the player..." error.
+                user = userObj != null ? userObj.Id.ToString() : (-1).ToString();
+            }
+            user = user.Trim(new char[] { ' ', '<', '>', '!', '@' });
+            if (!ulong.TryParse(user, out ulong userid))
+            {
+                await ReplyAsync("Mention the player with this command to see their stats. Or if you want to be polite, try using their ID.");
                 return;
             }
             if (!await db.UserExists(userid))
@@ -110,7 +118,7 @@ namespace UNObot.Modules
             {
                 await ReplyAsync($"NOTE: {note}");
             }
-            await ReplyAsync($"<@{userid}>'s stats:\n"
+            await ReplyAsync($"{Program._client.GetUser(userid).Username}'s stats:\n"
                                 + $"Games joined: {stats[0]}\n"
                                 + $"Games fully played: {stats[1]}\n"
                                 + $"Games won: {stats[2]}");
@@ -149,6 +157,7 @@ namespace UNObot.Modules
                 response += $"- {c.ToString()} | \n";
             }
             Console.WriteLine(response);
+            await ReplyAsync("UNObot was already succcessfully initialized in this server. But thank you.");
         }
 
         [Command("setusernote"), RequireOwner]
@@ -499,7 +508,7 @@ namespace UNObot.Modules
                 else
                 {
                     string Response = "";
-                    switch (mode)
+                    switch (mode.ToLower().Trim())
                     {
                         case "private":
                             Response += "Playing in privacy!";
