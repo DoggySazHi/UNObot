@@ -15,6 +15,7 @@
 *.userosscache
 *.sln.docstates
 *.conf
+*.sh
 config.json
 src/UNObot/config.json
 *.sh
