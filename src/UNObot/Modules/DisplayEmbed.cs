@@ -75,14 +75,14 @@ namespace UNObot.Modules
             {
                 footer
                     .WithText($"UNObot {Program.version} - By DoggySazHi")
-                    .WithIconUrl("https://cdn.discordapp.com/avatars/191397590946807809/efaab2638e2f463f09881d4233ec84c9.png");
+                    .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
             })
             .WithThumbnailUrl(ImageHandler.GetImage(card))
             .WithAuthor(author =>
             {
                 author
                     .WithName($"Playing in {server}")
-                    .WithIconUrl("https://cdn.discordapp.com/avatars/477616287997231105/02408a548a232053f61694fa86c91a12.png");
+                    .WithIconUrl("https://williamle.com/unobot/unobot.png");
             })
             .AddField("Current Players", response, true)
             .AddField("Current Card", card, true);

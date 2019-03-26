@@ -51,20 +51,21 @@ namespace DiscordBot.Services
         Task LogCommand(LogMessage message)
         {
             // Return an error message for async commands
-            /*
+
+#if DEBUG
             if (message.Exception is CommandException command)
             {
                 // Don't risk blocking the logging task by awaiting a message send; ratelimits!?
                 var _ = command.Context.Channel.SendMessageAsync($"Error: {command.Message}");
             }
-            */
+#endif
 
             _commandsLogger.Log(
                 LogLevelFromSeverity(message.Severity),
                 0,
                 message,
                 message.Exception,
-                (_1, _2) => message.ToString(prependTimestamp: false));
+                (_1, _2) => message.ToString(prependTimestamp: true));
             return Task.CompletedTask;
         }
 

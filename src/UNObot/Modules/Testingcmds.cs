@@ -16,7 +16,7 @@ namespace UNObot.Modules
     {
         UNOdb db = new UNOdb();
 
-        [Command("purge"), RequireUserPermission(GuildPermission.Administrator), RequireBotPermission(ChannelPermission.ManageMessages)]
+        [Command("purge", RunMode = RunMode.Async), RequireUserPermission(GuildPermission.Administrator), RequireBotPermission(ChannelPermission.ManageMessages)]
         [Help(new string[] { ".purge (number of messages)" }, "Delete messages via a range. Testing command; do not rely on forever.", false, "UNObot 1.4")]
         public async Task Purge(int length)
         {
@@ -96,7 +96,7 @@ namespace UNObot.Modules
                              $"Map: {response.Map}");
         }
 
-        [Command("helpmeplz"), RequireOwner]
+        [Command("helpmeplz", RunMode = RunMode.Async), RequireOwner]
         public async Task HelpmePlz(int length)
         {
             var messages = await Context.Channel.GetMessagesAsync(length + 1).FlattenAsync();
@@ -109,18 +109,18 @@ namespace UNObot.Modules
             await textchannel.DeleteMessagesAsync(messages);
         }
 
-        [Command("moltthink")]
+        [Command("moltthink", RunMode = RunMode.Async)]
         [Help(new string[] { ".moltthink" }, "Think like Molt.", true, "UNObot 3.0 Beta 1")]
         public async Task MoltThink()
         {
             await ReplyAsync("<:moltthink:471842854591791104>");
         }
-        [Command("moltthinkreact")]
+        [Command("moltthinkreact", RunMode = RunMode.Async)]
         [Help(new string[] { ".moltthinkreact" }, "React by thinking as Molt.", true, "UNObot 3.0 Beta 1")]
         public async Task MoltThinkReact()
             => await MoltThinkReact(1);
 
-        [Command("moltthinkreact")]
+        [Command("moltthinkreact", RunMode = RunMode.Async)]
         [Help(new string[] { ".moltthinkreact (number of messages)" }, "React by thinking as Molt.", true, "UNObot 3.0 Beta 1")]
         public async Task MoltThinkReact(int numMessages)
         {
@@ -128,23 +128,23 @@ namespace UNObot.Modules
             await BaseReact(numMessages, emote);
         }
 
-        [Command("oof")]
+        [Command("oof", RunMode = RunMode.Async)]
         [Help(new string[] { ".oof" }, "Oof.", true, "UNObot 3.0 Beta 1")]
         public async Task OOF()
         {
-            await ReplyAsync("<:oof:443773918319476757>");
+            await ReplyAsync("<:oof:559961296418635776>");
         }
 
-        [Command("oofreact")]
+        [Command("oofreact", RunMode = RunMode.Async)]
         [Help(new string[] { ".oofreact" }, "Damn, oof.", true, "UNObot 3.0 Beta 1")]
         public async Task OOFReact()
             => await OOFReact(1);
 
-        [Command("oofreact")]
+        [Command("oofreact", RunMode = RunMode.Async)]
         [Help(new string[] { ".oofreact (number of messages)" }, "Damn, oof.", true, "UNObot 3.0 Beta 1")]
         public async Task OOFReact(int numMessages)
         {
-            IEmote emote = await Context.Client.GetGuild(420005591155605535).GetEmoteAsync(443773918319476757);
+            IEmote emote = await Context.Client.GetGuild(420005591155605535).GetEmoteAsync(559961296418635776);
             await BaseReact(numMessages, emote);
         }
 
@@ -166,6 +166,7 @@ namespace UNObot.Modules
         }
 
         [Command("getbuttons", RunMode = RunMode.Async)]
+        [Help(new string[] { "yes." }, "", false, "no")]
         public async Task AddButtons()
         {
             var message = await ReplyAsync("Loading buttons...");
