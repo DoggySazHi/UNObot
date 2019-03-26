@@ -554,6 +554,10 @@ namespace UNObot.Modules
                             await queueHandler.ReversePlayers(Context.Guild.Id);
                             Response += $"\nWhat? The order has been reversed! Now, it's <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>'s turn.";
                             break;
+                        case "Skip":
+                            await queueHandler.NextPlayer(Context.Guild.Id);
+                            Response += $"What's this? A skip? Oh well, now it's <@{await queueHandler.GetCurrentPlayer(Context.Guild.Id)}>'s turn.";
+                            break;
                         default:
                             _ = 1;
                             break;

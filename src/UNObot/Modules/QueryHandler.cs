@@ -76,10 +76,16 @@ namespace UNObot.Modules
         public string Spectator { get; set; }       //0x40
         public short SpectatorPort { get; set; }   //0x40
         public short Port { get; set; }             //0x80
+        public bool ServerUp { get; set; }
+
         #endregion
         public A2S_INFO(IPEndPoint ep)
         {
+            try
+            {
             UdpClient udp = new UdpClient();
+            udp.Client.SendTimeout = 5000;
+            udp.Client.ReceiveTimeout = 5000;
             udp.Send(REQUEST, REQUEST.Length, ep);
             MemoryStream ms = new MemoryStream(udp.Receive(ref ep));    // Saves the received data in a memory buffer
             BinaryReader br = new BinaryReader(ms, Encoding.UTF8);      // A binary reader that treats charaters as Unicode 8-bit
@@ -118,6 +124,12 @@ namespace UNObot.Modules
             br.Close();
             ms.Close();
             udp.Close();
+            ServerUp = true;
+            }
+            catch(Exception)
+            {
+                ServerUp = false;
+            }
         }
         /// <summary>Reads a null-terminated string into a .NET Framework compatible string.</summary>
         /// <param name="input">Binary reader to pull the null-terminated string from.  Make sure it is correctly positioned in the stream before calling.</param>
@@ -227,7 +239,7 @@ namespace UNObot.Modules
             }
             IPEndPoint iPEndPoint = new IPEndPoint(iP, port);
             output = new A2S_INFO(iPEndPoint);
-            return true;
+            return output.ServerUp;
         }
 
         public static MCStatus GetInfoMC(string ip, ushort port = 25565)
