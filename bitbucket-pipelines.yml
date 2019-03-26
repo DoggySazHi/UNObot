@@ -16,14 +16,7 @@ pipelines:
           - dotnet restore
           - dotnet build $PROJECT_NAME
     - step:
-        name: Manual Build
-        trigger: manual
-        script:
-          - export PROJECT_NAME=src/UNObot
-          - dotnet restore
-          - dotnet build $PROJECT_NAME
-    - step:
-        name: Manual Deploy
+        name: Deploy
         trigger: manual
         script:
           - export PROJECT_NAME=src/UNObot
