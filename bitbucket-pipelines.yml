@@ -19,10 +19,12 @@ pipelines:
         name: Deploy
         trigger: manual
         script:
+          - dotnet publish -c Release src/UNObot
+          - mv src/UNObot/bin/Release/netcoreapp2.1/publish/ src/UNObot/bin/Release/netcoreapp2.1/UNObot
           - pipe: atlassian/scp-deploy:0.3.1
             variables:
               USER: 'doggysazhi'
               SERVER: 'williamle.com'
               REMOTE_PATH: '/mnt/backup/Projects/Test'
-              LOCAL_PATH: 'src/UNObot'
+              LOCAL_PATH: 'src/UNObot/bin/Release/netcoreapp2.1/UNObot'
               DEBUG: 'true'
