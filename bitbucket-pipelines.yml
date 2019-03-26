@@ -25,6 +25,6 @@ pipelines:
             variables:
               USER: 'doggysazhi'
               SERVER: 'williamle.com'
-              REMOTE_PATH: '/mnt/backup/Projects/Test'
+              REMOTE_PATH: '/mnt/backup/Projects'
               LOCAL_PATH: 'src/UNObot/bin/Release/netcoreapp2.1/UNObot'
               DEBUG: 'true'
