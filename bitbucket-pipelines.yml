@@ -15,3 +15,25 @@ pipelines:
           - export PROJECT_NAME=src/UNObot
           - dotnet restore
           - dotnet build $PROJECT_NAME
+    - step:
+        name: Manual Build
+        trigger: manual
+        script:
+          - export PROJECT_NAME=src/UNObot
+          - dotnet restore
+          - dotnet build $PROJECT_NAME
+    - step:
+        name: Manual Deploy
+        trigger: manual
+        script:
+          - export PROJECT_NAME=src/UNObot
+          - dotnet restore
+          - dotnet build $PROJECT_NAME
+          - pipe: atlassian/scp-deploy:0.3.1
+            variables:
+              USER: 'doggysazhi'
+              SERVER: 'williamle.com'
+              REMOTE_PATH: ' /mnt/backup/Projects/Test'
+              LOCAL_PATH: 'src/UNObot'
+              SSH_KEY: $SERVER_KEY
+              DEBUG: 'true'
