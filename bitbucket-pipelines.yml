@@ -11,7 +11,7 @@ pipelines:
         deployment: staging
         caches:
           - dotnetcore
-        script: # Modify the comma`nds below to build your repository.
+        script:
           - export PROJECT_NAME=src/UNObot
           - dotnet restore
           - dotnet build $PROJECT_NAME
@@ -28,3 +28,40 @@ pipelines:
               REMOTE_PATH: '/mnt/backup/Projects'
               LOCAL_PATH: 'src/UNObot/bin/Release/netcoreapp2.1/UNObot'
               DEBUG: 'true'
+  custom:
+    manualdeploy:
+      - step:
+          caches:
+            - dotnetcore
+          name: Manual Build and Deploy
+          script:
+            - export PROJECT_NAME=src/UNObot
+            - dotnet restore
+            - dotnet build $PROJECT_NAME
+            - dotnet publish -c Release src/UNObot
+            - mv src/UNObot/bin/Release/netcoreapp2.1/publish/ src/UNObot/bin/Release/netcoreapp2.1/UNObot
+            - pipe: atlassian/scp-deploy:0.3.1
+              variables:
+                USER: 'doggysazhi'
+                SERVER: 'williamle.com'
+                REMOTE_PATH: '/mnt/backup/Projects'
+                LOCAL_PATH: 'src/UNObot/bin/Release/netcoreapp2.1/UNObot'
+                DEBUG: 'true'
+    manualbuild:
+      - step:
+          caches:
+            - dotnetcore
+          name: Manual Build
+          script:
+            - export PROJECT_NAME=src/UNObot
+            - dotnet restore
+            - dotnet build $PROJECT_NAME
+  branches:
+    staging:
+      - step:
+          caches:
+            - dotnetcore
+          script:
+            - export PROJECT_NAME=src/UNObot
+            - dotnet restore
+            - dotnet build $PROJECT_NAME
