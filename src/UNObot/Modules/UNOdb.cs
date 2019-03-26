@@ -7,6 +7,9 @@ using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
+#pragma warning disable CS1701 // Assuming assembly reference matches identity
+#pragma warning disable CS1702 // Assuming assembly reference matches identity
+
 namespace UNObot.Modules
 {
     public class UNOdb
@@ -858,6 +861,7 @@ namespace UNObot.Modules
                 await conn.CloseAsync();
             }
         }
+        //TODO something about addallowedchannel causing this to throw null????
         public async Task<ulong> GetDefaultChannel(ulong server)
         {
             if (conn == null)
@@ -881,7 +885,6 @@ namespace UNObot.Modules
                     while (dr.Read())
                     {
                         channel = dr.GetUInt64(0);
-
                     }
                 }
                 catch (MySqlException ex)

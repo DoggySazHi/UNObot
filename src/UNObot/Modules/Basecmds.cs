@@ -3,11 +3,14 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 
+#pragma warning disable CS1701 // Assuming assembly reference matches identity
+#pragma warning disable CS1702 // Assuming assembly reference matches identity
+
 namespace UNObot.Modules
 {
     public class Basecmds : ModuleBase<SocketCommandContext>
     {
-        [Command("info")]
+        [Command("info", RunMode = RunMode.Async)]
         [Help(new string[] { ".info" }, "Get the current version of UNObot.", true, "UNObot 1.0")]
         public async Task Info()
         {
@@ -15,14 +18,14 @@ namespace UNObot.Modules
                 $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {Program.version}\nCurrent Time (PST): {DateTime.Now.ToString()}");
         }
 
-        [Command("gulag")]
+        [Command("gulag", RunMode = RunMode.Async)]
         [Help(new string[] { ".gulag" }, "Blyat.", false, "UNObot 1.4")]
         public async Task Gulag()
         {
             await ReplyAsync($"<@{Context.User.Id}> has been sent to gulag and has all of his cards converted to red blyats.");
         }
 
-        [Command("gulag")]
+        [Command("gulag", RunMode = RunMode.Async)]
         [Help(new string[] { ".gulag (user)" }, "Blyat.", false, "UNObot 1.4")]
         public async Task Gulag2(string user)
         {
@@ -31,27 +34,27 @@ namespace UNObot.Modules
             await ReplyAsync($"<@{user}> has been sent to gulag and has all of his cards converted to red blyats.");
         }
 
-        [Command("nepnep")]
+        [Command("nepnep", RunMode = RunMode.Async)]
         [Help(new string[] { ".nepnep" }, "Wait, how did this command get in here?", false, "UNObot 1.4")]
         public async Task Nep()
         {
             await ReplyAsync($"You got me there at \"nep\".");
         }
 
-        [Command("ugay"), Alias("u gay", "you gay", "you're gay")]
+        [Command("ugay", RunMode = RunMode.Async), Alias("u gay", "you gay", "you're gay")]
         [Help(new string[] { ".ugay" }, "That's not very nice. >:[", false, "UNObot 0.1")]
         public async Task Ugay()
             => await ReplyAsync(
                 $"<@{Context.User.Id}> no u\n");
 
-        [Command("no u"), Alias("nou")]
+        [Command("no u", RunMode = RunMode.Async), Alias("nou")]
         [Help(new string[] { ".no u" }, "Fite me m8", false, "UNObot 1.0")]
         public async Task Easteregg1()
         {
             await ReplyAsync($"I claim that <@{Context.User.Id}> is triple gay. Say \"No U\" again, uh...");
         }
 
-        [Command("testperms"), RequireUserPermission(GuildPermission.ManageGuild)]
+        [Command("testperms", RunMode = RunMode.Async), RequireUserPermission(GuildPermission.ManageGuild)]
         [Help(new string[] { ".testperms" }, "Show all permissions that UNObot has. Added for security reasons.", true, "UNObot 1.4")]
         public async Task TestPerms()
         {
@@ -64,7 +67,7 @@ namespace UNObot.Modules
             }
             await ReplyAsync(response);
         }
-        [Command("dogtestperms"), RequireOwner]
+        [Command("dogtestperms", RunMode = RunMode.Async), RequireOwner]
         public async Task TestPerms2()
         {
             string response = "Permissions:\n";
@@ -76,7 +79,7 @@ namespace UNObot.Modules
             }
             await ReplyAsync(response);
         }
-        [Command("nick"), RequireOwner]
+        [Command("nick", RunMode = RunMode.Async), RequireOwner]
         [Help(new string[] { ".nick (nickname)" }, "Change the nickname of UNObot.", false, "UNObot 2.0")]
         public async Task ChangeNick(string newnick)
         {
@@ -87,14 +90,14 @@ namespace UNObot.Modules
             });
         }
 
-        [Command("upupdowndownleftrightleftrightbastart")]
+        [Command("upupdowndownleftrightleftrightbastart", RunMode = RunMode.Async)]
         [Help(new string[] { ".upupdowndownleftrightleftrightbastart" }, "Wow, an ancient easter egg. It's still ancient.", false, "UNObot 1.4")]
         public async Task OldEasterEgg()
             => await ReplyAsync("lol, that's outdated");
 
-        [Command("help"), Alias("ahh", "ahhh", "ahhhh")]
-        [Help(new string[] { ".help" }, "If you need help using help, you're truly lost.", true, "UNObot 1.0")]
-        public async Task Help()
+        [Command("fullhelp", RunMode = RunMode.Async)]
+        [Help(new string[] { ".fullhelp" }, "If you need help using help, you're truly lost.", true, "UNObot 1.0")]
+        public async Task FullHelp()
         {
             await ReplyAsync("Help has been sent. Or, I think it has.");
             string Response = "```Commands: @UNOBot#4308 command/ .command\n (Required) {May be required} [Optional]\n \n";
@@ -134,8 +137,41 @@ namespace UNObot.Modules
             Response += "```";
             await UserExtensions.SendMessageAsync(Context.Message.Author, Response);
         }
+        [Command("help", RunMode = RunMode.Async), Alias("ahh", "ahhh", "ahhhh")]
+        public async Task Help()
+        {
+            var builder = new EmbedBuilder()
+                .WithTitle("Quick-start guide to UNObot")
+                .WithColor(new Color(UNOcore.r.Next(0, 256), UNOcore.r.Next(0, 256), UNOcore.r.Next(0, 256)))
+                .WithTimestamp(DateTimeOffset.Now)
+                .WithFooter(footer =>
+                {
+                    footer
+                        .WithText($"UNObot {Program.version} - By DoggySazHi")
+                        .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
+                })
+                .WithAuthor(author =>
+                {
+                    author
+                        .WithName($"Playing in {Context.Guild.Name}")
+                        .WithIconUrl("https://williamle.com/unobot/unobot.png");
+                })
+                .AddField("Usages", "@UNOBot#4308 *commandtorun*\n.*commandtorun*")
+                .AddField(".join", "Join a game in the current server.", true)
+                .AddField(".start", "Start a game in the current server.\nYou must have joined beforehand.", true)
+                .AddField(".play (color) (value) [new color]", "Play a card, assuming if it's your turn.\nIf you are playing a Wild card, also\nadd the color to change to.", true)
+                .AddField(".hand", "See which cards you have, as well as\nwhich ones you can play.", true)
+                .AddField(".game", "See everything about the current game.\nThis also shows the current card.", true)
+                .AddField(".draw", "Draw a card. Duh. Can be used indefinitely.", true)
+                .AddField(".quickplay", "Auto-magically draw and play the first valid card that comes out.", true)
+                .AddField(".fullhelp", "See an extended listing of commands.\nNice!", true);
+            var embed = builder.Build();
+            await Context.Channel.SendMessageAsync(
+                ":+1: got cha fam",
+                embed: embed);
+        }
 
-        [Command("help"), Alias("ahh", "ahhh", "ahhhh")]
+        [Command("help", RunMode = RunMode.Async), Alias("ahh", "ahhh", "ahhhh")]
         [Help(new string[] { ".help (command)" }, "If you need help using help, you're truly lost.", true, "UNObot 1.0")]
         public async Task Help(string cmdSearch)
         {
@@ -165,16 +201,24 @@ namespace UNObot.Modules
             await ReplyAsync(Response);
         }
 
-        [Command("credits"), Alias("asdf")]
+        [Command("credits", RunMode = RunMode.Async), Alias("asdf")]
         [Help(new string[] { ".credits" }, "Wow, look at all of the victims during the making of this bot.", true, "UNObot 1.0")]
         public async Task Credits()
         {
             await ReplyAsync("UNObot: Programmed by DoggySazHi\n" +
                 "Tested by Aragami and Fm (ish)\n" +
-                "UNO card images created by Dmitry Fomin (Wikipedia)" +
+                "UNO card images from Wikipedia\n" +
                 "Created for the UBOWS server\n\n" +
                 "Stickerz was here.\n" +
                 "Blame LocalDisk and Harvest for any bugs.");
+        }
+
+        [Command("invite", RunMode = RunMode.Async)]
+        [Help(new string[] { ".invite" }, "You actually want the bot? Wow.", true, "UNObot 3.1.4")]
+        public async Task Invite()
+        {
+            await ReplyAsync("If you want to add this bot to your server, use this link: \n" +
+                "https://discordapp.com/api/oauth2/authorize?client_id=477616287997231105&permissions=8192&scope=bot");
         }
     }
 }

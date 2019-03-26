@@ -2,6 +2,9 @@ using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
 
+#pragma warning disable CS1701 // Assuming assembly reference matches identity
+#pragma warning disable CS1702 // Assuming assembly reference matches identity
+
 namespace UNObot.Modules
 {
     class PlayCard
@@ -131,8 +134,6 @@ namespace UNObot.Modules
                 Response += "Game is over. You may rejoin now.";
                 return Response;
             }
-            if (checkCards.Count == 1)
-                await db.SetUNOPlayer(server, player);
             //keeps on going if nobody won
             await queueHandler.NextPlayer(server);
             if (playCard.Color == "Wild")
@@ -163,13 +164,19 @@ namespace UNObot.Modules
                     Response += $"<@{await queueHandler.GetCurrentPlayer(server)}> has been skipped!\n";
                     await queueHandler.NextPlayer(server);
                     break;
-                default:
+                case "Reverse":
                     Response += "The order has been reversed!\n";
                     await queueHandler.ReversePlayers(server);
                     if (await queueHandler.PlayerCount(server) != 2)
                         await queueHandler.NextPlayer(server);
                     break;
+                default:
+                    _ = 1;
+                    break;
             }
+            checkCards = await db.GetCards(player);
+            if (checkCards.Count == 1)
+                await db.SetUNOPlayer(server, player);
 
             await db.UpdateDescription(server, Response);
             Response += $"It is now <@{await queueHandler.GetCurrentPlayer(server)}>'s turn.";

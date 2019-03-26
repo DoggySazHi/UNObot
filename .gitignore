@@ -15,8 +15,11 @@
 *.userosscache
 *.sln.docstates
 *.conf
+*.sh
 config.json
 src/UNObot/config.json
+*.sh
+*.yml
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

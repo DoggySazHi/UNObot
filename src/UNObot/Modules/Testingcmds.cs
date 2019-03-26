@@ -7,46 +7,30 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 
+#pragma warning disable CS1701 // Assuming assembly reference matches identity
+#pragma warning disable CS1702 // Assuming assembly reference matches identity
+
 namespace UNObot.Modules
 {
     public class Testingcmds : ModuleBase<SocketCommandContext>
     {
         UNOdb db = new UNOdb();
 
-        [Command("purge"), RequireUserPermission(GuildPermission.Administrator), RequireBotPermission(ChannelPermission.ManageMessages)]
+        [Command("purge", RunMode = RunMode.Async), RequireUserPermission(GuildPermission.Administrator), RequireBotPermission(ChannelPermission.ManageMessages)]
         [Help(new string[] { ".purge (number of messages)" }, "Delete messages via a range. Testing command; do not rely on forever.", false, "UNObot 1.4")]
         public async Task Purge(int length)
         {
             var messages = await Context.Channel.GetMessagesAsync(length + 1).FlattenAsync();
 
-            ITextChannel textchannel = Context.Channel as ITextChannel;
-            if (textchannel == null)
+            if (!(Context.Channel is ITextChannel textchannel))
             {
                 Console.WriteLine("error cast");
                 return;
             }
             await textchannel.DeleteMessagesAsync(messages);
         }
-        [Command("exit")]
-        [Help(new string[] { ".exit" }, "Kill UNObot when he's being a bad bot. Only Doggy and other \"special\" people can do it.", false, "UNObot 1.4")]
-        public async Task Exit()
-        {
-            switch (Context.User.Id)
-            {
-                case 191397590946807809:
-                    break;
-                case 278524552462598145:
-                    await ReplyAsync("Wait, this isn't Doggy... eh who cares?");
-                    break;
-                default:
-                    await ReplyAsync("You can only exit if you're DoggySazHi.");
-                    return;
-            }
-            await ReplyAsync("Sorry to be a hassle. Goodbye world!");
-            Environment.Exit(0);
-        }
 
-        [Command("ubows"), Alias("ubow")]
+        [Command("ubows", RunMode = RunMode.Async), Alias("ubow")]
         [Help(new string[] { ".ubows" }, "Get basic server information about the Unturned Bunker Official Wikia Server.", true, "UNObot 2.4")]
         public async Task UBOWS()
         {
@@ -65,7 +49,7 @@ namespace UNObot.Modules
                              $"Port: {response.Port}");
         }
 
-        [Command("slamc")]
+        [Command("slamc", RunMode = RunMode.Async)]
         [Help(new string[] { ".slamc" }, "Get basic server information about the Slightly Less Average Minecraft server.", true, "UNObot 2.4")]
         public async Task SLAMC()
         {
@@ -76,7 +60,7 @@ namespace UNObot.Modules
                 await ReplyAsync("The server seems to be down from here...");
         }
 
-        [Command("psurvival")]
+        [Command("psurvival", RunMode = RunMode.Async)]
         [Help(new string[] { ".psurvival" }, "Get basic server information about the pSurvival Minecraft server.", true, "UNObot 2.4")]
         public async Task PSurvival()
         {
@@ -86,7 +70,7 @@ namespace UNObot.Modules
             else
                 await ReplyAsync("The server seems to be down from here...");
         }
-        [Command("checkmc")]
+        [Command("checkmc", RunMode = RunMode.Async)]
         [Help(new string[] { ".checkmc (ip) (port)" }, "Get basic server information about any Minecraft server.", true, "UNObot 2.4")]
         public async Task CheckMC(string ip, ushort port)
         {
@@ -97,7 +81,7 @@ namespace UNObot.Modules
                 await ReplyAsync("The server seems to be down from here...");
         }
 
-        [Command("unofficialwiki"), Alias("unwiki")]
+        [Command("unofficialwiki", RunMode = RunMode.Async), Alias("unwiki")]
         [Help(new string[] { ".unofficialwiki" }, "Get basic server information about the Unofficial Wikia Server.", true, "UNObot 2.4")]
         public async Task UnoffWiki()
         {
@@ -112,7 +96,7 @@ namespace UNObot.Modules
                              $"Map: {response.Map}");
         }
 
-        [Command("helpmeplz"), RequireOwner]
+        [Command("helpmeplz", RunMode = RunMode.Async), RequireOwner]
         public async Task HelpmePlz(int length)
         {
             var messages = await Context.Channel.GetMessagesAsync(length + 1).FlattenAsync();
@@ -125,18 +109,18 @@ namespace UNObot.Modules
             await textchannel.DeleteMessagesAsync(messages);
         }
 
-        [Command("moltthink")]
+        [Command("moltthink", RunMode = RunMode.Async)]
         [Help(new string[] { ".moltthink" }, "Think like Molt.", true, "UNObot 3.0 Beta 1")]
         public async Task MoltThink()
         {
             await ReplyAsync("<:moltthink:471842854591791104>");
         }
-        [Command("moltthinkreact")]
+        [Command("moltthinkreact", RunMode = RunMode.Async)]
         [Help(new string[] { ".moltthinkreact" }, "React by thinking as Molt.", true, "UNObot 3.0 Beta 1")]
         public async Task MoltThinkReact()
             => await MoltThinkReact(1);
 
-        [Command("moltthinkreact")]
+        [Command("moltthinkreact", RunMode = RunMode.Async)]
         [Help(new string[] { ".moltthinkreact (number of messages)" }, "React by thinking as Molt.", true, "UNObot 3.0 Beta 1")]
         public async Task MoltThinkReact(int numMessages)
         {
@@ -144,23 +128,23 @@ namespace UNObot.Modules
             await BaseReact(numMessages, emote);
         }
 
-        [Command("oof")]
+        [Command("oof", RunMode = RunMode.Async)]
         [Help(new string[] { ".oof" }, "Oof.", true, "UNObot 3.0 Beta 1")]
         public async Task OOF()
         {
-            await ReplyAsync("<:oof:443773918319476757>");
+            await ReplyAsync("<:oof:559961296418635776>");
         }
 
-        [Command("oofreact")]
+        [Command("oofreact", RunMode = RunMode.Async)]
         [Help(new string[] { ".oofreact" }, "Damn, oof.", true, "UNObot 3.0 Beta 1")]
         public async Task OOFReact()
             => await OOFReact(1);
 
-        [Command("oofreact")]
+        [Command("oofreact", RunMode = RunMode.Async)]
         [Help(new string[] { ".oofreact (number of messages)" }, "Damn, oof.", true, "UNObot 3.0 Beta 1")]
         public async Task OOFReact(int numMessages)
         {
-            IEmote emote = await Context.Client.GetGuild(420005591155605535).GetEmoteAsync(443773918319476757);
+            IEmote emote = await Context.Client.GetGuild(420005591155605535).GetEmoteAsync(559961296418635776);
             await BaseReact(numMessages, emote);
         }
 
@@ -179,6 +163,15 @@ namespace UNObot.Modules
             //Emoji emoji = new Emoji("👍");
             await updatedMessage.AddReactionAsync(emote);
             await Purge(0);
+        }
+
+        [Command("getbuttons", RunMode = RunMode.Async)]
+        [Help(new string[] { "yes." }, "", false, "no")]
+        public async Task AddButtons()
+        {
+            var message = await ReplyAsync("Loading buttons...");
+            await InputHandler.AddReactions(message);
+            await message.ModifyAsync(o => o.Content = "Finished loading buttons!");
         }
         /*
         Timer spamTimer = new Timer();
