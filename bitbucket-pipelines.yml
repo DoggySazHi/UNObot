@@ -26,7 +26,7 @@ pipelines:
             variables:
               USER: 'doggysazhi'
               SERVER: 'williamle.com'
-              REMOTE_PATH: ' /mnt/backup/Projects/Test'
+              REMOTE_PATH: '/mnt/backup/Projects/Test'
               LOCAL_PATH: 'src/UNObot'
               SSH_KEY: $SERVER_KEY
               DEBUG: 'true'
