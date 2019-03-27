@@ -21,7 +21,7 @@ pipelines:
         script:
           - dotnet publish -c Release src/UNObot
           - mv src/UNObot/bin/Release/netcoreapp2.1/publish/ src/UNObot/bin/Release/netcoreapp2.1/UNObot
-          - echo "$BITBUCKET_COMMIT $BITBUCKET_BUILD_NUMBER" > commit
+          - echo "$BITBUCKET_COMMIT $BITBUCKET_BUILD_NUMBER" > src/UNObot/commit
           - pipe: atlassian/scp-deploy:0.3.1
             variables:
               USER: 'doggysazhi'
@@ -41,7 +41,7 @@ pipelines:
             - dotnet build $PROJECT_NAME
             - dotnet publish -c Release src/UNObot
             - mv src/UNObot/bin/Release/netcoreapp2.1/publish/ src/UNObot/bin/Release/netcoreapp2.1/UNObot
-            - echo "$BITBUCKET_COMMIT $BITBUCKET_BUILD_NUMBER" > commit
+            - echo "$BITBUCKET_COMMIT $BITBUCKET_BUILD_NUMBER" > src/UNObot/commit
             - pipe: atlassian/scp-deploy:0.3.1
               variables:
                 USER: 'doggysazhi'
