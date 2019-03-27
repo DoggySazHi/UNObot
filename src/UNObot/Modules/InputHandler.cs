@@ -32,6 +32,7 @@ namespace UNObot.Modules
             {new Emoji("8⃣"), "8"},
             {new Emoji("9⃣"), "9"}
         };
+        /*
         public static async Task ReactionAdded(Cacheable<IUserMessage, ulong> reactmessage, ISocketMessageChannel channel, SocketReaction reaction)
         {
             //TODO add check for what type of message (kete)
@@ -46,7 +47,7 @@ namespace UNObot.Modules
 
             foreach (var react in message.Reactions)
             {
-                var users = await message.GetReactionUsersAsync(react.Key);
+                var users = await message.GetReactionUsersAsync(react.Key, 3);
                 messagereactions.Add(react.Key, users.ToArray());
             }
 
@@ -67,5 +68,6 @@ namespace UNObot.Modules
             foreach (IEmote emoji in reactions.Keys)
                 await s.AddReactionAsync(emoji);
         }
+        */
     }
 }

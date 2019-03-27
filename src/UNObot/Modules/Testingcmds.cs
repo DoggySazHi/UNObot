@@ -165,6 +165,7 @@ namespace UNObot.Modules
             await Purge(0);
         }
 
+        /*
         [Command("getbuttons", RunMode = RunMode.Async)]
         [Help(new string[] { "yes." }, "", false, "no")]
         public async Task AddButtons()
@@ -173,6 +174,8 @@ namespace UNObot.Modules
             await InputHandler.AddReactions(message);
             await message.ModifyAsync(o => o.Content = "Finished loading buttons!");
         }
+        */
+
         /*
         Timer spamTimer = new Timer();
         ulong server = 0;

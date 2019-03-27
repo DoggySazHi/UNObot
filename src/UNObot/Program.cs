@@ -12,6 +12,7 @@ using Newtonsoft.Json;
 using System.Reflection;
 using System.Linq;
 using Newtonsoft.Json.Linq;
+using System.Threading;
 
 #pragma warning disable CS1701 // Assuming assembly reference matches identity
 #pragma warning disable CS1702 // Assuming assembly reference matches identity
@@ -51,7 +52,7 @@ namespace UNObot
 
             await _client.LoginAsync(TokenType.Bot, _config["token"]);
             await _client.StartAsync();
-            _client.ReactionAdded += Modules.InputHandler.ReactionAdded;
+            //_client.ReactionAdded += Modules.InputHandler.ReactionAdded;
             await db.CleanAll();
             await _client.SetGameAsync($"UNObot {version}");
             await LoadHelp();
