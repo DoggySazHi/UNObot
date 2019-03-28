@@ -23,6 +23,8 @@ namespace UNObot
     {
         static Modules.UNOdb db = new Modules.UNOdb();
         public static string version = "Unknown Version";
+        public static string commit = "Unknown Commit";
+        public static string build = "Unknown Build";
         public static List<Modules.Command> commands = new List<Modules.Command>();
 
         static async Task Main()
@@ -87,7 +89,6 @@ namespace UNObot
                 File.CreateText("config.json");
                 using (StreamWriter sr = new StreamWriter("config.json", false))
                     sr.Write(obj);
-                Task.Delay(15000);
                 return null;
             }
             var json = JObject.Parse(File.ReadAllText("config.json"));
@@ -109,6 +110,10 @@ namespace UNObot
                 Console.WriteLine("Please fix all of these errors. Exiting.");
                 Environment.Exit(1);
                 return null;
+            }
+            if (!File.Exists("commit"))
+            {
+                Console.WriteLine("The build information seems to be missing. Either this is a debug copy, or has been deleted.");
             }
             return new ConfigurationBuilder()
                         .SetBasePath(Directory.GetCurrentDirectory())
