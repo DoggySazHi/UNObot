@@ -12,7 +12,6 @@ namespace UNObot.Modules
 {
     public class UNOcmds : ModuleBase<SocketCommandContext>
     {
-        readonly AFKtimer AFKtimer = new AFKtimer();
         readonly PlayCard playCard = new PlayCard();
 
         [Command("seed", RunMode = RunMode.Async)]

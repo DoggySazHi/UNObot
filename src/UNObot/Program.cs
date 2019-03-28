@@ -79,6 +79,7 @@ namespace UNObot
 
         IConfiguration BuildConfig()
         {
+            Console.WriteLine($"Reading files in {Directory.GetCurrentDirectory()}");
             if (!File.Exists("config.json"))
             {
                 Console.WriteLine("Config doesn't exist! The file has been created, please edit all fields to be correct. Exiting.");
@@ -89,6 +90,7 @@ namespace UNObot
                 File.CreateText("config.json");
                 using (StreamWriter sr = new StreamWriter("config.json", false))
                     sr.Write(obj);
+                Environment.Exit(1);
                 return null;
             }
             var json = JObject.Parse(File.ReadAllText("config.json"));
