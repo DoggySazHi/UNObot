@@ -69,6 +69,7 @@ namespace UNObot.Modules
             await ReplyAsync(response);
         }
         [Command("dogtestperms", RunMode = RunMode.Async), RequireOwner]
+        [Help(new string[] { ".dogtestperms" }, "Show all permissions that UNObot has. Added for security reasons.", false, "UNObot 1.4")]
         public async Task TestPerms2()
         {
             string response = "Permissions:\n";
