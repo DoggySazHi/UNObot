@@ -641,12 +641,26 @@ namespace UNObot.Modules
             await ReplyAsync($":white_check_mark: Set default UNO channel to #{Context.Channel.Name}.");
             await db.SetDefaultChannel(Context.Guild.Id, Context.Channel.Id);
             await db.SetHasDefaultChannel(Context.Guild.Id, true);
+
+            //default channel should be allowed, by default
+            var currentChannels = await db.GetAllowedChannels(Context.Guild.Id);
+            currentChannels.Add(Context.Channel.Id);
+            await db.SetAllowedChannels(Context.Guild.Id, currentChannels);
         }
         [Command("removedefaultchannel", RunMode = RunMode.Async), RequireUserPermission(GuildPermission.ManageChannels), Alias("deletedefaultchannel")]
         [Help(new string[] { ".removedefaultchannel" }, "Remove the default channel for UNObot to chat in. Managers only.", true, "UNObot 2.0")]
         public async Task RemoveDefaultChannel()
         {
             await ReplyAsync($":white_check_mark: Removed default UNO channel, assuming there was one.");
+            if (!await db.HasDefaultChannel(Context.Guild.Id))
+            {
+                ulong channel = await db.GetDefaultChannel(Context.Guild.Id);
+                //remove default channel
+                var currentChannels = await db.GetAllowedChannels(Context.Guild.Id);
+                currentChannels.Remove(channel);
+                await db.SetAllowedChannels(Context.Guild.Id, currentChannels);
+            }
+            //ok tbh, it should be null, but doesn't really matter imo
             await db.SetDefaultChannel(Context.Guild.Id, Context.Guild.DefaultChannel.Id);
             await db.SetHasDefaultChannel(Context.Guild.Id, false);
         }
@@ -654,7 +668,7 @@ namespace UNObot.Modules
         [Help(new string[] { ".enforcechannels" }, "Only allow UNObot to recieve commands from enforced channels. Managers only.", true, "UNObot 2.0")]
         public async Task EnforceChannel()
         {
-            //start check
+            //start check (make sure all channels exist at time of enforcing)
             var allowedChannels = await db.GetAllowedChannels(Context.Guild.Id);
             var currentChannels = Context.Guild.TextChannels.ToList();
             var currentChannelsIDs = new List<ulong>();
@@ -672,6 +686,11 @@ namespace UNObot.Modules
                 await Context.Channel.SendMessageAsync("Error: Cannot enable enforcechannels if there are no allowed channels!");
                 return;
             }
+            if (!await db.HasDefaultChannel(Context.Guild.Id))
+            {
+                await Context.Channel.SendMessageAsync("Error: Cannot enable enforcechannels if there is no default channel!");
+                return;
+            }
             bool enforce = await db.EnforceChannel(Context.Guild.Id);
             await db.SetEnforceChannel(Context.Guild.Id, !enforce);
             if (!enforce)
@@ -684,7 +703,9 @@ namespace UNObot.Modules
 
         public async Task AddAllowedChannel()
         {
-            if (await db.GetDefaultChannel(Context.Guild.Id) == Context.Channel.Id && await db.HasDefaultChannel(Context.Guild.Id))
+            if (!await db.HasDefaultChannel(Context.Guild.Id))
+                await ReplyAsync("Error: You need to set a default channel first.");
+            else if (await db.GetDefaultChannel(Context.Guild.Id) == Context.Channel.Id)
                 await ReplyAsync("The default UNO channel has been set to this already; there is no need to add this as a default channel.");
             else if ((await db.GetAllowedChannels(Context.Guild.Id)).Contains(Context.Channel.Id))
                 await ReplyAsync("This channel is already allowed! To see all channels, use .listallowedchannels.");

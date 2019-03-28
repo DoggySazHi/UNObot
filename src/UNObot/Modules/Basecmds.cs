@@ -15,7 +15,8 @@ namespace UNObot.Modules
         public async Task Info()
         {
             await ReplyAsync(
-                $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {Program.version}\nCurrent Time (PST): {DateTime.Now.ToString()}");
+                $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {Program.version}\nCurrent Time (PST): {DateTime.Now.ToString()}" +
+                    $"\n\nCommit {Program.commit}\nBuild #{Program.build}");
         }
 
         [Command("gulag", RunMode = RunMode.Async)]

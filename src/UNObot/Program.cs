@@ -115,6 +115,29 @@ namespace UNObot
             {
                 Console.WriteLine("The build information seems to be missing. Either this is a debug copy, or has been deleted.");
             }
+            else
+            {
+                try
+                {
+                    using (StreamReader sr = new StreamReader("commit"))
+                    {
+                        if (sr.EndOfStream)
+                            throw new Exception();
+                        var input = sr.ReadLine();
+                        if (input == null)
+                            throw new Exception();
+                        var words = input.Split(' ');
+                        if (words.Length < 2 || words[0].Length < 7)
+                            throw new Exception();
+                        commit = words[0].Trim().Substring(0, 7);
+                        build = words[1].Trim();
+                    }
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Build information file has not been created properly.");
+                }
+            }
             return new ConfigurationBuilder()
                         .SetBasePath(Directory.GetCurrentDirectory())
                         .AddJsonFile("config.json")
