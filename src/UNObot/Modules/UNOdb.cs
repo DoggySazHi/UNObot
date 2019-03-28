@@ -10,10 +10,10 @@ using Newtonsoft.Json.Linq;
 #pragma warning disable CS1702 // Assuming assembly reference matches identity
 namespace UNObot.Modules
 {
-    public class UNOdb
+    public static class UNOdb
     {
-        public static MySqlConnection conn;
-        public void GetConnectionString()
+        public static string ConnString = "";
+        public static void GetConnectionString()
         {
             using (StreamReader r = new StreamReader("config.json"))
             {
@@ -24,83 +24,63 @@ namespace UNObot.Modules
                     Console.WriteLine("ERROR: Database string has not been written in config.json!\nIt must contain a connStr.");
                     return;
                 }
-                conn = new MySqlConnection((string)jObject["connStr"]);
+                ConnString = (string)jObject["connStr"];
             }
-            try
-            {
-                Console.WriteLine("Connecting to MySQL...");
-                //ha, damn the limited encodings.
-                Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-                Encoding.GetEncoding("windows-1254");
-                conn.Open();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"MySQL has encountered an error: {ex}");
-            }
-            Console.WriteLine("Successfully connected.");
+            //ha, damn the limited encodings.
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            Encoding.GetEncoding("windows-1254");
         }
-        public async Task AddGame(ulong server)
+        public static async Task AddGame(ulong server)
         {
-            MySqlCommand Cmd = new MySqlCommand
-            {
-                Connection = conn,
-                CommandText = "INSERT IGNORE INTO Games (server) VALUES(?)"
-            };
+            List<MySqlParameter> parameters = new List<MySqlParameter>();
             MySqlParameter p1 = new MySqlParameter
             {
                 Value = server
             };
-            Cmd.Parameters.Add(p1);
+            parameters.Add(p1);
+
             try
             {
-                await Cmd.ExecuteNonQueryAsync();
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, "INSERT IGNORE INTO Games (server) VALUES(?)", parameters.ToArray());
             }
             catch (MySqlException ex)
             {
                 Console.WriteLine($"A MySQL error has been caught, Error {ex}");
             }
         }
-        public async Task UpdateDescription(ulong server, string text)
+        public static async Task UpdateDescription(ulong server, string text)
         {
-            MySqlCommand Cmd = new MySqlCommand
-            {
-                Connection = conn,
-                CommandText = "UPDATE Games SET description = ? WHERE server = ?"
-            };
+            List<MySqlParameter> parameters = new List<MySqlParameter>();
             MySqlParameter p1 = new MySqlParameter
             {
                 Value = text
             };
-            Cmd.Parameters.Add(p1);
+            parameters.Add(p1);
             MySqlParameter p2 = new MySqlParameter
             {
                 Value = server
             };
-            Cmd.Parameters.Add(p2);
+            parameters.Add(p2);
+
             try
             {
-                await Cmd.ExecuteNonQueryAsync();
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, "UPDATE Games SET description = ? WHERE server = ?", parameters.ToArray());
             }
             catch (MySqlException ex)
             {
                 Console.WriteLine($"A MySQL error has been caught, Error {ex}");
             }
         }
-        public async Task<string> GetDescription(ulong server)
+        public static async Task<string> GetDescription(ulong server)
         {
             string description = "";
-            MySqlCommand Cmd = new MySqlCommand
-            {
-                Connection = conn,
-                CommandText = "SELECT description FROM UNObot.Games WHERE server = ?"
-            };
+            List<MySqlParameter> parameters = new List<MySqlParameter>();
             MySqlParameter p1 = new MySqlParameter
             {
                 Value = server
             };
-            Cmd.Parameters.Add(p1);
-            using (MySqlDataReader dr = (MySqlDataReader)await Cmd.ExecuteReaderAsync())
+            parameters.Add(p1);
+            using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, "SELECT description FROM UNObot.Games WHERE server = ?", parameters.ToArray()))
             {
                 try
                 {
@@ -117,16 +97,14 @@ namespace UNObot.Modules
                 return description;
             }
         }
-        public async Task ResetGame(ulong server)
+        public static async Task ResetGame(ulong server)
         {
             MySqlCommand Cmd = new MySqlCommand
             {
                 Connection = conn,
                 CommandText = "UPDATE Games SET inGame = 0, currentCard = ?, `order` = 1, oneCardLeft = 0, queue = ?, description = null WHERE server = ?"
             };
-            AFKtimer afkTimer = new AFKtimer();
-            //suspisous code
-            afkTimer.DeleteTimer(server);
+            AFKtimer.DeleteTimer(server);
             MySqlParameter p1 = new MySqlParameter
             {
                 Value = "[]"
@@ -151,7 +129,7 @@ namespace UNObot.Modules
                 Console.WriteLine($"A MySQL error has been caught, Error {ex}");
             }
         }
-        public async Task<bool> IsServerInGame(ulong server)
+        public static async Task<bool> IsServerInGame(ulong server)
         {
             bool yesorno = false;
             MySqlCommand Cmd = new MySqlCommand
@@ -180,7 +158,7 @@ namespace UNObot.Modules
                 return yesorno;
             }
         }
-        public async Task AddUser(ulong id, string usrname, ulong server)
+        public static async Task AddUser(ulong id, string usrname, ulong server)
         {
             MySqlCommand Cmd = new MySqlCommand
             {
@@ -231,7 +209,7 @@ namespace UNObot.Modules
                 Console.WriteLine($"A MySQL error has been caught, Error {ex}");
             }
         }
-        public async Task AddUser(ulong id, string usrname)
+        public static async Task AddUser(ulong id, string usrname)
         {
             MySqlCommand Cmd = new MySqlCommand
             {
@@ -262,7 +240,7 @@ namespace UNObot.Modules
                 Console.WriteLine($"A MySQL error has been caught, Error {ex}");
             }
         }
-        public async Task RemoveUser(ulong id)
+        public static async Task RemoveUser(ulong id)
         {
             MySqlCommand Cmd = new MySqlCommand
             {
@@ -293,7 +271,7 @@ namespace UNObot.Modules
                 Console.WriteLine($"A MySQL error has been caught, Error {ex}");
             }
         }
-        public async Task CleanAll()
+        public static async Task CleanAll()
         {
             using (StreamReader r = new StreamReader("config.json"))
             {
@@ -338,9 +316,9 @@ namespace UNObot.Modules
                 Console.WriteLine($"A MySQL error has been caught, Error {ex}");
             }
         }
-        public async Task AddGuild(ulong Guild, ushort ingame)
+        public static async Task AddGuild(ulong Guild, ushort ingame)
         => await AddGuild(Guild, ingame, 1);
-        public async Task AddGuild(ulong Guild, ushort ingame, ushort gamemode)
+        public static async Task AddGuild(ulong Guild, ushort ingame, ushort gamemode)
         {
             /* 
              * 1 - In a regular game.
@@ -384,7 +362,7 @@ namespace UNObot.Modules
                 Console.WriteLine($"A MySQL error has been caught, Error {ex}");
             }
         }
-        public async Task<ushort> GetGamemode(ulong server)
+        public static async Task<ushort> GetGamemode(ulong server)
         {
             ushort gamemode = 1;
             MySqlCommand Cmd = new MySqlCommand
@@ -414,7 +392,7 @@ namespace UNObot.Modules
             }
         }
         //NOTE THAT THIS GETS DIRECTLY FROM SERVER; YOU MUST AddPlayersToServer
-        public async Task<Queue<ulong>> GetPlayers(ulong server)
+        public static async Task<Queue<ulong>> GetPlayers(ulong server)
         {
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
@@ -441,7 +419,7 @@ namespace UNObot.Modules
             }
             return players;
         }
-        public async Task<ulong> GetUserServer(ulong player)
+        public static async Task<ulong> GetUserServer(ulong player)
         {
             ulong server = 0;
             MySqlCommand Cmd = new MySqlCommand();
@@ -468,7 +446,7 @@ namespace UNObot.Modules
             }
             return server;
         }
-        public async Task SetPlayers(ulong server, Queue<ulong> players)
+        public static async Task SetPlayers(ulong server, Queue<ulong> players)
         {
             string json = JsonConvert.SerializeObject(players);
             MySqlCommand Cmd = new MySqlCommand();
@@ -493,7 +471,7 @@ namespace UNObot.Modules
                 Console.WriteLine($"A MySQL error has been caught, Error {ex}");
             }
         }
-        public async Task<Queue<ulong>> GetUsersWithServer(ulong server)
+        public static async Task<Queue<ulong>> GetUsersWithServer(ulong server)
         {
             Queue<ulong> players = new Queue<ulong>();
             MySqlCommand Cmd = new MySqlCommand();
@@ -520,7 +498,7 @@ namespace UNObot.Modules
                 return players;
             }
         }
-        public async Task<ulong> GetUNOPlayer(ulong server)
+        public static async Task<ulong> GetUNOPlayer(ulong server)
         {
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
@@ -548,7 +526,7 @@ namespace UNObot.Modules
                 return player;
             }
         }
-        public async Task SetUNOPlayer(ulong server, ulong player)
+        public static async Task SetUNOPlayer(ulong server, ulong player)
         {
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
@@ -572,7 +550,7 @@ namespace UNObot.Modules
                 Console.WriteLine($"A MySQL error has been caught, Error {ex}");
             }
         }
-        public async Task SetDefaultChannel(ulong server, ulong channel)
+        public static async Task SetDefaultChannel(ulong server, ulong channel)
         {
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
@@ -596,7 +574,7 @@ namespace UNObot.Modules
                 Console.WriteLine($"A MySQL error has been caught, Error {ex}");
             }
         }
-        public async Task SetHasDefaultChannel(ulong server, bool hasDefault)
+        public static async Task SetHasDefaultChannel(ulong server, bool hasDefault)
         {
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
@@ -620,7 +598,7 @@ namespace UNObot.Modules
                 Console.WriteLine($"A MySQL error has been caught, Error {ex}");
             }
         }
-        public async Task<bool> HasDefaultChannel(ulong server)
+        public static async Task<bool> HasDefaultChannel(ulong server)
         {
             bool yesorno = false;
             MySqlCommand Cmd = new MySqlCommand
@@ -647,7 +625,7 @@ namespace UNObot.Modules
                 return yesorno;
             }
         }
-        public async Task<bool> EnforceChannel(ulong server)
+        public static async Task<bool> EnforceChannel(ulong server)
         {
             bool yesorno = false;
             MySqlCommand Cmd = new MySqlCommand
@@ -674,7 +652,7 @@ namespace UNObot.Modules
                 return yesorno;
             }
         }
-        public async Task SetEnforceChannel(ulong server, bool enforce)
+        public static async Task SetEnforceChannel(ulong server, bool enforce)
         {
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
@@ -698,8 +676,7 @@ namespace UNObot.Modules
                 Console.WriteLine($"A MySQL error has been caught, Error {ex}");
             }
         }
-        //TODO something about addallowedchannel causing this to throw null????
-        public async Task<ulong> GetDefaultChannel(ulong server)
+        public static async Task<ulong> GetDefaultChannel(ulong server)
         {
             ulong channel = 0;
             MySqlCommand Cmd = new MySqlCommand
@@ -728,7 +705,7 @@ namespace UNObot.Modules
                 return channel;
             }
         }
-        public async Task<List<ulong>> GetAllowedChannels(ulong server)
+        public static async Task<List<ulong>> GetAllowedChannels(ulong server)
         {
             List<ulong> allowedChannels = new List<ulong>();
             MySqlCommand Cmd = new MySqlCommand
@@ -755,7 +732,7 @@ namespace UNObot.Modules
                 return allowedChannels;
             }
         }
-        public async Task SetAllowedChannels(ulong server, List<ulong> allowedChannels)
+        public static async Task SetAllowedChannels(ulong server, List<ulong> allowedChannels)
         {
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
@@ -779,7 +756,7 @@ namespace UNObot.Modules
                 Console.WriteLine($"A MySQL error has been caught, Error {ex}");
             }
         }
-        public async Task<Card> GetCurrentCard(ulong server)
+        public static async Task<Card> GetCurrentCard(ulong server)
         {
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
@@ -806,7 +783,7 @@ namespace UNObot.Modules
                 return card;
             }
         }
-        public async Task SetCurrentCard(ulong server, Card card)
+        public static async Task SetCurrentCard(ulong server, Card card)
         {
             string cardJSON = JsonConvert.SerializeObject(card);
             MySqlCommand Cmd = new MySqlCommand();
@@ -831,7 +808,7 @@ namespace UNObot.Modules
                 Console.WriteLine($"A MySQL error has been caught, Error {ex}");
             }
         }
-        public async Task<bool> IsPlayerInGame(ulong player)
+        public static async Task<bool> IsPlayerInGame(ulong player)
         {
             bool yesorno = false;
             MySqlCommand Cmd = new MySqlCommand();
@@ -856,7 +833,7 @@ namespace UNObot.Modules
                 return yesorno;
             }
         }
-        public async Task<bool> IsPlayerInServerGame(ulong player, ulong server)
+        public static async Task<bool> IsPlayerInServerGame(ulong player, ulong server)
         {
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
@@ -882,7 +859,7 @@ namespace UNObot.Modules
             }
         }
         //Done?
-        public async Task<List<Card>> GetCards(ulong player)
+        public static async Task<List<Card>> GetCards(ulong player)
         {
             string jsonstring = "";
             MySqlCommand Cmd = new MySqlCommand();
@@ -909,7 +886,7 @@ namespace UNObot.Modules
                 return cards;
             }
         }
-        public async Task<bool> UserExists(ulong player)
+        public static async Task<bool> UserExists(ulong player)
         {
             bool exists = false;
             MySqlCommand Cmd = new MySqlCommand();
@@ -934,7 +911,7 @@ namespace UNObot.Modules
                 return exists;
             }
         }
-        public async Task GetUsersAndAdd(ulong server)
+        public static async Task GetUsersAndAdd(ulong server)
         {
             Queue<ulong> players = await GetUsersWithServer(server);
             //slight randomization of order
@@ -961,7 +938,7 @@ namespace UNObot.Modules
                 ColorConsole.WriteLine($"A MySQL error has been caught, Error {ex}", ConsoleColor.Red);
             }
         }
-        public async Task StarterCard(ulong server)
+        public static async Task StarterCard(ulong server)
         {
             Queue<ulong> players = await GetPlayers(server);
             foreach (ulong player in players)
@@ -972,7 +949,7 @@ namespace UNObot.Modules
                 }
             }
         }
-        public async Task<int[]> GetStats(ulong player)
+        public static async Task<int[]> GetStats(ulong player)
         {
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
@@ -999,7 +976,7 @@ namespace UNObot.Modules
                 return stats;
             }
         }
-        public async Task<string> GetNote(ulong player)
+        public static async Task<string> GetNote(ulong player)
         {
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
@@ -1025,7 +1002,7 @@ namespace UNObot.Modules
             }
             return message;
         }
-        public async Task SetNote(ulong player, string note)
+        public static async Task SetNote(ulong player, string note)
         {
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
@@ -1045,7 +1022,7 @@ namespace UNObot.Modules
                 Console.WriteLine($"A MySQL error has been caught, Error {ex}");
             }
         }
-        public async Task RemoveNote(ulong player)
+        public static async Task RemoveNote(ulong player)
         {
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
@@ -1062,7 +1039,7 @@ namespace UNObot.Modules
                 Console.WriteLine($"A MySQL error has been caught, Error {ex}");
             }
         }
-        public async Task UpdateStats(ulong player, int mode)
+        public static async Task UpdateStats(ulong player, int mode)
         {
             //1 is gamesJoined
             //2 is gamesPlayed
@@ -1096,7 +1073,7 @@ namespace UNObot.Modules
                 Console.WriteLine($"A MySQL error has been caught, Error {ex}");
             }
         }
-        public async Task AddCard(ulong player, Card card)
+        public static async Task AddCard(ulong player, Card card)
         {
             List<Card> cards = await GetCards(player);
             if (cards == null)
@@ -1121,7 +1098,7 @@ namespace UNObot.Modules
                 Console.WriteLine($"A MySQL error has been caught, Error {ex}");
             }
         }
-        public async Task SetCards(ulong player, List<Card> cards)
+        public static async Task SetCards(ulong player, List<Card> cards)
         {
             if (cards == null)
                 cards = new List<Card>();
@@ -1144,7 +1121,7 @@ namespace UNObot.Modules
                 Console.WriteLine($"A MySQL error has been caught, Error {ex}");
             }
         }
-        public async Task<char> GetPrefix(ulong server)
+        public static async Task<char> GetPrefix(ulong server)
         {
             char prefix = '!';
             MySqlCommand Cmd = new MySqlCommand();
@@ -1169,7 +1146,7 @@ namespace UNObot.Modules
             }
             return prefix;
         }
-        public async Task SetPrefix(ulong server, char prefix)
+        public static async Task SetPrefix(ulong server, char prefix)
         {
             MySqlCommand Cmd = new MySqlCommand();
             Cmd.Connection = conn;
@@ -1189,7 +1166,7 @@ namespace UNObot.Modules
                 Console.WriteLine($"A MySQL error has been caught, Error {ex}");
             }
         }
-        public async Task<bool> RemoveCard(ulong player, Card card)
+        public static async Task<bool> RemoveCard(ulong player, Card card)
         {
             bool foundCard = false;
             List<Card> cards = await GetCards(player);

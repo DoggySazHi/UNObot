@@ -9,8 +9,6 @@ namespace UNObot.Modules
 {
     class PlayCard
     {
-        readonly UNOdb db = new UNOdb();
-        readonly QueueHandler queueHandler = new QueueHandler();
         public async Task<string> Play(string color, string value, string wild, ulong player, ulong server)
         {
             switch (color.ToLower())
@@ -88,7 +86,7 @@ namespace UNObot.Modules
                 Value = value
             };
             bool existing = false;
-            foreach (Card card in await db.GetCards(player))
+            foreach (Card card in await UNOdb.GetCards(player))
             {
                 existing |= card.Equals(playCard);
             }
@@ -96,7 +94,7 @@ namespace UNObot.Modules
             {
                 return "You do not have this card!";
             }
-            Card currentCard = await db.GetCurrentCard(server);
+            Card currentCard = await UNOdb.GetCurrentCard(server);
             if (!(playCard.Color == currentCard.Color || playCard.Value == currentCard.Value || playCard.Color == "Wild"))
             {
                 return "This is illegal you know. Your card must match in color/value, or be a wild card.";
@@ -104,45 +102,45 @@ namespace UNObot.Modules
             string Response = "";
             string UsernamePlayer = Program._client.GetUser(player).Username;
             Response += $"{UsernamePlayer} has placed an {playCard.ToString()}.\n";
-            if (await db.GetUNOPlayer(server) != 0)
+            if (await UNOdb.GetUNOPlayer(server) != 0)
             {
-                Response += $"<@{await db.GetUNOPlayer(server)}> has forgotten to say UNO! They have been given 2 cards.\n";
-                await db.AddCard(await db.GetUNOPlayer(server), UNOcore.RandomCard());
-                await db.AddCard(await db.GetUNOPlayer(server), UNOcore.RandomCard());
-                await db.SetUNOPlayer(server, 0);
+                Response += $"<@{await UNOdb.GetUNOPlayer(server)}> has forgotten to say UNO! They have been given 2 cards.\n";
+                await UNOdb.AddCard(await UNOdb.GetUNOPlayer(server), UNOcore.RandomCard());
+                await UNOdb.AddCard(await UNOdb.GetUNOPlayer(server), UNOcore.RandomCard());
+                await UNOdb.SetUNOPlayer(server, 0);
             }
-            await db.RemoveCard(player, playCard);
-            await db.SetCurrentCard(server, playCard);
+            await UNOdb.RemoveCard(player, playCard);
+            await UNOdb.SetCurrentCard(server, playCard);
             //time to check if someone won or set uno player
-            List<Card> checkCards = await db.GetCards(player);
+            List<Card> checkCards = await UNOdb.GetCards(player);
             if (checkCards.Count == 0)
             {
                 //woah person won
                 Response += $"<@{player}> has won!\n";
-                await db.UpdateStats(player, 3);
+                await UNOdb.UpdateStats(player, 3);
 
                 string response = "";
-                foreach (ulong getplayer in await db.GetPlayers(server))
+                foreach (ulong getplayer in await UNOdb.GetPlayers(server))
                 {
-                    List<Card> loserlist = await db.GetCards(getplayer);
+                    List<Card> loserlist = await UNOdb.GetCards(getplayer);
                     response += $"- <@{getplayer}> had {loserlist.Count} cards left.\n";
-                    await db.UpdateStats(getplayer, 2);
-                    await db.RemoveUser(getplayer);
+                    await UNOdb.UpdateStats(getplayer, 2);
+                    await UNOdb.RemoveUser(getplayer);
                 }
                 Response += response;
-                await db.ResetGame(server);
+                await UNOdb.ResetGame(server);
                 Response += "Game is over. You may rejoin now.";
                 return Response;
             }
             //keeps on going if nobody won
-            await queueHandler.NextPlayer(server);
+            await QueueHandler.NextPlayer(server);
             if (playCard.Color == "Wild")
             {
                 if (playCard.Value == "+4")
                 {
-                    Response += $"<@{await queueHandler.GetCurrentPlayer(server)}> has recieved four cards from the action.\n";
+                    Response += $"<@{await QueueHandler.GetCurrentPlayer(server)}> has recieved four cards from the action.\n";
                     for (int i = 0; i < 4; i++)
-                        await db.AddCard(await queueHandler.GetCurrentPlayer(server), UNOcore.RandomCard());
+                        await UNOdb.AddCard(await QueueHandler.GetCurrentPlayer(server), UNOcore.RandomCard());
                 }
                 Response += $"Due to the wild card, the current card is now {wild}.\n";
                 Card newCard = new Card
@@ -150,36 +148,36 @@ namespace UNObot.Modules
                     Color = wild,
                     Value = "Any"
                 };
-                await db.SetCurrentCard(server, newCard);
+                await UNOdb.SetCurrentCard(server, newCard);
             }
 
             switch (playCard.Value)
             {
                 case "+2":
-                    Response += $"<@{await queueHandler.GetCurrentPlayer(server)}> has recieved two cards from the action.\n";
-                    await db.AddCard(await queueHandler.GetCurrentPlayer(server), UNOcore.RandomCard());
-                    await db.AddCard(await queueHandler.GetCurrentPlayer(server), UNOcore.RandomCard());
+                    Response += $"<@{await QueueHandler.GetCurrentPlayer(server)}> has recieved two cards from the action.\n";
+                    await UNOdb.AddCard(await QueueHandler.GetCurrentPlayer(server), UNOcore.RandomCard());
+                    await UNOdb.AddCard(await QueueHandler.GetCurrentPlayer(server), UNOcore.RandomCard());
                     break;
                 case "Skip":
-                    Response += $"<@{await queueHandler.GetCurrentPlayer(server)}> has been skipped!\n";
-                    await queueHandler.NextPlayer(server);
+                    Response += $"<@{await QueueHandler.GetCurrentPlayer(server)}> has been skipped!\n";
+                    await QueueHandler.NextPlayer(server);
                     break;
                 case "Reverse":
                     Response += "The order has been reversed!\n";
-                    await queueHandler.ReversePlayers(server);
-                    if (await queueHandler.PlayerCount(server) != 2)
-                        await queueHandler.NextPlayer(server);
+                    await QueueHandler.ReversePlayers(server);
+                    if (await QueueHandler.PlayerCount(server) != 2)
+                        await QueueHandler.NextPlayer(server);
                     break;
                 default:
                     _ = 1;
                     break;
             }
-            checkCards = await db.GetCards(player);
+            checkCards = await UNOdb.GetCards(player);
             if (checkCards.Count == 1)
-                await db.SetUNOPlayer(server, player);
+                await UNOdb.SetUNOPlayer(server, player);
 
-            await db.UpdateDescription(server, Response);
-            Response += $"It is now <@{await queueHandler.GetCurrentPlayer(server)}>'s turn.";
+            await UNOdb.UpdateDescription(server, Response);
+            Response += $"It is now <@{await QueueHandler.GetCurrentPlayer(server)}>'s turn.";
             return Response;
         }
     }

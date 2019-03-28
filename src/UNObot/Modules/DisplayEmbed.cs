@@ -19,11 +19,10 @@ namespace UNObot.Modules
     }
     public static class DisplayEmbed
     {
-        readonly static UNOdb db = new UNOdb();
         public static async Task<Embed> DisplayGame(ulong serverid)
         {
             uint cardColor = 0xFF0000;
-            var card = await db.GetCurrentCard(serverid);
+            var card = await UNOdb.GetCurrentCard(serverid);
 
             switch (card.Color)
             {
@@ -41,15 +40,15 @@ namespace UNObot.Modules
                     break;
             }
             string response = "";
-            ushort isPrivate = await db.GetGamemode(serverid);
+            ushort isPrivate = await UNOdb.GetGamemode(serverid);
             string server = Program._client.GetGuild(serverid).Name;
-            foreach (ulong id in await db.GetPlayers(serverid))
+            foreach (ulong id in await UNOdb.GetPlayers(serverid))
             {
                 var user = Program._client.GetUser(id);
-                var cardCount = (await db.GetCards(id)).Count();
+                var cardCount = (await UNOdb.GetCards(id)).Count();
                 if (isPrivate != 2)
                 {
-                    if (id == (await db.GetPlayers(serverid)).Peek())
+                    if (id == (await UNOdb.GetPlayers(serverid)).Peek())
                         response += $"**{user.Username}** - {cardCount} card";
                     else
                         response += $"{user.Username} - {cardCount} card";
@@ -60,7 +59,7 @@ namespace UNObot.Modules
                 }
                 else
                 {
-                    if (id == (await db.GetPlayers(serverid)).Peek())
+                    if (id == (await UNOdb.GetPlayers(serverid)).Peek())
                         response += $"**{user.Username}** - ??? cards\n";
                     else
                         response += $"{user.Username} - ??? cards\n";
@@ -68,7 +67,7 @@ namespace UNObot.Modules
             }
             var builder = new EmbedBuilder()
             .WithTitle("Current Game")
-            .WithDescription(await db.GetDescription(serverid))
+            .WithDescription(await UNOdb.GetDescription(serverid))
             .WithColor(new Color(cardColor))
             .WithTimestamp(DateTimeOffset.Now)
             .WithFooter(footer =>
@@ -94,8 +93,8 @@ namespace UNObot.Modules
         public static async Task<Embed> DisplayCards(ulong userid, ulong serverid)
         {
             string server = Program._client.GetGuild(serverid).Name;
-            var currentCard = await db.GetCurrentCard(serverid);
-            var cards = await db.GetCards(userid);
+            var currentCard = await UNOdb.GetCurrentCard(serverid);
+            var cards = await UNOdb.GetCards(userid);
             cards = cards.OrderBy(o => o.Color).ThenBy(o => o.Value).ToList();
 
             string RedCards = "";

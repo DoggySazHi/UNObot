@@ -14,8 +14,6 @@ namespace UNObot.Modules
 {
     public class Testingcmds : ModuleBase<SocketCommandContext>
     {
-        UNOdb db = new UNOdb();
-
         [Command("purge", RunMode = RunMode.Async), RequireUserPermission(GuildPermission.Administrator), RequireBotPermission(ChannelPermission.ManageMessages)]
         [Help(new string[] { ".purge (number of messages)" }, "Delete messages via a range. Testing command; do not rely on forever.", false, "UNObot 1.4")]
         public async Task Purge(int length)

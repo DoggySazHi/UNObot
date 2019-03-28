@@ -13,6 +13,7 @@ using System.Reflection;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using System.Threading;
+using UNObot.Modules;
 
 #pragma warning disable CS1701 // Assuming assembly reference matches identity
 #pragma warning disable CS1702 // Assuming assembly reference matches identity
@@ -21,7 +22,6 @@ namespace UNObot
 {
     class Program
     {
-        static Modules.UNOdb db = new Modules.UNOdb();
         public static string version = "Unknown Version";
         public static string commit = "Unknown Commit";
         public static string build = "Unknown Build";
@@ -55,7 +55,7 @@ namespace UNObot
             await _client.LoginAsync(TokenType.Bot, _config["token"]);
             await _client.StartAsync();
             //_client.ReactionAdded += Modules.InputHandler.ReactionAdded;
-            await db.CleanAll();
+            await UNOdb.CleanAll();
             await _client.SetGameAsync($"UNObot {version}");
             await LoadHelp();
             await Task.Delay(-1);
@@ -227,8 +227,8 @@ namespace UNObot
             ulong channel = 0;
             channel = _client.GetGuild(server).DefaultChannel.Id;
             Console.WriteLine($"Channel: {channel}");
-            if (await db.HasDefaultChannel(server))
-                channel = await db.GetDefaultChannel(server);
+            if (await UNOdb.HasDefaultChannel(server))
+                channel = await UNOdb.GetDefaultChannel(server);
             Console.WriteLine($"Channel: {channel}");
             await _client.GetGuild(server).GetTextChannel(channel).SendMessageAsync(text);
         }

@@ -67,7 +67,6 @@ namespace UNObot.Modules
     }
     public static class UNOcore
     {
-        static UNOdb db = new UNOdb();
         public static Random r = new Random();
 
         public static Card RandomCard()
@@ -174,15 +173,11 @@ namespace UNObot.Modules
             Console.ResetColor();
         }
     }
-    public class AFKtimer
+    public static class AFKtimer
     {
         public static Dictionary<ulong, Timer> playTimers = new Dictionary<ulong, Timer>();
 
-        UNOdb db = new UNOdb();
-
-        QueueHandler queueHandler = new QueueHandler();
-
-        public void ResetTimer(ulong server)
+        public static void ResetTimer(ulong server)
         {
             if (!playTimers.ContainsKey(server))
                 ColorConsole.WriteLine("ERROR: Attempted to reset timer that doesn't exist!", ConsoleColor.Red);
@@ -192,7 +187,7 @@ namespace UNObot.Modules
                 playTimers[server].Start();
             }
         }
-        public void StartTimer(ulong server)
+        public static void StartTimer(ulong server)
         {
             Console.WriteLine("Starting timer!");
             if (playTimers.ContainsKey(server))
@@ -208,7 +203,7 @@ namespace UNObot.Modules
                 playTimers[server].Start();
             }
         }
-        async void TimerOver(Object source, ElapsedEventArgs e)
+        async static void TimerOver(object source, ElapsedEventArgs e)
         {
             Console.WriteLine("Timer over!");
             ulong serverID = 0;
@@ -223,24 +218,24 @@ namespace UNObot.Modules
                 ColorConsole.WriteLine("ERROR: Couldn't figure out what server timer belonged to!", ConsoleColor.Yellow);
                 return;
             }
-            ulong currentPlayer = await queueHandler.GetCurrentPlayer(serverID);
-            await db.RemoveUser(currentPlayer);
-            await queueHandler.DropFrontPlayer(serverID);
+            ulong currentPlayer = await QueueHandler.GetCurrentPlayer(serverID);
+            await UNOdb.RemoveUser(currentPlayer);
+            await QueueHandler.DropFrontPlayer(serverID);
             Console.WriteLine("SayPlayer");
             await Program.SendMessage($"<@{currentPlayer}>, you have been AFK removed.\n", serverID);
             await Program.SendPM("You have been AFK removed.", currentPlayer);
-            if (await queueHandler.PlayerCount(serverID) == 0)
+            if (await QueueHandler.PlayerCount(serverID) == 0)
             {
-                await db.ResetGame(serverID);
+                await UNOdb.ResetGame(serverID);
                 await Program.SendMessage("Game has been reset, due to nobody in-game.", serverID);
                 DeleteTimer(serverID);
                 return;
             }
             ResetTimer(serverID);
-            await Program.SendMessage($"It is now <@{await queueHandler.GetCurrentPlayer(serverID)}> turn.\n", serverID);
+            await Program.SendMessage($"It is now <@{await QueueHandler.GetCurrentPlayer(serverID)}> turn.\n", serverID);
         }
 
-        public void DeleteTimer(ulong server)
+        public static void DeleteTimer(ulong server)
         {
             if (playTimers.ContainsKey(server))
             {
