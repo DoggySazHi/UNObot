@@ -154,7 +154,7 @@ namespace UNObot
             {
                 foreach (var module in type.GetMethods())
                 {
-                    var helpatt = module.GetCustomAttribute(typeof(Modules.Help)) as Modules.Help;
+                    var helpatt = module.GetCustomAttribute(typeof(Help)) as Help;
                     var aliasatt = module.GetCustomAttributes(typeof(AliasAttribute)) as AliasAttribute;
                     var owneronlyatt = module.GetCustomAttribute(typeof(RequireOwnerAttribute)) as RequireOwnerAttribute;
                     var userpermsatt = module.GetCustomAttributes(typeof(RequireUserPermissionAttribute)) as RequireUserPermissionAttribute;
@@ -175,9 +175,9 @@ namespace UNObot
                         if (positioncmd < 0)
                         {
                             if (helpatt != null)
-                                commands.Add(new Modules.Command(nameatt.Text, aliases, helpatt.Usages.ToList(), helpatt.HelpMsg, helpatt.Active, helpatt.Version));
+                                commands.Add(new Command(nameatt.Text, aliases, helpatt.Usages.ToList(), helpatt.HelpMsg, helpatt.Active, helpatt.Version));
                             else
-                                commands.Add(new Modules.Command(nameatt.Text, aliases, new List<string> { $".{nameatt.Text}" }, "No help is given for this command.", true, "Unknown Version"));
+                                commands.Add(new Command(nameatt.Text, aliases, new List<string> { $".{nameatt.Text}" }, "No help is given for this command.", true, "Unknown Version"));
                         }
                         else
                         {
@@ -199,7 +199,7 @@ namespace UNObot
             commands = commands.OrderBy(o => o.CommandName).ToList();
             Console.WriteLine($"Loaded {commands.Count} commands!");
 
-            //Fallback to help.json
+            //Fallback to help.json, ex; Updates, Custom help messages, or temporary troll "fixes"
             if (File.Exists("help.json"))
             {
                 Console.WriteLine("Loading help.json into memory...");
@@ -207,7 +207,7 @@ namespace UNObot
                 using (StreamReader r = new StreamReader("help.json"))
                 {
                     string json = await r.ReadToEndAsync();
-                    foreach (Modules.Command c in JsonConvert.DeserializeObject<List<Modules.Command>>(json))
+                    foreach (Command c in JsonConvert.DeserializeObject<List<Command>>(json))
                     {
                         var index = commands.FindIndex(o => o.CommandName == c.CommandName);
                         if (index >= 0 && commands[index].Help == "No help is given for this command.")
@@ -232,7 +232,22 @@ namespace UNObot
             if (await UNOdb.HasDefaultChannel(server))
                 channel = await UNOdb.GetDefaultChannel(server);
             Console.WriteLine($"Channel: {channel}");
-            await _client.GetGuild(server).GetTextChannel(channel).SendMessageAsync(text);
+
+            try
+            {
+                _ = _client.GetGuild(server).GetTextChannel(channel).SendMessageAsync(text);
+            }
+            catch (Exception)
+            {
+                try
+                {
+                    _ = _client.GetGuild(server).GetTextChannel(_client.GetGuild(server).DefaultChannel.Id).SendMessageAsync(text);
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Ok what the heck is this? Can't post in the default OR secondary channel?");
+                }
+            }
         }
         public static async Task SendPM(string text, ulong user)
             => await UserExtensions.SendMessageAsync(_client.GetUser(user), text);

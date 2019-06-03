@@ -99,7 +99,7 @@ namespace UNObot.Services
                         await context.Channel.SendMessageAsync($"There are multiple commands with the same name. Type '<@{context.Client.CurrentUser.Id}> help' to see which one you need.");
                         break;
                     case CommandError.UnmetPrecondition:
-                        await context.Channel.SendMessageAsync("You do not have the **power** to run this command!");
+                        //await context.Channel.SendMessageAsync("You do not have the **power** to run this command!");
                         break;
                     case CommandError.UnknownCommand:
                         break;
