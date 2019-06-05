@@ -142,9 +142,10 @@ namespace UNObot.Modules
         [Command("help", RunMode = RunMode.Async), Alias("ahh", "ahhh", "ahhhh")]
         public async Task Help()
         {
+            Random r = ThreadSafeRandom.ThisThreadsRandom;
             var builder = new EmbedBuilder()
                 .WithTitle("Quick-start guide to UNObot")
-                .WithColor(new Color(UNOcore.r.Next(0, 256), UNOcore.r.Next(0, 256), UNOcore.r.Next(0, 256)))
+                .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {

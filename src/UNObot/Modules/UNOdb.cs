@@ -927,7 +927,7 @@ namespace UNObot.Modules
         {
             Queue<ulong> players = await GetUsersWithServer(server);
             //slight randomization of order
-            for (int i = 0; i < UNOcore.r.Next(0, players.Count - 1); i++)
+            for (int i = 0; i < ThreadSafeRandom.ThisThreadsRandom.Next(0, players.Count - 1); i++)
                 players.Enqueue(players.Dequeue());
             if (players.Count == 0)
                 ColorConsole.WriteLine("[WARN] Why is the list empty whem I'm getting players?", ConsoleColor.Yellow);
@@ -1252,6 +1252,57 @@ namespace UNObot.Modules
                 Console.WriteLine($"A MySQL error has been caught, Error {ex}");
             }
             return true;
+        }
+        public static async Task UpdateServerCards(ulong server, string text)
+        {
+            string CommandText = "UPDATE Games SET cards = ? WHERE server = ?";
+            List<MySqlParameter> Parameters = new List<MySqlParameter>();
+            MySqlParameter p1 = new MySqlParameter
+            {
+                Value = text
+            };
+            Parameters.Add(p1);
+            MySqlParameter p2 = new MySqlParameter
+            {
+                Value = server
+            };
+            Parameters.Add(p2);
+
+            try
+            {
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, CommandText, Parameters.ToArray());
+            }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+        }
+        public static async Task<string> GetServerCards(ulong server)
+        {
+            string CommandText = "SELECT cards FROM UNObot.Games WHERE server = ?";
+            string description = "";
+            List<MySqlParameter> Parameters = new List<MySqlParameter>();
+            MySqlParameter p1 = new MySqlParameter
+            {
+                Value = server
+            };
+            Parameters.Add(p1);
+            using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
+            {
+                try
+                {
+                    while (dr.Read())
+                    {
+                        if (!await dr.IsDBNullAsync(0))
+                            description = dr.GetString(0);
+                    }
+                }
+                catch (MySqlException ex)
+                {
+                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                }
+                return description;
+            }
         }
     }
 }

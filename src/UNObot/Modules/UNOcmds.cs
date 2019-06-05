@@ -15,11 +15,15 @@ namespace UNObot.Modules
         readonly PlayCard playCard = new PlayCard();
 
         [Command("seed", RunMode = RunMode.Async)]
-        [Help(new string[] { ".seed" }, "Cheat like Aragami and hope the RNG favors you.", true, "UNObot 1.0")]
+        [Help(new string[] { ".seed (seed)" }, "Cheat like Aragami and hope the RNG favors you. Deprecated due to a different RNG algorithm.", false, "UNObot 1.0")]
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         public async Task Seed([Remainder]string seed)
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
+            /*
             UNOcore.r = new Random(seed.GetHashCode());
             await ReplyAsync("Seed has been updated. I do not guarantee 100% Wild cards.");
+            */
         }
         [Command("join", RunMode = RunMode.Async), Help(new string[] { ".join" }, "Join the queue in the current server.", true, "UNObot 0.1")]
         public async Task Join()
@@ -528,7 +532,7 @@ namespace UNObot.Modules
                         await UNOdb.UpdateStats(player, 1);
                     }
                     //randomize start
-                    for (int i = 0; i < UNOcore.r.Next(0, await QueueHandler.PlayerCount(Context.Guild.Id)); i++)
+                    for (int i = 0; i < ThreadSafeRandom.ThisThreadsRandom.Next(0, await QueueHandler.PlayerCount(Context.Guild.Id)); i++)
                         await QueueHandler.NextPlayer(Context.Guild.Id);
 
                     Response += "\n\nGame has started. All information about your cards will be PMed.\n" +

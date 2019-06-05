@@ -144,10 +144,12 @@ namespace UNObot.Modules
             YellowCards += YellowCards == "" ? "There are no cards available." : "";
             WildCards += WildCards == "" ? "There are no cards available." : "";
 
+            Random r = ThreadSafeRandom.ThisThreadsRandom;
+
             var builder = new EmbedBuilder()
             .WithTitle("Cards in Hand")
                 .WithDescription($"Current Card: {currentCard}")
-            .WithColor(new Color(UNOcore.r.Next(0, 256), UNOcore.r.Next(0, 256), UNOcore.r.Next(0, 256)))
+            .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
             .WithTimestamp(DateTimeOffset.Now)
             .WithFooter(footer =>
             {

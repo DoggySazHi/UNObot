@@ -61,14 +61,78 @@ namespace UNObot.Modules
         public string Color;
         public string Value;
 
-        public override String ToString() => $"{Color} {Value}";
+        public override string ToString() => $"{Color} {Value}";
 
         public bool Equals(Card other) => Value == other.Value && Color == other.Color;
     }
+
+    public class ServerCard
+    {
+        public Card Card;
+        public int CardsAvailable = 1;
+        public int CardsAllocated = 1;
+
+        public ServerCard(Card Card)
+            => this.Card = Card;
+        public bool Equals(ServerCard other) => Card.Equals(other.Card);
+    }
+
+    public class ServerDeck
+    {
+        public List<ServerCard> Cards;
+        public static readonly List<string> Colors = new List<string> { "Red", "Green", "Blue", "Yellow" };
+        public static readonly List<string> Values = new List<string> { "1", "2", "3", "4", "5", "6", "7", "8", "9", "Skip", "Reverse", "+2" };
+
+        public ServerDeck()
+        {
+            //smells like spaghetti code
+            for (int i = 0; i < 2; i++)
+                foreach (string Color in Colors)
+                    foreach (string Value in Values)
+                        Cards.Add(new ServerCard(new Card
+                        {
+                            Color = Color,
+                            Value = Value
+                        }));
+            foreach (string Color in Colors)
+                Cards.Add(new ServerCard(new Card
+                {
+                    Color = Color,
+                    Value = "0"
+                }));
+            for (int i = 0; i < 4; i++)
+            {
+                Cards.Add(new ServerCard(new Card
+                {
+                    Color = "Wild",
+                    Value = "Color"
+                }));
+                Cards.Add(new ServerCard(new Card
+                {
+                    Color = "Wild",
+                    Value = "+4"
+                }));
+            }
+        }
+
+        public void Shuffle()
+        {
+
+        }
+    }
+
+    public static class ThreadSafeRandom
+    {
+        [ThreadStatic] private static Random Local;
+
+        public static Random ThisThreadsRandom
+        {
+            get { return Local ?? (Local = new Random(unchecked(Environment.TickCount * 31 + System.Threading.Thread.CurrentThread.ManagedThreadId))); }
+        }
+    }
+
     public static class UNOcore
     {
-        public static Random r = new Random();
-
         public static Card RandomCard()
         {
             Card card = new Card();
@@ -78,9 +142,9 @@ namespace UNObot.Modules
             lock (lockObject)
             {
                 //0-9 is number, 10 is actioncard
-                myCard = r.Next(0, 11);
+                myCard = ThreadSafeRandom.ThisThreadsRandom.Next(0, 11);
                 // see switch
-                myColor = r.Next(1, 5);
+                myColor = ThreadSafeRandom.ThisThreadsRandom.Next(1, 5);
             }
 
             switch (myColor)
@@ -106,7 +170,7 @@ namespace UNObot.Modules
             else
             {
                 //4 is wild, 1-3 is action
-                int action = r.Next(1, 5);
+                int action = ThreadSafeRandom.ThisThreadsRandom.Next(1, 5);
                 switch (action)
                 {
                     case 1:
@@ -119,7 +183,7 @@ namespace UNObot.Modules
                         card.Value = "+2";
                         break;
                     case 4:
-                        int wild = r.Next(1, 3);
+                        int wild = ThreadSafeRandom.ThisThreadsRandom.Next(1, 3);
                         card.Color = "Wild";
                         if (wild == 1)
                             card.Value = "Color";
