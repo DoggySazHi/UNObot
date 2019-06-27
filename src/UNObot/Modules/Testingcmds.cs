@@ -94,6 +94,21 @@ namespace UNObot.Modules
                              $"Map: {response.Map}");
         }
 
+        [Command("checkunturned", RunMode = RunMode.Async), Alias("checku")]
+        [Help(new string[] { ".checkunturned (ip) (server)" }, "Get basic server information about any Unturned server.", true, "UNObot 3.7")]
+        public async Task CheckUnturned(string ip, ushort port = 27015)
+        {
+            bool success = QueryHandler.GetInfo(ip, port, out A2S_INFO response);
+            if (!success)
+            {
+                await ReplyAsync("Error: Apparently we couldn't get any information about this server.");
+                return;
+            }
+            await ReplyAsync($"Name: {response.Name}\n" +
+                             $"Players: {Convert.ToInt32(response.Players)}/{Convert.ToInt32(response.MaxPlayers)}\n" +
+                             $"Map: {response.Map}");
+        }
+
         [Command("helpmeplz", RunMode = RunMode.Async), RequireOwner]
         public async Task HelpmePlz(int length)
         {

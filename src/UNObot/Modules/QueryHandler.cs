@@ -83,50 +83,50 @@ namespace UNObot.Modules
         {
             try
             {
-            UdpClient udp = new UdpClient();
-            udp.Client.SendTimeout = 5000;
-            udp.Client.ReceiveTimeout = 5000;
-            udp.Send(REQUEST, REQUEST.Length, ep);
-            MemoryStream ms = new MemoryStream(udp.Receive(ref ep));    // Saves the received data in a memory buffer
-            BinaryReader br = new BinaryReader(ms, Encoding.UTF8);      // A binary reader that treats charaters as Unicode 8-bit
-            ms.Seek(4, SeekOrigin.Begin);   // skip the 4 0xFFs
-            Header = br.ReadByte();
-            Protocol = br.ReadByte();
-            Name = ReadNullTerminatedString(ref br);
-            Map = ReadNullTerminatedString(ref br);
-            Folder = ReadNullTerminatedString(ref br);
-            Game = ReadNullTerminatedString(ref br);
-            ID = br.ReadInt16();
-            Players = br.ReadByte();
-            MaxPlayers = br.ReadByte();
-            Bots = br.ReadByte();
-            ServerType = (ServerTypeFlags)br.ReadByte();
-            Environment = (EnvironmentFlags)br.ReadByte();
-            Visibility = (VisibilityFlags)br.ReadByte();
-            VAC = (VACFlags)br.ReadByte();
-            Version = ReadNullTerminatedString(ref br);
-            ExtraDataFlag = (ExtraDataFlags)br.ReadByte();
-            #region These EDF readers have to be in this order because that's the way they are reported
-            if (ExtraDataFlag.HasFlag(ExtraDataFlags.Port))
-                Port = br.ReadInt16();
-            if (ExtraDataFlag.HasFlag(ExtraDataFlags.SteamID))
-                SteamID = br.ReadUInt64();
-            if (ExtraDataFlag.HasFlag(ExtraDataFlags.Spectator))
-            {
-                SpectatorPort = br.ReadInt16();
-                Spectator = ReadNullTerminatedString(ref br);
+                UdpClient udp = new UdpClient();
+                udp.Client.SendTimeout = 5000;
+                udp.Client.ReceiveTimeout = 5000;
+                udp.Send(REQUEST, REQUEST.Length, ep);
+                MemoryStream ms = new MemoryStream(udp.Receive(ref ep));    // Saves the received data in a memory buffer
+                BinaryReader br = new BinaryReader(ms, Encoding.UTF8);      // A binary reader that treats charaters as Unicode 8-bit
+                ms.Seek(4, SeekOrigin.Begin);   // skip the 4 0xFFs
+                Header = br.ReadByte();
+                Protocol = br.ReadByte();
+                Name = ReadNullTerminatedString(ref br);
+                Map = ReadNullTerminatedString(ref br);
+                Folder = ReadNullTerminatedString(ref br);
+                Game = ReadNullTerminatedString(ref br);
+                ID = br.ReadInt16();
+                Players = br.ReadByte();
+                MaxPlayers = br.ReadByte();
+                Bots = br.ReadByte();
+                ServerType = (ServerTypeFlags)br.ReadByte();
+                Environment = (EnvironmentFlags)br.ReadByte();
+                Visibility = (VisibilityFlags)br.ReadByte();
+                VAC = (VACFlags)br.ReadByte();
+                Version = ReadNullTerminatedString(ref br);
+                ExtraDataFlag = (ExtraDataFlags)br.ReadByte();
+                #region These EDF readers have to be in this order because that's the way they are reported
+                if (ExtraDataFlag.HasFlag(ExtraDataFlags.Port))
+                    Port = br.ReadInt16();
+                if (ExtraDataFlag.HasFlag(ExtraDataFlags.SteamID))
+                    SteamID = br.ReadUInt64();
+                if (ExtraDataFlag.HasFlag(ExtraDataFlags.Spectator))
+                {
+                    SpectatorPort = br.ReadInt16();
+                    Spectator = ReadNullTerminatedString(ref br);
+                }
+                if (ExtraDataFlag.HasFlag(ExtraDataFlags.Keywords))
+                    Keywords = ReadNullTerminatedString(ref br);
+                if (ExtraDataFlag.HasFlag(ExtraDataFlags.GameID))
+                    GameID = br.ReadUInt64();
+                #endregion
+                br.Close();
+                ms.Close();
+                udp.Close();
+                ServerUp = true;
             }
-            if (ExtraDataFlag.HasFlag(ExtraDataFlags.Keywords))
-                Keywords = ReadNullTerminatedString(ref br);
-            if (ExtraDataFlag.HasFlag(ExtraDataFlags.GameID))
-                GameID = br.ReadUInt64();
-            #endregion
-            br.Close();
-            ms.Close();
-            udp.Close();
-            ServerUp = true;
-            }
-            catch(Exception)
+            catch (Exception)
             {
                 ServerUp = false;
             }
@@ -229,7 +229,7 @@ namespace UNObot.Modules
 
     public static class QueryHandler
     {
-        public static bool GetInfo(string ip, int port, out A2S_INFO output)
+        public static bool GetInfo(string ip, ushort port, out A2S_INFO output)
         {
             bool parseCheck = IPAddress.TryParse(ip, out IPAddress iP);
             if (!parseCheck)
