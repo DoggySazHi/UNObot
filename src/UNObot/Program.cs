@@ -58,6 +58,7 @@ namespace UNObot
             await UNOdb.CleanAll();
             await _client.SetGameAsync($"UNObot {version}");
             await LoadHelp();
+            UnturnedReleaseNotes.GetInstance();
             await Task.Delay(-1);
         }
 

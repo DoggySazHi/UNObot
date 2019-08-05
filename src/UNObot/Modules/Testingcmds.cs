@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
+using System.Xml;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
@@ -45,6 +46,13 @@ namespace UNObot.Modules
                              $"Map: {response.Map}\n" +
                              $"IP: 108.61.100.48\n" +
                              $"Port: {response.Port}");
+        }
+
+        [Command("unturnedreleasenotes", RunMode = RunMode.Async), Alias("urn")]
+        [Help(new string[] { ".unturnedreleasenotes" }, "Find out what's in the latest release notes for Unturned.", true, "UNObot 3.1.7")]
+        public async Task URN()
+        {
+            await ReplyAsync(UnturnedReleaseNotes.GetLatestLink());
         }
 
         [Command("slamc", RunMode = RunMode.Async)]
