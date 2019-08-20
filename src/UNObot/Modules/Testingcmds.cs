@@ -41,11 +41,11 @@ namespace UNObot.Modules
             }
             if (response.Map == "Carpat")
                 response.Map = "~~Carpat~~ **Carpet**";
-            int players = Convert.ToInt32(response.Players) / Convert.ToInt32(response.MaxPlayers);
+            int players = Convert.ToInt32(response.Players);
             if (players == 0 && new Random().Next(0, 5) == 0)
                 players = -1;
             await ReplyAsync($"Name: {response.Name}\n" +
-                             $"Players: {players}\n" +
+                             $"Players: {players}/{Convert.ToInt32(response.MaxPlayers)}\n" +
                              $"Map: {response.Map}\n" +
                              $"IP: 108.61.100.48\n" +
                              $"Port: {response.Port}");
