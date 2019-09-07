@@ -33,6 +33,7 @@ namespace UNObot.Modules
         [Help(new string[] { ".ubows" }, "Get basic server information about the Unturned Bunker Official Wikia Server.", true, "UNObot 2.4")]
         public async Task UBOWS()
         {
+            //add one for query port
             bool success = QueryHandler.GetInfo("108.61.100.48", 25445, out A2S_INFO response);
             if (!success)
             {
@@ -106,13 +107,14 @@ namespace UNObot.Modules
         }
 
         [Command("checkunturned", RunMode = RunMode.Async), Alias("checku")]
-        [Help(new string[] { ".checkunturned (ip) (server)" }, "Get basic server information about any Unturned server.", true, "UNObot 3.7")]
+        [Help(new string[] { ".checkunturned (ip) (port)" }, "Get basic server information about any Unturned server.", true, "UNObot 3.7")]
         public async Task CheckUnturned(string ip, ushort port = 27015)
         {
-            bool success = QueryHandler.GetInfo(ip, port, out A2S_INFO response);
+            // query port = 1+ normal port
+            bool success = QueryHandler.GetInfo(ip, ++port, out A2S_INFO response);
             if (!success)
             {
-                await ReplyAsync("Error: Apparently we couldn't get any information about this server.");
+                await ReplyAsync("Error: Apparently we couldn't get any information about this server. Use the normal (join) port, as this automatically takes care of query ports.");
                 return;
             }
             await ReplyAsync($"Name: {response.Name}\n" +
