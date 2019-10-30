@@ -8,7 +8,7 @@ namespace UNObot.Modules
 {
     public static class Shell
     {
-        public static async Task<string> Run(string cmd)
+        public static async Task<string> RunYTDL(string cmd)
         {
             TaskCompletionSource<string> result = new TaskCompletionSource<string>();
 
@@ -40,6 +40,19 @@ namespace UNObot.Modules
                 throw new Exception("Shell failed!");
             return awaited;
         }
+
+        // Should be a file path.
+        public static Process GetAudioStream(string Path)
+        {
+            ProcessStartInfo ffmpeg = new ProcessStartInfo
+            {
+                FileName = "ffmpeg",
+                Arguments = $"-hide_banner -loglevel panic -i \"{Path}\" -ac 2 -f s16le -ar 48000 pipe:1",
+                UseShellExecute = false,
+                RedirectStandardOutput = true
+            };
+            return Process.Start(ffmpeg);
+        }
     }
 
     public static class DownloadHelper
@@ -66,42 +79,33 @@ namespace UNObot.Modules
             URL = URLFixer(URL);
             if (URL.ToLower().Contains("youtube.com"))
                 return await DownloadFromYouTube(URL);
-            throw new Exception("Video URL not supported!");
+            throw new Exception("Not a YouTube URL!");
         }
 
         public static async Task<string> DownloadPlaylist(string URL)
         {
             URL = URLFixer(URL);
             if (URL.ToLower().Contains("youtube.com"))
-            {
                 return await DownloadPlaylistFromYouTube(URL);
-            }
-            throw new Exception("Video URL not supported!");
+            throw new Exception("Not a YouTube URL!");
         }
 
-        public static async Task<Tuple<string, string>> GetInfo(string URL)
+        public static async Task<Tuple<string, string, string>> GetInfo(string URL)
         {
             URL = URLFixer(URL);
             if (URL.ToLower().Contains("youtube.com"))
-            {
                 return await GetInfoFromYouTube(URL);
-            }
-            throw new Exception("Video URL not supported!");
+            throw new Exception("Not a YouTube URL!");
         }
 
-        private static async Task<Tuple<string, string>> GetInfoFromYouTube(string URL)
+        private static async Task<Tuple<string, string, string>> GetInfoFromYouTube(string URL)
         {
-            string Title = "No Title Found";
-            string Duration = "0";
-
-            var lines = (await Shell.Run($"-s -e --get-duration {URL}")).Split('\n');
-            if (lines.Length >= 2)
-            {
-                Title = lines[0];
-                Duration = lines[1];
-            }
-
-            return new Tuple<string, string>(Title, Duration);
+            var lines = (await Shell.RunYTDL($"-s -e --get-duration --get-thumbnail {URL}")).Split('\n');
+            if (lines.Length >= 3)
+                // Title, Duration, Thumbnail Link
+                return new Tuple<string, string, string>(lines[0], lines[2], lines[1]);
+            else
+                throw new Exception("Could not get information from URL! Is the link valid?");
         }
 
         private static async Task<string> DownloadFromYouTube(string url)
@@ -116,19 +120,15 @@ namespace UNObot.Modules
                 FileName = Path.Combine(DownloadPath, "downloadSong" + ++count + ".mp3");
             } while (File.Exists(FileName));
 
-            var Result = await Shell.Run($"-x --audio-format mp3 -o {FileName} {url}");
+            var Result = await Shell.RunYTDL($"-x --audio-format mp3 -o {FileName} {url}");
 
             var StartTime = DateTime.Now;
 
             while ((DateTime.Now - StartTime).TotalSeconds < DL_TIMEOUT)
-            {
                 if (File.Exists(FileName))
-                {
-                    //Return MP3 Path & Video Title
                     return FileName.Replace("\n", "").Replace(Environment.NewLine, "");
-                }
-            }
-            Console.WriteLine($"Could not download Song, youtube-dl responded with:\n{Result}");
+
+            ColorConsole.WriteLine($"Could not download Song, youtube-dl responded with: {Result}", ConsoleColor.Red);
             throw new Exception("Failed to download file.");
         }
 
@@ -141,21 +141,26 @@ namespace UNObot.Modules
                 FileName = Path.Combine(DownloadPath, "tempvideo" + ++count + ".mp3");
             } while (File.Exists(FileName));
 
-            var Result = await Shell.Run($"--extract-audio --audio-format mp3 -o {FileName} {URL}");
+            var Result = await Shell.RunYTDL($"--extract-audio --audio-format mp3 -o {FileName} {URL}");
 
             var StartTime = DateTime.Now;
 
             while ((DateTime.Now - StartTime).TotalSeconds < DL_TIMEOUT)
-            {
                 if (File.Exists(FileName))
-                {
-                    //Return MP3 Path & Video Title
                     return FileName.Replace("\n", "").Replace(Environment.NewLine, "");
-                }
-            }
-            //Error downloading
-            Console.WriteLine($"Could not download Song, youtube-dl responded with:\n{Result}");
+
+            ColorConsole.WriteLine($"Could not download Song, youtube-dl responded with: {Result}", ConsoleColor.Red);
             throw new Exception("Failed to download file.");
+        }
+
+        public static async Task<string> GetThumbnail(string URL)
+        {
+            var Result = await Shell.RunYTDL($"{URL} -s --get-thumbnail");
+            if (Result.Contains("jpg") || Result.Contains("png"))
+                return Result;
+
+            ColorConsole.WriteLine($"Could not query thumbnail, youtube-dl responded with: {Result}", ConsoleColor.Red);
+            throw new Exception("Failed to query thumbnail.");
         }
     }
 }

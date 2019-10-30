@@ -14,6 +14,7 @@ using System.Linq;
 using Newtonsoft.Json.Linq;
 using System.Threading;
 using UNObot.Modules;
+using UNObot.Services;
 
 #pragma warning disable CS1701 // Assuming assembly reference matches identity
 #pragma warning disable CS1702 // Assuming assembly reference matches identity
@@ -67,7 +68,7 @@ namespace UNObot
                 // Base
                 .AddSingleton(_client)
                 .AddSingleton<CommandService>()
-                .AddSingleton<Services.CommandHandlingService>()
+                .AddSingleton<CommandHandlingService>()
                 // Logging
                 .AddLogging()
                 .AddSingleton<LogService>()

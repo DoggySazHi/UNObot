@@ -174,24 +174,6 @@ namespace UNObot.Modules
             await BaseReact(numMessages, emote);
         }
 
-        [Command("getytinfo", RunMode = RunMode.Async)]
-        //[Help(new string[] { ".oofreact (number of messages)" }, "Damn, oof.", true, "UNObot 3.0 Beta 1")]
-        public async Task GetYTInfo([Remainder] string Link)
-        {
-            try
-            {
-                _ = ReplyAsync($"Program is now querying, please wait warmly...");
-                var Result = await DownloadHelper.GetInfo(Link);
-                _ = ReplyAsync($"Name: {Result.Item1}\nDuration: {Result.Item2}, now attempting to download.");
-                var Result2 = await DownloadHelper.Download(Link);
-                _ = ReplyAsync($"{Result2} has been created!");
-            }
-            catch (Exception ex)
-            {
-                _ = ReplyAsync($"Error: {ex.Message}");
-            }
-        }
-
         public async Task BaseReact(int numMessages, IEmote emote)
         {
             var messages = await Context.Channel.GetMessagesAsync(numMessages + 1).FlattenAsync();

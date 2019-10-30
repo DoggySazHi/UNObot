@@ -33,7 +33,7 @@ namespace DiscordBot.Services
 
         ILoggerFactory ConfigureLogging(ILoggerFactory factory)
         {
-            factory.AddConsole();
+            factory = LoggerFactory.Create(builder => builder.AddConsole());
             return factory;
         }
 

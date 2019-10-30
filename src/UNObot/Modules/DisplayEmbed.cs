@@ -172,5 +172,36 @@ namespace UNObot.Modules
             var embed = builder.Build();
             return embed;
         }
+
+        public static async Task<Tuple<Embed, Tuple<string, string, string>>> DisplayAddSong(ulong UserID, ulong ServerID, string SongURL)
+        {
+            var Information = await DownloadHelper.GetInfo(SongURL);
+            string Server = Program._client.GetGuild(ServerID).Name;
+            string Username = Program._client.GetUser(UserID).Username;
+            Random r = ThreadSafeRandom.ThisThreadsRandom;
+
+            var builder = new EmbedBuilder()
+                .WithTitle(Information.Item1)
+                .WithUrl(SongURL)
+                .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
+                .WithTimestamp(DateTimeOffset.Now)
+                .WithFooter(footer =>
+                {
+                    footer
+                        .WithText($"UNObot {Program.version} - By DoggySazHi")
+                        .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
+                })
+                .WithThumbnailUrl(Information.Item3)
+                .WithAuthor(author =>
+                {
+                    author
+                        .WithName($"Added in {Server}")
+                        .WithIconUrl("https://williamle.com/unobot/unobot.png");
+                })
+                .AddField("Duration", Information.Item2)
+                .AddField("Requested By", Username);
+            var embed = builder.Build();
+            return new Tuple<Embed, Tuple<string, string, string>>(embed, Information);
+        }
     }
 }
