@@ -159,43 +159,20 @@ namespace UNObot.Modules
                 var Embed = await DisplayEmbed.DisplayAddSong(Context.User.Id, Context.Guild.Id, Link);
                 await ReplyAsync("", false, Embed.Item1);
 
-                if (MusicPlayers.Where(o => o.Server == Context.Guild.Id).Count() == 0)
-                    MusicPlayers.Add(new Player(Context.Guild.Id, await AudioChannel.ConnectAsync()));
+                //if (MusicPlayers.Where(o => o.Server == Context.Guild.Id).Count() == 0)
+                //    MusicPlayers.Add(new Player(Context.Guild.Id, await AudioChannel.ConnectAsync()));
 
                 // Wait before downloading...
-                var Result2 = await DownloadHelper.Download(Link);
-                _ = ReplyAsync($"{Result2} has been created!");
+                var Result2 = await YoutubeService.Download(Link);
+                AudioService ads = AudioService.GetSingleton();
+                await ads.JoinAudio(Context.Guild, AudioChannel);
+                await ads.SendAudioAsync(Context.Guild, Context.Channel, Result2);
+                await ads.LeaveAudio(Context.Guild);
+                File.Delete(Result2);
             }
             catch (Exception ex)
             {
                 _ = ReplyAsync($"Error: {ex.Message}");
-            }
-        }
-
-        [Command("vctest", RunMode = RunMode.Async)]
-        [Help(new string[] { ".playmusic (YouTube Link)" }, "Wait, MusicBot functionality in UNObot?", true, "UNObot 3.2 Beta 1")]
-        public async Task VCTest()
-        {
-            var AudioChannel = (Context.User as IVoiceState)?.VoiceChannel;
-            if (AudioChannel == null)
-            {
-                _ = ReplyAsync("Please join a VC that I can connect to!");
-                return;
-            }
-
-            _ = ReplyAsync("Attempting to connect...");
-            var AudioClient = await AudioChannel.ConnectAsync();
-
-            using (var output = Shell.GetAudioStream("/Users/doggysazhi/Documents/Projects/UNObot/src/UNObot/bin/Debug/netcoreapp2.1/Music/downloadSong3.mp3"))
-            {
-                using (AudioOutStream discord = AudioClient.CreatePCMStream(AudioApplication.Music))
-                {
-                    _ = ReplyAsync("Preparing to play...");
-                    try { await output.StandardOutput.BaseStream.CopyToAsync(discord); }
-                    finally { await discord.FlushAsync(); }
-                    _ = ReplyAsync("Playback Finished.");
-                    await discord.FlushAsync();
-                }
             }
         }
 

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using YoutubeExplode;
 
 namespace UNObot.Modules
 {
@@ -23,7 +24,7 @@ namespace UNObot.Modules
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = "youtube-dl",
-                        Arguments = $"{escapedArgs}",
+                        Arguments = $"-4 {escapedArgs}",
                         RedirectStandardOutput = true,
                         UseShellExecute = false,
                         CreateNoWindow = true
@@ -52,6 +53,34 @@ namespace UNObot.Modules
                 RedirectStandardOutput = true
             };
             return Process.Start(ffmpeg);
+        }
+
+        public async static Task<string> ConvertToMP3(string Path)
+        {
+            TaskCompletionSource<string> result = new TaskCompletionSource<string>();
+
+            new Thread(() =>
+            {
+                var process = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "ffmpeg",
+                        Arguments = $"-hide_banner -loglevel panic -i ${Path} -vn -ab 128k -ar 44100 -y ${Path}.mp3",
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true
+                    }
+                };
+                process.Start();
+                result.SetResult(process.StandardOutput.ReadToEnd());
+                process.WaitForExit();
+            }).Start();
+
+            string awaited = await result.Task;
+            Console.WriteLine($"Shell result: {awaited}");
+            if (awaited == null)
+                throw new Exception("Shell failed!");
+            return awaited;
         }
     }
 
