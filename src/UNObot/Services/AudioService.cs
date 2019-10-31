@@ -28,14 +28,11 @@ namespace UNObot.Services
         public async Task JoinAudio(IGuild guild, IVoiceChannel target)
         {
             IAudioClient client;
+
             if (ConnectedChannels.TryGetValue(guild.Id, out client))
-            {
                 return;
-            }
             if (target.Guild.Id != guild.Id)
-            {
                 return;
-            }
 
             var audioClient = await target.ConnectAsync();
 
@@ -70,9 +67,10 @@ namespace UNObot.Services
             {
                 //await Log(LogSeverity.Debug, $"Starting playback of {path} in {guild.Name}");
                 using (var ffmpeg = CreateProcess(path))
-                using (var stream = client.CreatePCMStream(AudioApplication.Mixed, 90000, 200))
+                using (var stream = client.CreatePCMStream(AudioApplication.Music))
                 {
-                    await ffmpeg.StandardOutput.BaseStream.CopyToAsync(stream);
+                    try { await ffmpeg.StandardOutput.BaseStream.CopyToAsync(stream); }
+                    finally { await stream.FlushAsync(); }
                 }
             }
         }

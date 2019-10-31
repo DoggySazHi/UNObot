@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using UNObot.Services;
 
 #pragma warning disable CS1701 // Assuming assembly reference matches identity
 #pragma warning disable CS1702 // Assuming assembly reference matches identity
@@ -175,7 +176,7 @@ namespace UNObot.Modules
 
         public static async Task<Tuple<Embed, Tuple<string, string, string>>> DisplayAddSong(ulong UserID, ulong ServerID, string SongURL)
         {
-            var Information = await DownloadHelper.GetInfo(SongURL);
+            var Information = await YoutubeService.GetInfo(SongURL);
             string Server = Program._client.GetGuild(ServerID).Name;
             string Username = Program._client.GetUser(UserID).Username;
             Random r = ThreadSafeRandom.ThisThreadsRandom;
