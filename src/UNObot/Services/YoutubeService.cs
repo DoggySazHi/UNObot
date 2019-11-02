@@ -59,6 +59,7 @@ namespace UNObot.Services
         {
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
+
             string FileName;
 
             // Search for empty buffer files.
