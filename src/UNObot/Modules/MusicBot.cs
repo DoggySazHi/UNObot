@@ -18,7 +18,7 @@ using UNObot.Services;
 
 namespace UNObot.Modules
 {
-    public class MusicBot : ModuleBase<SocketCommandContext>, IAsyncDisposable
+    public class MusicBot : ModuleBase<SocketCommandContext>
     {
         [Command("playmusic", RunMode = RunMode.Async)]
         [Help(new string[] { ".playmusic (YouTube Link)" }, "Wait, MusicBot functionality in UNObot?", true, "UNObot 3.2 Beta 1")]
@@ -41,7 +41,7 @@ namespace UNObot.Modules
                 //    MusicPlayers.Add(new Player(Context.Guild.Id, await AudioChannel.ConnectAsync()));
 
                 // Wait before downloading...
-                var Result2 = await YoutubeService.GetSingleton().Download(Link);
+                var Result2 = await YoutubeService.GetSingleton().Download(Link, Context.Guild.Id);
                 AudioService ads = AudioService.GetSingleton();
                 await ads.JoinAudio(Context.Guild, AudioChannel);
                 await ads.SendAudioAsync(Context.Guild, Context.Channel, Result2);
