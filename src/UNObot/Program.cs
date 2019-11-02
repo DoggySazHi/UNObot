@@ -36,6 +36,7 @@ namespace UNObot
 
         public static DiscordSocketClient _client;
         IConfiguration _config;
+        ManualResetEvent ExitEvent = new ManualResetEvent(false);
 
         public async Task MainAsync()
         {
@@ -51,7 +52,7 @@ namespace UNObot
 
             var services = ConfigureServices();
             services.GetRequiredService<LogService>();
-            await services.GetRequiredService<Services.CommandHandlingService>().InitializeAsync(services);
+            await services.GetRequiredService<CommandHandlingService>().InitializeAsync(services);
 
             await _client.LoginAsync(TokenType.Bot, _config["token"]);
             await _client.StartAsync();
@@ -59,7 +60,26 @@ namespace UNObot
             await UNOdb.CleanAll();
             await _client.SetGameAsync($"UNObot {version}");
             await LoadHelp();
-            await Task.Delay(-1);
+            SafeExitHandler();
+            ExitEvent.WaitOne();
+            await OnExit();
+        }
+
+        private void SafeExitHandler()
+        {
+            AppDomain.CurrentDomain.ProcessExit += (o, a) => { ExitEvent.Set(); };
+
+            Console.CancelKeyPress += (sender, eventArgs) =>
+            {
+                eventArgs.Cancel = true;
+                ExitEvent.Set();
+            };
+        }
+
+        private async Task OnExit()
+        {
+            Console.WriteLine("Goodbye!");
+            await MusicBotService.GetSingleton().DisposeAsync();
         }
 
         IServiceProvider ConfigureServices()

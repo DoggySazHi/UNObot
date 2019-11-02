@@ -117,7 +117,7 @@ namespace UNObot.Modules
 
         public void Shuffle()
         {
-
+            Cards.Shuffle();
         }
     }
 
@@ -128,6 +128,19 @@ namespace UNObot.Modules
         public static Random ThisThreadsRandom
         {
             get { return Local ?? (Local = new Random(unchecked(Environment.TickCount * 31 + System.Threading.Thread.CurrentThread.ManagedThreadId))); }
+        }
+
+        public static void Shuffle<T>(this IList<T> list)
+        {
+            int n = list.Count;
+            while (n > 1)
+            {
+                n--;
+                int k = ThisThreadsRandom.Next(n + 1);
+                T value = list[k];
+                list[k] = list[n];
+                list[n] = value;
+            }
         }
     }
 

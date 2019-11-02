@@ -18,124 +18,8 @@ using UNObot.Services;
 
 namespace UNObot.Modules
 {
-    public struct Song
+    public class MusicBot : ModuleBase<SocketCommandContext>, IAsyncDisposable
     {
-        public string URL;
-        public ulong RequestedBy;
-        public string Name;
-        public string Duration;
-        public string ThumbnailURL;
-        public bool IsPlaying;
-
-        public async Task Prepopulate()
-        {
-            if (URL == null) return;
-            bool Valid = Uri.TryCreate(URL, UriKind.Absolute, out Uri uriResult)
-                          && (uriResult.Scheme == "http" || uriResult.Scheme == "https");
-            if (!Valid) return;
-            var Result = await DownloadHelper.GetInfo(URL);
-            Name = Result.Item1;
-            Duration = Result.Item2;
-            ThumbnailURL = Result.Item3;
-        }
-    }
-
-    public class Player
-    {
-        public ulong Server { get; private set; }
-        private Queue<Song> Songs;
-        private bool LoopingQueue;
-        private bool LoopingSong;
-
-        private CancellationTokenSource _disposeToken;
-        private IAudioClient AudioClient;
-        /*
-        private async Task AudioHelper(IAudioClient audioChannel, string Path)
-        {
-            using (AudioOutStream discord = audioChannel.CreatePCMStream(AudioApplication.Mixed, 1920))
-            {
-                Stream output = Shell.GetAudioStream(Path);
-
-                int bufferSize = 1024;
-                int bytesSent = 0;
-                bool fail = false;
-                bool exit = false;
-                byte[] buffer = new byte[bufferSize];
-
-                while (
-                    //!Skip &&                                    // If Skip is set to true, stop sending and set back to false (with getter)
-                    !fail &&                                    // After a failed attempt, stop sending
-                    !exit                                       // Audio Playback has ended (No more data from FFmpeg.exe)
-                        )
-                {
-                    try
-                    {
-                        int read = await output.ReadAsync(buffer, 0, bufferSize);
-                        if (read == 0)
-                        {
-                            //No more data available
-                            exit = true;
-                            break;
-                        }
-
-                        await discord.WriteAsync(buffer, 0, read);
-
-                        if (Pause)
-                        {
-                            bool pauseAgain;
-
-                            do
-                            {
-                                pauseAgain = await _tcs.Task;
-                                _tcs = new TaskCompletionSource<bool>();
-                            } while (pauseAgain);
-                        }
-
-                        bytesSent += read;
-                    }
-                    catch (TaskCanceledException)
-                    {
-                        exit = true;
-                    }
-                    catch
-                    {
-                        fail = true;
-                        // could not send
-                    }
-                }
-                await discord.FlushAsync();
-                await output.DisposeAsync();
-            }
-        }
-
-        //Send Audio with ffmpeg
-        private async Task SendAudio(IVoiceChannel ivc, string Path)
-        {
-            IAudioChannel audio;
-            _voiceChannel = (socketMsg.Author as IGuildUser)?.VoiceChannel;
-            if (ivc == null)
-            {
-                Print("Error joining Voice Channel!", ConsoleColor.Red);
-                await socketMsg.Channel.SendMessageAsync($"I can't connect to your Voice Channel <@{socketMsg.Author}>!" + ImABot);
-            }
-            else
-            {
-                Print($"Joined Voice Channel \"{_voiceChannel.Name}\"", ConsoleColor.Magenta);
-                audio = await _voiceChannel.ConnectAsync();
-            }
-        }
-        */
-        public Player(ulong Guild, IAudioClient AudioClient)
-        {
-
-        }
-
-    }
-
-    public class MusicBot : ModuleBase<SocketCommandContext>
-    {
-        List<Player> MusicPlayers = new List<Player>();
-
         [Command("playmusic", RunMode = RunMode.Async)]
         [Help(new string[] { ".playmusic (YouTube Link)" }, "Wait, MusicBot functionality in UNObot?", true, "UNObot 3.2 Beta 1")]
         public async Task PlayMusic([Remainder] string Link)
@@ -149,12 +33,6 @@ namespace UNObot.Modules
 
             try
             {
-                //Test for valid URL
-                bool result = Uri.TryCreate(Link, UriKind.Absolute, out Uri uriResult)
-                          && (uriResult.Scheme == "http" || uriResult.Scheme == "https");
-                if (!result)
-                    _ = ReplyAsync("That is not a valid link!");
-
                 _ = ReplyAsync($"Program is now querying, please wait warmly...");
                 var Embed = await DisplayEmbed.DisplayAddSong(Context.User.Id, Context.Guild.Id, Link);
                 await ReplyAsync("", false, Embed.Item1);
@@ -163,7 +41,7 @@ namespace UNObot.Modules
                 //    MusicPlayers.Add(new Player(Context.Guild.Id, await AudioChannel.ConnectAsync()));
 
                 // Wait before downloading...
-                var Result2 = await YoutubeService.Download(Link);
+                var Result2 = await YoutubeService.GetSingleton().Download(Link);
                 AudioService ads = AudioService.GetSingleton();
                 await ads.JoinAudio(Context.Guild, AudioChannel);
                 await ads.SendAudioAsync(Context.Guild, Context.Channel, Result2);
@@ -190,6 +68,20 @@ namespace UNObot.Modules
             await ads.JoinAudio(Context.Guild, AudioChannel);
             await ads.SendAudioAsync(Context.Guild, Context.Channel, song);
             await ads.LeaveAudio(Context.Guild);
+        }
+
+        [Command("timings", RunMode = RunMode.Async)]
+        public async Task MusicBotTimings()
+        {
+            var Timings = YoutubeService.GetSingleton().Timings;
+            await ReplyAsync($"Timings: \n" +
+                $"File search: {Timings[0]} ms\n" +
+                $"ID parse: {Timings[1]} ms\n" +
+                $"Stream search: {Timings[2] + Timings[3] + Timings[4]} ms\n" +
+                $"- Getting streams: {Timings[2]} ms\n" +
+                $"- Finding best audio stream: {Timings[3]} ms\n" +
+                $"- Getting extension: {Timings[4]} ms\n" +
+                $"Download: {Timings[5]} ms");
         }
     }
 }

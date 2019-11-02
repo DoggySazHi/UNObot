@@ -29,6 +29,7 @@ namespace UNObot.Modules
             //ha, damn the limited encodings.
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             Encoding.GetEncoding("windows-1254");
+
         }
         public static async Task AddGame(ulong server)
         {

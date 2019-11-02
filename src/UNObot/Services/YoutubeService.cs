@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using UNObot.Modules;
@@ -15,9 +16,19 @@ namespace UNObot.Services
         private static readonly string DownloadPath = Path.Combine(Directory.GetCurrentDirectory(), "Music");
 
         private static YoutubeService Instance;
-        private YoutubeClient Client = new YoutubeClient();
+        private YoutubeClient Client;
+        private YoutubeConverter Converter;
+        public long[] Timings { get; private set; }
 
-        private YoutubeService() { }
+        private YoutubeService()
+        {
+            Client = new YoutubeClient();
+            Converter = new YoutubeConverter(Client, "/usr/local/bin/ffmpeg");
+            if (Directory.Exists(DownloadPath))
+                Directory.Delete(DownloadPath, true);
+            Directory.CreateDirectory(DownloadPath);
+            Timings = new long[6];
+        }
 
         public static YoutubeService GetSingleton()
         {
@@ -26,20 +37,28 @@ namespace UNObot.Services
             return Instance;
         }
 
-        public static async Task<Tuple<string, string, string>> GetInfo(string URL)
+        public async Task<Tuple<string, string, string>> GetInfo(string URL)
         {
-            YoutubeClient Client = new YoutubeClient();
-
+            URL = URL.TrimStart('<', '>').TrimEnd('<', '>');
             if (!YoutubeClient.TryParseVideoId(URL, out string Id))
                 throw new Exception("Could not get information from URL! Is the link valid?");
             var VideoData = await Client.GetVideoAsync(Id);
-            var Duration = string.Format("{0:g}", VideoData.Duration);
+            var Duration = TimeString(VideoData.Duration);
             return new Tuple<string, string, string>(VideoData.Title, Duration, VideoData.Thumbnails.StandardResUrl);
         }
 
-        public static async Task<string> Download(string URL)
+        private string PathToGuildFolder(ulong Guild)
         {
-            YoutubeClient Client = new YoutubeClient();
+            string DirectoryPath = Path.Combine(DownloadPath, Guild.ToString());
+            if (!Directory.Exists(DirectoryPath))
+                Directory.CreateDirectory(DirectoryPath);
+            return DirectoryPath;
+        }
+
+        public async Task<string> Download(string URL, ulong Guild)
+        {
+            Stopwatch stopWatch = new Stopwatch();
+            stopWatch.Start();
             string FileName;
 
             // Search for empty buffer files.
@@ -47,14 +66,49 @@ namespace UNObot.Services
             int Count = 0;
             do
             {
-                FileName = Path.Combine(DownloadPath, "downloadSong" + ++Count + ".mp3");
+                FileName = Path.Combine(PathToGuildFolder(Guild), "downloadSong" + ++Count);
             } while (File.Exists(FileName));
 
+            stopWatch.Stop();
+            Timings[0] = stopWatch.ElapsedMilliseconds;
+            stopWatch.Restart();
+
+            URL = URL.TrimStart('<', '>').TrimEnd('<', '>');
             if (!YoutubeClient.TryParseVideoId(URL, out string Id))
+            {
+                stopWatch.Stop();
+                Timings[1] = stopWatch.ElapsedMilliseconds;
                 throw new Exception("Invalid video link!");
-            //TODO bypass converter part
-            var converter = new YoutubeConverter(Client, "/usr/local/bin/ffmpeg");
-            await converter.DownloadVideoAsync(Id, FileName);
+            }
+
+            stopWatch.Stop();
+            Timings[1] = stopWatch.ElapsedMilliseconds;
+            stopWatch.Restart();
+
+            var MediaStreams = await Client.GetVideoMediaStreamInfosAsync(Id);
+
+            stopWatch.Stop();
+            Timings[2] = stopWatch.ElapsedMilliseconds;
+            stopWatch.Restart();
+
+            var AudioStream = MediaStreams.Audio.WithHighestBitrate();
+
+            stopWatch.Stop();
+            Timings[3] = stopWatch.ElapsedMilliseconds;
+            stopWatch.Restart();
+
+            var Extension = AudioStream.Container.GetFileExtension();
+
+            stopWatch.Stop();
+            Timings[4] = stopWatch.ElapsedMilliseconds;
+            stopWatch.Restart();
+
+            FileName = $"{FileName}.{Extension}";
+            await Client.DownloadMediaStreamAsync(AudioStream, FileName);
+
+            stopWatch.Stop();
+            Timings[5] = stopWatch.ElapsedMilliseconds;
+            stopWatch.Restart();
 
             var StartTime = DateTime.Now;
 
@@ -64,5 +118,8 @@ namespace UNObot.Services
 
             throw new Exception("Failed to download file.");
         }
+
+        public string TimeString(TimeSpan Ts)
+            => $"{(Ts.Hours > 0 ? $"{Ts.Hours}:" : "")}{Ts.Minutes.ToString("00")}:{Ts.Seconds.ToString("00")}";
     }
 }
