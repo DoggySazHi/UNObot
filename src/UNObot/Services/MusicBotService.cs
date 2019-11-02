@@ -11,26 +11,33 @@ namespace UNObot.Services
 {
     public struct Song
     {
-        public string URL;
-        public string PathCached;
-        public ulong RequestedBy;
-        public string Name;
-        public string Duration;
-        public string ThumbnailURL;
-        public bool IsPlaying;
+        public string URL { get; private set; }
+        public string PathCached { get; private set; }
+        public ulong RequestedBy { get; private set; }
+        public ulong RequestedGuild { get; private set; }
+        public string Name { get; private set; }
+        public string Duration { get; private set; }
+        public string ThumbnailURL { get; private set; }
+        public bool IsPlaying { get; private set; }
 
-        public async Task Prepopulate(string URL, Tuple<string, string, string> Data)
+        //TODO Add method auto-fills this.
+        public void Prepopulate(string URL, Tuple<string, string, string> Data, ulong User, ulong Guild)
         {
             this.URL = URL;
             Name = Data.Item1;
             Duration = Data.Item2;
             ThumbnailURL = Data.Item3;
+            RequestedBy = User;
+            RequestedGuild = Guild;
+            IsPlaying = false;
         }
 
         public async Task Cache()
         {
-            PathCached = await YoutubeService.GetSingleton().Download(URL);
+            PathCached = await YoutubeService.GetSingleton().Download(URL, RequestedGuild);
         }
+
+        public void SetPlaying() => IsPlaying = true;
     }
 
     public class Player : IAsyncDisposable
@@ -44,10 +51,11 @@ namespace UNObot.Services
         public bool Paused { get; private set; }
 
         private bool Skip;
+        private bool Quit;
         private bool IsPlaying;
         private ManualResetEvent PauseEvent;
+        private ManualResetEvent QuitEvent;
 
-        private CancellationTokenSource _disposeToken;
         private IVoiceChannel AudioChannel;
         private IAudioClient AudioClient;
 
@@ -57,10 +65,13 @@ namespace UNObot.Services
             this.AudioClient = AudioClient;
             this.AudioChannel = AudioChannel;
             AudioClient.Disconnected += FixConnection;
+            PauseEvent = new ManualResetEvent(false);
+            QuitEvent = new ManualResetEvent(false);
         }
 
         private async Task FixConnection(Exception arg)
         {
+            Paused = true;
             if (Songs.Count != 0 && AudioClient?.ConnectionState != ConnectionState.Connected)
                 AudioClient = await AudioChannel.ConnectAsync();
         }
@@ -75,9 +86,32 @@ namespace UNObot.Services
             await AudioClient.StopAsync();
         }
 
-        public void TogglePause()
+        public string TryPause()
         {
+            if (Songs.Count == 0)
+                return "There is no song playing.";
+            if (!Paused || PauseEvent.WaitOne(0))
+            {
+                Paused = false;
+                return "Player is already playing.";
+            }
+            Paused = true;
+            PauseEvent.Reset();
+            return null;
+        }
 
+        public string TryPlay()
+        {
+            if (Songs.Count == 0)
+                return "There is no song playing.";
+            if (!Paused || !PauseEvent.WaitOne(0))
+            {
+                Paused = true;
+                return "Player is already paused.";
+            }
+            Paused = false;
+            PauseEvent.Set();
+            return null;
         }
 
         private async Task SendAudio(Stream AudioStream, AudioOutStream DiscordStream)
@@ -95,15 +129,16 @@ namespace UNObot.Services
                     bool Exit = false;
                     byte[] buffer = new byte[bufferSize];
 
-                    while (
-                        !Skip &&                                    // If Skip is set to true, stop sending and set back to false (with getter)
-                        !Fail &&                                    // After a failed attempt, stop sending
-                        !Exit                                       // Audio Playback has ended (No more data from FFmpeg.exe)
-                            )
+                    // Skip: User skipped the song.
+                    // Fail: Failed to read, kill the song.
+                    // Exit: Song ended.
+                    // Quit: Program exiting.
+
+                    while (!Skip && !Fail && !Exit && !Quit)
                     {
                         try
                         {
-                            int read = await AudioStream.ReadAsync(buffer, 0, bufferSize, _disposeToken.Token);
+                            int read = await AudioStream.ReadAsync(buffer, 0, bufferSize);
                             if (read == 0)
                             {
                                 //No more data available
@@ -111,17 +146,12 @@ namespace UNObot.Services
                                 break;
                             }
 
-                            await DiscordStream.WriteAsync(buffer, 0, read, _disposeToken.Token);
+                            await DiscordStream.WriteAsync(buffer, 0, read);
 
                             if (Paused)
                             {
-                                bool pauseAgain;
-
-                                do
-                                {
-                                    pauseAgain = await _tcs.Task;
-                                    _tcs = new TaskCompletionSource<bool>();
-                                } while (pauseAgain);
+                                PauseEvent.Reset();
+                                PauseEvent.WaitOne();
                             }
 
                             bytesSent += read;
@@ -137,6 +167,8 @@ namespace UNObot.Services
                 }
             }
             IsPlaying = false;
+            if (Quit)
+                QuitEvent.Set();
         }
 
         private Stream CreateStream(string path)
@@ -153,13 +185,15 @@ namespace UNObot.Services
         public async ValueTask DisposeAsync()
         {
             Songs = new Queue<Song>();
-            Skip = true;
-            while (IsPlaying) { }
+            Quit = true;
+            if (IsPlaying)
+                QuitEvent.WaitOne();
             if (AudioClient?.ConnectionState == ConnectionState.Connected)
             {
                 await AudioClient?.StopAsync();
             }
             AudioClient?.Dispose();
+            PauseEvent?.Dispose();
         }
     }
 
