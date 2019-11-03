@@ -6,10 +6,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Audio;
+using Discord.WebSocket;
+using UNObot.Modules;
 
 namespace UNObot.Services
 {
-    public struct Song
+    // Can't use Struct, needs passing by reference.
+    public class Song
     {
         public string URL { get; private set; }
         public string PathCached { get; private set; }
@@ -34,7 +37,8 @@ namespace UNObot.Services
 
         public async Task Cache()
         {
-            PathCached = await YoutubeService.GetSingleton().Download(URL, RequestedGuild);
+            if (PathCached == null)
+                PathCached = await YoutubeService.GetSingleton().Download(URL, RequestedGuild);
         }
 
         public void SetPlaying() => IsPlaying = true;
@@ -43,16 +47,17 @@ namespace UNObot.Services
     public class Player : IAsyncDisposable
     {
         public ulong Guild { get; private set; }
-        private Queue<Song> Songs;
+        private List<Song> Songs;
         //TODO make sure they don't conflict
         public bool LoopingQueue { get; private set; }
         public bool LoopingSong { get; private set; }
 
         public bool Paused { get; private set; }
 
-        private bool Skip;
         private bool Quit;
         private bool IsPlaying;
+        private bool Caching;
+        private readonly int CacheLength = 5;
         private ManualResetEvent PauseEvent;
         private ManualResetEvent QuitEvent;
 
@@ -71,9 +76,16 @@ namespace UNObot.Services
 
         private async Task FixConnection(Exception arg)
         {
-            Paused = true;
+            bool PrevPlaying = !Paused;
+
+            if (PrevPlaying)
+                TryPause();
             if (Songs.Count != 0 && AudioClient?.ConnectionState != ConnectionState.Connected)
+            {
                 AudioClient = await AudioChannel.ConnectAsync();
+                if (PrevPlaying)
+                    TryPlay();
+            }
         }
 
         public async Task RunPlayer()
@@ -81,19 +93,37 @@ namespace UNObot.Services
             await FixConnection(null);
             while (Songs.Count != 0)
             {
-                await SendAudio(CreateStream(Songs.Dequeue().PathCached), AudioClient.CreatePCMStream(AudioApplication.Music));
+                Song NextSong = Songs[0];
+                Songs.RemoveAt(0);
+
+                if (NextSong.PathCached == null)
+                    await NextSong.Cache();
+                await SendAudio(CreateStream(NextSong.PathCached), AudioClient.CreatePCMStream(AudioApplication.Music));
+                File.Delete(NextSong.PathCached);
+                _ = Task.Run(() => Cache());
             }
             await AudioClient.StopAsync();
+        }
+
+        private async Task Cache()
+        {
+            if (Caching)
+                return;
+            Caching = true;
+            List<Song> ToCache = Songs.GetRange(0, Math.Min(CacheLength, Songs.Count));
+            foreach (Song s in ToCache)
+                await s.Cache();
+            Caching = false;
         }
 
         public string TryPause()
         {
             if (Songs.Count == 0)
                 return "There is no song playing.";
-            if (!Paused || PauseEvent.WaitOne(0))
+            if (Paused || !PauseEvent.WaitOne(0))
             {
                 Paused = false;
-                return "Player is already playing.";
+                return "Player is already paused.";
             }
             Paused = true;
             PauseEvent.Reset();
@@ -104,13 +134,28 @@ namespace UNObot.Services
         {
             if (Songs.Count == 0)
                 return "There is no song playing.";
-            if (!Paused || !PauseEvent.WaitOne(0))
+            if (!Paused || PauseEvent.WaitOne(0))
             {
                 Paused = true;
-                return "Player is already paused.";
+                return "Player is already playing.";
             }
             Paused = false;
             PauseEvent.Set();
+            return null;
+        }
+
+        public string TrySkip()
+        {
+            if (Songs.Count == 0)
+                return "There is no song playing.";
+            if (Paused || !PauseEvent.WaitOne(0))
+            {
+                Paused = true;
+                return "Player is paused. Resume playback before skipping.";
+            }
+            Quit = true;
+            QuitEvent.WaitOne();
+            QuitEvent.Reset();
             return null;
         }
 
@@ -134,14 +179,13 @@ namespace UNObot.Services
                     // Exit: Song ended.
                     // Quit: Program exiting.
 
-                    while (!Skip && !Fail && !Exit && !Quit)
+                    while (!Fail && !Exit && !Quit)
                     {
                         try
                         {
                             int read = await AudioStream.ReadAsync(buffer, 0, bufferSize);
                             if (read == 0)
                             {
-                                //No more data available
                                 Exit = true;
                                 break;
                             }
@@ -162,7 +206,6 @@ namespace UNObot.Services
                         }
                     }
                     await DiscordStream.FlushAsync();
-                    Skip = false;
                     Paused = false;
                 }
             }
@@ -184,7 +227,7 @@ namespace UNObot.Services
 
         public async ValueTask DisposeAsync()
         {
-            Songs = new Queue<Song>();
+            Songs.Clear();
             Quit = true;
             if (IsPlaying)
                 QuitEvent.WaitOne();
@@ -201,10 +244,11 @@ namespace UNObot.Services
     {
         private static MusicBotService Instance;
         private List<Player> MusicPlayers = new List<Player>();
+        private SocketGuildUser Self;
 
         private MusicBotService()
         {
-
+            Self = Program._client.GetUser(Program._client.CurrentUser.Id) as SocketGuildUser;
         }
 
         public static MusicBotService GetSingleton()
@@ -218,6 +262,36 @@ namespace UNObot.Services
         {
             foreach (Player MusicPlayer in MusicPlayers)
                 await MusicPlayer.DisposeAsync();
+        }
+
+        public async Task<string> ConnectAsync(ulong Guild, IVoiceChannel AudioChannel)
+        {
+            var Permissions = Self.GetPermissions(AudioChannel);
+            if (!Permissions.Connect)
+                return "No permissions to connect to the voice channel!";
+            if (!Permissions.Speak)
+                return "No permissions to talk in the voice channel!";
+
+            if (MusicPlayers.FindAll(o => o.Guild == Guild).Count == 0)
+                MusicPlayers.Add(new Player(Guild, AudioChannel, await AudioChannel.ConnectAsync()));
+            return null;
+        }
+
+        //TODO return null if it doesn't exist, otherwise add.
+        public async Task<Embed> Add(ulong User, ulong Guild, string URL)
+        {
+            Embed EmbedOut;
+            try
+            {
+                //TODO move DisplayEmbed as a service.
+                var Result = await DisplayEmbed.DisplayAddSong(User, Guild, URL);
+                EmbedOut = Result.Item1;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+            return EmbedOut;
         }
     }
 }
