@@ -23,8 +23,7 @@ namespace UNObot.Services
         public string ThumbnailURL { get; private set; }
         public bool IsPlaying { get; private set; }
 
-        //TODO Add method auto-fills this.
-        public void Prepopulate(string URL, Tuple<string, string, string> Data, ulong User, ulong Guild)
+        public Song(string URL, Tuple<string, string, string> Data, ulong User, ulong Guild)
         {
             this.URL = URL;
             Name = Data.Item1;
@@ -53,6 +52,7 @@ namespace UNObot.Services
         public bool LoopingSong { get; private set; }
 
         public bool Paused { get; private set; }
+        public bool Disposed { get; private set; }
 
         private bool Quit;
         private bool IsPlaying;
@@ -72,6 +72,7 @@ namespace UNObot.Services
             AudioClient.Disconnected += FixConnection;
             PauseEvent = new ManualResetEvent(false);
             QuitEvent = new ManualResetEvent(false);
+            Songs = new List<Song>();
         }
 
         private async Task FixConnection(Exception arg)
@@ -96,13 +97,16 @@ namespace UNObot.Services
                 Song NextSong = Songs[0];
                 Songs.RemoveAt(0);
 
+                //TODO don't cache if the Cacher is already running
                 if (NextSong.PathCached == null)
                     await NextSong.Cache();
                 await SendAudio(CreateStream(NextSong.PathCached), AudioClient.CreatePCMStream(AudioApplication.Music));
                 File.Delete(NextSong.PathCached);
-                _ = Task.Run(() => Cache());
+                _ = Task.Run(Cache);
             }
             await AudioClient.StopAsync();
+            await DisposeAsync();
+            Disposed = true;
         }
 
         private async Task Cache()
@@ -114,6 +118,12 @@ namespace UNObot.Services
             foreach (Song s in ToCache)
                 await s.Cache();
             Caching = false;
+        }
+
+        public void Add(string URL, Tuple<string, string, string> Data, ulong User, ulong Guild)
+        {
+            Songs.Add(new Song(URL, Data, User, Guild));
+            _ = Task.Run(Cache);
         }
 
         public string TryPause()
@@ -244,11 +254,10 @@ namespace UNObot.Services
     {
         private static MusicBotService Instance;
         private List<Player> MusicPlayers = new List<Player>();
-        private SocketGuildUser Self;
 
         private MusicBotService()
         {
-            Self = Program._client.GetUser(Program._client.CurrentUser.Id) as SocketGuildUser;
+
         }
 
         public static MusicBotService GetSingleton()
@@ -264,34 +273,46 @@ namespace UNObot.Services
                 await MusicPlayer.DisposeAsync();
         }
 
-        public async Task<string> ConnectAsync(ulong Guild, IVoiceChannel AudioChannel)
+        public async Task<Tuple<Player, string>> ConnectAsync(ulong Guild, IVoiceChannel AudioChannel)
         {
-            var Permissions = Self.GetPermissions(AudioChannel);
-            if (!Permissions.Connect)
-                return "No permissions to connect to the voice channel!";
-            if (!Permissions.Speak)
-                return "No permissions to talk in the voice channel!";
-
+            var Players = MusicPlayers.FindAll(o => o.Guild == Guild);
             if (MusicPlayers.FindAll(o => o.Guild == Guild).Count == 0)
-                MusicPlayers.Add(new Player(Guild, AudioChannel, await AudioChannel.ConnectAsync()));
-            return null;
+            {
+                Player p = new Player(Guild, AudioChannel, await AudioChannel.ConnectAsync());
+                MusicPlayers.Add(p);
+                _ = Task.Run(p.RunPlayer);
+                return new Tuple<Player, string>(p, null);
+            }
+            if (Players[0].Disposed)
+            {
+                Players[0] = new Player(Guild, AudioChannel, await AudioChannel.ConnectAsync());
+                _ = Task.Run(Players[0].RunPlayer);
+            }
+            return new Tuple<Player, string>(Players[0], null);
         }
 
-        //TODO return null if it doesn't exist, otherwise add.
-        public async Task<Embed> Add(ulong User, ulong Guild, string URL)
+        public async Task<Tuple<Embed, string>> Add(ulong User, ulong Guild, string URL, IVoiceChannel Channel)
         {
             Embed EmbedOut;
-            try
-            {
-                //TODO move DisplayEmbed as a service.
-                var Result = await DisplayEmbed.DisplayAddSong(User, Guild, URL);
-                EmbedOut = Result.Item1;
-            }
-            catch (Exception)
-            {
-                return null;
-            }
-            return EmbedOut;
+            string Error = null;
+            //try
+            //{
+            var Result = await DisplayEmbed.DisplayAddSong(User, Guild, URL);
+            EmbedOut = Result.Item1;
+            var Data = Result.Item2;
+            var Player = await ConnectAsync(Guild, Channel);
+            if (Player.Item2 != null)
+                Error = Player.Item2;
+            else
+                Player.Item1.Add(URL, Data, User, Guild);
+            //}
+            //TODO Fix
+            //catch (Exception ex)
+            //{
+            //    return new Tuple<Embed, string>(null, Error + ex.Message);
+            //}
+
+            return new Tuple<Embed, string>(EmbedOut, Error);
         }
     }
 }
