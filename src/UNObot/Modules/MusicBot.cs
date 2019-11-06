@@ -30,19 +30,30 @@ namespace UNObot.Modules
                 _ = ReplyAsync("Please join a VC that I can connect to!");
                 return;
             }
-            //TODO Get rid
-            //try
-            //{
+
             var Result = await MusicBotService.GetSingleton().Add(Context.User.Id, Context.Guild.Id, Link, AudioChannel);
-            if (Result.Item2 != "")
+            if (Result.Item2 != null && Result.Item2 != "")
                 _ = ReplyAsync($"Error: {Result.Item2}");
             else
                 _ = ReplyAsync("", false, Result.Item1);
-            //}
-            //catch (Exception ex)
-            //{
-            //    _ = ReplyAsync($"Error: {ex.Message}");
-            //}
+        }
+
+        [Command("playmusic", RunMode = RunMode.Async)]
+        [Help(new string[] { ".playmusic (YouTube Link)" }, "Skip the current track in a queue.", true, "UNObot 3.2 Beta 1")]
+        public async Task PlayMusic([Remainder] string Link)
+        {
+            var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
+            if (AudioChannel == null)
+            {
+                _ = ReplyAsync("Please join a VC that I can connect to!");
+                return;
+            }
+
+            var Result = await MusicBotService.GetSingleton().Add(Context.User.Id, Context.Guild.Id, Link, AudioChannel);
+            if (Result.Item2 != null && Result.Item2 != "")
+                _ = ReplyAsync($"Error: {Result.Item2}");
+            else
+                _ = ReplyAsync("", false, Result.Item1);
         }
 
         [Command("vctest1", RunMode = RunMode.Async)]

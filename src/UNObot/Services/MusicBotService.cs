@@ -36,17 +36,18 @@ namespace UNObot.Services
 
         public async Task Cache()
         {
-            if (PathCached == null)
+            if (PathCached == null || PathCached == "")
                 PathCached = await YoutubeService.GetSingleton().Download(URL, RequestedGuild);
         }
 
+        //TODO Playing Message in Discord Embed
         public void SetPlaying() => IsPlaying = true;
     }
 
     public class Player : IAsyncDisposable
     {
         public ulong Guild { get; private set; }
-        private List<Song> Songs;
+        public List<Song> Songs { get; private set; }
         //TODO make sure they don't conflict
         public bool LoopingQueue { get; private set; }
         public bool LoopingSong { get; private set; }
@@ -100,6 +101,7 @@ namespace UNObot.Services
                 //TODO don't cache if the Cacher is already running
                 if (NextSong.PathCached == null)
                     await NextSong.Cache();
+                NextSong.SetPlaying();
                 await SendAudio(CreateStream(NextSong.PathCached), AudioClient.CreatePCMStream(AudioApplication.Music));
                 File.Delete(NextSong.PathCached);
                 _ = Task.Run(Cache);
@@ -276,7 +278,7 @@ namespace UNObot.Services
         public async Task<Tuple<Player, string>> ConnectAsync(ulong Guild, IVoiceChannel AudioChannel)
         {
             var Players = MusicPlayers.FindAll(o => o.Guild == Guild);
-            if (MusicPlayers.FindAll(o => o.Guild == Guild).Count == 0)
+            if (Players.Count == 0)
             {
                 Player p = new Player(Guild, AudioChannel, await AudioChannel.ConnectAsync());
                 MusicPlayers.Add(p);
@@ -295,24 +297,69 @@ namespace UNObot.Services
         {
             Embed EmbedOut;
             string Error = null;
-            //try
-            //{
-            var Result = await DisplayEmbed.DisplayAddSong(User, Guild, URL);
-            EmbedOut = Result.Item1;
-            var Data = Result.Item2;
-            var Player = await ConnectAsync(Guild, Channel);
-            if (Player.Item2 != null)
-                Error = Player.Item2;
-            else
-                Player.Item1.Add(URL, Data, User, Guild);
-            //}
-            //TODO Fix
-            //catch (Exception ex)
-            //{
-            //    return new Tuple<Embed, string>(null, Error + ex.Message);
-            //}
+            try
+            {
+                var Result = await DisplayEmbed.DisplayAddSong(User, Guild, URL);
+                EmbedOut = Result.Item1;
+                var Data = Result.Item2;
+                var Player = await ConnectAsync(Guild, Channel);
+                if (Player.Item2 != null)
+                    Error = Player.Item2;
+                else
+                    Player.Item1.Add(URL, Data, User, Guild);
+            }
+            catch (Exception ex)
+            {
+                return new Tuple<Embed, string>(null, ex.Message);
+            }
 
             return new Tuple<Embed, string>(EmbedOut, Error);
+        }
+
+        public async Task<string> Skip(ulong User, ulong Guild, IVoiceChannel Channel)
+        {
+            //TODO Add checking for User.
+            string Error = null;
+            try
+            {
+                var Players = MusicPlayers.FindAll(o => o.Guild == Guild);
+                if (Players.Count == 0)
+                    Error = "The server is not playing any music!";
+                else
+                {
+                    string SkipMessage = Players[0].TrySkip();
+                    if (SkipMessage != null && SkipMessage != "")
+                        Error = SkipMessage;
+                }
+            }
+            catch (Exception ex)
+            {
+                Error = ex.Message;
+            }
+
+            return Error != null ? "Skipped song." : "Error: " + Error;
+        }
+
+        public async Task<Tuple<Embed, string>> GetMusicQueue(ulong User, ulong Guild, IVoiceChannel Channel)
+        {
+            Embed List = null;
+            string Error = null;
+            try
+            {
+                var Players = MusicPlayers.FindAll(o => o.Guild == Guild);
+                if (Players.Count == 0)
+                    Error = "The server is not playing any music!";
+                else
+                {
+                    var Queue = Players[0].Songs;
+                    //TODO pass it into a Song List Embed
+                }
+            }
+            catch (Exception ex)
+            {
+                Error = ex.Message;
+            }
+            return new Tuple<Embed, string>(List, Error);
         }
     }
 }
