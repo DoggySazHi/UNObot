@@ -38,9 +38,9 @@ namespace UNObot.Modules
                 _ = ReplyAsync("", false, Result.Item1);
         }
 
-        [Command("playmusic", RunMode = RunMode.Async)]
+        [Command("skipsong", RunMode = RunMode.Async)]
         [Help(new string[] { ".playmusic (YouTube Link)" }, "Skip the current track in a queue.", true, "UNObot 3.2 Beta 1")]
-        public async Task PlayMusic([Remainder] string Link)
+        public async Task Skip([Remainder] string Link)
         {
             var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
             if (AudioChannel == null)
