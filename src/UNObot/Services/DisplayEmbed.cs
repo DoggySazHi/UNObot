@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -203,6 +204,72 @@ namespace UNObot.Modules
                 .AddField("Requested By", Username);
             var embed = builder.Build();
             return new Tuple<Embed, Tuple<string, string, string>>(embed, Information);
+        }
+
+        public static Embed DisplayNowPlaying(Song Song, string CurrentDuration)
+        {
+            string Username = Program._client.GetUser(Song.RequestedBy).Username;
+            string Servername = Program._client.GetGuild(Song.RequestedGuild).Name;
+            Random r = ThreadSafeRandom.ThisThreadsRandom;
+
+            var builder = new EmbedBuilder()
+                .WithTitle(Song.Name)
+                .WithUrl(Song.URL)
+                .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
+                .WithTimestamp(DateTimeOffset.Now)
+                .WithFooter(footer =>
+                {
+                    footer
+                        .WithText($"UNObot {Program.version} - By DoggySazHi")
+                        .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
+                })
+                .WithThumbnailUrl(Song.ThumbnailURL)
+                .WithAuthor(author =>
+                {
+                    author
+                        .WithName($"Playing in {Servername}")
+                        .WithIconUrl("https://williamle.com/unobot/unobot.png");
+                })
+                .AddField("Duration", $"{(string.IsNullOrEmpty(CurrentDuration) ? "" : $"{CurrentDuration}/")}{Song.Duration}")
+                .AddField("Requested By", Username);
+            return builder.Build();
+        }
+
+        public static Embed DisplaySongList(Song NowPlaying, List<Song> Songs)
+        {
+            Random r = ThreadSafeRandom.ThisThreadsRandom;
+            string Server = Program._client.GetGuild(NowPlaying.RequestedGuild).Name;
+            StringBuilder List = new StringBuilder();
+
+            if (Songs.Count == 0)
+                List.Append("There are no songs queued.");
+            else
+                foreach (Song s in Songs)
+                {
+                    string Username = Program._client.GetUser(s.RequestedBy).Username;
+                    List.Append($"[{s.Name}]({s.URL}) - {s.Duration} - Added by {Username}");
+                    List.Append("\n");
+                }
+
+            var builder = new EmbedBuilder()
+            .WithTitle("Now Playing")
+            .WithDescription($"[{NowPlaying.Name}]({NowPlaying.URL})")
+            .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
+            .WithTimestamp(DateTimeOffset.Now)
+            .WithFooter(footer =>
+            {
+                footer
+                    .WithText($"UNObot {Program.version} - By DoggySazHi")
+                    .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
+            })
+            .WithAuthor(author =>
+            {
+                author
+                    .WithName($"Playing in {Server}")
+                    .WithIconUrl("https://williamle.com/unobot/unobot.png");
+            })
+            .AddField("Queued", List.ToString());
+            return builder.Build();
         }
     }
 }

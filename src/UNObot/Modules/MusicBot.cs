@@ -21,8 +21,61 @@ namespace UNObot.Modules
     public class MusicBot : ModuleBase<SocketCommandContext>
     {
         [Command("playmusic", RunMode = RunMode.Async)]
-        [Help(new string[] { ".playmusic (YouTube Link)" }, "Wait, MusicBot functionality in UNObot?", true, "UNObot 3.2 Beta 1")]
+        [Help(new string[] { ".playmusic", ".playmusic (YouTube Link)" }, "Wait, MusicBot functionality in UNObot?", true, "UNObot 3.2 Beta 1")]
         public async Task PlayMusic([Remainder] string Link)
+        {
+            var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
+            if (AudioChannel == null)
+            {
+                _ = ReplyAsync("Please join a VC that I can connect to!");
+                return;
+            }
+
+            var Result = await MusicBotService.GetSingleton().Add(Context.User.Id, Context.Guild.Id, Link, AudioChannel, Context.Channel);
+            if (Result.Item2 != null && Result.Item2 != "")
+                _ = ReplyAsync($"Error: {Result.Item2}");
+            else
+                _ = ReplyAsync("", false, Result.Item1);
+        }
+
+        [Command("playmusic", RunMode = RunMode.Async)]
+        public async Task Play()
+        {
+            var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
+            if (AudioChannel == null)
+            {
+                _ = ReplyAsync("Please join a VC that I can connect to!");
+                return;
+            }
+            /*
+            //TODO check channel
+            var Result = await MusicBotService.GetSingleton().Add(Context.User.Id, Context.Guild.Id, Link, AudioChannel);
+            if (Result.Item2 != null && Result.Item2 != "")
+                _ = ReplyAsync($"Error: {Result.Item2}");
+            else
+                _ = ReplyAsync("", false, Result.Item1);
+                */
+        }
+
+        [Command("pause", RunMode = RunMode.Async)]
+        [Help(new string[] { ".pausemusic" }, "Pause the player.", true, "UNObot 3.2 Beta 2")]
+        public async Task Pause()
+        {
+            var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
+            if (AudioChannel == null)
+            {
+                _ = ReplyAsync("Please join a VC that I can connect to!");
+                return;
+            }
+
+            var Result = await MusicBotService.GetSingleton().Skip(Context.User.Id, Context.Guild.Id, AudioChannel);
+            _ = ReplyAsync(Result);
+        }
+
+        /*
+        [Command("skipsong", RunMode = RunMode.Async)]
+        [Help(new string[] { ".skipsong" }, "Skip the current track in a queue.", true, "UNObot 3.2 Beta 2")]
+        public async Task Skip([Remainder] string Link)
         {
             var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
             if (AudioChannel == null)
@@ -37,10 +90,11 @@ namespace UNObot.Modules
             else
                 _ = ReplyAsync("", false, Result.Item1);
         }
+        */
 
-        [Command("skipsong", RunMode = RunMode.Async)]
-        [Help(new string[] { ".playmusic (YouTube Link)" }, "Skip the current track in a queue.", true, "UNObot 3.2 Beta 1")]
-        public async Task Skip([Remainder] string Link)
+        [Command("nowplaying", RunMode = RunMode.Async), Alias("np")]
+        [Help(new string[] { ".nowplaying" }, "Get the song playing.", true, "UNObot 3.2 Beta 2")]
+        public async Task NowPlaying()
         {
             var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
             if (AudioChannel == null)
@@ -49,7 +103,25 @@ namespace UNObot.Modules
                 return;
             }
 
-            var Result = await MusicBotService.GetSingleton().Add(Context.User.Id, Context.Guild.Id, Link, AudioChannel);
+            var Result = await MusicBotService.GetSingleton().GetNowPlaying(Context.Guild.Id);
+            if (Result.Item2 != null && Result.Item2 != "")
+                _ = ReplyAsync($"Error: {Result.Item2}");
+            else
+                _ = ReplyAsync("", false, Result.Item1);
+        }
+
+        [Command("playerqueue", RunMode = RunMode.Async)]
+        [Help(new string[] { ".playerqueue" }, "Get the songs in the player's queue.", true, "UNObot 3.2 Beta 2")]
+        public async Task Queue()
+        {
+            var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
+            if (AudioChannel == null)
+            {
+                _ = ReplyAsync("Please join a VC that I can connect to!");
+                return;
+            }
+
+            var Result = await MusicBotService.GetSingleton().GetMusicQueue(Context.Guild.Id);
             if (Result.Item2 != null && Result.Item2 != "")
                 _ = ReplyAsync($"Error: {Result.Item2}");
             else

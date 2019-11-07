@@ -120,7 +120,7 @@ namespace UNObot.Services
             throw new Exception("Failed to download file.");
         }
 
-        public string TimeString(TimeSpan Ts)
+        public static string TimeString(TimeSpan Ts)
             => $"{(Ts.Hours > 0 ? $"{Ts.Hours}:" : "")}{Ts.Minutes.ToString("00")}:{Ts.Seconds.ToString("00")}";
     }
 }
