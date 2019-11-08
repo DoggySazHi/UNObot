@@ -38,6 +38,7 @@ namespace UNObot.Modules
                 _ = ReplyAsync("", false, Result.Item1);
         }
 
+        //TODO Play pause
         [Command("playmusic", RunMode = RunMode.Async)]
         public async Task Play()
         {
@@ -47,6 +48,10 @@ namespace UNObot.Modules
                 _ = ReplyAsync("Please join a VC that I can connect to!");
                 return;
             }
+
+            Console.WriteLine("Skipped");
+            var Result = MusicBotService.GetSingleton().Skip(Context.User.Id, Context.Guild.Id, AudioChannel);
+            _ = ReplyAsync(Result);
             /*
             //TODO check channel
             var Result = await MusicBotService.GetSingleton().Add(Context.User.Id, Context.Guild.Id, Link, AudioChannel);
@@ -68,7 +73,7 @@ namespace UNObot.Modules
                 return;
             }
 
-            var Result = await MusicBotService.GetSingleton().Skip(Context.User.Id, Context.Guild.Id, AudioChannel);
+            var Result = MusicBotService.GetSingleton().Skip(Context.User.Id, Context.Guild.Id, AudioChannel);
             _ = ReplyAsync(Result);
         }
 
@@ -103,7 +108,7 @@ namespace UNObot.Modules
                 return;
             }
 
-            var Result = await MusicBotService.GetSingleton().GetNowPlaying(Context.Guild.Id);
+            var Result = MusicBotService.GetSingleton().GetNowPlaying(Context.Guild.Id);
             if (Result.Item2 != null && Result.Item2 != "")
                 _ = ReplyAsync($"Error: {Result.Item2}");
             else
@@ -121,7 +126,7 @@ namespace UNObot.Modules
                 return;
             }
 
-            var Result = await MusicBotService.GetSingleton().GetMusicQueue(Context.Guild.Id);
+            var Result = MusicBotService.GetSingleton().GetMusicQueue(Context.Guild.Id);
             if (Result.Item2 != null && Result.Item2 != "")
                 _ = ReplyAsync($"Error: {Result.Item2}");
             else

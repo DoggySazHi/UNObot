@@ -15,7 +15,6 @@ namespace UNObot.Modules
 
             new Thread(() =>
             {
-                //TODO Check the stupid URL fixing.
                 var escapedArgs = cmd.Replace("\"", "\\\"");
                 Console.WriteLine(escapedArgs);
 
@@ -47,7 +46,7 @@ namespace UNObot.Modules
         {
             ProcessStartInfo ffmpeg = new ProcessStartInfo
             {
-                FileName = "ffmpeg",
+                FileName = "/usr/local/bin/ffmpeg",
                 Arguments = $"-hide_banner -loglevel panic -i \"{Path}\" -ac 2 -f s16le -ar 48000 pipe:1",
                 UseShellExecute = false,
                 RedirectStandardOutput = true
@@ -65,7 +64,7 @@ namespace UNObot.Modules
                 {
                     StartInfo = new ProcessStartInfo
                     {
-                        FileName = "ffmpeg",
+                        FileName = "/usr/local/bin/ffmpeg",
                         Arguments = $"-hide_banner -loglevel panic -i ${Path} -vn -ab 128k -ar 44100 -y ${Path}.mp3",
                         UseShellExecute = false,
                         RedirectStandardOutput = true

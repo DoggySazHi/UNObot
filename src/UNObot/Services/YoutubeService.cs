@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using UNObot.Modules;
 using YoutubeExplode;
 using YoutubeExplode.Converter;
+using YoutubeExplode.Models;
 using YoutubeExplode.Models.MediaStreams;
 
 namespace UNObot.Services
@@ -47,6 +48,15 @@ namespace UNObot.Services
             return new Tuple<string, string, string>(VideoData.Title, Duration, VideoData.Thumbnails.StandardResUrl);
         }
 
+        public async Task<Playlist> GetPlaylist(string URL)
+        {
+            URL = URL.TrimStart('<', '>').TrimEnd('<', '>');
+            if (!YoutubeClient.TryParsePlaylistId(URL, out string Id))
+                throw new Exception("Could not get playlist from URL! Is the link valid?");
+            var VideoData = await Client.GetPlaylistAsync(Id);
+            return VideoData;
+        }
+
         private string PathToGuildFolder(ulong Guild)
         {
             string DirectoryPath = Path.Combine(DownloadPath, Guild.ToString());
@@ -59,20 +69,6 @@ namespace UNObot.Services
         {
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
-
-            string FileName;
-
-            // Search for empty buffer files.
-
-            int Count = 0;
-            do
-            {
-                FileName = Path.Combine(PathToGuildFolder(Guild), "downloadSong" + ++Count);
-            } while (File.Exists(FileName));
-
-            stopWatch.Stop();
-            Timings[0] = stopWatch.ElapsedMilliseconds;
-            stopWatch.Restart();
 
             URL = URL.TrimStart('<', '>').TrimEnd('<', '>');
             if (!YoutubeClient.TryParseVideoId(URL, out string Id))
@@ -100,11 +96,25 @@ namespace UNObot.Services
 
             var Extension = AudioStream.Container.GetFileExtension();
 
+            string FileName;
+
+            // Search for empty buffer files.
+
+            int Count = 0;
+            do
+            {
+                FileName = Path.Combine(PathToGuildFolder(Guild), "downloadSong" + ++Count + "." + Extension);
+                Console.WriteLine($"{FileName} {File.Exists(FileName)}");
+            } while (File.Exists(FileName));
+
+            stopWatch.Stop();
+            Timings[0] = stopWatch.ElapsedMilliseconds;
+            stopWatch.Restart();
+
             stopWatch.Stop();
             Timings[4] = stopWatch.ElapsedMilliseconds;
             stopWatch.Restart();
 
-            FileName = $"{FileName}.{Extension}";
             await Client.DownloadMediaStreamAsync(AudioStream, FileName);
 
             stopWatch.Stop();

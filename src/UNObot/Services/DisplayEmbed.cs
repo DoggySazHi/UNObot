@@ -251,6 +251,7 @@ namespace UNObot.Modules
                     List.Append("\n");
                 }
 
+            //TODO Make Description match others.
             var builder = new EmbedBuilder()
             .WithTitle("Now Playing")
             .WithDescription($"[{NowPlaying.Name}]({NowPlaying.URL})")
