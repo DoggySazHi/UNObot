@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using UNObot.Services;
+using YoutubeExplode.Models;
 
 #pragma warning disable CS1701 // Assuming assembly reference matches identity
 #pragma warning disable CS1702 // Assuming assembly reference matches identity
@@ -235,6 +236,37 @@ namespace UNObot.Modules
             return builder.Build();
         }
 
+        public static async Task<Tuple<Embed, Playlist>> DisplayPlaylist(ulong UserID, ulong ServerID, string SongURL)
+        {
+            string Username = Program._client.GetUser(UserID).Username;
+            string Servername = Program._client.GetGuild(ServerID).Name;
+            Random r = ThreadSafeRandom.ThisThreadsRandom;
+            var Playlist = await YoutubeService.GetSingleton().GetPlaylist(SongURL);
+
+            var builder = new EmbedBuilder()
+                .WithTitle(Playlist.Title)
+                .WithUrl(Playlist.GetUrl())
+                .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
+                .WithTimestamp(DateTimeOffset.Now)
+                .WithFooter(footer =>
+                {
+                    footer
+                        .WithText($"UNObot {Program.version} - By DoggySazHi")
+                        .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
+                })
+                .WithThumbnailUrl(Playlist.Videos.First().Thumbnails.MediumResUrl)
+                .WithAuthor(author =>
+                {
+                    author
+                        .WithName($"Playing in {Servername}")
+                        .WithIconUrl("https://williamle.com/unobot/unobot.png");
+                })
+                .AddField("Description", $"{Playlist.Description}")
+                .AddField("Author", $"{Playlist.Author}")
+                .AddField("Requested By", Username);
+            return new Tuple<Embed, Playlist>(builder.Build(), Playlist);
+        }
+
         public static Embed DisplaySongList(Song NowPlaying, List<Song> Songs)
         {
             Random r = ThreadSafeRandom.ThisThreadsRandom;
@@ -244,8 +276,9 @@ namespace UNObot.Modules
             if (Songs.Count == 0)
                 List.Append("There are no songs queued.");
             else
-                foreach (Song s in Songs)
+                for (int i = 0; i < 10; i++)
                 {
+                    Song s = Songs[i];
                     string Username = Program._client.GetUser(s.RequestedBy).Username;
                     List.Append($"[{s.Name}]({s.URL}) - {s.Duration} - Added by {Username}");
                     List.Append("\n");

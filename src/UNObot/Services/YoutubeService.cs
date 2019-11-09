@@ -45,7 +45,7 @@ namespace UNObot.Services
                 throw new Exception("Could not get information from URL! Is the link valid?");
             var VideoData = await Client.GetVideoAsync(Id);
             var Duration = TimeString(VideoData.Duration);
-            return new Tuple<string, string, string>(VideoData.Title, Duration, VideoData.Thumbnails.StandardResUrl);
+            return new Tuple<string, string, string>(VideoData.Title, Duration, VideoData.Thumbnails.MediumResUrl);
         }
 
         public async Task<Playlist> GetPlaylist(string URL)

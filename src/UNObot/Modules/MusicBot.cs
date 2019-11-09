@@ -31,14 +31,15 @@ namespace UNObot.Modules
                 return;
             }
 
-            var Result = await MusicBotService.GetSingleton().Add(Context.User.Id, Context.Guild.Id, Link, AudioChannel, Context.Channel);
-            if (Result.Item2 != null && Result.Item2 != "")
+            var Result = await MusicBotService.GetSingleton().AddList(Context.User.Id, Context.Guild.Id, Link, AudioChannel, Context.Channel);
+            if (Result.Item1 == null)
+                Result = await MusicBotService.GetSingleton().Add(Context.User.Id, Context.Guild.Id, Link, AudioChannel, Context.Channel);
+            if (Result.Item2 != null && Result.Item2.Contains("Error"))
                 _ = ReplyAsync($"Error: {Result.Item2}");
             else
-                _ = ReplyAsync("", false, Result.Item1);
+                _ = ReplyAsync(Result.Item2 == null ? "" : Result.Item2, false, Result.Item1);
         }
 
-        //TODO Play pause
         [Command("playmusic", RunMode = RunMode.Async)]
         public async Task Play()
         {
@@ -49,17 +50,8 @@ namespace UNObot.Modules
                 return;
             }
 
-            Console.WriteLine("Skipped");
-            var Result = MusicBotService.GetSingleton().Skip(Context.User.Id, Context.Guild.Id, AudioChannel);
+            var Result = MusicBotService.GetSingleton().Play(Context.User.Id, Context.Guild.Id, AudioChannel);
             _ = ReplyAsync(Result);
-            /*
-            //TODO check channel
-            var Result = await MusicBotService.GetSingleton().Add(Context.User.Id, Context.Guild.Id, Link, AudioChannel);
-            if (Result.Item2 != null && Result.Item2 != "")
-                _ = ReplyAsync($"Error: {Result.Item2}");
-            else
-                _ = ReplyAsync("", false, Result.Item1);
-                */
         }
 
         [Command("pause", RunMode = RunMode.Async)]
@@ -73,7 +65,22 @@ namespace UNObot.Modules
                 return;
             }
 
-            var Result = MusicBotService.GetSingleton().Skip(Context.User.Id, Context.Guild.Id, AudioChannel);
+            var Result = MusicBotService.GetSingleton().Pause(Context.User.Id, Context.Guild.Id, AudioChannel);
+            _ = ReplyAsync(Result);
+        }
+
+        [Command("shuffle", RunMode = RunMode.Async)]
+        [Help(new string[] { ".shuffle" }, "Shuffle the player.", true, "UNObot 3.2 Beta 3")]
+        public async Task Shuffle()
+        {
+            var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
+            if (AudioChannel == null)
+            {
+                _ = ReplyAsync("Please join a VC that I can connect to!");
+                return;
+            }
+
+            var Result = MusicBotService.GetSingleton().Pause(Context.User.Id, Context.Guild.Id, AudioChannel);
             _ = ReplyAsync(Result);
         }
 
@@ -96,7 +103,7 @@ namespace UNObot.Modules
                 _ = ReplyAsync("", false, Result.Item1);
         }
         */
-
+        //TODO Help cmd for musicbot, new prefix?
         [Command("nowplaying", RunMode = RunMode.Async), Alias("np")]
         [Help(new string[] { ".nowplaying" }, "Get the song playing.", true, "UNObot 3.2 Beta 2")]
         public async Task NowPlaying()

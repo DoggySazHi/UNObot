@@ -40,12 +40,12 @@ namespace UNObot.Services
         {
             if (PathCached == null || PathCached == "")
             {
-                Console.WriteLine($"Actually caching {Name}");
+                Console.WriteLine($"Caching {Name}");
                 PathCached = "Caching...";
                 PathCached = await YoutubeService.GetSingleton().Download(URL, RequestedGuild);
-                Console.WriteLine("Finished caching");
                 if (EndCache != null)
                     EndCache.Set();
+                Console.WriteLine("Finished caching.");
             }
         }
 
@@ -137,17 +137,18 @@ namespace UNObot.Services
                 NowPlaying = Songs[0];
                 Songs.RemoveAt(0);
 
+                CacheEvent.Reset();
                 if (NowPlaying.PathCached == null)
                     await NowPlaying.Cache();
 
                 NowPlaying.SetCacheEvent(CacheEvent);
+                Console.WriteLine(CacheEvent.WaitOne(0));
                 CacheEvent.WaitOne();
-                CacheEvent.Reset();
 
                 NowPlaying.SetPlaying();
                 PlayPos.Restart();
                 _ = MessageChannel.SendMessageAsync("", false, DisplayEmbed.DisplayNowPlaying(NowPlaying, null));
-                await SendAudio(CreateStream(NowPlaying.PathCached), AudioClient.CreatePCMStream(AudioApplication.Music));
+                await SendAudio(CreateStream(NowPlaying.PathCached), AudioClient.CreatePCMStream(AudioApplication.Mixed, 1920));
                 File.Delete(NowPlaying.PathCached);
                 NowPlaying = null;
                 _ = Task.Run(Cache);
@@ -165,7 +166,6 @@ namespace UNObot.Services
             for (int i = 0; i < Math.Min(Songs.Count, CacheLength); i++)
             {
                 Song s = Songs[i];
-                Console.WriteLine($"Caching {s.Name}");
                 await s.Cache();
             }
             Caching = false;
@@ -183,8 +183,8 @@ namespace UNObot.Services
                 return "There is no song playing.";
             if (Paused || !PauseEvent.WaitOne(0))
             {
-                Paused = false;
-                return "Player is already paused.";
+                Paused = true;
+                return $"Player is already paused. Paused Var: {Paused} PauseEvent: {PauseEvent.WaitOne(0)}";
             }
             Paused = true;
             PauseEvent.Reset();
@@ -197,8 +197,8 @@ namespace UNObot.Services
                 return "There is no song playing.";
             if (!Paused || PauseEvent.WaitOne(0))
             {
-                Paused = true;
-                return "Player is already playing.";
+                Paused = false;
+                return $"Player is already playing. Paused Var: {Paused} PauseEvent: {PauseEvent.WaitOne(0)}";
             }
             Paused = false;
             PauseEvent.Set();
@@ -219,6 +219,11 @@ namespace UNObot.Services
             QuitEvent.WaitOne();
             QuitEvent.Reset();
             return null;
+        }
+
+        public void Shuffle()
+        {
+            ThreadSafeRandom.Shuffle(Songs);
         }
 
         private async Task SendAudio(Stream AudioStream, AudioOutStream DiscordStream)
@@ -377,13 +382,84 @@ namespace UNObot.Services
             return new Tuple<Embed, string>(EmbedOut, Error);
         }
 
+        public string Pause(ulong User, ulong Guild, IAudioChannel Channel)
+        {
+            string Message;
+            try
+            {
+                var Players = MusicPlayers.FindAll(o => o.Guild == Guild);
+                if (Players.Count == 0 || Players[0].Disposed)
+                    Message = "Error: The server is not playing any music!";
+                else
+                {
+                    string SkipMessage = Players[0].TryPause();
+                    if (SkipMessage != null && SkipMessage != "")
+                        Message = SkipMessage;
+                    else
+                        Message = "Player paused.";
+                }
+            }
+            catch (Exception ex)
+            {
+                return "Error: " + ex.Message;
+            }
+            return Message;
+        }
+
+        public string Play(ulong User, ulong Guild, IAudioChannel Channel)
+        {
+            string Message;
+            try
+            {
+                var Players = MusicPlayers.FindAll(o => o.Guild == Guild);
+                if (Players.Count == 0 || Players[0].Disposed)
+                    Message = "Error: The server is not playing any music!";
+                else
+                {
+                    string SkipMessage = Players[0].TryPlay();
+                    if (SkipMessage != null && SkipMessage != "")
+                        Message = SkipMessage;
+                    else
+                        Message = "Player continued.";
+                }
+            }
+            catch (Exception ex)
+            {
+                return "Error: " + ex.Message;
+            }
+            return Message;
+        }
+
+        public string Shuffle(ulong User, ulong Guild, IAudioChannel Channel)
+        {
+            string Message;
+            try
+            {
+                var Players = MusicPlayers.FindAll(o => o.Guild == Guild);
+                if (Players.Count == 0 || Players[0].Disposed)
+                    Message = "Error: The server is not playing any music!";
+                else
+                {
+                    Players[0].Shuffle();
+                    Message = "Shuffled.";
+                }
+            }
+            catch (Exception ex)
+            {
+                return "Error: " + ex.Message;
+            }
+            return Message;
+        }
+
         public async Task<Tuple<Embed, string>> AddList(ulong User, ulong Guild, string URL, IVoiceChannel Channel, ISocketMessageChannel MessageChannel)
         {
             Embed Display = null;
-            string Message = "Error: Failed to add playlist.";
+            string Message;
             try
             {
-                var ResultPlay = (await YoutubeService.GetSingleton().GetPlaylist(URL)).Videos;
+                var Playlist = await DisplayEmbed.DisplayPlaylist(User, Guild, URL);
+                Display = Playlist.Item1;
+                var ResultPlay = Playlist.Item2.Videos;
                 var Player = await ConnectAsync(Guild, Channel, MessageChannel);
                 if (Player.Item2 != null)
                     Message = Player.Item2;
@@ -391,8 +467,8 @@ namespace UNObot.Services
                 {
                     foreach (var Video in ResultPlay)
                         Player.Item1.Add($"https://www.youtube.com/watch?v={Video.Id}",
-                            new Tuple<string, string, string>(Video.Title, YoutubeService.TimeString(Video.Duration), Video.Thumbnails.StandardResUrl), User, Guild);
-                    Message = $"Added {ResultPlay.Count} songs";
+                            new Tuple<string, string, string>(Video.Title, YoutubeService.TimeString(Video.Duration), Video.Thumbnails.MediumResUrl), User, Guild);
+                    Message = $"Added {ResultPlay.Count} song{(ResultPlay.Count == 1 ? "" : "s")}.";
                 }
             }
             catch (Exception ex)
