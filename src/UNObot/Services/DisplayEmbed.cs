@@ -280,8 +280,10 @@ namespace UNObot.Modules
                 {
                     Song s = Songs[i];
                     string Username = Program._client.GetUser(s.RequestedBy).Username;
-                    List.Append($"[{s.Name}]({s.URL}) - {s.Duration} - Added by {Username}");
-                    List.Append("\n");
+                    string NextLine = $"[{s.Name}]({s.URL}) - {s.Duration} - Added by {Username}\n";
+                    if (List.Length + NextLine.Length > 1024)
+                        break;
+                    List.Append(NextLine);
                 }
 
             //TODO Make Description match others.

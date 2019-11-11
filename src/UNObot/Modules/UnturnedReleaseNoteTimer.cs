@@ -23,13 +23,13 @@ namespace UNObot.Modules
             checkInterval.Elapsed += CheckForUpdates;
         }
 
-        private void CheckForUpdates(object sender, ElapsedEventArgs e)
+        private async void CheckForUpdates(object sender, ElapsedEventArgs e)
         {
             string Link = GetLatestLink();
             if (lastLink != Link)
             {
                 lastLink = Link;
-                _ = Program._client.GetGuild(185593135458418701).GetTextChannel(477647595175411718).SendMessageAsync(Link);
+                await Program._client.GetGuild(185593135458418701).GetTextChannel(477647595175411718).SendMessageAsync(Link);
                 //_ = Program.SendPM(Link, 191397590946807809);
                 Console.WriteLine("Found update.");
             }

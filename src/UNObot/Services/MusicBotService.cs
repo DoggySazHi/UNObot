@@ -148,7 +148,7 @@ namespace UNObot.Services
                 NowPlaying.SetPlaying();
                 PlayPos.Restart();
                 _ = MessageChannel.SendMessageAsync("", false, DisplayEmbed.DisplayNowPlaying(NowPlaying, null));
-                await SendAudio(CreateStream(NowPlaying.PathCached), AudioClient.CreatePCMStream(AudioApplication.Mixed, 1920));
+                await SendAudio(CreateStream(NowPlaying.PathCached), AudioClient.CreatePCMStream(AudioApplication.Music));
                 File.Delete(NowPlaying.PathCached);
                 NowPlaying = null;
                 _ = Task.Run(Cache);
@@ -257,7 +257,14 @@ namespace UNObot.Services
                                 break;
                             }
 
-                            await DiscordStream.WriteAsync(buffer, 0, read);
+                            try
+                            {
+                                await DiscordStream.WriteAsync(buffer, 0, read);
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                Console.WriteLine("Failed to write!");
+                            }
 
                             if (Paused)
                             {
@@ -306,6 +313,7 @@ namespace UNObot.Services
         public async ValueTask DisposeAsync()
         {
             Songs.Clear();
+            Paused = false;
             Quit = true;
             if (IsPlaying)
                 QuitEvent.WaitOne();

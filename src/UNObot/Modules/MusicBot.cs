@@ -80,7 +80,22 @@ namespace UNObot.Modules
                 return;
             }
 
-            var Result = MusicBotService.GetSingleton().Pause(Context.User.Id, Context.Guild.Id, AudioChannel);
+            var Result = MusicBotService.GetSingleton().Shuffle(Context.User.Id, Context.Guild.Id, AudioChannel);
+            _ = ReplyAsync(Result);
+        }
+
+        [Command("skip", RunMode = RunMode.Async)]
+        [Help(new string[] { ".skip" }, "Skip the current song.", true, "UNObot 3.2 Beta 3")]
+        public async Task Skip()
+        {
+            var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
+            if (AudioChannel == null)
+            {
+                _ = ReplyAsync("Please join a VC that I can connect to!");
+                return;
+            }
+
+            var Result = MusicBotService.GetSingleton().Skip(Context.User.Id, Context.Guild.Id, AudioChannel);
             _ = ReplyAsync(Result);
         }
 
@@ -108,13 +123,6 @@ namespace UNObot.Modules
         [Help(new string[] { ".nowplaying" }, "Get the song playing.", true, "UNObot 3.2 Beta 2")]
         public async Task NowPlaying()
         {
-            var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
-            if (AudioChannel == null)
-            {
-                _ = ReplyAsync("Please join a VC that I can connect to!");
-                return;
-            }
-
             var Result = MusicBotService.GetSingleton().GetNowPlaying(Context.Guild.Id);
             if (Result.Item2 != null && Result.Item2 != "")
                 _ = ReplyAsync($"Error: {Result.Item2}");
