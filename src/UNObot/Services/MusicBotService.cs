@@ -218,6 +218,7 @@ namespace UNObot.Services
             Quit = true;
             QuitEvent.WaitOne();
             QuitEvent.Reset();
+            Quit = false;
             return null;
         }
 
@@ -291,7 +292,10 @@ namespace UNObot.Services
             }
             IsPlaying = false;
             if (Quit)
+            {
                 QuitEvent.Set();
+                Quit = false;
+            }
         }
 
         public string GetPosition()

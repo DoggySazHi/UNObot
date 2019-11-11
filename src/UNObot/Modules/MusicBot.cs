@@ -85,7 +85,7 @@ namespace UNObot.Modules
         }
 
         [Command("skip", RunMode = RunMode.Async)]
-        [Help(new string[] { ".skip" }, "Skip the current song.", true, "UNObot 3.2 Beta 3")]
+        [Help(new string[] { ".playerskip" }, "Skip the current song.", true, "UNObot 3.2 Beta 3")]
         public async Task Skip()
         {
             var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;

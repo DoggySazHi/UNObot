@@ -276,11 +276,11 @@ namespace UNObot.Modules
             if (Songs.Count == 0)
                 List.Append("There are no songs queued.");
             else
-                for (int i = 0; i < 10; i++)
+                for (int i = 1; i <= 10; i++)
                 {
                     Song s = Songs[i];
                     string Username = Program._client.GetUser(s.RequestedBy).Username;
-                    string NextLine = $"[{s.Name}]({s.URL}) - {s.Duration} - Added by {Username}\n";
+                    string NextLine = $"``{i}.``[{s.Name}]({s.URL}) |``{s.Duration} Requested by: {Username}``\n\n";
                     if (List.Length + NextLine.Length > 1024)
                         break;
                     List.Append(NextLine);
@@ -289,7 +289,7 @@ namespace UNObot.Modules
             //TODO Make Description match others.
             var builder = new EmbedBuilder()
             .WithTitle("Now Playing")
-            .WithDescription($"[{NowPlaying.Name}]({NowPlaying.URL})")
+            .WithDescription($"[{NowPlaying.Name}]({NowPlaying.URL}) |``{NowPlaying.Duration} Requested by: {Program._client.GetUser(NowPlaying.RequestedBy).Username}``")
             .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
             .WithTimestamp(DateTimeOffset.Now)
             .WithFooter(footer =>
