@@ -16,7 +16,7 @@ namespace UNObot.Services
     public class Song
     {
         public string URL { get; private set; }
-        public string PathCached { get; private set; }
+        public string PathCached { get; set; }
         public ulong RequestedBy { get; private set; }
         public ulong RequestedGuild { get; private set; }
         public string Name { get; private set; }
@@ -48,6 +48,7 @@ namespace UNObot.Services
                 Console.WriteLine("Finished caching.");
             }
         }
+        sk
 
         public void SetCacheEvent(ManualResetEvent EndCache)
         {
@@ -146,9 +147,20 @@ namespace UNObot.Services
                 CacheEvent.WaitOne();
 
                 NowPlaying.SetPlaying();
-                PlayPos.Restart();
-                _ = MessageChannel.SendMessageAsync("", false, DisplayEmbed.DisplayNowPlaying(NowPlaying, null));
-                await SendAudio(CreateStream(NowPlaying.PathCached), AudioClient.CreatePCMStream(AudioApplication.Music));
+
+                do
+                {
+                    PlayPos.Restart();
+                    _ = MessageChannel.SendMessageAsync("", false, DisplayEmbed.DisplayNowPlaying(NowPlaying, null));
+                    await SendAudio(CreateStream(NowPlaying.PathCached), AudioClient.CreatePCMStream(AudioApplication.Music, AudioChannel.Bitrate));
+                }
+                while (LoopingSong);
+
+                NowPlaying.PathCached = null;
+
+                if (LoopingQueue)
+                    Songs.Add(NowPlaying);
+
                 File.Delete(NowPlaying.PathCached);
                 NowPlaying = null;
                 _ = Task.Run(Cache);
@@ -208,18 +220,38 @@ namespace UNObot.Services
         public string TrySkip()
         {
             Console.WriteLine("Attempted to skip");
-            if (Songs.Count == 0)
+            if (NowPlaying == null)
                 return "There is no song playing.";
-            if (Paused || !PauseEvent.WaitOne(0))
-            {
-                Paused = true;
-                return "Player is paused. Resume playback before skipping.";
-            }
+            Paused = false;
+            PauseEvent.Set();
+
             Quit = true;
             QuitEvent.WaitOne();
             QuitEvent.Reset();
+            PauseEvent.Reset();
             Quit = false;
             return null;
+        }
+
+        public string ToggleLoopSong()
+        {
+            if (NowPlaying == null && Songs.Count == 0)
+                return "There is no song playing.";
+
+            LoopingSong = !LoopingSong;
+            LoopingQueue = false;
+            return (LoopingSong ? "Enabled" : "Disabled") + " song loop.";
+        }
+
+        public string ToggleLoopPlaylist()
+        {
+            if (Songs.Count == 0)
+                return "There are no songs in the queue.";
+
+            LoopingSong = false;
+            LoopingQueue = !LoopingQueue;
+
+            return (LoopingQueue ? "Enabled" : "Disabled") + " queue loop.";
         }
 
         public void Shuffle()
@@ -234,7 +266,6 @@ namespace UNObot.Services
             {
                 using (DiscordStream)
                 {
-
                     //Adjust?
                     int bufferSize = 1024;
                     int bytesSent = 0;
@@ -454,6 +485,67 @@ namespace UNObot.Services
                 {
                     Players[0].Shuffle();
                     Message = "Shuffled.";
+                }
+            }
+            catch (Exception ex)
+            {
+                return "Error: " + ex.Message;
+            }
+            return Message;
+        }
+
+        public string ToggleLoop(ulong User, ulong Guild, IAudioChannel Channel)
+        {
+            string Message;
+            try
+            {
+                var Players = MusicPlayers.FindAll(o => o.Guild == Guild);
+                if (Players.Count == 0 || Players[0].Disposed)
+                    Message = "Error: The server is not playing any music!";
+                else
+                {
+                    Message = Players[0].ToggleLoopSong();
+                }
+            }
+            catch (Exception ex)
+            {
+                return "Error: " + ex.Message;
+            }
+            return Message;
+        }
+
+        public string ToggleLoopQueue(ulong User, ulong Guild, IAudioChannel Channel)
+        {
+            string Message;
+            try
+            {
+                var Players = MusicPlayers.FindAll(o => o.Guild == Guild);
+                if (Players.Count == 0 || Players[0].Disposed)
+                    Message = "Error: The server is not playing any music!";
+                else
+                {
+                    Message = Players[0].ToggleLoopPlaylist();
+                }
+            }
+            catch (Exception ex)
+            {
+                return "Error: " + ex.Message;
+            }
+            return Message;
+        }
+
+        public async Task<string> Disconnect(ulong User, ulong Guild, IAudioChannel Channel)
+        {
+            string Message;
+            try
+            {
+                var Players = MusicPlayers.FindAll(o => o.Guild == Guild);
+                if (Players.Count == 0 || Players[0].Disposed)
+                    Message = "Error: The server is not playing any music!";
+                else
+                {
+                    await Players[0].DisposeAsync();
+                    Message = "Successfully disconnected.";
                 }
             }
             catch (Exception ex)

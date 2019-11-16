@@ -276,11 +276,11 @@ namespace UNObot.Modules
             if (Songs.Count == 0)
                 List.Append("There are no songs queued.");
             else
-                for (int i = 1; i <= 10; i++)
+                for (int i = 0; i < 9; i++)
                 {
                     Song s = Songs[i];
                     string Username = Program._client.GetUser(s.RequestedBy).Username;
-                    string NextLine = $"``{i}.``[{s.Name}]({s.URL}) |``{s.Duration} Requested by: {Username}``\n\n";
+                    string NextLine = $"``{i + 1}.``[{s.Name}]({s.URL}) |``{s.Duration} Requested by: {Username}``\n\n";
                     if (List.Length + NextLine.Length > 1024)
                         break;
                     List.Append(NextLine);

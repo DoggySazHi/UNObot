@@ -104,7 +104,6 @@ namespace UNObot.Services
             do
             {
                 FileName = Path.Combine(PathToGuildFolder(Guild), "downloadSong" + ++Count + "." + Extension);
-                Console.WriteLine($"{FileName} {File.Exists(FileName)}");
             } while (File.Exists(FileName));
 
             stopWatch.Stop();
