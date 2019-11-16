@@ -357,6 +357,7 @@ namespace UNObot.Services
             }
             AudioClient?.Dispose();
             PauseEvent?.Dispose();
+            Disposed = true;
         }
     }
 
@@ -606,7 +607,6 @@ namespace UNObot.Services
             return Error != null ? "Skipped song." : "Error: " + Error;
         }
 
-        //TODO Shuffle CMD, add entire playlist
         public Tuple<Embed, string> GetMusicQueue(ulong Guild)
         {
             Embed List = null;
