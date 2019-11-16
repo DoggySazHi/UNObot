@@ -48,7 +48,6 @@ namespace UNObot.Services
                 Console.WriteLine("Finished caching.");
             }
         }
-        sk
 
         public void SetCacheEvent(ManualResetEvent EndCache)
         {
