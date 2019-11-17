@@ -118,7 +118,7 @@ namespace UNObot.Services
             {
                 AudioClient = await AudioChannel.ConnectAsync();
                 AudioClient.Disconnected += FixConnection;
-                _ = MessageChannel.SendMessageAsync("Detected audio disconnection, reconnected. Use .disconnect to force the bot to leave.");
+                _ = MessageChannel.SendMessageAsync("Detected audio disconnection, reconnected. Use .playerdc to force the bot to leave.");
                 if (PrevPlaying)
                 {
                     Console.WriteLine(TryPlay());
@@ -347,6 +347,8 @@ namespace UNObot.Services
         public async ValueTask DisposeAsync()
         {
             Songs.Clear();
+            LoopingSong = false;
+            LoopingQueue = false;
             Paused = false;
             Quit = true;
             if (IsPlaying)

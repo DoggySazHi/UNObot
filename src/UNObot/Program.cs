@@ -78,8 +78,11 @@ namespace UNObot
 
         private async Task OnExit()
         {
-            Console.WriteLine("Goodbye!");
+            Console.WriteLine("Quitting...");
             await MusicBotService.GetSingleton().DisposeAsync();
+            await _client.StopAsync();
+            _client.Dispose();
+            Console.WriteLine("Quit successfully.");
         }
 
         IServiceProvider ConfigureServices()
