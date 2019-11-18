@@ -48,6 +48,16 @@ namespace UNObot.Services
             return new Tuple<string, string, string>(VideoData.Title, Duration, VideoData.Thumbnails.MediumResUrl);
         }
 
+        public async Task<Tuple<Tuple<string, string, string>, string>> SearchVideo(string Query)
+        {
+            var Data = await Client.SearchVideosAsync(Query, 1);
+            if (Data.Count == 0)
+                throw new Exception("No results found!");
+            var VideoData = Data[0];
+            var Duration = TimeString(VideoData.Duration);
+            return new Tuple<Tuple<string, string, string>, string>(new Tuple<string, string, string>(VideoData.Title, Duration, VideoData.Thumbnails.MediumResUrl), VideoData.GetUrl());
+        }
+
         public async Task<Playlist> GetPlaylist(string URL)
         {
             URL = URL.TrimStart('<', '>').TrimEnd('<', '>');

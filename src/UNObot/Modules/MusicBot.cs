@@ -34,6 +34,8 @@ namespace UNObot.Modules
             var Result = await MusicBotService.GetSingleton().AddList(Context.User.Id, Context.Guild.Id, Link, AudioChannel, Context.Channel);
             if (Result.Item1 == null)
                 Result = await MusicBotService.GetSingleton().Add(Context.User.Id, Context.Guild.Id, Link, AudioChannel, Context.Channel);
+            if (Result.Item1 == null)
+                Result = await MusicBotService.GetSingleton().Search(Context.User.Id, Context.Guild.Id, Link, AudioChannel, Context.Channel);
             if (Result.Item2 != null && Result.Item2.Contains("Error"))
                 _ = ReplyAsync($"Error: {Result.Item2}");
             else
@@ -175,6 +177,7 @@ namespace UNObot.Modules
                 _ = ReplyAsync("", false, Result.Item1);
         }
 
+        /*
         [Command("vctest1", RunMode = RunMode.Async)]
         [RequireOwner]
         public async Task VCTest1([Remainder] string Link)
@@ -208,6 +211,7 @@ namespace UNObot.Modules
                 _ = ReplyAsync($"Error: {ex.Message}");
             }
         }
+        */
 
         [Command("vctest2", RunMode = RunMode.Async)]
         [RequireOwner]

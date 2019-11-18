@@ -410,7 +410,8 @@ namespace UNObot.Services
             string Error = null;
             try
             {
-                var Result = await DisplayEmbed.DisplayAddSong(User, Guild, URL);
+                var Information = await YoutubeService.GetSingleton().GetInfo(URL);
+                var Result = await DisplayEmbed.DisplayAddSong(User, Guild, URL, Information);
                 EmbedOut = Result.Item1;
                 var Data = Result.Item2;
                 var Player = await ConnectAsync(Guild, Channel, MessageChannel);
@@ -418,6 +419,30 @@ namespace UNObot.Services
                     Error = Player.Item2;
                 else
                     Player.Item1.Add(URL, Data, User, Guild);
+            }
+            catch (Exception ex)
+            {
+                return new Tuple<Embed, string>(null, ex.Message);
+            }
+
+            return new Tuple<Embed, string>(EmbedOut, Error);
+        }
+
+        public async Task<Tuple<Embed, string>> Search(ulong User, ulong Guild, string Query, IVoiceChannel Channel, ISocketMessageChannel MessageChannel)
+        {
+            Embed EmbedOut;
+            string Error = null;
+            try
+            {
+                var Information = await YoutubeService.GetSingleton().SearchVideo(Query);
+                var Result = await DisplayEmbed.DisplayAddSong(User, Guild, Information.Item2, Information.Item1);
+                EmbedOut = Result.Item1;
+                var Data = Result.Item2;
+                var Player = await ConnectAsync(Guild, Channel, MessageChannel);
+                if (Player.Item2 != null)
+                    Error = Player.Item2;
+                else
+                    Player.Item1.Add(Information.Item2, Data, User, Guild);
             }
             catch (Exception ex)
             {

@@ -176,9 +176,8 @@ namespace UNObot.Modules
             return embed;
         }
 
-        public static async Task<Tuple<Embed, Tuple<string, string, string>>> DisplayAddSong(ulong UserID, ulong ServerID, string SongURL)
+        public static async Task<Tuple<Embed, Tuple<string, string, string>>> DisplayAddSong(ulong UserID, ulong ServerID, string SongURL, Tuple<string, string, string> Information)
         {
-            var Information = await YoutubeService.GetSingleton().GetInfo(SongURL);
             string Server = Program._client.GetGuild(ServerID).Name;
             string Username = Program._client.GetUser(UserID).Username;
             Random r = ThreadSafeRandom.ThisThreadsRandom;
