@@ -155,19 +155,16 @@ namespace UNObot.Services
                     await SendAudio(CreateStream(NowPlaying.PathCached), AudioClient.CreatePCMStream(AudioApplication.Music, AudioChannel.Bitrate));
                 }
                 while (LoopingSong);
-                Console.WriteLine("Finished loop.");
-                NowPlaying.PathCached = null;
 
                 if (LoopingQueue)
                     Songs.Add(NowPlaying);
 
                 File.Delete(NowPlaying.PathCached);
-                Console.WriteLine("Deleted.");
+                NowPlaying.PathCached = null;
+
                 NowPlaying = null;
                 _ = Task.Run(Cache);
-                Console.WriteLine("Ran cache.");
             }
-            Console.WriteLine("Exited Player Thread.");
             await AudioClient.StopAsync();
             await DisposeAsync();
         }
@@ -323,7 +320,6 @@ namespace UNObot.Services
                         }
                     }
                     //TODO download timer when loading, so we can restart if bad
-                    Console.WriteLine($"Finished playing {Fail} {Exit} {Quit}");
                     PlayPos.Stop();
                     //await DiscordStream.FlushAsync();
                     Paused = false;
@@ -335,7 +331,6 @@ namespace UNObot.Services
                 QuitEvent.Set();
                 Quit = false;
             }
-            Console.WriteLine("Finished play event.");
         }
 
         public string GetPosition()
