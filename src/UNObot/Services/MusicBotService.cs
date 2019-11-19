@@ -73,7 +73,8 @@ namespace UNObot.Services
         public bool LoopingSong { get; private set; }
 
         public bool Paused { get; private set; }
-        public bool Disposed { get; private set; }
+        private bool _Disposed;
+        public bool Disposed { get { return _Disposed && AudioClient.ConnectionState == ConnectionState.Disconnected; } }
 
         private bool Quit;
         private bool IsPlaying;
@@ -166,7 +167,6 @@ namespace UNObot.Services
             }
             await AudioClient.StopAsync();
             await DisposeAsync();
-            Disposed = true;
         }
 
         private async Task Cache()
@@ -281,6 +281,12 @@ namespace UNObot.Services
                     {
                         try
                         {
+                            if (AudioClient.ConnectionState == ConnectionState.Disconnected)
+                            {
+                                AudioClient = await AudioChannel.ConnectAsync();
+                                AudioClient.Disconnected += FixConnection;
+                            }
+
                             int read = await AudioStream.ReadAsync(buffer, 0, bufferSize);
                             if (read == 0)
                             {
@@ -359,7 +365,7 @@ namespace UNObot.Services
             }
             AudioClient?.Dispose();
             PauseEvent?.Dispose();
-            Disposed = true;
+            _Disposed = true;
         }
     }
 
