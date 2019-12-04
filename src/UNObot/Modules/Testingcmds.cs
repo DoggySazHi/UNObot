@@ -174,6 +174,40 @@ namespace UNObot.Modules
             await BaseReact(numMessages, emote);
         }
 
+        [Command("calculateemote", RunMode = RunMode.Async)]
+        public async Task CalculateEmote([Remainder] string Input)
+        {
+            await ReplyAsync($"Server: ``{Context.Guild.Id}`` Emote: ``{Input}``").ConfigureAwait(false);
+        }
+
+        [Command("emote", RunMode = RunMode.Async)]
+        public async Task Emote(ulong Server, ulong Emote)
+        {
+            try
+            {
+                IEmote emote = await Context.Client.GetGuild(Server).GetEmoteAsync(Emote);
+                await ReplyAsync(emote.ToString());
+            }
+            catch(Exception)
+            {
+                await ReplyAsync("Failed to get emote!");
+            }
+        }
+
+        [Command("emotereact", RunMode = RunMode.Async)]
+        public async Task EmoteReact(ulong Server, ulong Emote, int numMessages)
+        {
+            try
+            {
+                IEmote emote = await Context.Client.GetGuild(Server).GetEmoteAsync(Emote);
+                await BaseReact(numMessages, emote);
+            }
+            catch(Exception)
+            {
+                await ReplyAsync("Failed to get emote!");
+            }
+        }
+
         public async Task BaseReact(int numMessages, IEmote emote)
         {
             var messages = await Context.Channel.GetMessagesAsync(numMessages + 1).FlattenAsync();

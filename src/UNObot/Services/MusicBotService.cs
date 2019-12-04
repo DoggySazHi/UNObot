@@ -74,7 +74,7 @@ namespace UNObot.Services
 
         public bool Paused { get; private set; }
         private bool _Disposed;
-        public bool Disposed { get { return _Disposed && AudioClient.ConnectionState == ConnectionState.Disconnected; } }
+        public bool Disposed { get { return _Disposed || AudioClient.ConnectionState == ConnectionState.Disconnected; } }
 
         private bool Quit;
         private bool IsPlaying;
@@ -351,20 +351,28 @@ namespace UNObot.Services
 
         public async ValueTask DisposeAsync()
         {
-            Songs.Clear();
-            LoopingSong = false;
-            LoopingQueue = false;
-            Paused = false;
-            Quit = true;
-            if (IsPlaying)
-                QuitEvent.WaitOne();
-            if (AudioClient?.ConnectionState == ConnectionState.Connected)
+            try
             {
-                await AudioClient?.StopAsync();
+                Songs.Clear();
+                LoopingSong = false;
+                LoopingQueue = false;
+                Paused = false;
+                Quit = true;
+                if (IsPlaying)
+                    QuitEvent.WaitOne();
+                await AudioClient.StopAsync();
+                AudioClient.Dispose();
+                PauseEvent.Dispose();
             }
-            AudioClient?.Dispose();
-            PauseEvent?.Dispose();
-            _Disposed = true;
+            catch (Exception e)
+            {
+                Console.WriteLine("Failed to dispose: " + e);
+            }
+            finally
+            {
+                _Disposed = true;
+                Console.WriteLine($"Disposed {Guild}");
+            }
         }
     }
 
@@ -393,20 +401,26 @@ namespace UNObot.Services
 
         public async Task<Tuple<Player, string>> ConnectAsync(ulong Guild, IVoiceChannel AudioChannel, ISocketMessageChannel MessageChannel)
         {
-            var Players = MusicPlayers.FindAll(o => o.Guild == Guild);
-            if (Players.Count == 0)
+            var Player = MusicPlayers.FindIndex(o => o.Guild == Guild);
+            if (Player < 0)
             {
-                Player p = new Player(Guild, AudioChannel, await AudioChannel.ConnectAsync(), MessageChannel);
-                MusicPlayers.Add(p);
-                _ = Task.Run(p.RunPlayer);
-                return new Tuple<Player, string>(p, null);
+                Player NewPlayer = new Player(Guild, AudioChannel, await AudioChannel.ConnectAsync(), MessageChannel);
+                MusicPlayers.Add(NewPlayer);
+                _ = Task.Run(NewPlayer.RunPlayer);
+                Console.WriteLine("Generated new player.");
+                return new Tuple<Player, string>(NewPlayer, null);
             }
-            if (Players[0].Disposed)
+            if (MusicPlayers[Player].Disposed)
             {
-                Players[0] = new Player(Guild, AudioChannel, await AudioChannel.ConnectAsync(), MessageChannel);
-                _ = Task.Run(Players[0].RunPlayer);
+                Console.WriteLine("Replaced player.");
+                MusicPlayers.RemoveAt(Player);
+                var NewPlayer = new Player(Guild, AudioChannel, await AudioChannel.ConnectAsync(), MessageChannel);
+                MusicPlayers.Add(NewPlayer);
+                _ = Task.Run(NewPlayer.RunPlayer);
+                return new Tuple<Player, string>(NewPlayer, null);
             }
-            return new Tuple<Player, string>(Players[0], null);
+            Console.WriteLine("Returned existing player.");
+            return new Tuple<Player, string>(MusicPlayers[Player], null);
         }
 
         public async Task<Tuple<Embed, string>> Add(ulong User, ulong Guild, string URL, IVoiceChannel Channel, ISocketMessageChannel MessageChannel)
