@@ -3,7 +3,7 @@
 # Only use spaces to indent your .yml configuration.
 # -----
 # You can specify a custom docker image from Docker Hub as your build environment.
-image: microsoft/dotnet:sdk
+image: mcr.microsoft.com/dotnet/core/sdk:3.1
 
 pipelines:
   default:
@@ -20,14 +20,14 @@ pipelines:
         trigger: manual
         script:
           - dotnet publish -c Release src/UNObot
-          - mv src/UNObot/bin/Release/netcoreapp3.0/publish/ src/UNObot/bin/Release/netcoreapp3.0/UNObot
-          - echo "$BITBUCKET_COMMIT $BITBUCKET_BUILD_NUMBER" > src/UNObot/bin/Release/netcoreapp2.1/UNObot/commit
+          - mv src/UNObot/bin/Release/netcoreapp3.1/publish/ src/UNObot/bin/Release/netcoreapp3.1/UNObot
+          - echo "$BITBUCKET_COMMIT $BITBUCKET_BUILD_NUMBER" > src/UNObot/bin/Release/netcoreapp3.1/UNObot/commit
           - pipe: atlassian/scp-deploy:0.3.1
             variables:
               USER: 'doggysazhi'
               SERVER: 'williamle.com'
               REMOTE_PATH: '/mnt/backup/Projects'
-              LOCAL_PATH: 'src/UNObot/bin/Release/netcoreapp3.0/UNObot'
+              LOCAL_PATH: 'src/UNObot/bin/Release/netcoreapp3.1/UNObot'
               DEBUG: 'true'
   custom:
     manualdeploy:
@@ -40,14 +40,14 @@ pipelines:
             - dotnet restore
             - dotnet build $PROJECT_NAME
             - dotnet publish -c Release src/UNObot
-            - mv src/UNObot/bin/Release/netcoreapp3.0/publish/ src/UNObot/bin/Release/netcoreapp3.0/UNObot
-            - echo "$BITBUCKET_COMMIT $BITBUCKET_BUILD_NUMBER" > src/UNObot/bin/Release/netcoreapp2.1/UNObot/commit
+            - mv src/UNObot/bin/Release/netcoreapp3.1/publish/ src/UNObot/bin/Release/netcoreapp3.1/UNObot
+            - echo "$BITBUCKET_COMMIT $BITBUCKET_BUILD_NUMBER" > src/UNObot/bin/Release/netcoreapp3.1/UNObot/commit
             - pipe: atlassian/scp-deploy:0.3.1
               variables:
                 USER: 'doggysazhi'
                 SERVER: 'williamle.com'
                 REMOTE_PATH: '/mnt/backup/Projects'
-                LOCAL_PATH: 'src/UNObot/bin/Release/netcoreapp3.0/UNObot'
+                LOCAL_PATH: 'src/UNObot/bin/Release/netcoreapp3.1/UNObot'
                 DEBUG: 'true'
     manualbuild:
       - step:
