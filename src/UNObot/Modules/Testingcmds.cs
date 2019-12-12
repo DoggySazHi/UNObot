@@ -224,6 +224,10 @@ namespace UNObot.Modules
             await updatedMessage.AddReactionAsync(emote);
             await Purge(0);
         }
+        public async Task Translate(string From, string To, [Remainder] string Message)
+        {
+            
+        }
 
         /*
         [Command("getbuttons", RunMode = RunMode.Async)]

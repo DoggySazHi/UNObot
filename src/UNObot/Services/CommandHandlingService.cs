@@ -102,11 +102,8 @@ namespace UNObot.Services
                         //await context.Channel.SendMessageAsync("You do not have the **power** to run this command!");
                         break;
                     case CommandError.UnknownCommand:
-                        break;
                     case CommandError.ObjectNotFound:
-                        break;
                     case CommandError.Exception:
-                        break;
                     case CommandError.Unsuccessful:
                         break;
                     default:
@@ -114,7 +111,8 @@ namespace UNObot.Services
                         break;
                 }
 #if DEBUG
-                await context.Channel.SendMessageAsync($"Debug error: {result.ToString()}");
+                if(result.Error.Value != CommandError.UnknownCommand)
+                    await context.Channel.SendMessageAsync($"Debug error: {result.ToString()}");
 #endif
             }
         }

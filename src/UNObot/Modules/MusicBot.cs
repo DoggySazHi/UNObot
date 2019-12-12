@@ -27,7 +27,7 @@ namespace UNObot.Modules
             var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
             if (AudioChannel == null)
             {
-                _ = ReplyAsync("Please join a VC that I can connect to!");
+                await ReplyAsync("Please join a VC that I can connect to!").ConfigureAwait(true);
                 return;
             }
 
@@ -48,7 +48,7 @@ namespace UNObot.Modules
             var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
             if (AudioChannel == null)
             {
-                _ = ReplyAsync("Please join a VC that I can connect to!");
+                await ReplyAsync("Please join a VC that I can connect to!").ConfigureAwait(true);
                 return;
             }
 
@@ -63,7 +63,7 @@ namespace UNObot.Modules
             var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
             if (AudioChannel == null)
             {
-                _ = ReplyAsync("Please join a VC that I can connect to!");
+                await ReplyAsync("Please join a VC that I can connect to!").ConfigureAwait(true);
                 return;
             }
 
@@ -78,7 +78,7 @@ namespace UNObot.Modules
             var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
             if (AudioChannel == null)
             {
-                _ = ReplyAsync("Please join a VC that I can connect to!");
+                await ReplyAsync("Please join a VC that I can connect to!").ConfigureAwait(true);
                 return;
             }
 
@@ -93,7 +93,7 @@ namespace UNObot.Modules
             var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
             if (AudioChannel == null)
             {
-                _ = ReplyAsync("Please join a VC that I can connect to!");
+                await ReplyAsync("Please join a VC that I can connect to!").ConfigureAwait(true);
                 return;
             }
 
@@ -108,7 +108,7 @@ namespace UNObot.Modules
             var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
             if (AudioChannel == null)
             {
-                _ = ReplyAsync("Please join a VC that I can connect to!");
+                await ReplyAsync("Please join a VC that I can connect to!").ConfigureAwait(true);
                 return;
             }
 
@@ -123,7 +123,7 @@ namespace UNObot.Modules
             var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
             if (AudioChannel == null)
             {
-                _ = ReplyAsync("Please join a VC that I can connect to!");
+                await ReplyAsync("Please join a VC that I can connect to!").ConfigureAwait(true);
                 return;
             }
 
@@ -139,12 +139,12 @@ namespace UNObot.Modules
             var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
             if (AudioChannel == null)
             {
-                _ = ReplyAsync("Please join a VC that I can connect to!");
+                await ReplyAsync("Please join a VC that I can connect to!").ConfigureAwait(false);
                 return;
             }
 
-            var Result = await MusicBotService.GetSingleton().Disconnect(Context.User.Id, Context.Guild.Id, AudioChannel);
-            await ReplyAsync(Result);
+            var Result = await MusicBotService.GetSingleton().Disconnect(Context.User.Id, Context.Guild.Id, AudioChannel).ConfigureAwait(true);
+            await ReplyAsync(Result).ConfigureAwait(false);
         }
 
         //TODO Help cmd for musicbot, new prefix?
@@ -153,7 +153,7 @@ namespace UNObot.Modules
         public async Task NowPlaying()
         {
             var Result = MusicBotService.GetSingleton().GetNowPlaying(Context.Guild.Id);
-            if (Result.Item2 != null && Result.Item2 != "")
+            if (!string.IsNullOrWhiteSpace(Result.Item2))
                 _ = ReplyAsync($"Error: {Result.Item2}");
             else
                 _ = ReplyAsync("", false, Result.Item1);
@@ -163,18 +163,11 @@ namespace UNObot.Modules
         [Help(new string[] { ".playerqueue" }, "Get the songs in the player's queue.", true, "UNObot 3.2 Beta 2")]
         public async Task Queue()
         {
-            var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
-            if (AudioChannel == null)
-            {
-                _ = ReplyAsync("Please join a VC that I can connect to!");
-                return;
-            }
-
             var Result = MusicBotService.GetSingleton().GetMusicQueue(Context.Guild.Id);
-            if (Result.Item2 != null && Result.Item2 != "")
-                _ = ReplyAsync($"Error: {Result.Item2}");
+            if (!string.IsNullOrWhiteSpace(Result.Item2))
+                await ReplyAsync($"Error: {Result.Item2}").ConfigureAwait(false);
             else
-                _ = ReplyAsync("", false, Result.Item1);
+                await ReplyAsync("", false, Result.Item1).ConfigureAwait(false);
         }
 
         /*
@@ -185,7 +178,7 @@ namespace UNObot.Modules
             var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
             if (AudioChannel == null)
             {
-                _ = ReplyAsync("Please join a VC that I can connect to!");
+                await ReplyAsync("Please join a VC that I can connect to!").ConfigureAwait(true);
                 return;
             }
 
@@ -220,7 +213,7 @@ namespace UNObot.Modules
             var AudioChannel = (Context.User as IVoiceState)?.VoiceChannel;
             if (AudioChannel == null)
             {
-                _ = ReplyAsync("Please join a VC that I can connect to!");
+                await ReplyAsync("Please join a VC that I can connect to!").ConfigureAwait(true);
                 return;
             }
 

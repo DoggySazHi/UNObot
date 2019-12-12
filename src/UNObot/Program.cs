@@ -111,7 +111,7 @@ namespace UNObot
                                           new JProperty("connStr", "server=127.0.0.1;user=UNObot;database=UNObot;port=3306;password=DBPassword"),
                                           new JProperty("version", "Unknown Version")
                                          );
-                File.CreateText("config.json");
+                File.CreateText("config.json").Dispose();
                 using (StreamWriter sr = new StreamWriter("config.json", false))
                     sr.Write(obj);
                 Environment.Exit(1);
@@ -145,19 +145,17 @@ namespace UNObot
             {
                 try
                 {
-                    using (StreamReader sr = new StreamReader("commit"))
-                    {
-                        if (sr.EndOfStream)
-                            throw new Exception();
-                        var input = sr.ReadLine();
-                        if (input == null)
-                            throw new Exception();
-                        var words = input.Split(' ');
-                        if (words.Length < 2 || words[0].Length < 7)
-                            throw new Exception();
-                        commit = words[0].Trim().Substring(0, 7);
-                        build = words[1].Trim();
-                    }
+                    using StreamReader sr = new StreamReader("commit");
+                    if (sr.EndOfStream)
+                        throw new Exception();
+                    var input = sr.ReadLine();
+                    if (input == null)
+                        throw new Exception();
+                    var words = input.Split(' ');
+                    if (words.Length < 2 || words[0].Length < 7)
+                        throw new Exception();
+                    commit = words[0].Trim().Substring(0, 7);
+                    build = words[1].Trim();
                 }
                 catch (Exception)
                 {

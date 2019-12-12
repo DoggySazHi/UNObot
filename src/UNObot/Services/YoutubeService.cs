@@ -13,7 +13,7 @@ namespace UNObot.Services
     public class YoutubeService
     {
         // Seconds.
-        private static readonly double DL_TIMEOUT = 5.0;
+        private const double DL_TIMEOUT = 5.0;
         private static readonly string DownloadPath = Path.Combine(Directory.GetCurrentDirectory(), "Music");
 
         private static YoutubeService Instance;
