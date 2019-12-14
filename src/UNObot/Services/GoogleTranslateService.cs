@@ -55,12 +55,12 @@ namespace UNObot.Services
             // Extract out trans":"...[Extracted]...","from the JSON string
             string result = Regex.Match(html, "trans\":(\".*?\"),\"", RegexOptions.IgnoreCase).Groups[1].Value;
 
-            if (string.IsNullOrEmpty(result))
+            if (string.IsNullOrEmpty(html))
             {
                 return $"Error: No response was returned.";
             }
 
-            return result;
+            return html;
         }
     }
 }

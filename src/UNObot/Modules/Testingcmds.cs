@@ -7,6 +7,7 @@ using System.Xml;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using UNObot.Services;
 
 #pragma warning disable CS1701 // Assuming assembly reference matches identity
 #pragma warning disable CS1702 // Assuming assembly reference matches identity
@@ -221,12 +222,14 @@ namespace UNObot.Modules
             //IEmote emote = await Context.Client.GetGuild(420005591155605535).GetEmoteAsync(471842854591791104);
             //Emote emote = Emote emote = Emote.Parse("<:dotnet:232902710280716288>");
             //Emoji emoji = new Emoji("👍");
-            await updatedMessage.AddReactionAsync(emote);
-            await Purge(0);
+            await updatedMessage.AddReactionAsync(emote).ConfigureAwait(false);
+            await Purge(0).ConfigureAwait(false);
         }
+
+        [Command("translate", RunMode = RunMode.Async)]
         public async Task Translate(string From, string To, [Remainder] string Message)
         {
-            
+            await ReplyAsync(GoogleTranslateService.GetSingleton().Translate(Message, From, To)).ConfigureAwait(false);
         }
 
         /*
