@@ -76,11 +76,11 @@ namespace UNObot
             };
         }
 
-        private async Task OnExit()
+        public static async Task OnExit()
         {
             Console.WriteLine("Quitting...");
             await MusicBotService.GetSingleton().DisposeAsync();
-            await _client.StopAsync();
+            await _client.StopAsync().ConfigureAwait(false);
             _client.Dispose();
             Console.WriteLine("Quit successfully.");
         }

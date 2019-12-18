@@ -75,6 +75,11 @@ namespace UNObot.Services
             return DirectoryPath;
         }
 
+        public void DeleteGuildFolder(ulong Guild)
+        {
+            Directory.Delete(PathToGuildFolder(Guild));
+        }
+
         public async Task<string> Download(string URL, ulong Guild)
         {
             Stopwatch stopWatch = new Stopwatch();

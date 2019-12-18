@@ -14,17 +14,6 @@ namespace UNObot.Modules
     {
         readonly PlayCard playCard = new PlayCard();
 
-        [Command("seed", RunMode = RunMode.Async)]
-        [Help(new string[] { ".seed (seed)" }, "Cheat like Aragami and hope the RNG favors you. Deprecated due to a different RNG algorithm.", false, "UNObot 1.0")]
-#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
-        public async Task Seed([Remainder]string seed)
-#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
-        {
-            /*
-            UNOcore.r = new Random(seed.GetHashCode());
-            await ReplyAsync("Seed has been updated. I do not guarantee 100% Wild cards.");
-            */
-        }
         [Command("join", RunMode = RunMode.Async), Help(new string[] { ".join" }, "Join the queue in the current server.", true, "UNObot 0.1")]
         public async Task Join()
         {
@@ -786,11 +775,11 @@ namespace UNObot.Modules
         public async Task Exit()
         {
             if (Context.User.Id == 278524552462598145)
-                await ReplyAsync("ERROR: detected idiot");
+                await ReplyAsync("ERROR: <:patchythink:592817853313581067>");
             else if (Context.User.Id == 191397590946807809)
             {
                 await ReplyAsync("Resetting!");
-                Environment.Exit(0);
+                Program.OnExit();
             }
             else
                 await ReplyAsync("You do not have access to this command!");

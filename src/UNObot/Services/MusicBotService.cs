@@ -139,11 +139,10 @@ namespace UNObot.Services
                 Songs.RemoveAt(0);
 
                 CacheEvent.Reset();
-                if (NowPlaying.PathCached == null)
-                    await NowPlaying.Cache();
-
                 NowPlaying.SetCacheEvent(CacheEvent);
-                Console.WriteLine(CacheEvent.WaitOne(0));
+                if (NowPlaying.PathCached == null)
+                    await NowPlaying.Cache().ConfigureAwait(false);
+
                 CacheEvent.WaitOne();
 
                 NowPlaying.SetPlaying();
@@ -152,7 +151,7 @@ namespace UNObot.Services
                 {
                     PlayPos.Restart();
                     _ = MessageChannel.SendMessageAsync("", false, DisplayEmbed.DisplayNowPlaying(NowPlaying, null));
-                    await SendAudio(CreateStream(NowPlaying.PathCached), AudioClient.CreatePCMStream(AudioApplication.Music, AudioChannel.Bitrate));
+                    await SendAudio(CreateStream(NowPlaying.PathCached), AudioClient.CreatePCMStream(AudioApplication.Music, AudioChannel.Bitrate)).ConfigureAwait(false);
                 }
                 while (LoopingSong);
 
@@ -163,9 +162,9 @@ namespace UNObot.Services
                 NowPlaying.PathCached = null;
 
                 NowPlaying = null;
-                _ = Task.Run(Cache);
+                _ = Task.Run(Cache).ConfigureAwait(false);
             }
-            await AudioClient.StopAsync();
+            await AudioClient.StopAsync().ConfigureAwait(false);
             await DisposeAsync();
         }
 
@@ -177,7 +176,7 @@ namespace UNObot.Services
             for (int i = 0; i < Math.Min(Songs.Count, CacheLength); i++)
             {
                 Song s = Songs[i];
-                await s.Cache();
+                await s.Cache().ConfigureAwait(false);
             }
             Caching = false;
         }
@@ -255,7 +254,10 @@ namespace UNObot.Services
 
         public void Shuffle()
         {
+            Songs.ForEach(o => o.PathCached = null);
+            YoutubeService.GetSingleton().DeleteGuildFolder(Guild);
             ThreadSafeRandom.Shuffle(Songs);
+            _ = Task.Run(Cache).ConfigureAwait(false);
         }
 
         private async Task SendAudio(Stream AudioStream, AudioOutStream DiscordStream)

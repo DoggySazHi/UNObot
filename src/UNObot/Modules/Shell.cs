@@ -81,5 +81,61 @@ namespace UNObot.Modules
                 throw new Exception("Shell failed!");
             return awaited;
         }
+
+        public async static Task<string> GitFetch()
+        {
+            TaskCompletionSource<string> result = new TaskCompletionSource<string>();
+
+            new Thread(() =>
+            {
+                var process = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "/usr/local/bin/ffmpeg",
+                        Arguments = $"-hide_banner -loglevel panic -i ${Path} -vn -ab 128k -ar 44100 -y ${Path}.mp3",
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true
+                    }
+                };
+                process.Start();
+                result.SetResult(process.StandardOutput.ReadToEnd());
+                process.WaitForExit();
+            }).Start();
+
+            string awaited = await result.Task;
+            Console.WriteLine($"Shell result: {awaited}");
+            if (awaited == null)
+                throw new Exception("Shell failed!");
+            return awaited;
+        }
+
+        public async static Task<string> GitStatus()
+        {
+            TaskCompletionSource<string> result = new TaskCompletionSource<string>();
+
+            new Thread(() =>
+            {
+                var process = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "/usr/local/bin/ffmpeg",
+                        Arguments = $"-hide_banner -loglevel panic -i ${Path} -vn -ab 128k -ar 44100 -y ${Path}.mp3",
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true
+                    }
+                };
+                process.Start();
+                result.SetResult(process.StandardOutput.ReadToEnd());
+                process.WaitForExit();
+            }).Start();
+
+            string awaited = await result.Task;
+            Console.WriteLine($"Shell result: {awaited}");
+            if (awaited == null)
+                throw new Exception("Shell failed!");
+            return awaited;
+        }
     }
 }
