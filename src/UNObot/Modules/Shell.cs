@@ -92,8 +92,8 @@ namespace UNObot.Modules
                 {
                     StartInfo = new ProcessStartInfo
                     {
-                        FileName = "/usr/local/bin/ffmpeg",
-                        Arguments = $"-hide_banner -loglevel panic -i ${Path} -vn -ab 128k -ar 44100 -y ${Path}.mp3",
+                        FileName = "/usr/bin/git",
+                        Arguments = $"fetch",
                         UseShellExecute = false,
                         RedirectStandardOutput = true
                     }
@@ -120,8 +120,8 @@ namespace UNObot.Modules
                 {
                     StartInfo = new ProcessStartInfo
                     {
-                        FileName = "/usr/local/bin/ffmpeg",
-                        Arguments = $"-hide_banner -loglevel panic -i ${Path} -vn -ab 128k -ar 44100 -y ${Path}.mp3",
+                        FileName = "/usr/bin/git",
+                        Arguments = $"status",
                         UseShellExecute = false,
                         RedirectStandardOutput = true
                     }

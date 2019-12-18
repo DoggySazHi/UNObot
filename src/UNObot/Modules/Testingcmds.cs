@@ -232,6 +232,13 @@ namespace UNObot.Modules
             await ReplyAsync(GoogleTranslateService.GetSingleton().Translate(Message, From, To)).ConfigureAwait(false);
         }
 
+        [Command("debugstatus", RunMode = RunMode.Async)]
+        public async Task Translate()
+        {
+            await Shell.GitFetch().ConfigureAwait(false);
+            await ReplyAsync(await Shell.GitStatus().ConfigureAwait(false)).ConfigureAwait(false);
+        }
+
         /*
         [Command("getbuttons", RunMode = RunMode.Async)]
         [Help(new string[] { "yes." }, "", false, "no")]
