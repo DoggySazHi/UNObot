@@ -36,7 +36,7 @@ namespace UNObot
 
         public static DiscordSocketClient _client;
         IConfiguration _config;
-        ManualResetEvent ExitEvent = new ManualResetEvent(false);
+        static ManualResetEvent ExitEvent = new ManualResetEvent(false);
 
         public async Task MainAsync()
         {
@@ -86,7 +86,9 @@ namespace UNObot
             await MusicBotService.GetSingleton().DisposeAsync();
             await _client.StopAsync().ConfigureAwait(false);
             _client.Dispose();
+            ExitEvent?.Dispose();
             Console.WriteLine("Quit successfully.");
+            Environment.Exit(0);
         }
 
         IServiceProvider ConfigureServices()
