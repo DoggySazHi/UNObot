@@ -233,7 +233,7 @@ namespace UNObot.Modules
         }
 
         [Command("debugstatus", RunMode = RunMode.Async)]
-        public async Task Translate()
+        public async Task DebugStatus()
         {
             await Shell.GitFetch().ConfigureAwait(false);
             await ReplyAsync(await Shell.GitStatus().ConfigureAwait(false)).ConfigureAwait(false);

@@ -154,9 +154,9 @@ namespace UNObot.Modules
         {
             var Result = MusicBotService.GetSingleton().GetNowPlaying(Context.Guild.Id);
             if (!string.IsNullOrWhiteSpace(Result.Item2))
-                _ = ReplyAsync($"Error: {Result.Item2}");
+                await ReplyAsync($"Error: {Result.Item2}");
             else
-                _ = ReplyAsync("", false, Result.Item1);
+                await ReplyAsync("", false, Result.Item1);
         }
 
         [Command("playerqueue", RunMode = RunMode.Async)]
@@ -221,20 +221,6 @@ namespace UNObot.Modules
             await ads.JoinAudio(Context.Guild, AudioChannel);
             await ads.SendAudioAsync(Context.Guild, Context.Channel, song);
             await ads.LeaveAudio(Context.Guild);
-        }
-
-        [Command("timings", RunMode = RunMode.Async)]
-        public async Task MusicBotTimings()
-        {
-            var Timings = YoutubeService.GetSingleton().Timings;
-            await ReplyAsync($"Timings: \n" +
-                $"File search: {Timings[0]} ms\n" +
-                $"ID parse: {Timings[1]} ms\n" +
-                $"Stream search: {Timings[2] + Timings[3] + Timings[4]} ms\n" +
-                $"- Getting streams: {Timings[2]} ms\n" +
-                $"- Finding best audio stream: {Timings[3]} ms\n" +
-                $"- Getting extension: {Timings[4]} ms\n" +
-                $"Download: {Timings[5]} ms");
         }
     }
 }

@@ -19,7 +19,6 @@ namespace UNObot.Services
         private static YoutubeService Instance;
         private YoutubeClient Client;
         private YoutubeConverter Converter;
-        public long[] Timings { get; private set; }
 
         private YoutubeService()
         {
@@ -28,7 +27,6 @@ namespace UNObot.Services
             if (Directory.Exists(DownloadPath))
                 Directory.Delete(DownloadPath, true);
             Directory.CreateDirectory(DownloadPath);
-            Timings = new long[6];
         }
 
         public static YoutubeService GetSingleton()
@@ -82,58 +80,51 @@ namespace UNObot.Services
 
         public async Task<string> Download(string URL, ulong Guild)
         {
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
-
             URL = URL.TrimStart('<', '>').TrimEnd('<', '>');
             if (!YoutubeClient.TryParseVideoId(URL, out string Id))
-            {
-                stopWatch.Stop();
-                Timings[1] = stopWatch.ElapsedMilliseconds;
                 throw new Exception("Invalid video link!");
+
+            Console.WriteLine("Id: " + Id);
+            if(Id == null)
+            {
+                var StartIndex = URL.IndexOf("?v=") + 3;
+                var EndIndex = URL.IndexOf("&");
+                if (EndIndex < 0)
+                    EndIndex = URL.Length;
+                Id = URL.Substring(StartIndex, EndIndex - StartIndex);
             }
 
-            stopWatch.Stop();
-            Timings[1] = stopWatch.ElapsedMilliseconds;
-            stopWatch.Restart();
-
+            Console.WriteLine("New Id: " + Id);
             var MediaStreams = await Client.GetVideoMediaStreamInfosAsync(Id);
 
-            stopWatch.Stop();
-            Timings[2] = stopWatch.ElapsedMilliseconds;
-            stopWatch.Restart();
-
-            var AudioStream = MediaStreams.Audio.WithHighestBitrate();
-
-            stopWatch.Stop();
-            Timings[3] = stopWatch.ElapsedMilliseconds;
-            stopWatch.Restart();
-
-            var Extension = AudioStream.Container.GetFileExtension();
-
-            string FileName;
-
-            // Search for empty buffer files.
-
-            int Count = 0;
-            do
+            if (MediaStreams.Audio.Count == 0)
             {
-                FileName = Path.Combine(PathToGuildFolder(Guild), "downloadSong" + ++Count + "." + Extension);
-            } while (File.Exists(FileName));
+                string Path = GetNextFile(Guild, "mp3");
+                await Converter.DownloadVideoAsync(Id, Path).ConfigureAwait(false);
+                return Path;
+            }
+            else
+                return await Download(Guild, MediaStreams.Audio.WithHighestBitrate());
+        }
 
-            stopWatch.Stop();
-            Timings[0] = stopWatch.ElapsedMilliseconds;
-            stopWatch.Restart();
+        private async Task<string> Download(ulong Guild, AudioStreamInfo AudioStream)
+        {
+            string Extension = "webm";
+            try
+            {
+                Extension = AudioStream.Container.GetFileExtension();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+            Console.WriteLine("Got Extension");
 
-            stopWatch.Stop();
-            Timings[4] = stopWatch.ElapsedMilliseconds;
-            stopWatch.Restart();
+            string FileName = GetNextFile(Guild, Extension);
+
 
             await Client.DownloadMediaStreamAsync(AudioStream, FileName);
-
-            stopWatch.Stop();
-            Timings[5] = stopWatch.ElapsedMilliseconds;
-            stopWatch.Restart();
+            Console.WriteLine("Downloaded");
 
             var StartTime = DateTime.Now;
 
@@ -142,6 +133,18 @@ namespace UNObot.Services
                     return FileName.Replace("\n", "").Replace(Environment.NewLine, "");
 
             throw new Exception("Failed to download file.");
+        }
+
+        private string GetNextFile(ulong Guild, string Extension)
+        {
+            string FileName = "";
+            int Count = 0;
+            do
+            {
+                FileName = Path.Combine(PathToGuildFolder(Guild), "downloadSong" + ++Count + "." + Extension);
+            } while (File.Exists(FileName));
+            Console.WriteLine("Saving to " + FileName);
+            return FileName;
         }
 
         public static string TimeString(TimeSpan Ts)

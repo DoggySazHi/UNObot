@@ -26,7 +26,7 @@ namespace UNObot
         public static string version = "Unknown Version";
         public static string commit = "Unknown Commit";
         public static string build = "Unknown Build";
-        public static List<Modules.Command> commands = new List<Modules.Command>();
+        public static List<Command> commands = new List<Command>();
 
         static async Task Main()
         {
@@ -57,22 +57,26 @@ namespace UNObot
             await _client.LoginAsync(TokenType.Bot, _config["token"]);
             await _client.StartAsync();
             //_client.ReactionAdded += Modules.InputHandler.ReactionAdded;
+#if DEBUG
+            DebugService.GetSingleton();
+#endif
             await UNOdb.CleanAll();
             await _client.SetGameAsync($"UNObot {version}");
             await LoadHelp();
             SafeExitHandler();
             ExitEvent.WaitOne();
+            ExitEvent.Dispose();
             await OnExit();
         }
 
         private void SafeExitHandler()
         {
-            AppDomain.CurrentDomain.ProcessExit += (o, a) => { ExitEvent.Set(); };
+            AppDomain.CurrentDomain.ProcessExit += (o, a) => { ExitEvent?.Set(); };
 
             Console.CancelKeyPress += (sender, eventArgs) =>
             {
                 eventArgs.Cancel = true;
-                ExitEvent.Set();
+                ExitEvent?.Set();
             };
         }
 
