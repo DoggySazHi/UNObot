@@ -20,12 +20,12 @@ namespace UNObot.Modules
             return $"https://williamle.com/unobot/{c.Color}_{c.Value}.png";
         }
     }
-    public static class DisplayEmbed
+    public static class EmbedDisplayService
     {
         public static async Task<Embed> DisplayGame(ulong serverid)
         {
             uint cardColor = 0xFF0000;
-            var card = await UNOdb.GetCurrentCard(serverid);
+            var card = await UNODatabaseService.GetCurrentCard(serverid);
 
             cardColor = card.Color switch
             {
@@ -35,15 +35,15 @@ namespace UNObot.Modules
                 _ => 0x00FF00,
             };
             string response = "";
-            ushort isPrivate = await UNOdb.GetGamemode(serverid);
+            ushort isPrivate = await UNODatabaseService.GetGamemode(serverid);
             string server = Program._client.GetGuild(serverid).Name;
-            foreach (ulong id in await UNOdb.GetPlayers(serverid))
+            foreach (ulong id in await UNODatabaseService.GetPlayers(serverid))
             {
                 var user = Program._client.GetUser(id);
-                var cardCount = (await UNOdb.GetCards(id)).Count();
+                var cardCount = (await UNODatabaseService.GetCards(id)).Count();
                 if (isPrivate != 2)
                 {
-                    if (id == (await UNOdb.GetPlayers(serverid)).Peek())
+                    if (id == (await UNODatabaseService.GetPlayers(serverid)).Peek())
                         response += $"**{user.Username}** - {cardCount} card";
                     else
                         response += $"{user.Username} - {cardCount} card";
@@ -54,7 +54,7 @@ namespace UNObot.Modules
                 }
                 else
                 {
-                    if (id == (await UNOdb.GetPlayers(serverid)).Peek())
+                    if (id == (await UNODatabaseService.GetPlayers(serverid)).Peek())
                         response += $"**{user.Username}** - ??? cards\n";
                     else
                         response += $"{user.Username} - ??? cards\n";
@@ -62,7 +62,7 @@ namespace UNObot.Modules
             }
             var builder = new EmbedBuilder()
             .WithTitle("Current Game")
-            .WithDescription(await UNOdb.GetDescription(serverid))
+            .WithDescription(await UNODatabaseService.GetDescription(serverid))
             .WithColor(new Color(cardColor))
             .WithTimestamp(DateTimeOffset.Now)
             .WithFooter(footer =>
@@ -88,8 +88,8 @@ namespace UNObot.Modules
         public static async Task<Embed> DisplayCards(ulong userid, ulong serverid)
         {
             string server = Program._client.GetGuild(serverid).Name;
-            var currentCard = await UNOdb.GetCurrentCard(serverid);
-            var cards = await UNOdb.GetCards(userid);
+            var currentCard = await UNODatabaseService.GetCurrentCard(serverid);
+            var cards = await UNODatabaseService.GetCards(userid);
             cards = cards.OrderBy(o => o.Color).ThenBy(o => o.Value).ToList();
 
             string RedCards = "";
@@ -168,7 +168,7 @@ namespace UNObot.Modules
             return embed;
         }
 
-        public static async Task<Tuple<Embed, Tuple<string, string, string>>> DisplayAddSong(ulong UserID, ulong ServerID, string SongURL, Tuple<string, string, string> Information)
+        public static Tuple<Embed, Tuple<string, string, string>> DisplayAddSong(ulong UserID, ulong ServerID, string SongURL, Tuple<string, string, string> Information)
         {
             string Server = Program._client.GetGuild(ServerID).Name;
             string Username = Program._client.GetUser(UserID).Username;
@@ -301,14 +301,13 @@ namespace UNObot.Modules
 
         public static bool UnturnedQueryEmbed(ulong Server, string IP, ushort Port, out Embed Result)
         {
-            A2S_INFO Information = null;
             A2S_PLAYER Players = null;
             A2S_RULES Rules = null;
-            bool success = QueryHandler.GetInfo(IP, ++Port, out Information);
+            bool success = QueryHandlerService.GetInfo(IP, ++Port, out A2S_INFO Information);
             if(success)
-                success &= QueryHandler.GetPlayers(IP, ++Port, out Players);
+                success &= QueryHandlerService.GetPlayers(IP, ++Port, out Players);
             if(success)
-                success &= QueryHandler.GetRules(IP, ++Port, out Rules);
+                success &= QueryHandlerService.GetRules(IP, ++Port, out Rules);
             if (!success)
             {
                 Result = null;
@@ -332,7 +331,7 @@ namespace UNObot.Modules
                 ServerDescription += Rules.Rules.Find(o => o.Name.Contains($"Browser_Desc_Full_Line_{i}", StringComparison.OrdinalIgnoreCase)).Value;
             for(int i = 0; i < Players.PlayerCount; i++)
             {
-                PlayersOnline += $"{Players.Players[i].Name} - {QueryHandler.HumanReadable(Players.Players[i].Duration)}";
+                PlayersOnline += $"{Players.Players[i].Name} - {QueryHandlerService.HumanReadable(Players.Players[i].Duration)}";
                 if (i != Players.PlayerCount - 1)
                     PlayersOnline += "\n";
             }

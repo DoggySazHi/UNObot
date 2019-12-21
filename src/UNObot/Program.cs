@@ -51,7 +51,7 @@ namespace UNObot
             _config = BuildConfig();
 
             var services = ConfigureServices();
-            services.GetRequiredService<LogService>();
+            services.GetRequiredService<LoggerService>();
             await services.GetRequiredService<CommandHandlingService>().InitializeAsync(services);
 
             await _client.LoginAsync(TokenType.Bot, _config["token"]);
@@ -60,7 +60,7 @@ namespace UNObot
 #if DEBUG
             DebugService.GetSingleton();
 #endif
-            await UNOdb.CleanAll();
+            await UNODatabaseService.CleanAll();
             await _client.SetGameAsync($"UNObot {version}");
             await LoadHelp();
             SafeExitHandler();
@@ -80,13 +80,17 @@ namespace UNObot
             };
         }
 
-        public static async Task OnExit()
+        public static void Exit()
+        {
+            ExitEvent.Set();
+        }
+
+        private static async Task OnExit()
         {
             Console.WriteLine("Quitting...");
             await MusicBotService.GetSingleton().DisposeAsync();
             await _client.StopAsync().ConfigureAwait(false);
             _client.Dispose();
-            ExitEvent?.Dispose();
             Console.WriteLine("Quit successfully.");
             Environment.Exit(0);
         }
@@ -100,7 +104,7 @@ namespace UNObot
                 .AddSingleton<CommandHandlingService>()
                 // Logging
                 .AddLogging()
-                .AddSingleton<LogService>()
+                .AddSingleton<LoggerService>()
                 // Extra
                 .AddSingleton(_config)
                 // Add additional services here...
@@ -257,8 +261,8 @@ namespace UNObot
             ulong channel = 0;
             channel = _client.GetGuild(server).DefaultChannel.Id;
             Console.WriteLine($"Channel: {channel}");
-            if (await UNOdb.HasDefaultChannel(server))
-                channel = await UNOdb.GetDefaultChannel(server);
+            if (await UNODatabaseService.HasDefaultChannel(server))
+                channel = await UNODatabaseService.GetDefaultChannel(server);
             Console.WriteLine($"Channel: {channel}");
 
             try

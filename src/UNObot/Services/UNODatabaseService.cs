@@ -10,7 +10,7 @@ using Newtonsoft.Json.Linq;
 #pragma warning disable CS1702 // Assuming assembly reference matches identity
 namespace UNObot.Modules
 {
-    public static class UNOdb
+    public static class UNODatabaseService
     {
         public static string ConnString = "";
         public static void GetConnectionString()
@@ -958,7 +958,7 @@ namespace UNObot.Modules
             {
                 for (int i = 0; i < 7; i++)
                 {
-                    await AddCard(player, UNOcore.RandomCard());
+                    await AddCard(player, UNOCoreServices.RandomCard());
                 }
             }
         }

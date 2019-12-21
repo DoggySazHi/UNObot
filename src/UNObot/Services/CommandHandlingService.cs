@@ -52,10 +52,10 @@ namespace UNObot.Services
                 return;
             }
 
-            if (await UNOdb.EnforceChannel(context.Guild.Id))
+            if (await UNODatabaseService.EnforceChannel(context.Guild.Id))
             {
                 //start check
-                var allowedChannels = await UNOdb.GetAllowedChannels(context.Guild.Id);
+                var allowedChannels = await UNODatabaseService.GetAllowedChannels(context.Guild.Id);
                 var currentChannels = context.Guild.TextChannels.ToList();
                 var currentChannelsIDs = new List<ulong>();
                 foreach (var channel in currentChannels)
@@ -64,13 +64,13 @@ namespace UNObot.Services
                 {
                     foreach (var toRemove in allowedChannels.Except(currentChannelsIDs))
                         allowedChannels.Remove(toRemove);
-                    await UNOdb.SetAllowedChannels(context.Guild.Id, allowedChannels);
+                    await UNODatabaseService.SetAllowedChannels(context.Guild.Id, allowedChannels);
                 }
                 //end check
                 if (allowedChannels.Count == 0)
                 {
                     await context.Channel.SendMessageAsync("Warning: Since there are no channels that allow UNObot to speak normally, enforcechannels has been disabled.");
-                    await UNOdb.SetEnforceChannel(context.Guild.Id, false);
+                    await UNODatabaseService.SetEnforceChannel(context.Guild.Id, false);
                 }
                 else if (!(allowedChannels.Contains(context.Channel.Id)))
                     return;
@@ -82,8 +82,8 @@ namespace UNObot.Services
                 await context.Channel.SendMessageAsync("I do not accept DM messages. Please use me in a guild/server.");
                 return;
             }
-            await UNOdb.AddGame(context.Guild.Id);
-            await UNOdb.AddUser(context.User.Id, context.User.Username);
+            await UNODatabaseService.AddGame(context.Guild.Id);
+            await UNODatabaseService.AddUser(context.User.Id, context.User.Username);
             var result = await _commands.ExecuteAsync(context, argPos, _provider);
             if (result.Error.HasValue)
             {

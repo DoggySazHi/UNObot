@@ -17,7 +17,7 @@ namespace UNObot.Services
     //Dealing with network-level stuff is hard
 
     //Credit to https://github.com/maxime-paquatte/csharp-minecraft-query/blob/master/src/Status.cs
-    public static class QueryHandler
+    public static class QueryHandlerService
     {
         public static string HumanReadable(float Time)
         {
@@ -188,8 +188,11 @@ namespace UNObot.Services
             }
             catch (EndOfStreamException)
             {
-                Console.WriteLine("Hit EOF");
                 ServerUp = true;
+            }
+            catch (SocketException)
+            {
+                ServerUp = false;
             }
             catch (Exception Ex)
             {
@@ -265,8 +268,11 @@ namespace UNObot.Services
             }
             catch (EndOfStreamException)
             {
-                Console.WriteLine("Hit EOF");
                 ServerUp = true;
+            }
+            catch (SocketException)
+            {
+                ServerUp = false;
             }
             catch (Exception Ex)
             {
@@ -342,8 +348,11 @@ namespace UNObot.Services
             }
             catch (EndOfStreamException)
             {
-                Console.WriteLine("Hit EOF");
                 ServerUp = true;
+            }
+            catch (SocketException)
+            {
+                ServerUp = false;
             }
             catch (Exception Ex)
             {

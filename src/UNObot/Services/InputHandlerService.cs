@@ -11,7 +11,7 @@ using Discord.WebSocket;
 
 namespace UNObot.Modules
 {
-    public static class InputHandler
+    public static class InputHandlerService
     {
         static readonly Dictionary<IEmote, string> reactions = new Dictionary<IEmote, string>
         {

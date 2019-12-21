@@ -8,23 +8,23 @@ using System.Linq;
 
 namespace UNObot.Modules
 {
-    public static class QueueHandler
+    public static class QueueHandlerService
     {
         public static async Task NextPlayer(ulong server)
         {
-            Queue<ulong> players = await UNOdb.GetPlayers(server);
+            Queue<ulong> players = await UNODatabaseService.GetPlayers(server);
             ulong sendToBack = players.Dequeue();
             players.Enqueue(sendToBack);
-            await UNOdb.SetPlayers(server, players);
+            await UNODatabaseService.SetPlayers(server, players);
         }
         public static async Task ReversePlayers(ulong server)
         {
-            Queue<ulong> players = await UNOdb.GetPlayers(server);
-            await UNOdb.SetPlayers(server, new Queue<ulong>(players.Reverse()));
+            Queue<ulong> players = await UNODatabaseService.GetPlayers(server);
+            await UNODatabaseService.SetPlayers(server, new Queue<ulong>(players.Reverse()));
         }
         public static async Task<ulong> GetCurrentPlayer(ulong server)
         {
-            Queue<ulong> players = await UNOdb.GetPlayers(server);
+            Queue<ulong> players = await UNODatabaseService.GetPlayers(server);
             ulong player = 0;
             if (players.TryPeek(out player))
                 return player;
@@ -33,22 +33,22 @@ namespace UNObot.Modules
         }
         public static async Task<int> PlayerCount(ulong server)
         {
-            Queue<ulong> players = await UNOdb.GetPlayers(server);
+            Queue<ulong> players = await UNODatabaseService.GetPlayers(server);
             return players.Count;
         }
         public static async Task<ulong[]> PlayerArray(ulong server)
         {
-            Queue<ulong> players = await UNOdb.GetPlayers(server);
+            Queue<ulong> players = await UNODatabaseService.GetPlayers(server);
             return players.ToArray();
         }
         public static async Task RemovePlayer(ulong player, ulong server)
         {
-            Queue<ulong> players = await UNOdb.GetPlayers(server);
+            Queue<ulong> players = await UNODatabaseService.GetPlayers(server);
             bool attemptPeek = players.TryPeek(out ulong result);
             if (!attemptPeek)
             {
                 ColorConsole.WriteLine("Error: Couldn't read first player!", ConsoleColor.Red);
-                await UNOdb.ResetGame(server);
+                await UNODatabaseService.ResetGame(server);
             }
             else if (player == result)
             {
@@ -76,13 +76,13 @@ namespace UNObot.Modules
                         break;
                 }
             }
-            await UNOdb.SetPlayers(server, players);
+            await UNODatabaseService.SetPlayers(server, players);
         }
         public static async Task DropFrontPlayer(ulong server)
         {
-            Queue<ulong> players = await UNOdb.GetPlayers(server);
+            Queue<ulong> players = await UNODatabaseService.GetPlayers(server);
             players.Dequeue();
-            await UNOdb.SetPlayers(server, players);
+            await UNODatabaseService.SetPlayers(server, players);
         }
     }
 }

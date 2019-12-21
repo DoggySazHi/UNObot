@@ -7,7 +7,7 @@ using YoutubeExplode;
 
 namespace UNObot.Modules
 {
-    public static class Shell
+    public static class ShellService
     {
         public static async Task<string> RunYTDL(string cmd)
         {

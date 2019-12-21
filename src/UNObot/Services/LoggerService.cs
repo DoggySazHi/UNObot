@@ -10,7 +10,7 @@ using Discord.WebSocket;
 
 namespace DiscordBot.Services
 {
-    public class LogService
+    public class LoggerService
     {
         readonly DiscordSocketClient _discord;
         readonly CommandService _commands;
@@ -18,7 +18,7 @@ namespace DiscordBot.Services
         readonly ILogger _discordLogger;
         readonly ILogger _commandsLogger;
 
-        public LogService(DiscordSocketClient discord, CommandService commands, ILoggerFactory loggerFactory)
+        public LoggerService(DiscordSocketClient discord, CommandService commands, ILoggerFactory loggerFactory)
         {
             _discord = discord;
             _commands = commands;

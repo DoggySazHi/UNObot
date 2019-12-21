@@ -18,10 +18,10 @@ using UNObot.Services;
 
 namespace UNObot.Modules
 {
-    public class MusicBot : ModuleBase<SocketCommandContext>
+    public class MusicBotCommands : ModuleBase<SocketCommandContext>
     {
-        [Command("playmusic", RunMode = RunMode.Async)]
-        [Help(new string[] { ".playmusic", ".playmusic (YouTube Link)" }, "Wait, MusicBot functionality in UNObot?", true, "UNObot 3.2 Beta 1")]
+        [Command("playerplay", RunMode = RunMode.Async), Alias("playmusic")]
+        [Help(new string[] { ".playerplay", ".playerplay (link)", ".playerplay (search)" }, "Wait, MusicBot functionality in UNObot?", true, "UNObot 3.2 Beta 1")]
         public async Task PlayMusic([Remainder] string Link)
         {
             var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
@@ -42,7 +42,7 @@ namespace UNObot.Modules
                 _ = ReplyAsync(Result.Item2 == null ? "" : Result.Item2, false, Result.Item1);
         }
 
-        [Command("playmusic", RunMode = RunMode.Async)]
+        [Command("playerplay", RunMode = RunMode.Async)]
         public async Task Play()
         {
             var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
@@ -56,8 +56,8 @@ namespace UNObot.Modules
             _ = ReplyAsync(Result);
         }
 
-        [Command("pause", RunMode = RunMode.Async)]
-        [Help(new string[] { ".pausemusic" }, "Pause the player.", true, "UNObot 3.2 Beta 2")]
+        [Command("playerpause", RunMode = RunMode.Async), Alias("pause", "pauseplayer")]
+        [Help(new string[] { ".playerpause" }, "Pause the player.", true, "UNObot 3.2 Beta 2")]
         public async Task Pause()
         {
             var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
@@ -71,8 +71,8 @@ namespace UNObot.Modules
             _ = ReplyAsync(Result);
         }
 
-        [Command("shuffle", RunMode = RunMode.Async)]
-        [Help(new string[] { ".shuffle" }, "Shuffle the player.", true, "UNObot 3.2 Beta 3")]
+        [Command("playershuffle", RunMode = RunMode.Async), Alias("shuffle")]
+        [Help(new string[] { ".playershuffle" }, "Shuffle the player.", true, "UNObot 3.2 Beta 3")]
         public async Task Shuffle()
         {
             var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
@@ -116,6 +116,7 @@ namespace UNObot.Modules
             await ReplyAsync(Result);
         }
 
+        //TODO PlayerLoopQueue won't include NowPlaying
         [Command("playerloopqueue", RunMode = RunMode.Async)]
         [Help(new string[] { ".playerloopqueue" }, "Loop the entire queue.", true, "UNObot 3.2 Beta 4")]
         public async Task LoopQueue()
@@ -131,8 +132,7 @@ namespace UNObot.Modules
             await ReplyAsync(Result);
         }
 
-        [Command("playerdc", RunMode = RunMode.Async)]
-        [Alias("dc")]
+        [Command("playerdc", RunMode = RunMode.Async), Alias("dc", "playerdisconnect")]
         [Help(new string[] { ".playerdc" }, "Disconnect the bot from the channel.", true, "UNObot 3.2 Beta 4")]
         public async Task Disconnect()
         {
@@ -147,9 +147,8 @@ namespace UNObot.Modules
             await ReplyAsync(Result).ConfigureAwait(false);
         }
 
-        //TODO Help cmd for musicbot, new prefix?
-        [Command("nowplaying", RunMode = RunMode.Async), Alias("np")]
-        [Help(new string[] { ".nowplaying" }, "Get the song playing.", true, "UNObot 3.2 Beta 2")]
+        [Command("playernp", RunMode = RunMode.Async), Alias("playernowplaying", "np")]
+        [Help(new string[] { ".playernp" }, "Get the song playing.", true, "UNObot 3.2 Beta 2")]
         public async Task NowPlaying()
         {
             var Result = MusicBotService.GetSingleton().GetNowPlaying(Context.Guild.Id);
@@ -204,7 +203,7 @@ namespace UNObot.Modules
                 _ = ReplyAsync($"Error: {ex.Message}");
             }
         }
-        */
+        
 
         [Command("vctest2", RunMode = RunMode.Async)]
         [RequireOwner]
@@ -222,5 +221,6 @@ namespace UNObot.Modules
             await ads.SendAudioAsync(Context.Guild, Context.Channel, song);
             await ads.LeaveAudio(Context.Guild);
         }
+        */
     }
 }

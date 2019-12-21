@@ -144,7 +144,7 @@ namespace UNObot.Modules
         }
     }
 
-    public static class UNOcore
+    public static class UNOCoreServices
     {
         public static Card RandomCard()
         {
@@ -295,21 +295,21 @@ namespace UNObot.Modules
                 ColorConsole.WriteLine("ERROR: Couldn't figure out what server timer belonged to!", ConsoleColor.Yellow);
                 return;
             }
-            ulong currentPlayer = await QueueHandler.GetCurrentPlayer(serverID);
-            await UNOdb.RemoveUser(currentPlayer);
-            await QueueHandler.DropFrontPlayer(serverID);
+            ulong currentPlayer = await QueueHandlerService.GetCurrentPlayer(serverID);
+            await UNODatabaseService.RemoveUser(currentPlayer);
+            await QueueHandlerService.DropFrontPlayer(serverID);
             Console.WriteLine("SayPlayer");
             await Program.SendMessage($"<@{currentPlayer}>, you have been AFK removed.\n", serverID);
             await Program.SendPM("You have been AFK removed.", currentPlayer);
-            if (await QueueHandler.PlayerCount(serverID) == 0)
+            if (await QueueHandlerService.PlayerCount(serverID) == 0)
             {
-                await UNOdb.ResetGame(serverID);
+                await UNODatabaseService.ResetGame(serverID);
                 await Program.SendMessage("Game has been reset, due to nobody in-game.", serverID);
                 DeleteTimer(serverID);
                 return;
             }
             ResetTimer(serverID);
-            await Program.SendMessage($"It is now <@{await QueueHandler.GetCurrentPlayer(serverID)}> turn.\n", serverID);
+            await Program.SendMessage($"It is now <@{await QueueHandlerService.GetCurrentPlayer(serverID)}> turn.\n", serverID);
         }
 
         public static void DeleteTimer(ulong server)

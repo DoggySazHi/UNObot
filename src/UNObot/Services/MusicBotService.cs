@@ -58,8 +58,6 @@ namespace UNObot.Services
             }
             this.EndCache = EndCache;
         }
-
-        //TODO Playing Message in Discord Embed
         public void SetPlaying() => IsPlaying = true;
     }
 
@@ -68,7 +66,6 @@ namespace UNObot.Services
         public ulong Guild { get; private set; }
         public List<Song> Songs { get; private set; }
         public Song NowPlaying { get; private set; }
-        //TODO make sure they don't conflict
         public bool LoopingQueue { get; private set; }
         public bool LoopingSong { get; private set; }
 
@@ -80,15 +77,15 @@ namespace UNObot.Services
         private bool IsPlaying;
         private bool Caching;
         private readonly int CacheLength = 5;
-        private ManualResetEvent PauseEvent;
-        private ManualResetEvent QuitEvent;
-        private ManualResetEvent CacheEvent;
-        private Stopwatch PlayPos;
-        private Timer Timeout;
+        private readonly ManualResetEvent PauseEvent;
+        private readonly ManualResetEvent QuitEvent;
+        private readonly ManualResetEvent CacheEvent;
+        private readonly Stopwatch PlayPos;
+        private readonly Timer Timeout;
 
-        private IVoiceChannel AudioChannel;
+        private readonly IVoiceChannel AudioChannel;
         private IAudioClient AudioClient;
-        private ISocketMessageChannel MessageChannel;
+        private readonly ISocketMessageChannel MessageChannel;
 
         public Player(ulong Guild, IVoiceChannel AudioChannel, IAudioClient AudioClient, ISocketMessageChannel MessageChannel)
         {
@@ -150,7 +147,7 @@ namespace UNObot.Services
                 do
                 {
                     PlayPos.Restart();
-                    _ = MessageChannel.SendMessageAsync("", false, DisplayEmbed.DisplayNowPlaying(NowPlaying, null));
+                    _ = MessageChannel.SendMessageAsync("", false, EmbedDisplayService.DisplayNowPlaying(NowPlaying, null));
                     await SendAudio(CreateStream(NowPlaying.PathCached), AudioClient.CreatePCMStream(AudioApplication.Music, AudioChannel.Bitrate)).ConfigureAwait(false);
                 }
                 while (LoopingSong);
@@ -381,7 +378,7 @@ namespace UNObot.Services
     public class MusicBotService
     {
         private static MusicBotService Instance;
-        private List<Player> MusicPlayers = new List<Player>();
+        private readonly List<Player> MusicPlayers = new List<Player>();
 
         private MusicBotService()
         {
@@ -431,8 +428,8 @@ namespace UNObot.Services
             string Error = null;
             try
             {
-                var Information = await YoutubeService.GetSingleton().GetInfo(URL);
-                var Result = await DisplayEmbed.DisplayAddSong(User, Guild, URL, Information);
+                var Information = YoutubeService.GetSingleton().GetInfo(URL);
+                var Result = EmbedDisplayService.DisplayAddSong(User, Guild, URL, await Information);
                 EmbedOut = Result.Item1;
                 var Data = Result.Item2;
                 var Player = await ConnectAsync(Guild, Channel, MessageChannel);
@@ -456,7 +453,7 @@ namespace UNObot.Services
             try
             {
                 var Information = await YoutubeService.GetSingleton().SearchVideo(Query);
-                var Result = await DisplayEmbed.DisplayAddSong(User, Guild, Information.Item2, Information.Item1);
+                var Result = EmbedDisplayService.DisplayAddSong(User, Guild, Information.Item2, Information.Item1);
                 EmbedOut = Result.Item1;
                 var Data = Result.Item2;
                 var Player = await ConnectAsync(Guild, Channel, MessageChannel);
@@ -609,7 +606,7 @@ namespace UNObot.Services
             string Message;
             try
             {
-                var Playlist = await DisplayEmbed.DisplayPlaylist(User, Guild, URL);
+                var Playlist = await EmbedDisplayService.DisplayPlaylist(User, Guild, URL);
                 Display = Playlist.Item1;
                 var ResultPlay = Playlist.Item2.Videos;
                 var Player = await ConnectAsync(Guild, Channel, MessageChannel);
@@ -667,7 +664,7 @@ namespace UNObot.Services
                 else
                 {
                     var Player = Players[0];
-                    List = DisplayEmbed.DisplaySongList(Player.NowPlaying, Player.Songs);
+                    List = EmbedDisplayService.DisplaySongList(Player.NowPlaying, Player.Songs);
                 }
             }
             catch (Exception ex)
@@ -689,7 +686,7 @@ namespace UNObot.Services
                 else
                 {
                     var Player = Players[0];
-                    List = DisplayEmbed.DisplayNowPlaying(Player.NowPlaying, Player.GetPosition());
+                    List = EmbedDisplayService.DisplayNowPlaying(Player.NowPlaying, Player.GetPosition());
                 }
             }
             catch (Exception ex)

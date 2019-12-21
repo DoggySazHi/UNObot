@@ -8,7 +8,7 @@ using Discord.Commands;
 
 namespace UNObot.Modules
 {
-    public class Basecmds : ModuleBase<SocketCommandContext>
+    public class BaseCommands : ModuleBase<SocketCommandContext>
     {
         [Command("info", RunMode = RunMode.Async)]
         [Help(new string[] { ".info" }, "Get the current version of UNObot.", true, "UNObot 1.0")]
@@ -17,42 +17,6 @@ namespace UNObot.Modules
             await ReplyAsync(
                 $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {Program.version}\nCurrent Time (PST): {DateTime.Now.ToString()}" +
                     $"\n\nCommit {Program.commit}\nBuild #{Program.build}");
-        }
-
-        [Command("gulag", RunMode = RunMode.Async)]
-        [Help(new string[] { ".gulag" }, "Blyat.", false, "UNObot 1.4")]
-        public async Task Gulag()
-        {
-            await ReplyAsync($"<@{Context.User.Id}> has been sent to gulag and has all of his cards converted to red blyats.");
-        }
-
-        [Command("gulag", RunMode = RunMode.Async)]
-        [Help(new string[] { ".gulag (user)" }, "Blyat.", false, "UNObot 1.4")]
-        public async Task Gulag2(string user)
-        {
-            //extraclean
-            user = user.Trim(new Char[] { ' ', '<', '>', '!', '@' });
-            await ReplyAsync($"<@{user}> has been sent to gulag and has all of his cards converted to red blyats.");
-        }
-
-        [Command("nepnep", RunMode = RunMode.Async)]
-        [Help(new string[] { ".nepnep" }, "Wait, how did this command get in here?", false, "UNObot 1.4")]
-        public async Task Nep()
-        {
-            await ReplyAsync($"You got me there at \"nep\".");
-        }
-
-        [Command("ugay", RunMode = RunMode.Async), Alias("u gay", "you gay", "you're gay")]
-        [Help(new string[] { ".ugay" }, "That's not very nice. >:[", false, "UNObot 0.1")]
-        public async Task Ugay()
-            => await ReplyAsync(
-                $"<@{Context.User.Id}> no u\n");
-
-        [Command("no u", RunMode = RunMode.Async), Alias("nou")]
-        [Help(new string[] { ".no u" }, "Fite me m8", false, "UNObot 1.0")]
-        public async Task Easteregg1()
-        {
-            await ReplyAsync($"I claim that <@{Context.User.Id}> is triple gay. Say \"No U\" again, uh...");
         }
 
         [Command("testperms", RunMode = RunMode.Async), RequireUserPermission(GuildPermission.ManageGuild)]
@@ -91,11 +55,6 @@ namespace UNObot.Modules
                 x.Nickname = newnick;
             });
         }
-
-        [Command("upupdowndownleftrightleftrightbastart", RunMode = RunMode.Async)]
-        [Help(new string[] { ".upupdowndownleftrightleftrightbastart" }, "Wow, an ancient easter egg. It's still ancient.", false, "UNObot 1.4")]
-        public async Task OldEasterEgg()
-            => await ReplyAsync("lol, that's outdated");
 
         [Command("fullhelp", RunMode = RunMode.Async)]
         [Help(new string[] { ".fullhelp" }, "If you need help using help, you're truly lost.", true, "UNObot 1.0")]
@@ -139,6 +98,7 @@ namespace UNObot.Modules
             Response += "```";
             await UserExtensions.SendMessageAsync(Context.Message.Author, Response);
         }
+
         [Command("help", RunMode = RunMode.Async), Alias("ahh", "ahhh", "ahhhh")]
         public async Task Help()
         {
@@ -171,6 +131,41 @@ namespace UNObot.Modules
             var embed = builder.Build();
             await Context.Channel.SendMessageAsync(
                 ":+1: got cha fam",
+                embed: embed);
+        }
+
+        [Command("playerhelp", RunMode = RunMode.Async)]
+        public async Task PlayerHelp()
+        {
+            Random r = ThreadSafeRandom.ThisThreadsRandom;
+            var builder = new EmbedBuilder()
+                .WithTitle("Quick-start guide to UNObot-MusicBot")
+                .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
+                .WithTimestamp(DateTimeOffset.Now)
+                .WithFooter(footer =>
+                {
+                    footer
+                        .WithText($"UNObot {Program.version} - By DoggySazHi")
+                        .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
+                })
+                .WithAuthor(author =>
+                {
+                    author
+                        .WithName($"Playing in {Context.Guild.Name}")
+                        .WithIconUrl("https://williamle.com/unobot/unobot.png");
+                })
+                .AddField("Usages", "@UNOBot#4308 *commandtorun*\n.*commandtorun*")
+                .AddField(".playerplay (Link)", "Add a song to the queue, or continue if the player is paused.", true)
+                .AddField(".playerpause", "Pause the player. Duh.", true)
+                .AddField(".playershuffle", "Shuffle the contents of the queue.", true)
+                .AddField(".playerskip", "Skip the current song playing to the next one in the queue.", true)
+                .AddField(".playerqueue", "Display the contents of the queue.", true)
+                .AddField(".playernp", "Find out what song is playing currently.", true)
+                .AddField(".playerloop", "Loop the current song playing.", true)
+                .AddField(".playerloopqueue", "Loop the contents of the queue.", true);
+            var embed = builder.Build();
+            await Context.Channel.SendMessageAsync(
+                "",
                 embed: embed);
         }
 
