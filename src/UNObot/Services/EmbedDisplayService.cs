@@ -303,11 +303,11 @@ namespace UNObot.Modules
         {
             A2S_PLAYER Players = null;
             A2S_RULES Rules = null;
-            bool success = QueryHandlerService.GetInfo(IP, ++Port, out A2S_INFO Information);
+            bool success = QueryHandlerService.GetInfo(IP, (ushort) (Port + 1), out A2S_INFO Information);
             if(success)
-                success &= QueryHandlerService.GetPlayers(IP, ++Port, out Players);
+                success &= QueryHandlerService.GetPlayers(IP, (ushort) (Port + 1), out Players);
             if(success)
-                success &= QueryHandlerService.GetRules(IP, ++Port, out Rules);
+                success &= QueryHandlerService.GetRules(IP, (ushort) (Port + 1), out Rules);
             if (!success)
             {
                 Result = null;
