@@ -1,7 +1,7 @@
 This is UNObot.
-By William Le 2018
+By William Le 2020.
 
-Commands: @UNOBot#4308 (Required) {Required in certain conditions} [Optional]
+Commands: @UNOBot#9064 (Required) {Required in certain conditions} [Optional]
 
 - Join
 Join the queue.
@@ -18,4 +18,5 @@ See the last placed card.
 - Deck
 See the cards you have currently.
 
-This README is probably outdated; I recommend you to use the bot and use the help command.
+This README is **very** outdated; I recommend you to use the bot and use the help command.
+It now has music bot functionality and database.
