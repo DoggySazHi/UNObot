@@ -365,7 +365,7 @@ namespace UNObot.Modules
             .AddField("Port", Port, true)
             .AddField("Map", Map, true)
             .AddField("VAC Security", VACEnabled ? "Enabled" : "Disabled", true)
-            .AddField($"Versions <:patchythink:592817853313581067>", $"Unturned: {UnturnedVersion}{(RocketModVersion == "" ? "" : $"\nRocketMod: {RocketModVersion}")}", true);
+            .AddField($"Versions", $"Unturned: {UnturnedVersion}{(RocketModVersion == "" ? "" : $"\nRocketMod: {RocketModVersion}")}", true);
             if(!string.IsNullOrWhiteSpace(RocketModPlugins))
                 builder.AddField($"RocketMod Plugins", RocketModPlugins, true);
             builder.AddField($"Players: {Information.Players}/{Information.MaxPlayers}", PlayersOnline, true);
