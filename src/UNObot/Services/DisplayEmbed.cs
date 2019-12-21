@@ -304,11 +304,11 @@ namespace UNObot.Modules
             A2S_INFO Information = null;
             A2S_PLAYER Players = null;
             A2S_RULES Rules = null;
-            bool success = QueryHandler.GetInfo(IP, Port, out Information);
+            bool success = QueryHandler.GetInfo(IP, ++Port, out Information);
             if(success)
-                success &= QueryHandler.GetPlayers(IP, Port, out Players);
+                success &= QueryHandler.GetPlayers(IP, ++Port, out Players);
             if(success)
-                success &= QueryHandler.GetRules(IP, Port, out Rules);
+                success &= QueryHandler.GetRules(IP, ++Port, out Rules);
             if (!success)
             {
                 Result = null;

@@ -88,7 +88,7 @@ namespace UNObot.Modules
         public async Task CheckUnturned(string ip, ushort port = 27015)
         {
             // query port = 1+ normal port
-            bool success = DisplayEmbed.UnturnedQueryEmbed(Context.Guild.Id, ip, ++port, out var Embed);
+            bool success = DisplayEmbed.UnturnedQueryEmbed(Context.Guild.Id, ip, port, out var Embed);
             if (!success)
             {
                 await ReplyAsync("Error: Apparently we couldn't get any information about this server. Use the normal (join) port, as this automatically takes care of query ports.");
