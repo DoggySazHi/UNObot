@@ -101,6 +101,7 @@ namespace UNObot.Services
             {
                 string Path = GetNextFile(Guild, "mp3");
                 await Converter.DownloadVideoAsync(Id, Path).ConfigureAwait(false);
+                Console.WriteLine("Downloaded");
                 return Path;
             }
             else

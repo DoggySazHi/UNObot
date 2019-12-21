@@ -27,21 +27,13 @@ namespace UNObot.Modules
             uint cardColor = 0xFF0000;
             var card = await UNOdb.GetCurrentCard(serverid);
 
-            switch (card.Color)
+            cardColor = card.Color switch
             {
-                case "Red":
-                    cardColor = 0xFF0000;
-                    break;
-                case "Blue":
-                    cardColor = 0x0000FF;
-                    break;
-                case "Yellow":
-                    cardColor = 0xFFFF00;
-                    break;
-                default:
-                    cardColor = 0x00FF00;
-                    break;
-            }
+                "Red" => 0xFF0000,
+                "Blue" => 0x0000FF,
+                "Yellow" => 0xFFFF00,
+                _ => 0x00FF00,
+            };
             string response = "";
             ushort isPrivate = await UNOdb.GetGamemode(serverid);
             string server = Program._client.GetGuild(serverid).Name;
@@ -305,6 +297,80 @@ namespace UNObot.Modules
             })
             .AddField("Queued", List.ToString());
             return builder.Build();
+        }
+
+        public static bool UnturnedQueryEmbed(ulong Server, string IP, ushort Port, out Embed Result)
+        {
+            A2S_INFO Information = null;
+            A2S_PLAYER Players = null;
+            A2S_RULES Rules = null;
+            bool success = QueryHandler.GetInfo(IP, Port, out Information);
+            if(success)
+                success &= QueryHandler.GetPlayers(IP, Port, out Players);
+            if(success)
+                success &= QueryHandler.GetRules(IP, Port, out Rules);
+            if (!success)
+            {
+                Result = null;
+                return false;
+            }
+
+            var Random = ThreadSafeRandom.ThisThreadsRandom;
+            string DiscordServerName = Program._client.GetGuild(Server).Name;
+            string ServerName = Information.Name;
+            string ServerImageURL = Rules.Rules.Find(o => o.Name.Contains("Browser_Icon", StringComparison.OrdinalIgnoreCase)).Value;
+            string ServerDescription = "";
+            string Map = Information.Map;
+            string PlayersOnline = "";
+            bool VACEnabled = Information.VAC == A2S_INFO.VACFlags.Secured;
+            string UnturnedVersion = Rules.Rules.Find(o => o.Name.Contains("unturned", StringComparison.OrdinalIgnoreCase)).Value;
+            string RocketModVersion = "";
+            string RocketModPlugins = "";
+
+            int DescriptionLines = Convert.ToInt32(Rules.Rules.Find(o => o.Name.Contains("Browser_Desc_Full_Count", StringComparison.OrdinalIgnoreCase)).Value.Trim());
+            for(int i = 0; i < DescriptionLines; i++)
+                ServerDescription += Rules.Rules.Find(o => o.Name.Contains($"Browser_Desc_Full_Line_{i}", StringComparison.OrdinalIgnoreCase)).Value;
+            for(int i = 0; i < Players.PlayerCount; i++)
+            {
+                PlayersOnline += $"{Players.Players[i].Name} - {QueryHandler.HumanReadable(Players.Players[i].Duration)}";
+                if (i != Players.PlayerCount - 1)
+                    PlayersOnline += "\n";
+            }
+            int RocketExists = Rules.Rules.FindIndex(o => o.Name.Contains($"rocket", StringComparison.OrdinalIgnoreCase));
+            int RocketPluginsExists = Rules.Rules.FindIndex(o => o.Name.Contains($"rocketplugins", StringComparison.OrdinalIgnoreCase));
+            if (RocketExists != -1)
+                RocketModVersion = Rules.Rules[RocketExists].Value;
+            if (RocketPluginsExists != -1)
+                RocketModPlugins = Rules.Rules[RocketPluginsExists].Value;
+
+            var builder = new EmbedBuilder()
+            .WithTitle("Description")
+            .WithDescription(ServerDescription)
+            .WithColor(new Color(Random.Next(0, 256), Random.Next(0, 256), Random.Next(0, 256)))
+            .WithTimestamp(DateTimeOffset.Now)
+            .WithFooter(footer =>
+            {
+                footer
+                    .WithText($"UNObot {Program.version} - By DoggySazHi")
+                    .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
+            })
+            .WithThumbnailUrl(ServerImageURL)
+            .WithAuthor(author =>
+            {
+                author
+                    .WithName($"Server Query of {ServerName}")
+                    .WithIconUrl("https://williamle.com/unobot/unobot.png");
+            })
+            .AddField("IP", IP, true)
+            .AddField("Port", Port, true)
+            .AddField("Map", Map, true)
+            .AddField("VAC Security", VACEnabled ? "Enabled" : "Disabled", true)
+            .AddField($"Versions <:patchythink:592817853313581067>", $"Unturned: {UnturnedVersion}{(RocketModVersion == "" ? "" : $"\nRocketMod: {RocketModVersion}")}", true);
+            if(!string.IsNullOrWhiteSpace(RocketModPlugins))
+                builder.AddField($"RocketMod Plugins", RocketModPlugins, true);
+            builder.AddField($"Players: {Information.Players}/{Information.MaxPlayers}", PlayersOnline, true);
+            Result = builder.Build();
+            return true;
         }
     }
 }

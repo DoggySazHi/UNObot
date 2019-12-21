@@ -34,23 +34,7 @@ namespace UNObot.Modules
         [Help(new string[] { ".ubows" }, "Get basic server information about the Unturned Bunker Official Wikia Server.", true, "UNObot 2.4")]
         public async Task UBOWS()
         {
-            //add one for query port
-            bool success = QueryHandler.GetInfo("108.61.100.48", 25445, out A2S_INFO response);
-            if (!success)
-            {
-                await ReplyAsync("Error: Apparently we couldn't get any information about UBOWS.");
-                return;
-            }
-            if (response.Map == "Carpat")
-                response.Map = "~~Carpat~~ **Carpet**";
-            int players = Convert.ToInt32(response.Players);
-            if (players == 0 && new Random().Next(0, 5) == 0)
-                players = -1;
-            await ReplyAsync($"Name: {response.Name}\n" +
-                             $"Players: {players}/{Convert.ToInt32(response.MaxPlayers)}\n" +
-                             $"Map: {response.Map}\n" +
-                             $"IP: 108.61.100.48\n" +
-                             $"Port: {response.Port}");
+            await CheckUnturned("108.61.100.48", 25444);
         }
 
         [Command("unturnedreleasenotes", RunMode = RunMode.Async), Alias("urn")]
@@ -96,15 +80,7 @@ namespace UNObot.Modules
         [Help(new string[] { ".unofficialwiki" }, "Get basic server information about the Unofficial Wikia Server.", true, "UNObot 2.4")]
         public async Task UnoffWiki()
         {
-            bool success = QueryHandler.GetInfo("23.243.79.108", 27041, out A2S_INFO response);
-            if (!success)
-            {
-                await ReplyAsync("Error: Apparently we couldn't get any information about the Unofficial Wiki Server.");
-                return;
-            }
-            await ReplyAsync($"Name: {response.Name}\n" +
-                             $"Players: {Convert.ToInt32(response.Players)}/{Convert.ToInt32(response.MaxPlayers)}\n" +
-                             $"Map: {response.Map}");
+            await CheckUnturned("23.243.79.108", 27040);
         }
 
         [Command("checkunturned", RunMode = RunMode.Async), Alias("checku")]
@@ -112,15 +88,13 @@ namespace UNObot.Modules
         public async Task CheckUnturned(string ip, ushort port = 27015)
         {
             // query port = 1+ normal port
-            bool success = QueryHandler.GetInfo(ip, ++port, out A2S_INFO response);
+            bool success = DisplayEmbed.UnturnedQueryEmbed(Context.Guild.Id, ip, ++port, out var Embed);
             if (!success)
             {
                 await ReplyAsync("Error: Apparently we couldn't get any information about this server. Use the normal (join) port, as this automatically takes care of query ports.");
                 return;
             }
-            await ReplyAsync($"Name: {response.Name}\n" +
-                             $"Players: {Convert.ToInt32(response.Players)}/{Convert.ToInt32(response.MaxPlayers)}\n" +
-                             $"Map: {response.Map}");
+            await ReplyAsync("", false, Embed);
         }
 
         [Command("helpmeplz", RunMode = RunMode.Async), RequireOwner]

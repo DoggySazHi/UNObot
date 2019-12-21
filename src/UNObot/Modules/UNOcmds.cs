@@ -775,14 +775,12 @@ namespace UNObot.Modules
         public async Task Exit()
         {
             if (Context.User.Id == 278524552462598145)
-                await ReplyAsync("ERROR: <:patchythink:592817853313581067>");
+                await ReplyAsync("Error: <:patchythink:592817853313581067>");
             else if (Context.User.Id == 191397590946807809)
             {
                 await ReplyAsync("Resetting!");
-                Program.OnExit();
+                await Program.OnExit();
             }
-            else
-                await ReplyAsync("You do not have access to this command!");
         }
     }
 }
