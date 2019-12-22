@@ -4,6 +4,7 @@ using System.Timers;
 using System.Collections.Generic;
 using Discord.WebSocket;
 using Newtonsoft.Json;
+using UNObot.TerminalCore;
 
 #pragma warning disable CS1701 // Assuming assembly reference matches identity
 #pragma warning disable CS1702 // Assuming assembly reference matches identity
@@ -160,22 +161,13 @@ namespace UNObot.Modules
                 myColor = ThreadSafeRandom.ThisThreadsRandom.Next(1, 5);
             }
 
-            switch (myColor)
+            card.Color = myColor switch
             {
-                case 1:
-                    card.Color = "Red";
-                    break;
-                case 2:
-                    card.Color = "Yellow";
-                    break;
-                case 3:
-                    card.Color = "Green";
-                    break;
-                default:
-                    card.Color = "Blue";
-                    break;
-            }
-
+                1 => "Red",
+                2 => "Yellow",
+                3 => "Green",
+                _ => "Blue",
+            };
             if (myCard < 10)
             {
                 card.Value = myCard.ToString();
@@ -212,44 +204,7 @@ namespace UNObot.Modules
             return card;
         }
     }
-    public static class ColorConsole
-    {
-        public static void WriteLine(string Text, string Color)
-        {
-            ConsoleColor[] colors = (ConsoleColor[])Enum.GetValues(typeof(ConsoleColor));
-            //Ignore warning; debug mode.
-#if DEBUG
-            bool colorFound = false;
-#endif
-            foreach (var color in colors)
-            {
-                if (color.ToString() == Color)
-                {
-                    Console.BackgroundColor = ConsoleColor.Black;
-                    Console.ForegroundColor = color;
-#if DEBUG
-                    colorFound = true;
-#endif
-                    break;
-                }
-            }
-            Console.WriteLine(Text);
-            Console.ResetColor();
-#if DEBUG
-            if (!colorFound)
-            {
-                WriteLine("[WARN] Attempted to WriteLine with a color that doesn't exist!", ConsoleColor.Yellow);
-            }
-#endif
-        }
-        public static void WriteLine(string Text, ConsoleColor color)
-        {
-            Console.BackgroundColor = ConsoleColor.Black;
-            Console.ForegroundColor = color;
-            Console.WriteLine(Text);
-            Console.ResetColor();
-        }
-    }
+
     public static class AFKtimer
     {
         public static Dictionary<ulong, Timer> playTimers = new Dictionary<ulong, Timer>();

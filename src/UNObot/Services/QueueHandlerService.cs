@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System;
 using System.Threading.Tasks;
 using System.Linq;
+using UNObot.TerminalCore;
 
 #pragma warning disable CS1701 // Assuming assembly reference matches identity
 #pragma warning disable CS1702 // Assuming assembly reference matches identity
@@ -25,8 +26,7 @@ namespace UNObot.Modules
         public static async Task<ulong> GetCurrentPlayer(ulong server)
         {
             Queue<ulong> players = await UNODatabaseService.GetPlayers(server);
-            ulong player = 0;
-            if (players.TryPeek(out player))
+            if (players.TryPeek(out ulong player))
                 return player;
             ColorConsole.WriteLine("[ERR] No players!", ConsoleColor.Red);
             return player;

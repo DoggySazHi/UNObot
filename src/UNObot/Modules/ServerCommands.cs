@@ -66,14 +66,19 @@ namespace UNObot.Modules
         [Help(new string[] { ".checkunturned (ip) (port)" }, "Get basic server information about any Unturned server.", true, "UNObot 3.7")]
         public async Task CheckUnturned(string ip, ushort port = 27015)
         {
+            var Message = await ReplyAsync("I am now querying the server, please wait warmly...");
             // query port = 1+ normal port
             bool success = EmbedDisplayService.UnturnedQueryEmbed(Context.Guild.Id, ip, port, out var Embed);
             if (!success)
             {
-                await ReplyAsync("Error: Apparently we couldn't get any information about this server.");
+                await Message.ModifyAsync(o => o.Content = "Error: Apparently we couldn't get any information about this server.");
                 return;
             }
-            await ReplyAsync("", false, Embed);
+            await Message.ModifyAsync(o =>
+            {
+                o.Content = "";
+                o.Embed = Embed;
+            });
         }
     }
 }

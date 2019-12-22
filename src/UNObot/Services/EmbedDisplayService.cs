@@ -299,16 +299,27 @@ namespace UNObot.Modules
             return builder.Build();
         }
 
-        public static bool UnturnedQueryEmbed(ulong Server, string IP, ushort Port, out Embed Result)
+        private static readonly int Attempts = 3;
+
+        public static bool UnturnedQueryEmbed(ulong Server, string IP, ushort Port, out Embed Result, ServerAverages Averages = null)
         {
+            A2S_INFO Information = null;
+            bool InformationGet = false;
             A2S_PLAYER Players = null;
+            bool PlayersGet = false;
             A2S_RULES Rules = null;
-            bool success = QueryHandlerService.GetInfo(IP, (ushort) (Port + 1), out A2S_INFO Information);
-            if(success)
-                success &= QueryHandlerService.GetPlayers(IP, (ushort) (Port + 1), out Players);
-            if(success)
-                success &= QueryHandlerService.GetRules(IP, (ushort) (Port + 1), out Rules);
-            if (!success)
+            bool RulesGet = false;
+            for (int i = 0; i < Attempts; i++)
+            {
+                if(!InformationGet)
+                    InformationGet = QueryHandlerService.GetInfo(IP, (ushort)(Port + 1), out Information);
+                if (!PlayersGet)
+                    PlayersGet = QueryHandlerService.GetPlayers(IP, (ushort)(Port + 1), out Players);
+                if (!RulesGet)
+                    RulesGet = QueryHandlerService.GetRules(IP, (ushort)(Port + 1), out Rules);
+            }
+
+            if (!InformationGet || !PlayersGet || !RulesGet)
             {
                 Result = null;
                 return false;
@@ -317,18 +328,24 @@ namespace UNObot.Modules
             var Random = ThreadSafeRandom.ThisThreadsRandom;
             string DiscordServerName = Program._client.GetGuild(Server).Name;
             string ServerName = Information.Name;
-            string ServerImageURL = Rules.Rules.Find(o => o.Name.Contains("Browser_Icon", StringComparison.OrdinalIgnoreCase)).Value;
+            string ServerImageURL = Rules.Rules.FirstOrDefault(o => o.Name.Contains("Browser_Icon", StringComparison.OrdinalIgnoreCase)).Value;
             string ServerDescription = "";
             string Map = Information.Map;
             string PlayersOnline = "";
             bool VACEnabled = Information.VAC == A2S_INFO.VACFlags.Secured;
-            string UnturnedVersion = Rules.Rules.Find(o => o.Name.Contains("unturned", StringComparison.OrdinalIgnoreCase)).Value;
+            string UnturnedVersion = Rules.Rules.FirstOrDefault(o => o.Name.Contains("unturned", StringComparison.OrdinalIgnoreCase)).Value;
             string RocketModVersion = "";
             string RocketModPlugins = "";
 
+            if (ServerImageURL == null)
+                ServerImageURL = "";
+
+            if (UnturnedVersion == null)
+                UnturnedVersion = $"Unknown Version ({Information.Version}?)";
+
             int DescriptionLines = Convert.ToInt32(Rules.Rules.Find(o => o.Name.Contains("Browser_Desc_Full_Count", StringComparison.OrdinalIgnoreCase)).Value.Trim());
             for(int i = 0; i < DescriptionLines; i++)
-                ServerDescription += Rules.Rules.Find(o => o.Name.Contains($"Browser_Desc_Full_Line_{i}", StringComparison.OrdinalIgnoreCase)).Value;
+                ServerDescription += Rules.Rules.FirstOrDefault(o => o.Name.Contains($"Browser_Desc_Full_Line_{i}", StringComparison.OrdinalIgnoreCase)).Value;
             for(int i = 0; i < Players.PlayerCount; i++)
             {
                 PlayersOnline += $"{Players.Players[i].Name} - {QueryHandlerService.HumanReadable(Players.Players[i].Duration)}";
@@ -368,6 +385,13 @@ namespace UNObot.Modules
             if(!string.IsNullOrWhiteSpace(RocketModPlugins))
                 builder.AddField($"RocketMod Plugins", RocketModPlugins, true);
             builder.AddField($"Players: {Information.Players}/{Information.MaxPlayers}", PlayersOnline, true);
+            if (Averages != null)
+                builder.AddField("Server Averages",
+                    $"Last hour: {Averages.AverageLastHour.ToString("N2")} players\n" +
+                    $"Last 24 hours: {Averages.AverageLast24H.ToString("N2")} players\n" +
+                    $"Last week: {Averages.AverageLastWeek.ToString("N2")} players\n" +
+                    $"Last month: {Averages.AverageLastMonth.ToString("N2")} players\n" +
+                    $"Last year: {Averages.AverageLastYear.ToString("N2")} players\n", true);
             Result = builder.Build();
             return true;
         }

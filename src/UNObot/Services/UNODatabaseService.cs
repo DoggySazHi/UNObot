@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using UNObot.TerminalCore;
 #pragma warning disable CS1701 // Assuming assembly reference matches identity
 #pragma warning disable CS1702 // Assuming assembly reference matches identity
 namespace UNObot.Modules
@@ -84,22 +85,20 @@ namespace UNObot.Modules
                 Value = server
             };
             Parameters.Add(p1);
-            using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
+            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            try
             {
-                try
+                while (dr.Read())
                 {
-                    while (dr.Read())
-                    {
-                        if (!await dr.IsDBNullAsync(0))
-                            description = dr.GetString(0);
-                    }
+                    if (!await dr.IsDBNullAsync(0))
+                        description = dr.GetString(0);
                 }
-                catch (MySqlException ex)
-                {
-                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
-                }
-                return description;
             }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            return description;
         }
         public static async Task ResetGame(ulong server)
         {
@@ -143,21 +142,19 @@ namespace UNObot.Modules
                 Value = server
             };
             Parameters.Add(p1);
-            using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
+            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            try
             {
-                try
+                while (dr.Read())
                 {
-                    while (dr.Read())
-                    {
-                        yesorno |= dr.GetByte(0) == 1;
-                    }
+                    yesorno |= dr.GetByte(0) == 1;
                 }
-                catch (MySqlException ex)
-                {
-                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
-                }
-                return yesorno;
             }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            return yesorno;
         }
         public static async Task AddUser(ulong id, string usrname, ulong server)
         {
@@ -368,21 +365,19 @@ namespace UNObot.Modules
                 Value = server
             };
             Parameters.Add(p1);
-            using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
+            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            try
             {
-                try
+                while (dr.Read())
                 {
-                    while (dr.Read())
-                    {
-                        gamemode = dr.GetUInt16(0);
-                    }
+                    gamemode = dr.GetUInt16(0);
                 }
-                catch (MySqlException ex)
-                {
-                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
-                }
-                return gamemode;
             }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            return gamemode;
         }
         //NOTE THAT THIS GETS DIRECTLY FROM SERVER; YOU MUST AddPlayersToServer
         public static async Task<Queue<ulong>> GetPlayers(ulong server)
@@ -479,21 +474,19 @@ namespace UNObot.Modules
                 Value = server
             };
             Parameters.Add(p1);
-            using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
+            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            try
             {
-                try
+                while (dr.Read())
                 {
-                    while (dr.Read())
-                    {
-                        players.Enqueue(dr.GetUInt64(0));
-                    }
+                    players.Enqueue(dr.GetUInt64(0));
                 }
-                catch (MySqlException ex)
-                {
-                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
-                }
-                return players;
             }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            return players;
         }
         public static async Task<ulong> GetUNOPlayer(ulong server)
         {
@@ -507,22 +500,20 @@ namespace UNObot.Modules
             };
             Parameters.Add(p1);
             ulong player = 0;
-            using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
+            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            try
             {
-                try
+                while (dr.Read())
                 {
-                    while (dr.Read())
-                    {
-                        if (!await dr.IsDBNullAsync(0))
-                            player = dr.GetUInt64(0);
-                    }
+                    if (!await dr.IsDBNullAsync(0))
+                        player = dr.GetUInt64(0);
                 }
-                catch (MySqlException ex)
-                {
-                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
-                }
-                return player;
             }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            return player;
         }
         public static async Task SetUNOPlayer(ulong server, ulong player)
         {
@@ -611,19 +602,17 @@ namespace UNObot.Modules
                 Value = server
             };
             Parameters.Add(p1);
-            using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
+            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            try
             {
-                try
-                {
-                    while (dr.Read())
-                        yesorno |= dr.GetByte(0) == 1;
-                }
-                catch (MySqlException ex)
-                {
-                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
-                }
-                return yesorno;
+                while (dr.Read())
+                    yesorno |= dr.GetByte(0) == 1;
             }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            return yesorno;
         }
         public static async Task<bool> EnforceChannel(ulong server)
         {
@@ -637,19 +626,17 @@ namespace UNObot.Modules
                 Value = server
             };
             Parameters.Add(p1);
-            using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
+            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            try
             {
-                try
-                {
-                    while (dr.Read())
-                        yesorno |= dr.GetByte(0) == 1;
-                }
-                catch (MySqlException ex)
-                {
-                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
-                }
-                return yesorno;
+                while (dr.Read())
+                    yesorno |= dr.GetByte(0) == 1;
             }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            return yesorno;
         }
         public static async Task SetEnforceChannel(ulong server, bool enforce)
         {
@@ -688,21 +675,19 @@ namespace UNObot.Modules
                 Value = server
             };
             Parameters.Add(p1);
-            using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
+            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            try
             {
-                try
+                while (dr.Read())
                 {
-                    while (dr.Read())
-                    {
-                        channel = dr.GetUInt64(0);
-                    }
+                    channel = dr.GetUInt64(0);
                 }
-                catch (MySqlException ex)
-                {
-                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
-                }
-                return channel;
             }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            return channel;
         }
         public static async Task<List<ulong>> GetAllowedChannels(ulong server)
         {
@@ -716,19 +701,17 @@ namespace UNObot.Modules
                 Value = server
             };
             Parameters.Add(p1);
-            using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
+            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            try
             {
-                try
-                {
-                    while (dr.Read())
-                        allowedChannels = JsonConvert.DeserializeObject<List<ulong>>(dr.GetString(0));
-                }
-                catch (MySqlException ex)
-                {
-                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
-                }
-                return allowedChannels;
+                while (dr.Read())
+                    allowedChannels = JsonConvert.DeserializeObject<List<ulong>>(dr.GetString(0));
             }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            return allowedChannels;
         }
         public static async Task SetAllowedChannels(ulong server, List<ulong> allowedChannels)
         {
@@ -767,21 +750,19 @@ namespace UNObot.Modules
             };
             Parameters.Add(p1);
             Card card = new Card();
-            using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
+            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            try
             {
-                try
+                while (dr.Read())
                 {
-                    while (dr.Read())
-                    {
-                        card = JsonConvert.DeserializeObject<Card>(dr.GetString(0));
-                    }
+                    card = JsonConvert.DeserializeObject<Card>(dr.GetString(0));
                 }
-                catch (MySqlException ex)
-                {
-                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
-                }
-                return card;
             }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            return card;
         }
         public static async Task SetCurrentCard(ulong server, Card card)
         {
@@ -821,21 +802,19 @@ namespace UNObot.Modules
                 Value = player
             };
             Parameters.Add(p1);
-            using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
+            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            try
             {
-                try
+                while (dr.Read())
                 {
-                    while (dr.Read())
-                    {
-                        yesorno |= dr.GetByte(0) == 1;
-                    }
+                    yesorno |= dr.GetByte(0) == 1;
                 }
-                catch (MySqlException ex)
-                {
-                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
-                }
-                return yesorno;
             }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            return yesorno;
         }
         public static async Task<bool> IsPlayerInServerGame(ulong player, ulong server)
         {
@@ -849,21 +828,19 @@ namespace UNObot.Modules
                 Value = server
             };
             Parameters.Add(p1);
-            using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
+            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            try
             {
-                try
+                while (dr.Read())
                 {
-                    while (dr.Read())
-                    {
-                        players = JsonConvert.DeserializeObject<Queue<ulong>>(dr.GetString(0));
-                    }
+                    players = JsonConvert.DeserializeObject<Queue<ulong>>(dr.GetString(0));
                 }
-                catch (MySqlException ex)
-                {
-                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
-                }
-                return players.Contains(player);
             }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            return players.Contains(player);
         }
         //Done?
         public static async Task<List<Card>> GetCards(ulong player)
@@ -879,22 +856,20 @@ namespace UNObot.Modules
             };
             Parameters.Add(p1);
             List<Card> cards;
-            using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
+            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            try
             {
-                try
+                while (dr.Read())
                 {
-                    while (dr.Read())
-                    {
-                        jsonstring = dr.GetString(0);
-                    }
+                    jsonstring = dr.GetString(0);
                 }
-                catch (MySqlException ex)
-                {
-                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
-                }
-                cards = JsonConvert.DeserializeObject<List<Card>>(jsonstring);
-                return cards;
             }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            cards = JsonConvert.DeserializeObject<List<Card>>(jsonstring);
+            return cards;
         }
         public static async Task<bool> UserExists(ulong player)
         {
@@ -908,21 +883,19 @@ namespace UNObot.Modules
                 Value = player
             };
             Parameters.Add(p1);
-            using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
+            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            try
             {
-                try
+                while (dr.Read())
                 {
-                    while (dr.Read())
-                    {
-                        exists |= dr.GetInt64(0) == 1;
-                    }
+                    exists |= dr.GetInt64(0) == 1;
                 }
-                catch (MySqlException ex)
-                {
-                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
-                }
-                return exists;
             }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            return exists;
         }
         public static async Task GetUsersAndAdd(ulong server)
         {
@@ -974,23 +947,21 @@ namespace UNObot.Modules
             };
             Parameters.Add(p1);
             int[] stats = { 0, 0, 0 };
-            using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
+            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            try
             {
-                try
+                while (dr.Read())
                 {
-                    while (dr.Read())
-                    {
-                        stats[0] = dr.GetInt32(0);
-                        stats[1] = dr.GetInt32(1);
-                        stats[2] = dr.GetInt32(2);
-                    }
+                    stats[0] = dr.GetInt32(0);
+                    stats[1] = dr.GetInt32(1);
+                    stats[2] = dr.GetInt32(2);
                 }
-                catch (MySqlException ex)
-                {
-                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
-                }
-                return stats;
             }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            return stats;
         }
         public static async Task<string> GetNote(ulong player)
         {
@@ -1288,22 +1259,20 @@ namespace UNObot.Modules
                 Value = server
             };
             Parameters.Add(p1);
-            using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
+            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            try
             {
-                try
+                while (dr.Read())
                 {
-                    while (dr.Read())
-                    {
-                        if (!await dr.IsDBNullAsync(0))
-                            description = dr.GetString(0);
-                    }
+                    if (!await dr.IsDBNullAsync(0))
+                        description = dr.GetString(0);
                 }
-                catch (MySqlException ex)
-                {
-                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
-                }
-                return description;
             }
+            catch (MySqlException ex)
+            {
+                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+            }
+            return description;
         }
     }
 }

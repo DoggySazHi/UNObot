@@ -25,12 +25,12 @@ namespace UNObot
     {
         public static string version = "Unknown Version";
         public static string commit = "Unknown Commit";
-        public static string build = "Unknown Build";
+        public static string build = "???";
         public static List<Command> commands = new List<Command>();
 
         static async Task Main()
         {
-            Console.WriteLine("UNObot Launcher 1.0");
+            Console.WriteLine("UNObot Launcher 1.1");
             await new Program().MainAsync();
         }
 
@@ -60,6 +60,7 @@ namespace UNObot
 #if DEBUG
             DebugService.GetSingleton();
 #endif
+            UBOWServerLoggerService.GetSingleton();
             await UNODatabaseService.CleanAll();
             await _client.SetGameAsync($"UNObot {version}");
             await LoadHelp();
