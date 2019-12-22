@@ -36,7 +36,7 @@ namespace UNObot
 
         public static DiscordSocketClient _client;
         IConfiguration _config;
-        static ManualResetEvent ExitEvent = new ManualResetEvent(false);
+        static readonly ManualResetEvent ExitEvent = new ManualResetEvent(false);
 
         public async Task MainAsync()
         {
@@ -259,8 +259,7 @@ namespace UNObot
         }
         public static async Task SendMessage(string text, ulong server)
         {
-            ulong channel = 0;
-            channel = _client.GetGuild(server).DefaultChannel.Id;
+            ulong channel = _client.GetGuild(server).DefaultChannel.Id;
             Console.WriteLine($"Channel: {channel}");
             if (await UNODatabaseService.HasDefaultChannel(server))
                 channel = await UNODatabaseService.GetDefaultChannel(server);
