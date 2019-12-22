@@ -37,9 +37,13 @@ namespace UNObot.Services
             if(!File.Exists(FileName))
             {
                 Console.WriteLine("Started new logging service.");
-                this.Logs = new ServerLog();
+                this.Logs = new ServerLog
+                {
+                    ListOLogs = new List<Log>()
+                };
                 using var sw = File.Create(FileName);
                 await SaveLogs();
+                LogTimer.Enabled = true;
                 return;
             }
             string Data = "";
@@ -51,7 +55,10 @@ namespace UNObot.Services
             else
             {
                 ColorConsole.WriteLine("Error: Failed to read logs! Created new logging service.", ConsoleColor.Red);
-                this.Logs = new ServerLog();
+                this.Logs = new ServerLog
+                {
+                    ListOLogs = new List<Log>()
+                };
             }
             LogTimer.Enabled = true;
             Console.WriteLine("Initialized!");
