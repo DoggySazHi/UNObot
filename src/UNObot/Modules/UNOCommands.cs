@@ -87,7 +87,7 @@ namespace UNObot.Modules
             //Style of Username#XXXX or Username XXXX
             if ((user.Contains('#') || user.Contains(' ')) && user.Length >= 6 && int.TryParse(user.Substring(user.Length - 4), out int discriminator))
             {
-                var userObj = Program._client.GetUser(user.Substring(0, user.Length - 5), discriminator.ToString());
+                var userObj = Program._client.GetUser(user[0..^5], discriminator.ToString());
                 //Negative one is only passed in because it cannot convert to ulong; it will fail the TryParse and give a "Mention the player..." error.
                 user = userObj != null ? userObj.Id.ToString() : (-1).ToString();
             }
@@ -769,18 +769,6 @@ namespace UNObot.Modules
                              $"Currently on **{Context.Guild.Name}**, goodbye world!\n" +
                              "To reinvite the bot, please use this link: https://discordapp.com/api/oauth2/authorize?client_id=477616287997231105&permissions=8192&scope=bot");
             await Context.Guild.LeaveAsync();
-        }
-
-        [Command("exit", RunMode = RunMode.Async)]
-        public async Task Exit()
-        {
-            if (Context.User.Id == 278524552462598145)
-                await ReplyAsync("Error: <:patchythink:592817853313581067>");
-            else if (Context.User.Id == 191397590946807809)
-            {
-                await ReplyAsync("Resetting!");
-                Program.Exit();
-            }
         }
     }
 }

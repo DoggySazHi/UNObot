@@ -43,6 +43,18 @@ namespace UNObot.Modules
             await textchannel.DeleteMessagesAsync(messages);
         }
 
+        [Command("exit", RunMode = RunMode.Async)]
+        public async Task Exit()
+        {
+            if (Context.User.Id == 278524552462598145)
+                await ReplyAsync("Error: <:patchythink:592817853313581067>");
+            else if (Context.User.Id == 191397590946807809)
+            {
+                await ReplyAsync("Resetting!");
+                Program.Exit();
+            }
+        }
+
 #if DEBUG
         [Command("translate", RunMode = RunMode.Async)]
         public async Task Translate(string From, string To, [Remainder] string Message)

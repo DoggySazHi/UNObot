@@ -64,6 +64,11 @@ namespace UNObot.Modules
 
         [Command("checkunturned", RunMode = RunMode.Async), Alias("checku")]
         [Help(new string[] { ".checkunturned (ip) (port)" }, "Get basic server information about any Unturned server.", true, "UNObot 3.7")]
+        public async Task CheckUnturned(string ip, ushort port = 27015)
+        {
+            await CheckUnturned(ip, port, null);
+        }
+
         public async Task CheckUnturned(string ip, ushort port = 27015, ServerAverages Averages = null)
         {
             var Message = await ReplyAsync("I am now querying the server, please wait warmly...");
