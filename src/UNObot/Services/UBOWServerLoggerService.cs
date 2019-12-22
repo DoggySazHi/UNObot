@@ -38,6 +38,8 @@ namespace UNObot.Services
             {
                 Console.WriteLine("Started new logging service.");
                 this.Logs = new ServerLog();
+                using var sw = File.Create(FileName);
+                await SaveLogs();
                 return;
             }
             string Data = "";
