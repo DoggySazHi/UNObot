@@ -13,7 +13,7 @@ namespace UNObot.Modules
         [Help(new string[] { ".ubows" }, "Get basic server information about the Unturned Bunker Official Wikia Server.", true, "UNObot 2.4")]
         public async Task UBOWS()
         {
-            await CheckUnturned("108.61.100.48", 25444);
+            await CheckUnturned("108.61.100.48", 25444, UBOWServerLoggerService.GetSingleton().GetAverages());
         }
 
         [Command("unturnedreleasenotes", RunMode = RunMode.Async), Alias("urn")]
@@ -64,11 +64,11 @@ namespace UNObot.Modules
 
         [Command("checkunturned", RunMode = RunMode.Async), Alias("checku")]
         [Help(new string[] { ".checkunturned (ip) (port)" }, "Get basic server information about any Unturned server.", true, "UNObot 3.7")]
-        public async Task CheckUnturned(string ip, ushort port = 27015)
+        public async Task CheckUnturned(string ip, ushort port = 27015, ServerAverages Averages = null)
         {
             var Message = await ReplyAsync("I am now querying the server, please wait warmly...");
             // query port = 1+ normal port
-            bool success = EmbedDisplayService.UnturnedQueryEmbed(Context.Guild.Id, ip, port, out var Embed);
+            bool success = EmbedDisplayService.UnturnedQueryEmbed(Context.Guild.Id, ip, port, out var Embed, Averages);
             if (!success)
             {
                 await Message.ModifyAsync(o => o.Content = "Error: Apparently we couldn't get any information about this server.");

@@ -525,7 +525,7 @@ namespace UNObot.Modules
                         await QueueHandlerService.NextPlayer(Context.Guild.Id);
 
                     Response += "\n\nGame has started. All information about your cards will be PMed.\n" +
-                            "You have been given 7 cards; PM \"deck\" to view them.\n" +
+                            "You have been given 7 cards; run \".deck\" to view them.\n" +
                             "Remember; you have 1 minute and 30 seconds to place a card.\n" +
                             $"The first player is <@{await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id)}>.\n";
                     Card currentCard = UNOCoreServices.RandomCard();
