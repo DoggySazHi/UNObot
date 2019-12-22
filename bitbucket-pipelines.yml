@@ -17,7 +17,6 @@ pipelines:
           - dotnet build $PROJECT_NAME
     - step:
         name: Deploy
-        trigger: manual
         script:
           - dotnet publish -c Release src/UNObot
           - rm -rf src/UNObot/bin/Release/netcoreapp3.1/UNObot
