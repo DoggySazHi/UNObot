@@ -70,13 +70,24 @@ namespace UNObot.Services
             using StreamWriter sw = new StreamWriter(FileName, false);
             await sw.WriteAsync(Value);
         }
+
+        private static readonly int Attempts = 3;
         private async void LogMinute(object sender, ElapsedEventArgs e)
         {
             var Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             byte PlayerCount = 0;
-            var ServerUp = QueryHandlerService.GetInfo(IP, QueryPort, out var Output);
-            if (ServerUp)
-                PlayerCount = Output.Players;
+            bool ServerUp = false;
+            
+            for(int i = 0; i < Attempts; i++)
+            {
+                ServerUp = QueryHandlerService.GetInfo(IP, QueryPort, out var Output);
+                if (ServerUp)
+                {
+                    PlayerCount = Output.Players;
+                    break;
+                }
+            }
+
             Logs.ListOLogs.Add(new Log
             {
                 Timestamp = Timestamp,
