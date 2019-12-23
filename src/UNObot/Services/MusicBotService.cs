@@ -681,6 +681,8 @@ namespace UNObot.Services
                         else
                             Error += " There is only one page.";
                     }
+                    else
+                        List = Result.Item1;
                 }
             }
             catch (Exception ex)

@@ -18,7 +18,7 @@ namespace UNObot.Modules
             var Output = $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {Program.version}\nCurrent Time (PST): {DateTime.Now.ToString()}" +
                     $"\n\nCommit {Program.Commit}\nBuild #{Program.Build}";
             if (NewUpdate.Commit != Program.Commit)
-                Output += $"\nThere is a pending update for Commit {NewUpdate.Commit} Build #{NewUpdate.Build}.";
+                Output += $"\nThere is a pending update: Commit {NewUpdate.Commit} Build #{NewUpdate.Build}.";
             await ReplyAsync(Output);
         }
 
