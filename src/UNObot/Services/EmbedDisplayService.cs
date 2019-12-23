@@ -289,7 +289,6 @@ namespace UNObot.Modules
                 }
 
                 Containers.Add(List);
-                Console.WriteLine("Looping...");
             }
 
             if (Page <= 0 || Page > Containers.Count)

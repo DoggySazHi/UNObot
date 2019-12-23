@@ -674,11 +674,13 @@ namespace UNObot.Services
                     var Player = Players[0];
                     var Result = EmbedDisplayService.DisplaySongList(Player.NowPlaying, Player.Songs, Page);
                     if (Result.Item1 == null)
+                    {
                         Error = $"Invalid page number!";
-                    if (Result.Item2 > 1)
-                        Error += $" It should be between 1-{Result.Item2}, inclusively.";
-                    else
-                        Error += " There is only one page.";
+                        if (Result.Item2 > 1)
+                            Error += $" It should be between 1-{Result.Item2}, inclusively.";
+                        else
+                            Error += " There is only one page.";
+                    }
                 }
             }
             catch (Exception ex)
