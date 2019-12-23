@@ -32,6 +32,7 @@ namespace UNObot.Modules
             await UNODatabaseService.AddUser(Context.User.Id, Context.User.Username, Context.Guild.Id);
             await ReplyAsync($"{Context.User.Username} has been added to the queue.\n");
         }
+
         [Command("leave", RunMode = RunMode.Async)]
         [Help(new string[] { ".leave" }, "Leave the queue (or game) in the current server.", true, "UNObot 0.2")]
         public async Task Leave()
@@ -60,6 +61,7 @@ namespace UNObot.Modules
                 await ReplyAsync($"It is now <@{await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
             }
         }
+
         [Command("stats", RunMode = RunMode.Async)]
         [Help(new string[] { ".stats" }, "Get the statistics of you or another player to see if they are a noob, pro, or hacker.", true, "UNObot 1.4")]
         public async Task Stats()
@@ -79,6 +81,7 @@ namespace UNObot.Modules
                                 + $"Games fully played: {stats[1]}\n"
                                 + $"Games won: {stats[2]}");
         }
+
         [Command("stats", RunMode = RunMode.Async)]
         [Help(new string[] { ".stats (ping another player, or their ID)" }, "Get the statistics of you or another player to see if they are a noob, pro, or hacker.", true, "UNObot 1.4")]
         public async Task Stats2([Remainder] string user)
@@ -113,6 +116,7 @@ namespace UNObot.Modules
                                 + $"Games fully played: {stats[1]}\n"
                                 + $"Games won: {stats[2]}");
         }
+
         [Command("setnote", RunMode = RunMode.Async)]
         [Help(new string[] { ".setnote" }, "Set a note about yourself. Write nothing to delete your message", true, "UNObot 2.1")]
         public async Task SetNote()
@@ -120,6 +124,7 @@ namespace UNObot.Modules
             await UNODatabaseService.RemoveNote(Context.User.Id);
             await ReplyAsync("Successfully removed note!");
         }
+
         [Command("setnote", RunMode = RunMode.Async)]
         [Help(new string[] { ".setnote" }, "Set a note about yourself. Write nothing to delete your message", true, "UNObot 2.1")]
         public async Task SetNote([Remainder]string text)

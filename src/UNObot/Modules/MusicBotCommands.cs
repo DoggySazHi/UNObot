@@ -39,7 +39,7 @@ namespace UNObot.Modules
             if (Result.Item2 != null && Result.Item2.Contains("Error"))
                 _ = ReplyAsync($"Error: {Result.Item2}");
             else
-                _ = ReplyAsync(Result.Item2 == null ? "" : Result.Item2, false, Result.Item1);
+                _ = ReplyAsync(Result.Item2 ?? "", false, Result.Item1);
         }
 
         [Command("playerplay", RunMode = RunMode.Async)]
@@ -159,10 +159,22 @@ namespace UNObot.Modules
         }
 
         [Command("playerqueue", RunMode = RunMode.Async)]
-        [Help(new string[] { ".playerqueue" }, "Get the songs in the player's queue.", true, "UNObot 3.2 Beta 2")]
+        [Help(new string[] { ".playerqueue", ".playerqueue (page)" }, "Get the songs in the player's queue.", true, "UNObot 3.2 Beta 2")]
         public async Task Queue()
         {
-            var Result = MusicBotService.GetSingleton().GetMusicQueue(Context.Guild.Id);
+            //TODO Multiple pages!
+            //TODO Not right section, but when done playing, actually disconnect user self
+            var Result = MusicBotService.GetSingleton().GetMusicQueue(Context.Guild.Id, 1);
+            if (!string.IsNullOrWhiteSpace(Result.Item2))
+                await ReplyAsync($"Error: {Result.Item2}").ConfigureAwait(false);
+            else
+                await ReplyAsync("", false, Result.Item1).ConfigureAwait(false);
+        }
+
+        [Command("playerqueue", RunMode = RunMode.Async)]
+        public async Task Queue(int Page)
+        {
+            var Result = MusicBotService.GetSingleton().GetMusicQueue(Context.Guild.Id, Page);
             if (!string.IsNullOrWhiteSpace(Result.Item2))
                 await ReplyAsync($"Error: {Result.Item2}").ConfigureAwait(false);
             else

@@ -24,10 +24,10 @@ namespace UNObot.Services
             string Output = "";
             TimeSpan TS = TimeSpan.FromSeconds(Time);
             if (TS.Hours != 0)
-                Output += $"{TS.Hours} hour{(TS.Hours == 1 ? "" : "s")} ";
+                Output += $"{TS.Hours}:";
             if (TS.Minutes != 0)
-                Output += $"{TS.Minutes} minute{(TS.Minutes == 1 ? "" : "s")} ";
-            Output += $"{TS.Seconds} second{(TS.Seconds == 1 ? "" : "s")}";
+                Output += $"{TS.Minutes}:";
+            Output += $"{TS.Seconds}";
             return Output;
         }
 

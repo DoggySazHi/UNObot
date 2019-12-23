@@ -161,7 +161,6 @@ namespace UNObot.Services
                 NowPlaying = null;
                 _ = Task.Run(Cache).ConfigureAwait(false);
             }
-            await AudioClient.StopAsync().ConfigureAwait(false);
             await DisposeAsync();
         }
 
@@ -240,7 +239,7 @@ namespace UNObot.Services
 
         public string ToggleLoopPlaylist()
         {
-            if (Songs.Count == 0)
+            if (NowPlaying == null && Songs.Count == 0)
                 return "There are no songs in the queue.";
 
             LoopingSong = false;
@@ -325,11 +324,12 @@ namespace UNObot.Services
                             Fail = true;
                         }
                     }
-                    //TODO download timer when loading, so we can restart if bad
+                    //TODO Flush might break things
                     PlayPos.Stop();
-                    //await DiscordStream.FlushAsync();
+                    await DiscordStream.FlushAsync();
                     Paused = false;
                 }
+                await AudioStream.FlushAsync();
             }
             IsPlaying = false;
             if (Quit)
@@ -367,6 +367,7 @@ namespace UNObot.Services
                 if (IsPlaying)
                     QuitEvent.WaitOne();
                 await AudioClient.StopAsync();
+                try { await AudioChannel.DisconnectAsync(); } catch (Exception) { }
                 AudioClient.Dispose();
                 PauseEvent.Dispose();
             }
@@ -647,7 +648,7 @@ namespace UNObot.Services
                 else
                 {
                     string SkipMessage = Players[0].TrySkip();
-                    if (SkipMessage != null && SkipMessage != "")
+                    if (!string.IsNullOrWhiteSpace(SkipMessage))
                         Error = SkipMessage;
                 }
             }
@@ -659,7 +660,7 @@ namespace UNObot.Services
             return Error != null ? "Skipped song." : "Error: " + Error;
         }
 
-        public Tuple<Embed, string> GetMusicQueue(ulong Guild)
+        public Tuple<Embed, string> GetMusicQueue(ulong Guild, int Page)
         {
             Embed List = null;
             string Error = null;
@@ -671,7 +672,13 @@ namespace UNObot.Services
                 else
                 {
                     var Player = Players[0];
-                    List = EmbedDisplayService.DisplaySongList(Player.NowPlaying, Player.Songs);
+                    var Result = EmbedDisplayService.DisplaySongList(Player.NowPlaying, Player.Songs, Page);
+                    if (Result.Item1 == null)
+                        Error = $"Invalid page number!";
+                    if (Result.Item2 > 1)
+                        Error += $" It should be between 1-{Result.Item2}, inclusively.";
+                    else
+                        Error += " There is only one page.";
                 }
             }
             catch (Exception ex)

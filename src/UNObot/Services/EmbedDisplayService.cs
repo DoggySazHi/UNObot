@@ -258,26 +258,46 @@ namespace UNObot.Modules
             return new Tuple<Embed, Playlist>(builder.Build(), Playlist);
         }
 
-        public static Embed DisplaySongList(Song NowPlaying, List<Song> Songs)
+        public static Tuple<Embed, int> DisplaySongList(Song NowPlaying, List<Song> Songs, int Page)
         {
+            List<StringBuilder> Containers = new List<StringBuilder>();
             Random r = ThreadSafeRandom.ThisThreadsRandom;
             string Server = Program._client.GetGuild(NowPlaying.RequestedGuild).Name;
-            StringBuilder List = new StringBuilder();
 
-            if (Songs.Count == 0)
-                List.Append("There are no songs queued.");
-            else
-                for (int i = 0; i < 9; i++)
-                {
-                    Song s = Songs[i];
-                    string Username = Program._client.GetUser(s.RequestedBy).Username;
-                    string NextLine = $"``{i + 1}.``[{s.Name}]({s.URL}) |``{s.Duration} Requested by: {Username}``\n\n";
-                    if (List.Length + NextLine.Length > 1024)
-                        break;
-                    List.Append(NextLine);
-                }
+            int Index = -1;
 
-            //TODO Make Description match others.
+            while (Index < Songs.Count)
+            {
+                StringBuilder List = new StringBuilder();
+
+                if (Songs.Count == 0)
+                    List.Append("There are no songs queued.");
+                else
+                    for (int i = 0; i < 9; i++)
+                    {
+                        if (Index >= Songs.Count - 1)
+                            break;
+                        Song s = Songs[++Index];
+                        string Username = Program._client.GetUser(s.RequestedBy).Username;
+                        string NextLine = $"``{i + 1}.``[{s.Name}]({s.URL}) |``{s.Duration} Requested by: {Username}``\n\n";
+                        if (List.Length + NextLine.Length > 1024)
+                        {
+                            Index--;
+                            break;
+                        }
+                        List.Append(NextLine);
+                    }
+
+                Containers.Add(List);
+            }
+
+            if (Page <= 0 || Page > Containers.Count)
+                return new Tuple<Embed, int>(null, Containers.Count);
+            return new Tuple<Embed, int>(DisplaySongList(Server, r, Page, Containers.Count, Containers[Page - 1], NowPlaying, Songs), Containers.Count);
+        }
+
+        private static Embed DisplaySongList(string Server, Random r, int Page, int MaxPages, StringBuilder List, Song NowPlaying, List<Song> Songs)
+        {
             var builder = new EmbedBuilder()
             .WithTitle("Now Playing")
             .WithDescription($"[{NowPlaying.Name}]({NowPlaying.URL}) |``{NowPlaying.Duration} Requested by: {Program._client.GetUser(NowPlaying.RequestedBy).Username}``")
@@ -292,10 +312,11 @@ namespace UNObot.Modules
             .WithAuthor(author =>
             {
                 author
-                    .WithName($"Playing in {Server}")
+                    .WithName($"Page {Page}/{MaxPages} | Playing in {Server}")
                     .WithIconUrl("https://williamle.com/unobot/unobot.png");
             })
             .AddField("Queued", List.ToString());
+
             return builder.Build();
         }
 

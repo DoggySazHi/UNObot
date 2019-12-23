@@ -14,9 +14,12 @@ namespace UNObot.Modules
         [Help(new string[] { ".info" }, "Get the current version of UNObot.", true, "UNObot 1.0")]
         public async Task Info()
         {
-            await ReplyAsync(
-                $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {Program.version}\nCurrent Time (PST): {DateTime.Now.ToString()}" +
-                    $"\n\nCommit {Program.commit}\nBuild #{Program.build}");
+            var NewUpdate = Program.ReadCommitBuild();
+            var Output = $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {Program.version}\nCurrent Time (PST): {DateTime.Now.ToString()}" +
+                    $"\n\nCommit {Program.Commit}\nBuild #{Program.Build}";
+            if (NewUpdate.Commit != Program.Commit)
+                Output += $"\nThere is a pending update for Commit {NewUpdate.Commit} Build #{NewUpdate.Build}.";
+            await ReplyAsync(Output);
         }
 
         [Command("testperms", RunMode = RunMode.Async), RequireUserPermission(GuildPermission.ManageGuild)]

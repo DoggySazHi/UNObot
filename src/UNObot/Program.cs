@@ -24,8 +24,8 @@ namespace UNObot
     class Program
     {
         public static string version = "Unknown Version";
-        public static string commit = "Unknown Commit";
-        public static string build = "???";
+        public static string Commit = "Unknown Commit";
+        public static string Build = "???";
         public static List<Command> commands = new List<Command>();
 
         static async Task Main()
@@ -154,24 +154,9 @@ namespace UNObot
             }
             else
             {
-                try
-                {
-                    using StreamReader sr = new StreamReader("commit");
-                    if (sr.EndOfStream)
-                        throw new Exception();
-                    var input = sr.ReadLine();
-                    if (input == null)
-                        throw new Exception();
-                    var words = input.Split(' ');
-                    if (words.Length < 2 || words[0].Length < 7)
-                        throw new Exception();
-                    commit = words[0].Trim().Substring(0, 7);
-                    build = words[1].Trim();
-                }
-                catch (Exception)
-                {
-                    Console.WriteLine("Build information file has not been created properly.");
-                }
+                var Result = ReadCommitBuild();
+                Commit = Result.Commit;
+                Build = Result.Build;
             }
             return new ConfigurationBuilder()
                         .SetBasePath(Directory.GetCurrentDirectory())
@@ -257,6 +242,29 @@ namespace UNObot
                 Console.WriteLine($"Loaded {commands.Count} commands including from help.json!");
             }
         }
+
+        public static (string Commit, string Build) ReadCommitBuild()
+        {
+            try
+            {
+                using StreamReader sr = new StreamReader("commit");
+                if (sr.EndOfStream)
+                    throw new Exception("");
+                var input = sr.ReadLine();
+                if (input == null)
+                    throw new Exception();
+                var words = input.Split(' ');
+                if (words.Length < 2 || words[0].Length < 7)
+                    throw new Exception();
+                return (words[0].Trim().Substring(0, 7), words[1].Trim());
+            }
+            catch (Exception)
+            {
+                Console.WriteLine("Build information file has not been created properly.");
+            }
+            return ("Unknown Commit", "???");
+        }
+
         public static async Task SendMessage(string text, ulong server)
         {
             ulong channel = _client.GetGuild(server).DefaultChannel.Id;
