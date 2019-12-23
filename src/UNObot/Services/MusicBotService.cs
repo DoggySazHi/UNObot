@@ -252,7 +252,14 @@ namespace UNObot.Services
         public void Shuffle()
         {
             Songs.ForEach(o => o.PathCached = null);
-            YoutubeService.GetSingleton().DeleteGuildFolder(Guild);
+            try //Just brute force it.
+            {
+                YoutubeService.GetSingleton().DeleteGuildFolder(Guild);
+            }
+            catch(Exception)
+            {
+                YoutubeService.GetSingleton().DeleteGuildFolder(Guild);
+            }
             ThreadSafeRandom.Shuffle(Songs);
             _ = Task.Run(Cache).ConfigureAwait(false);
         }

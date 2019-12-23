@@ -73,9 +73,25 @@ namespace UNObot.Services
             return DirectoryPath;
         }
 
-        public void DeleteGuildFolder(ulong Guild)
+        public void DeleteGuildFolder(ulong Guild, params string[] Skip)
         {
-            Directory.Delete(PathToGuildFolder(Guild));
+            var MusicPath = PathToGuildFolder(Guild);
+            var Files = Directory.GetFiles(MusicPath);
+            foreach(var Filename in Files)
+            {
+                try
+                {
+                    foreach (var FileToSkip in Skip)
+                        if (FileToSkip == Filename)
+                            continue;
+                    var FilePath = Path.Combine(MusicPath, Filename);
+                    if (File.Exists(FilePath))
+                        File.Delete(FilePath);
+                    else
+                        Console.WriteLine("Song didn't exist?");
+                }
+                catch(Exception) { }
+            }
         }
 
         public async Task<string> Download(string URL, ulong Guild)
@@ -100,7 +116,15 @@ namespace UNObot.Services
             if (MediaStreams.Audio.Count == 0)
             {
                 string Path = GetNextFile(Guild, "mp3");
-                await Converter.DownloadVideoAsync(Id, Path).ConfigureAwait(false);
+                try
+                {
+                    await Converter.DownloadVideoAsync(Id, Path).ConfigureAwait(false);
+                }
+                catch(Exception ex)
+                {
+                    Console.WriteLine(ex);
+                    throw ex;
+                }
                 Console.WriteLine("Downloaded");
                 return Path;
             }

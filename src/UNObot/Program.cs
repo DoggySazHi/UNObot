@@ -72,18 +72,18 @@ namespace UNObot
 
         private void SafeExitHandler()
         {
-            AppDomain.CurrentDomain.ProcessExit += (o, a) => { ExitEvent?.Set(); };
+            AppDomain.CurrentDomain.ProcessExit += (o, a) => { try { ExitEvent.Set(); } catch (Exception) { } };
 
             Console.CancelKeyPress += (sender, eventArgs) =>
             {
                 eventArgs.Cancel = true;
-                ExitEvent?.Set();
+                try { ExitEvent.Set(); } catch (Exception) { }
             };
         }
 
         public static void Exit()
         {
-            ExitEvent.Set();
+            try { ExitEvent.Set(); } catch (Exception) { }
         }
 
         private static async Task OnExit()
