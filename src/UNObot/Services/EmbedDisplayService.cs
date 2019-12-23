@@ -264,31 +264,32 @@ namespace UNObot.Modules
             Random r = ThreadSafeRandom.ThisThreadsRandom;
             string Server = Program._client.GetGuild(NowPlaying.RequestedGuild).Name;
 
-            int Index = -1;
+            int Index = 0;
+
+            if (Songs.Count == 0)
+                Containers.Add(new StringBuilder("There are no songs queued."));
 
             while (Index < Songs.Count)
             {
                 StringBuilder List = new StringBuilder();
 
-                if (Songs.Count == 0)
-                    List.Append("There are no songs queued.");
-                else
-                    for (int i = 0; i < 9; i++)
+                for (int i = 0; i < 9; i++)
+                {
+                    if (Index >= Songs.Count)
+                        break;
+                    Song s = Songs[Index++];
+                    string Username = Program._client.GetUser(s.RequestedBy).Username;
+                    string NextLine = $"``{i + 1}.``[{s.Name}]({s.URL}) |``{s.Duration} Requested by: {Username}``\n\n";
+                    if (List.Length + NextLine.Length > 1024)
                     {
-                        if (Index >= Songs.Count - 1)
-                            break;
-                        Song s = Songs[++Index];
-                        string Username = Program._client.GetUser(s.RequestedBy).Username;
-                        string NextLine = $"``{i + 1}.``[{s.Name}]({s.URL}) |``{s.Duration} Requested by: {Username}``\n\n";
-                        if (List.Length + NextLine.Length > 1024)
-                        {
-                            Index--;
-                            break;
-                        }
-                        List.Append(NextLine);
+                        Index--;
+                        break;
                     }
+                    List.Append(NextLine);
+                }
 
                 Containers.Add(List);
+                Console.WriteLine("Looping...");
             }
 
             if (Page <= 0 || Page > Containers.Count)
