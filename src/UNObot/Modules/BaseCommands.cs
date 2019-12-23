@@ -102,7 +102,7 @@ namespace UNObot.Modules
             await UserExtensions.SendMessageAsync(Context.Message.Author, Response);
         }
 
-        [Command("help", RunMode = RunMode.Async), Alias("ahh", "ahhh", "ahhhh")]
+        [Command("help", RunMode = RunMode.Async), Alias("ahh", "ahhh", "ahhhh", "commands", "command")]
         public async Task Help()
         {
             Random r = ThreadSafeRandom.ThisThreadsRandom;
@@ -137,7 +137,7 @@ namespace UNObot.Modules
                 embed: embed);
         }
 
-        [Command("playerhelp", RunMode = RunMode.Async)]
+        [Command("playerhelp", RunMode = RunMode.Async), Alias("playercommand", "playercommands", "playercmd", "playercmds")]
         public async Task PlayerHelp()
         {
             Random r = ThreadSafeRandom.ThisThreadsRandom;
