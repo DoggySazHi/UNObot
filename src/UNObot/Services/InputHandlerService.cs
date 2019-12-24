@@ -6,9 +6,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 
-#pragma warning disable CS1701 // Assuming assembly reference matches identity
-#pragma warning disable CS1702 // Assuming assembly reference matches identity
-
 namespace UNObot.Modules
 {
     public static class InputHandlerService
@@ -32,7 +29,7 @@ namespace UNObot.Modules
             {new Emoji("8⃣"), "8"},
             {new Emoji("9⃣"), "9"}
         };
-        /*
+        
         public static async Task ReactionAdded(Cacheable<IUserMessage, ulong> reactmessage, ISocketMessageChannel channel, SocketReaction reaction)
         {
             //TODO add check for what type of message (kete)
@@ -47,7 +44,7 @@ namespace UNObot.Modules
 
             foreach (var react in message.Reactions)
             {
-                var users = await message.GetReactionUsersAsync(react.Key, 3);
+                var users = await message.GetReactionUsersAsync(react.Key, 3).FlattenAsync();
                 messagereactions.Add(react.Key, users.ToArray());
             }
 
@@ -63,11 +60,11 @@ namespace UNObot.Modules
                 Console.WriteLine(reaction.Emote.Name);
 #endif
         }
+
         public static async Task AddReactions(IUserMessage s)
         {
             foreach (IEmote emoji in reactions.Keys)
                 await s.AddReactionAsync(emoji);
         }
-        */
     }
 }

@@ -9,9 +9,6 @@ using Discord.Commands;
 using Discord.WebSocket;
 using UNObot.Services;
 
-#pragma warning disable CS1701 // Assuming assembly reference matches identity
-#pragma warning disable CS1702 // Assuming assembly reference matches identity
-
 namespace UNObot.Modules
 {
     public class DebugCommands : ModuleBase<SocketCommandContext>

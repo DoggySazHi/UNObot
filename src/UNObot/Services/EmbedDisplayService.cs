@@ -8,9 +8,6 @@ using Discord.Commands;
 using UNObot.Services;
 using YoutubeExplode.Models;
 
-#pragma warning disable CS1701 // Assuming assembly reference matches identity
-#pragma warning disable CS1702 // Assuming assembly reference matches identity
-
 namespace UNObot.Modules
 {
     public static class ImageHandler
@@ -293,10 +290,10 @@ namespace UNObot.Modules
 
             if (Page <= 0 || Page > Containers.Count)
                 return new Tuple<Embed, int>(null, Containers.Count);
-            return new Tuple<Embed, int>(DisplaySongList(Server, r, Page, Containers.Count, Containers[Page - 1], NowPlaying, Songs), Containers.Count);
+            return new Tuple<Embed, int>(DisplaySongList(Server, r, Page, Containers.Count, Containers[Page - 1], NowPlaying), Containers.Count);
         }
 
-        private static Embed DisplaySongList(string Server, Random r, int Page, int MaxPages, StringBuilder List, Song NowPlaying, List<Song> Songs)
+        private static Embed DisplaySongList(string Server, Random r, int Page, int MaxPages, StringBuilder List, Song NowPlaying)
         {
             var builder = new EmbedBuilder()
             .WithTitle("Now Playing")

@@ -3,9 +3,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 
-#pragma warning disable CS1701 // Assuming assembly reference matches identity
-#pragma warning disable CS1702 // Assuming assembly reference matches identity
-
 namespace UNObot.Modules
 {
     public class BaseCommands : ModuleBase<SocketCommandContext>
@@ -14,11 +11,11 @@ namespace UNObot.Modules
         [Help(new string[] { ".info" }, "Get the current version of UNObot.", true, "UNObot 1.0")]
         public async Task Info()
         {
-            var NewUpdate = Program.ReadCommitBuild();
+            var (Commit, Build) = Program.ReadCommitBuild();
             var Output = $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {Program.version}\nCurrent Time (PST): {DateTime.Now.ToString()}" +
                     $"\n\nCommit {Program.Commit}\nBuild #{Program.Build}";
-            if (NewUpdate.Commit != Program.Commit)
-                Output += $"\nThere is a pending update: Commit {NewUpdate.Commit} Build #{NewUpdate.Build}.";
+            if (Commit != Program.Commit)
+                Output += $"\nThere is a pending update: Commit {Commit} Build #{Build}.";
             await ReplyAsync(Output);
         }
 
@@ -65,10 +62,9 @@ namespace UNObot.Modules
         {
             await ReplyAsync("Help has been sent. Or, I think it has.");
             string Response = "```Commands: @UNOBot#4308 command/ .command\n (Required) {May be required} [Optional]\n \n";
-            string OldResponse = "";
             foreach (Command cmd in Program.commands)
             {
-                OldResponse = Response;
+                string OldResponse = Response;
                 if (cmd.Active)
                 {
                     OldResponse = Response;

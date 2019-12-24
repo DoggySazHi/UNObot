@@ -13,9 +13,6 @@ using Discord.Commands;
 using Discord.WebSocket;
 using UNObot.Services;
 
-#pragma warning disable CS1701 // Assuming assembly reference matches identity
-#pragma warning disable CS1702 // Assuming assembly reference matches identitynamespace UNObot.Modules
-
 namespace UNObot.Modules
 {
     public class MusicBotCommands : ModuleBase<SocketCommandContext>
@@ -67,8 +64,8 @@ namespace UNObot.Modules
                 return;
             }
 
-            var Result = MusicBotService.GetSingleton().Pause(Context.User.Id, Context.Guild.Id, AudioChannel);
-            _ = ReplyAsync(Result);
+            var Result = await MusicBotService.GetSingleton().Pause(Context.User.Id, Context.Guild.Id, AudioChannel);
+            await ReplyAsync(Result);
         }
 
         [Command("playershuffle", RunMode = RunMode.Async), Alias("shuffle")]
@@ -97,8 +94,8 @@ namespace UNObot.Modules
                 return;
             }
 
-            var Result = MusicBotService.GetSingleton().Skip(Context.User.Id, Context.Guild.Id, AudioChannel);
-            _ = ReplyAsync(Result);
+            var Result = await MusicBotService.GetSingleton().Skip(Context.User.Id, Context.Guild.Id, AudioChannel);
+            await ReplyAsync(Result);
         }
 
         [Command("playerloop", RunMode = RunMode.Async)]
@@ -111,12 +108,10 @@ namespace UNObot.Modules
                 await ReplyAsync("Please join a VC that I can connect to!").ConfigureAwait(true);
                 return;
             }
-
-            var Result = MusicBotService.GetSingleton().ToggleLoop(Context.User.Id, Context.Guild.Id, AudioChannel);
+            var Result = await MusicBotService.GetSingleton().ToggleLoop(Context.User.Id, Context.Guild.Id, AudioChannel);
             await ReplyAsync(Result);
         }
 
-        //TODO PlayerLoopQueue won't include NowPlaying
         [Command("playerloopqueue", RunMode = RunMode.Async)]
         [Help(new string[] { ".playerloopqueue" }, "Loop the entire queue.", true, "UNObot 3.2 Beta 4")]
         public async Task LoopQueue()
@@ -128,7 +123,7 @@ namespace UNObot.Modules
                 return;
             }
 
-            var Result = MusicBotService.GetSingleton().ToggleLoopQueue(Context.User.Id, Context.Guild.Id, AudioChannel);
+            var Result = await MusicBotService.GetSingleton().ToggleLoopQueue(Context.User.Id, Context.Guild.Id, AudioChannel);
             await ReplyAsync(Result);
         }
 
@@ -162,8 +157,6 @@ namespace UNObot.Modules
         [Help(new string[] { ".playerqueue", ".playerqueue (page)" }, "Get the songs in the player's queue.", true, "UNObot 3.2 Beta 2")]
         public async Task Queue()
         {
-            //TODO Multiple pages!
-            //TODO Not right section, but when done playing, actually disconnect user self
             var Result = MusicBotService.GetSingleton().GetMusicQueue(Context.Guild.Id, 1);
             if (!string.IsNullOrWhiteSpace(Result.Item2))
                 await ReplyAsync($"Error: {Result.Item2}").ConfigureAwait(false);

@@ -8,9 +8,6 @@ using Discord.Commands;
 using Discord.WebSocket;
 using UNObot.Modules;
 
-#pragma warning disable CS1701 // Assuming assembly reference matches identity
-#pragma warning disable CS1702 // Assuming assembly reference matches identity
-
 namespace UNObot.Services
 {
     public class CommandHandlingService

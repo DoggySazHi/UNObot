@@ -4,9 +4,6 @@ using System.Threading.Tasks;
 using System.Linq;
 using UNObot.TerminalCore;
 
-#pragma warning disable CS1701 // Assuming assembly reference matches identity
-#pragma warning disable CS1702 // Assuming assembly reference matches identity
-
 namespace UNObot.Modules
 {
     public static class QueueHandlerService

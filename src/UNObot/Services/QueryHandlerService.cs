@@ -7,9 +7,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-#pragma warning disable CS1701 // Assuming assembly reference matches identity
-#pragma warning disable CS1702 // Assuming assembly reference matches identity
-
 namespace UNObot.Services
 {
     //Adopted from Valve description: https://developer.valvesoftware.com/wiki/Server_queries#A2S_INFO
@@ -21,13 +18,14 @@ namespace UNObot.Services
     {
         public static string HumanReadable(float Time)
         {
-            string Output = "";
             TimeSpan TS = TimeSpan.FromSeconds(Time);
+            string Output;
             if (TS.Hours != 0)
-                Output += $"{TS.Hours}:";
-            if (TS.Minutes != 0)
-                Output += $"{TS.Minutes}:";
-            Output += $"{TS.Seconds}";
+                Output = $"{(int)TS.TotalHours}:{TS.Minutes.ToString("00")}:{TS.Seconds.ToString("00")}";
+            else if (TS.Minutes != 0)
+                Output = $"{TS.Minutes}:{TS.Seconds.ToString("00")}";
+            else
+                Output = $"{TS.Seconds} seconds";
             return Output;
         }
 

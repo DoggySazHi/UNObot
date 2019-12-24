@@ -16,9 +16,6 @@ using System.Threading;
 using UNObot.Modules;
 using UNObot.Services;
 
-#pragma warning disable CS1701 // Assuming assembly reference matches identity
-#pragma warning disable CS1702 // Assuming assembly reference matches identity
-
 namespace UNObot
 {
     class Program
