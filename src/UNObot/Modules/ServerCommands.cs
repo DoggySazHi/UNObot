@@ -72,18 +72,24 @@ namespace UNObot.Modules
         public async Task CheckUnturned(string ip, ushort port = 27015, ServerAverages Averages = null)
         {
             var Message = await ReplyAsync("I am now querying the server, please wait warmly...");
-            // query port = 1+ normal port
-            bool success = EmbedDisplayService.UnturnedQueryEmbed(Context.Guild.Id, ip, port, out var Embed, Averages);
-            if (!success)
+            try
             {
-                await Message.ModifyAsync(o => o.Content = "Error: Apparently we couldn't get any information about this server.");
-                return;
+                bool success = EmbedDisplayService.UnturnedQueryEmbed(Context.Guild.Id, ip, port, out var Embed, Averages);
+                if (!success || Embed == null)
+                {
+                    await Message.ModifyAsync(o => o.Content = "Error: Apparently we couldn't get any information about this server.");
+                    return;
+                }
+                await Message.ModifyAsync(o =>
+                {
+                    o.Content = "";
+                    o.Embed = Embed;
+                });
             }
-            await Message.ModifyAsync(o =>
+            catch(Exception)
             {
-                o.Content = "";
-                o.Embed = Embed;
-            });
+                await Message.ModifyAsync(o => o.Content = "We had some difficulties displaying the status. Please try again?");
+            }
         }
     }
 }

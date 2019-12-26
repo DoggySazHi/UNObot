@@ -8,6 +8,7 @@ using Discord;
 using Discord.Audio;
 using Discord.WebSocket;
 using UNObot.Modules;
+using YoutubeExplode.Models;
 using Timer = System.Timers.Timer;
 
 namespace UNObot.Services
@@ -38,7 +39,7 @@ namespace UNObot.Services
 
         public async Task Cache()
         {
-            if (PathCached == null || PathCached == "")
+            if (string.IsNullOrEmpty(PathCached))
             {
                 Console.WriteLine($"Caching {Name}");
                 PathCached = "Caching...";
@@ -169,17 +170,25 @@ namespace UNObot.Services
             if (Caching)
                 return;
             Caching = true;
+            List<string> FilesCached = new List<string>();
             for (int i = 0; i < Math.Min(Songs.Count, CacheLength); i++)
             {
                 Song s = Songs[i];
+                if(string.IsNullOrWhiteSpace(s.PathCached) || s.PathCached != "Caching...")
                 await s.Cache().ConfigureAwait(false);
+                FilesCached.Add(s.PathCached);
             }
+            YoutubeService.GetSingleton().DeleteGuildFolder(Guild, FilesCached.ToArray());
             Caching = false;
         }
 
-        public void Add(string URL, Tuple<string, string, string> Data, ulong User, ulong Guild)
+        public void Add(string URL, Tuple<string, string, string> Data, ulong User, ulong Guild, bool InsertAtTop = false)
         {
-            Songs.Add(new Song(URL, Data, User, Guild));
+            Song s = new Song(URL, Data, User, Guild);
+            if (InsertAtTop)
+                Songs.Insert(0, s);
+            else
+                Songs.Add(s);
             _ = Task.Run(Cache);
         }
 
@@ -190,7 +199,7 @@ namespace UNObot.Services
             if (Paused || !PauseEvent.WaitOne(0))
             {
                 Paused = true;
-                return $"Player is already paused. Paused Var: {Paused} PauseEvent: {PauseEvent.WaitOne(0)}";
+                return $"Player is already paused.";
             }
             Paused = true;
             PauseEvent.Reset();
@@ -204,7 +213,7 @@ namespace UNObot.Services
             if (!Paused || PauseEvent.WaitOne(0))
             {
                 Paused = false;
-                return $"Player is already playing. Paused Var: {Paused} PauseEvent: {PauseEvent.WaitOne(0)}";
+                return $"Player is already playing.";
             }
             Paused = false;
             PauseEvent.Set();
@@ -213,7 +222,6 @@ namespace UNObot.Services
 
         public string TrySkip()
         {
-            Console.WriteLine("Attempted to skip");
             if (NowPlaying == null)
                 return "There is no song playing.";
             Paused = false;
@@ -224,6 +232,18 @@ namespace UNObot.Services
             QuitEvent.Reset();
             PauseEvent.Reset();
             Quit = false;
+            return null;
+        }
+
+        public string TryRemove(int Index, out string SongName)
+        {
+            if (Index < 1 || Index > Songs.Count)
+            {
+                SongName = null;
+                return "Song is out of bounds!";
+            }
+            SongName = Songs[Index - 1].Name;
+            Songs.RemoveAt(Index - 1);
             return null;
         }
 
@@ -430,7 +450,7 @@ namespace UNObot.Services
             return new Tuple<Player, string>(MusicPlayers[Player], null);
         }
 
-        public async Task<Tuple<Embed, string>> Add(ulong User, ulong Guild, string URL, IVoiceChannel Channel, ISocketMessageChannel MessageChannel)
+        public async Task<Tuple<Embed, string>> Add(ulong User, ulong Guild, string URL, IVoiceChannel Channel, ISocketMessageChannel MessageChannel, bool InsertAtTop = false)
         {
             Embed EmbedOut;
             string Error = null;
@@ -444,7 +464,7 @@ namespace UNObot.Services
                 if (Player.Item2 != null)
                     Error = Player.Item2;
                 else
-                    Player.Item1.Add(URL, Data, User, Guild);
+                    Player.Item1.Add(URL, Data, User, Guild, InsertAtTop);
             }
             catch (Exception ex)
             {
@@ -454,7 +474,7 @@ namespace UNObot.Services
             return new Tuple<Embed, string>(EmbedOut, Error);
         }
 
-        public async Task<Tuple<Embed, string>> Search(ulong User, ulong Guild, string Query, IVoiceChannel Channel, ISocketMessageChannel MessageChannel)
+        public async Task<Tuple<Embed, string>> Search(ulong User, ulong Guild, string Query, IVoiceChannel Channel, ISocketMessageChannel MessageChannel, bool InsertAtTop = false)
         {
             Embed EmbedOut;
             string Error = null;
@@ -468,7 +488,7 @@ namespace UNObot.Services
                 if (Player.Item2 != null)
                     Error = Player.Item2;
                 else
-                    Player.Item1.Add(Information.Item2, Data, User, Guild);
+                    Player.Item1.Add(Information.Item2, Data, User, Guild, InsertAtTop);
             }
             catch (Exception ex)
             {
@@ -612,7 +632,7 @@ namespace UNObot.Services
             return Message;
         }
 
-        public async Task<Tuple<Embed, string>> AddList(ulong User, ulong Guild, string URL, IVoiceChannel Channel, ISocketMessageChannel MessageChannel)
+        public async Task<Tuple<Embed, string>> AddList(ulong User, ulong Guild, string URL, IVoiceChannel Channel, ISocketMessageChannel MessageChannel, bool InsertAtTop = false)
         {
             Embed Display = null;
             string Message;
@@ -626,9 +646,16 @@ namespace UNObot.Services
                     Message = Player.Item2;
                 else
                 {
+                    if (InsertAtTop)
+                        for (int i = ResultPlay.Count - 1; i >= 0; i--)
+                        {
+                            Video Video = ResultPlay[i];
+                            Player.Item1.Add($"https://www.youtube.com/watch?v={Video.Id}",
+                                new Tuple<string, string, string>(Video.Title, YoutubeService.TimeString(Video.Duration), Video.Thumbnails.MediumResUrl), User, Guild, InsertAtTop);
+                        }
                     foreach (var Video in ResultPlay)
                         Player.Item1.Add($"https://www.youtube.com/watch?v={Video.Id}",
-                            new Tuple<string, string, string>(Video.Title, YoutubeService.TimeString(Video.Duration), Video.Thumbnails.MediumResUrl), User, Guild);
+                            new Tuple<string, string, string>(Video.Title, YoutubeService.TimeString(Video.Duration), Video.Thumbnails.MediumResUrl), User, Guild, InsertAtTop);
                     Message = $"Added {ResultPlay.Count} song{(ResultPlay.Count == 1 ? "" : "s")}.";
                 }
             }
@@ -653,8 +680,7 @@ namespace UNObot.Services
                 else
                 {
                     string SkipMessage = Players[0].TrySkip();
-                    if (!string.IsNullOrWhiteSpace(SkipMessage))
-                        Error = SkipMessage;
+                    Error = SkipMessage;
                 }
             }
             catch (Exception ex)
@@ -662,7 +688,37 @@ namespace UNObot.Services
                 Error = ex.Message;
             }
 
-            return Error != null ? "Skipped song." : "Error: " + Error;
+            return string.IsNullOrWhiteSpace(Error) ? "Skipped song." : "Error: " + Error;
+        }
+
+        public async Task<string> Remove(ulong User, ulong Guild, IVoiceChannel Channel, int Index)
+        {
+            string Error = null;
+            string SongName = null;
+            try
+            {
+                var Players = MusicPlayers.FindAll(o => o.Guild == Guild);
+                if (Players.Count == 0 || Players[0].Disposed)
+                    Error = "The server is not playing any music!";
+                else if (!await HasPermissions(User, Guild, Channel))
+                    Error = "You do not have the power to run this command!";
+                else
+                {
+                    string SkipMessage = Players[0].TryRemove(Index, out SongName);
+                    Error = SkipMessage;
+                }
+            }
+            catch (Exception ex)
+            {
+                Error = ex.Message;
+            }
+
+            if (SongName != null)
+            {
+                SongName.Replace("\\", "\\\\");
+                SongName.Replace("`", "\\`");
+            }
+            return string.IsNullOrWhiteSpace(Error) ? $"Removed ``{SongName}`` successfully." : "Error: " + Error;
         }
 
         public Tuple<Embed, string> GetMusicQueue(ulong Guild, int Page)

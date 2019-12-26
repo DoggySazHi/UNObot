@@ -276,7 +276,7 @@ namespace UNObot.Modules
                         break;
                     Song s = Songs[Index++];
                     string Username = Program._client.GetUser(s.RequestedBy).Username;
-                    string NextLine = $"``{Index + 1}.``[{s.Name}]({s.URL}) |``{s.Duration} Requested by: {Username}``\n\n";
+                    string NextLine = $"``{Index}.``[{s.Name}]({s.URL}) |``{s.Duration} Requested by: {Username}``\n\n";
                     if (List.Length + NextLine.Length > 1024)
                     {
                         Index--;
