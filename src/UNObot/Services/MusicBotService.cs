@@ -167,19 +167,26 @@ namespace UNObot.Services
 
         private async Task Cache()
         {
-            if (Caching)
-                return;
-            Caching = true;
-            List<string> FilesCached = new List<string>();
-            for (int i = 0; i < Math.Min(Songs.Count, CacheLength); i++)
+            try
             {
-                Song s = Songs[i];
-                if(string.IsNullOrWhiteSpace(s.PathCached) || s.PathCached != "Caching...")
-                await s.Cache().ConfigureAwait(false);
-                FilesCached.Add(s.PathCached);
+                if (Caching)
+                    return;
+                Caching = true;
+                List<string> FilesCached = new List<string>();
+                for (int i = 0; i < Math.Min(Songs.Count, CacheLength); i++)
+                {
+                    Song s = Songs[i];
+                    if (string.IsNullOrWhiteSpace(s.PathCached) || s.PathCached != "Caching...")
+                        await s.Cache().ConfigureAwait(false);
+                    FilesCached.Add(s.PathCached);
+                }
+                YoutubeService.GetSingleton().DeleteGuildFolder(Guild, FilesCached.ToArray());
+                Caching = false;
             }
-            YoutubeService.GetSingleton().DeleteGuildFolder(Guild, FilesCached.ToArray());
-            Caching = false;
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
         }
 
         public void Add(string URL, Tuple<string, string, string> Data, ulong User, ulong Guild, bool InsertAtTop = false)
@@ -271,15 +278,8 @@ namespace UNObot.Services
         public void Shuffle()
         {
             Songs.ForEach(o => o.PathCached = null);
-            try //Just brute force it.
-            {
-                YoutubeService.GetSingleton().DeleteGuildFolder(Guild);
-            }
-            catch(Exception)
-            {
-                YoutubeService.GetSingleton().DeleteGuildFolder(Guild);
-            }
             ThreadSafeRandom.Shuffle(Songs);
+            // Let the Cacher delete, as if you try to kill the process too early, it throws an exception while caching.
             _ = Task.Run(Cache).ConfigureAwait(false);
         }
 
@@ -651,11 +651,12 @@ namespace UNObot.Services
                         {
                             Video Video = ResultPlay[i];
                             Player.Item1.Add($"https://www.youtube.com/watch?v={Video.Id}",
-                                new Tuple<string, string, string>(Video.Title, YoutubeService.TimeString(Video.Duration), Video.Thumbnails.MediumResUrl), User, Guild, InsertAtTop);
+                                new Tuple<string, string, string>(Video.Title, YoutubeService.TimeString(Video.Duration), Video.Thumbnails.MediumResUrl), User, Guild, true);
                         }
-                    foreach (var Video in ResultPlay)
-                        Player.Item1.Add($"https://www.youtube.com/watch?v={Video.Id}",
-                            new Tuple<string, string, string>(Video.Title, YoutubeService.TimeString(Video.Duration), Video.Thumbnails.MediumResUrl), User, Guild, InsertAtTop);
+                    else
+                        foreach (var Video in ResultPlay)
+                            Player.Item1.Add($"https://www.youtube.com/watch?v={Video.Id}",
+                                new Tuple<string, string, string>(Video.Title, YoutubeService.TimeString(Video.Duration), Video.Thumbnails.MediumResUrl), User, Guild);
                     Message = $"Added {ResultPlay.Count} song{(ResultPlay.Count == 1 ? "" : "s")}.";
                 }
             }

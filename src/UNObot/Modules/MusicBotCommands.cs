@@ -201,7 +201,7 @@ namespace UNObot.Modules
         }
 
         [Command("playerremove", RunMode = RunMode.Async), Alias("prm, rm")]
-        [Help(new string[] { ".playerskip" }, "Skip the current song.", true, "UNObot 3.2 Beta 3")]
+        [Help(new string[] { ".playerremove" }, "Remove the song.", true, "UNObot 3.2 Beta 3")]
         public async Task Remove(int Index)
         {
             var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;

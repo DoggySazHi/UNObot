@@ -82,8 +82,11 @@ namespace UNObot.Services
                 try
                 {
                     foreach (var FileToSkip in Skip)
-                        if (FileToSkip == Filename)
+                        if (FileToSkip.Contains(Filename))
+                        {
+                            Console.WriteLine($"Skipped {Filename}");
                             continue;
+                        }
                     var FilePath = Path.Combine(MusicPath, Filename);
                     if (File.Exists(FilePath))
                         File.Delete(FilePath);
