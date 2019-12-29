@@ -1,16 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Timers;
-using System.Xml;
-using Discord;
-using Discord.Audio;
+﻿using Discord;
 using Discord.Commands;
-using Discord.WebSocket;
+using System.Threading.Tasks;
 using UNObot.Services;
 
 namespace UNObot.Modules

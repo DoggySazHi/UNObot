@@ -1,10 +1,9 @@
-﻿using System;
-using System.Linq;
-using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.Threading.Tasks;
-using Discord;
+﻿using Discord;
 using Discord.WebSocket;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace UNObot.Modules
 {
@@ -29,7 +28,7 @@ namespace UNObot.Modules
             {new Emoji("8⃣"), "8"},
             {new Emoji("9⃣"), "9"}
         };
-        
+
         public static async Task ReactionAdded(Cacheable<IUserMessage, ulong> reactmessage, ISocketMessageChannel channel, SocketReaction reaction)
         {
             //TODO add check for what type of message (kete)

@@ -1,9 +1,7 @@
-using System;
-using System.Threading.Tasks;
-using System.Timers;
-using System.Collections.Generic;
-using Discord.WebSocket;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Timers;
 using UNObot.TerminalCore;
 
 namespace UNObot.Modules

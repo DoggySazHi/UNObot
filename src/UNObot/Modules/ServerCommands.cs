@@ -1,7 +1,5 @@
 ﻿using Discord.Commands;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using UNObot.Services;
 
@@ -86,7 +84,7 @@ namespace UNObot.Modules
                     o.Embed = Embed;
                 });
             }
-            catch(Exception)
+            catch (Exception)
             {
                 await Message.ModifyAsync(o => o.Content = "We had some difficulties displaying the status. Please try again?");
             }

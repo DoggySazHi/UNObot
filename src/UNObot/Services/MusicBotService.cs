@@ -1,12 +1,12 @@
-﻿using System;
+﻿using Discord;
+using Discord.Audio;
+using Discord.WebSocket;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Discord;
-using Discord.Audio;
-using Discord.WebSocket;
 using UNObot.Modules;
 using YoutubeExplode.Models;
 using Timer = System.Timers.Timer;
@@ -109,7 +109,7 @@ namespace UNObot.Services
             if (!IsPlaying || HandlingError)
                 return;
             HandlingError = true;
-            bool PrevPlaying = !Paused;
+            var PrevPlaying = !Paused;
 
             if (PrevPlaying)
                 Console.WriteLine(TryPause());
@@ -183,7 +183,7 @@ namespace UNObot.Services
                 YoutubeService.GetSingleton().DeleteGuildFolder(Guild, FilesCached.ToArray());
                 Caching = false;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine(ex);
             }
@@ -676,7 +676,7 @@ namespace UNObot.Services
                 var Players = MusicPlayers.FindAll(o => o.Guild == Guild);
                 if (Players.Count == 0 || Players[0].Disposed)
                     Error = "The server is not playing any music!";
-                else if(!await HasPermissions(User, Guild, Channel))
+                else if (!await HasPermissions(User, Guild, Channel))
                     Error = "You do not have the power to run this command!";
                 else
                 {
@@ -783,7 +783,7 @@ namespace UNObot.Services
             bool UserFound = false;
             int UserCount = 0;
 
-            foreach(var User in Users)
+            foreach (var User in Users)
             {
                 UserCount++;
                 UserFound |= User.Id == Caller;

@@ -1,10 +1,9 @@
-﻿using System;
+﻿using Discord;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Discord;
-using Discord.Commands;
 using UNObot.Services;
 using YoutubeExplode.Models;
 
@@ -329,7 +328,7 @@ namespace UNObot.Modules
             bool RulesGet = false;
             for (int i = 0; i < Attempts; i++)
             {
-                if(!InformationGet)
+                if (!InformationGet)
                     InformationGet = QueryHandlerService.GetInfo(IP, (ushort)(Port + 1), out Information);
                 if (!PlayersGet)
                     PlayersGet = QueryHandlerService.GetPlayers(IP, (ushort)(Port + 1), out Players);
@@ -362,9 +361,9 @@ namespace UNObot.Modules
                 UnturnedVersion = $"Unknown Version ({Information.Version}?)";
 
             int DescriptionLines = Convert.ToInt32(Rules.Rules.Find(o => o.Name.Contains("Browser_Desc_Full_Count", StringComparison.OrdinalIgnoreCase)).Value.Trim());
-            for(int i = 0; i < DescriptionLines; i++)
+            for (int i = 0; i < DescriptionLines; i++)
                 ServerDescription += Rules.Rules.FirstOrDefault(o => o.Name.Contains($"Browser_Desc_Full_Line_{i}", StringComparison.OrdinalIgnoreCase)).Value;
-            for(int i = 0; i < Players.PlayerCount; i++)
+            for (int i = 0; i < Players.PlayerCount; i++)
             {
                 PlayersOnline += $"{Players.Players[i].Name} - {QueryHandlerService.HumanReadable(Players.Players[i].Duration)}";
                 if (i != Players.PlayerCount - 1)
@@ -400,7 +399,7 @@ namespace UNObot.Modules
             .AddField("Map", Map, true)
             .AddField("VAC Security", VACEnabled ? "Enabled" : "Disabled", true)
             .AddField($"Versions", $"Unturned: {UnturnedVersion}{(RocketModVersion == "" ? "" : $"\nRocketMod: {RocketModVersion}")}", true);
-            if(!string.IsNullOrWhiteSpace(RocketModPlugins))
+            if (!string.IsNullOrWhiteSpace(RocketModPlugins))
                 builder.AddField($"RocketMod Plugins", RocketModPlugins, true);
             builder.AddField($"Players: {Information.Players}/{Information.MaxPlayers}", PlayersOnline, true);
             if (Averages != null)

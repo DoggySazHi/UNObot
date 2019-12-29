@@ -1,11 +1,11 @@
-﻿using System;
+﻿using Discord;
+using Discord.Commands;
+using Discord.WebSocket;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Discord;
-using Discord.Commands;
-using Discord.WebSocket;
 using UNObot.Modules;
 
 namespace UNObot.Services
@@ -108,7 +108,7 @@ namespace UNObot.Services
                         break;
                 }
 #if DEBUG
-                if(result.Error.Value != CommandError.UnknownCommand)
+                if (result.Error.Value != CommandError.UnknownCommand)
                     await context.Channel.SendMessageAsync($"Debug error: {result.ToString()}");
 #endif
             }

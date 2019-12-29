@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
-using UNObot.Modules;
 using YoutubeExplode;
 using YoutubeExplode.Converter;
 using YoutubeExplode.Models;
@@ -77,23 +75,29 @@ namespace UNObot.Services
         {
             var MusicPath = PathToGuildFolder(Guild);
             var Files = Directory.GetFiles(MusicPath);
-            foreach(var Filename in Files)
+            foreach (var Filename in Files)
             {
                 try
                 {
+                    var FileSkip = false;
                     foreach (var FileToSkip in Skip)
                         if (FileToSkip.Contains(Filename))
                         {
                             Console.WriteLine($"Skipped {Filename}");
-                            continue;
+                            FileSkip = true;
                         }
+                    if (FileSkip)
+                        continue;
                     var FilePath = Path.Combine(MusicPath, Filename);
                     if (File.Exists(FilePath))
                         File.Delete(FilePath);
                     else
                         Console.WriteLine("Song didn't exist?");
                 }
-                catch(Exception) { }
+                catch (Exception)
+                {
+                    // ignored
+                }
             }
         }
 
@@ -104,10 +108,10 @@ namespace UNObot.Services
                 throw new Exception("Invalid video link!");
 
             Console.WriteLine("Id: " + Id);
-            if(Id == null)
+            if (Id == null)
             {
-                var StartIndex = URL.IndexOf("?v=") + 3;
-                var EndIndex = URL.IndexOf("&");
+                var StartIndex = URL.IndexOf("?v=", StringComparison.Ordinal) + 3;
+                var EndIndex = URL.IndexOf("&", StringComparison.Ordinal);
                 if (EndIndex < 0)
                     EndIndex = URL.Length;
                 Id = URL.Substring(StartIndex, EndIndex - StartIndex);
@@ -123,10 +127,10 @@ namespace UNObot.Services
                 {
                     await Converter.DownloadVideoAsync(Id, Path).ConfigureAwait(false);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Console.WriteLine(ex);
-                    throw ex;
+                    throw;
                 }
                 Console.WriteLine("Downloaded");
                 return Path;
@@ -165,7 +169,7 @@ namespace UNObot.Services
 
         private string GetNextFile(ulong Guild, string Extension)
         {
-            string FileName = "";
+            string FileName;
             int Count = 0;
             do
             {
@@ -176,6 +180,6 @@ namespace UNObot.Services
         }
 
         public static string TimeString(TimeSpan Ts)
-            => $"{(Ts.Hours > 0 ? $"{Ts.Hours}:" : "")}{Ts.Minutes.ToString("00")}:{Ts.Seconds.ToString("00")}";
+            => $"{(Ts.Hours > 0 ? $"{Ts.Hours}:" : "")}{Ts.Minutes:00}:{Ts.Seconds:00}";
     }
 }

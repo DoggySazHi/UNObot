@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
 using UNObot.TerminalCore;
@@ -34,7 +33,7 @@ namespace UNObot.Services
 
         private async Task ReadLogs()
         {
-            if(!File.Exists(FileName))
+            if (!File.Exists(FileName))
             {
                 Console.WriteLine("Started new logging service.");
                 this.Logs = new ServerLog
@@ -77,8 +76,8 @@ namespace UNObot.Services
             var Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             byte PlayerCount = 0;
             bool ServerUp = false;
-            
-            for(int i = 0; i < Attempts; i++)
+
+            for (int i = 0; i < Attempts; i++)
             {
                 ServerUp = QueryHandlerService.GetInfo(IP, QueryPort, out var Output);
                 if (ServerUp)
