@@ -15,8 +15,8 @@ namespace UNObot.Services
         private static readonly string DownloadPath = Path.Combine(Directory.GetCurrentDirectory(), "Music");
 
         private static YoutubeService Instance;
-        private YoutubeClient Client;
-        private YoutubeConverter Converter;
+        private readonly YoutubeClient Client;
+        private readonly YoutubeConverter Converter;
 
         private YoutubeService()
         {
@@ -82,10 +82,7 @@ namespace UNObot.Services
                     var FileSkip = false;
                     foreach (var FileToSkip in Skip)
                         if (FileToSkip.Contains(Filename))
-                        {
-                            Console.WriteLine($"Skipped {Filename}");
                             FileSkip = true;
-                        }
                     if (FileSkip)
                         continue;
                     var FilePath = Path.Combine(MusicPath, Filename);
@@ -114,7 +111,7 @@ namespace UNObot.Services
                 var EndIndex = URL.IndexOf("&", StringComparison.Ordinal);
                 if (EndIndex < 0)
                     EndIndex = URL.Length;
-                Id = URL.Substring(StartIndex, EndIndex - StartIndex);
+                Id = URL[StartIndex..EndIndex];
             }
 
             Console.WriteLine("New Id: " + Id);

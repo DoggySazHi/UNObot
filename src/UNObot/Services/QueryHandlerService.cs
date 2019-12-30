@@ -415,14 +415,14 @@ namespace UNObot.Services
                 return;
             }
 
-            if (rawServerData == null || rawServerData.Length == 0)
+            if (rawServerData.Length == 0)
             {
                 ServerUp = false;
             }
             else
             {
                 var serverData = Encoding.Unicode.GetString(rawServerData).Split("\u0000\u0000\u0000".ToCharArray());
-                if (serverData != null && serverData.Length >= numFields)
+                if (serverData.Length >= numFields)
                 {
                     ServerUp = true;
                     Version = serverData[2];

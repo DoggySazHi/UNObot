@@ -1,10 +1,10 @@
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Timers;
+using Newtonsoft.Json;
 using UNObot.TerminalCore;
 
-namespace UNObot.Modules
+namespace UNObot.Services
 {
     [AttributeUsage(AttributeTargets.Method)]
     public class Help : Attribute
@@ -15,7 +15,7 @@ namespace UNObot.Modules
         public string Version { get; set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="T:UNObot.Modules.Help"/> class.
+        /// Initializes a new instance of the <see cref="T:UNObot.Services.Help"/> class.
         /// </summary>
         /// <param name="Usages">Usages of the command.</param>
         /// <param name="HelpMsg">Help message.</param>
@@ -146,8 +146,8 @@ namespace UNObot.Modules
         {
             Card card = new Card();
             object lockObject = new object();
-            int myColor = 1;
-            int myCard = 0;
+            int myColor;
+            int myCard;
             lock (lockObject)
             {
                 //0-9 is number, 10 is actioncard
@@ -189,9 +189,6 @@ namespace UNObot.Modules
                             card.Value = "Color";
                         else
                             card.Value = "+4";
-                        break;
-                    default:
-                        _ = 1;
                         break;
                 }
             }

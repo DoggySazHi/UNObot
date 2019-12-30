@@ -1,14 +1,14 @@
-﻿using MySql.Data.MySqlClient;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using MySql.Data.MySqlClient;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UNObot.TerminalCore;
 
-namespace UNObot.Modules
+namespace UNObot.Services
 {
     public static class UNODatabaseService
     {
@@ -280,20 +280,19 @@ namespace UNObot.Modules
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
             string CommandText = "SET SQL_SAFE_UPDATES = 0; UPDATE UNObot.Players SET cards = ?, inGame = 0, server = null, gameName = null; UPDATE Games SET inGame = 0, currentCard = ?, `order` = 1, oneCardLeft = 0, queue = ?, description = null; SET SQL_SAFE_UPDATES = 1;";
-            JArray empty = new JArray();
             MySqlParameter p1 = new MySqlParameter
             {
-                Value = empty.ToString()
+                Value = "[]"
             };
             Parameters.Add(p1);
             MySqlParameter p2 = new MySqlParameter
             {
-                Value = empty.ToString()
+                Value = "[]"
             };
             Parameters.Add(p2);
             MySqlParameter p3 = new MySqlParameter
             {
-                Value = empty.ToString()
+                Value = "[]"
             };
             Parameters.Add(p3);
             try
@@ -1053,9 +1052,6 @@ namespace UNObot.Modules
                     break;
                 case 3:
                     CommandText = "UPDATE UNObot.Players SET gamesWon = gamesWon + 1 WHERE userid = ?";
-                    break;
-                default:
-                    _ = 1;
                     break;
             }
             MySqlParameter p1 = new MySqlParameter

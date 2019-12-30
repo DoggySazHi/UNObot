@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using UNObot.Modules;
 
 namespace UNObot.Services
 {
@@ -40,14 +39,6 @@ namespace UNObot.Services
 
             int argPos = 0;
             var context = new SocketCommandContext(_discord, message);
-
-            if (context.User.Id == 246661485219020810)
-            {
-                var messages = await context.Channel.GetMessagesAsync(1).FlattenAsync();
-                ITextChannel textchannel = context.Channel as ITextChannel;
-                await textchannel.DeleteMessagesAsync(messages);
-                return;
-            }
 
             if (await UNODatabaseService.EnforceChannel(context.Guild.Id))
             {
@@ -103,13 +94,10 @@ namespace UNObot.Services
                     case CommandError.Exception:
                     case CommandError.Unsuccessful:
                         break;
-                    default:
-                        _ = 1;
-                        break;
                 }
 #if DEBUG
                 if (result.Error.Value != CommandError.UnknownCommand)
-                    await context.Channel.SendMessageAsync($"Debug error: {result.ToString()}");
+                    await context.Channel.SendMessageAsync($"Debug error: {result}");
 #endif
             }
         }

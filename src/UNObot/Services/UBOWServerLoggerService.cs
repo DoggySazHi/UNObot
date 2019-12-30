@@ -28,7 +28,7 @@ namespace UNObot.Services
                 Interval = 1000 * 60
             };
             LogTimer.Elapsed += LogMinute;
-            _ = Task.Run(ReadLogs);
+            Task.Run(ReadLogs);
         }
 
         private async Task ReadLogs()
@@ -45,16 +45,16 @@ namespace UNObot.Services
                 LogTimer.Enabled = true;
                 return;
             }
-            string Data = "";
+            string Data;
             using (StreamReader sr = new StreamReader(FileName))
                 Data = await sr.ReadToEndAsync();
             var Result = JsonConvert.DeserializeObject(Data, typeof(ServerLog));
-            if (Result is ServerLog Logs)
-                this.Logs = Logs;
+            if (Result is ServerLog LogFile)
+                Logs = LogFile;
             else
             {
                 ColorConsole.WriteLine("Error: Failed to read logs! Created new logging service.", ConsoleColor.Red);
-                this.Logs = new ServerLog
+                Logs = new ServerLog
                 {
                     ListOLogs = new List<Log>()
                 };

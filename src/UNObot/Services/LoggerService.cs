@@ -1,37 +1,31 @@
-﻿using Discord;
+﻿using System;
+using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Threading.Tasks;
 
-namespace DiscordBot.Services
+namespace UNObot.Services
 {
     public class LoggerService
     {
-        readonly DiscordSocketClient _discord;
-        readonly CommandService _commands;
-        readonly ILoggerFactory _loggerFactory;
         readonly ILogger _discordLogger;
         readonly ILogger _commandsLogger;
 
+        // ReSharper disable once UnusedParameter.Local
         public LoggerService(DiscordSocketClient discord, CommandService commands, ILoggerFactory loggerFactory)
         {
-            _discord = discord;
-            _commands = commands;
+            var loggerFactory1 = ConfigureLogging();
+            _discordLogger = loggerFactory1.CreateLogger("discord");
+            _commandsLogger = loggerFactory1.CreateLogger("commands");
 
-            _loggerFactory = ConfigureLogging(loggerFactory);
-            _discordLogger = _loggerFactory.CreateLogger("discord");
-            _commandsLogger = _loggerFactory.CreateLogger("commands");
-
-            _discord.Log += LogDiscord;
-            _commands.Log += LogCommand;
+            discord.Log += LogDiscord;
+            commands.Log += LogCommand;
         }
 
-        ILoggerFactory ConfigureLogging(ILoggerFactory factory)
+        ILoggerFactory ConfigureLogging()
         {
-            factory = LoggerFactory.Create(builder => builder.AddConsole());
-            return factory;
+            return LoggerFactory.Create(builder => builder.AddConsole());
         }
 
         Task LogDiscord(LogMessage message)
@@ -62,7 +56,7 @@ namespace DiscordBot.Services
                 0,
                 message,
                 message.Exception,
-                (_1, _2) => message.ToString(prependTimestamp: true));
+                (_1, _2) => message.ToString());
             return Task.CompletedTask;
         }
 

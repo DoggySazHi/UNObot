@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace UNObot.Modules
+namespace UNObot.Services
 {
     class UNOPlayCardService
     {
@@ -98,7 +98,7 @@ namespace UNObot.Modules
             }
             string Response = "";
             string UsernamePlayer = Program._client.GetUser(player).Username;
-            Response += $"{UsernamePlayer} has placed an {playCard.ToString()}.\n";
+            Response += $"{UsernamePlayer} has placed an {playCard}.\n";
             if (await UNODatabaseService.GetUNOPlayer(server) != 0)
             {
                 Response += $"<@{await UNODatabaseService.GetUNOPlayer(server)}> has forgotten to say UNO! They have been given 2 cards.\n";
@@ -164,9 +164,6 @@ namespace UNObot.Modules
                     await QueueHandlerService.ReversePlayers(server);
                     if (await QueueHandlerService.PlayerCount(server) != 2)
                         await QueueHandlerService.NextPlayer(server);
-                    break;
-                default:
-                    _ = 1;
                     break;
             }
             checkCards = await UNODatabaseService.GetCards(player);

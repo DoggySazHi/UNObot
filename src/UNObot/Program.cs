@@ -1,7 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using DiscordBot.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
@@ -13,7 +12,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using UNObot.Modules;
 using UNObot.Services;
 
 namespace UNObot
@@ -70,18 +68,18 @@ namespace UNObot
 
         private void SafeExitHandler()
         {
-            AppDomain.CurrentDomain.ProcessExit += (o, a) => { try { ExitEvent.Set(); } catch (Exception) { } };
+            AppDomain.CurrentDomain.ProcessExit += (o, a) => { try { ExitEvent.Set(); } catch (Exception) { /* ignored */ } };
 
             Console.CancelKeyPress += (sender, eventArgs) =>
             {
                 eventArgs.Cancel = true;
-                try { ExitEvent.Set(); } catch (Exception) { }
+                try { ExitEvent.Set(); } catch (Exception) { /* ignored */ }
             };
         }
 
         public static void Exit()
         {
-            try { ExitEvent.Set(); } catch (Exception) { }
+            try { ExitEvent.Set(); } catch (Exception) { /* ignored */ }
         }
 
         private static async Task OnExit()
@@ -171,44 +169,51 @@ namespace UNObot
                 foreach (var module in type.GetMethods())
                 {
                     var helpatt = module.GetCustomAttribute(typeof(Help)) as Help;
-                    var aliasatt = module.GetCustomAttributes(typeof(AliasAttribute)) as AliasAttribute;
+                    var aliasatt = module.GetCustomAttribute(typeof(AliasAttribute)) as AliasAttribute;
+
+                    /*
+
                     var owneronlyatt = module.GetCustomAttribute(typeof(RequireOwnerAttribute)) as RequireOwnerAttribute;
-                    var userpermsatt = module.GetCustomAttributes(typeof(RequireUserPermissionAttribute)) as RequireUserPermissionAttribute;
+                    var userpermsatt = module.GetCustomAttribute(typeof(RequireUserPermissionAttribute)) as RequireUserPermissionAttribute;
                     var remainder = module.GetCustomAttribute(typeof(RemainderAttribute)) as RemainderAttribute;
+
                     foreach (var pinfo in module.GetParameters())
                     {
                         var name = pinfo.Name;
                     }
+
+                    */
+
                     var aliases = new List<string>();
                     //check if it is a command
-                    if (module.GetCustomAttribute(typeof(CommandAttribute)) is CommandAttribute nameatt)
+                    if (!(module.GetCustomAttribute(typeof(CommandAttribute)) is CommandAttribute nameatt)) continue;
+
+                    var foundHelp = helpatt == null ? "Missing help." : "Found help.";
+                    Console.WriteLine($"Loaded \"{nameatt.Text}\". {foundHelp}");
+                    var positioncmd = commands.FindIndex(o => o.CommandName == nameatt.Text);
+                    if (aliasatt?.Aliases != null)
+                        aliases = aliasatt.Aliases.ToList();
+                    if (positioncmd < 0)
                     {
-                        string foundHelp = helpatt == null ? "Missing help." : "Found help.";
-                        Console.WriteLine($"Loaded \"{nameatt.Text}\". {foundHelp}");
-                        int positioncmd = commands.FindIndex(o => o.CommandName == nameatt.Text);
-                        if (aliasatt != null && aliasatt.Aliases != null)
-                            aliases = aliasatt.Aliases.ToList();
-                        if (positioncmd < 0)
+                        commands.Add(helpatt != null
+                            ? new Command(nameatt.Text, aliases, helpatt.Usages.ToList(), helpatt.HelpMsg,
+                                helpatt.Active, helpatt.Version)
+                            : new Command(nameatt.Text, aliases, new List<string> {$".{nameatt.Text}"},
+                                "No help is given for this command.", true, "Unknown Version"));
+                    }
+                    else
+                    {
+                        if (helpatt != null)
                         {
-                            if (helpatt != null)
-                                commands.Add(new Command(nameatt.Text, aliases, helpatt.Usages.ToList(), helpatt.HelpMsg, helpatt.Active, helpatt.Version));
-                            else
-                                commands.Add(new Command(nameatt.Text, aliases, new List<string> { $".{nameatt.Text}" }, "No help is given for this command.", true, "Unknown Version"));
+                            if (commands[positioncmd].Help == "No help is given for this command.")
+                                commands[positioncmd].Help = helpatt.HelpMsg;
+                            commands[positioncmd].Usages = commands[positioncmd].Usages.Union(helpatt.Usages.ToList()).ToList();
+                            commands[positioncmd].Active |= helpatt.Active;
+                            if (commands[positioncmd].Version == "Unknown Version")
+                                commands[positioncmd].Version = helpatt.Version;
                         }
-                        else
-                        {
-                            if (helpatt != null)
-                            {
-                                if (commands[positioncmd].Help == "No help is given for this command.")
-                                    commands[positioncmd].Help = helpatt.HelpMsg;
-                                commands[positioncmd].Usages = commands[positioncmd].Usages.Union(helpatt.Usages.ToList()).ToList();
-                                commands[positioncmd].Active |= helpatt.Active;
-                                if (commands[positioncmd].Version == "Unknown Version")
-                                    commands[positioncmd].Version = helpatt.Version;
-                            }
-                            if (aliasatt != null)
-                                commands[positioncmd].Aliases = commands[positioncmd].Aliases.Union(aliasatt.Aliases.ToList()).ToList();
-                        }
+                        if (aliasatt != null)
+                            commands[positioncmd].Aliases = commands[positioncmd].Aliases.Union((aliasatt.Aliases ?? throw new InvalidOperationException()).ToList()).ToList();
                     }
                 }
             }
@@ -273,13 +278,13 @@ namespace UNObot
 
             try
             {
-                _ = _client.GetGuild(server).GetTextChannel(channel).SendMessageAsync(text);
+                await _client.GetGuild(server).GetTextChannel(channel).SendMessageAsync(text);
             }
             catch (Exception)
             {
                 try
                 {
-                    _ = _client.GetGuild(server).GetTextChannel(_client.GetGuild(server).DefaultChannel.Id).SendMessageAsync(text);
+                   await _client.GetGuild(server).GetTextChannel(_client.GetGuild(server).DefaultChannel.Id).SendMessageAsync(text);
                 }
                 catch (Exception)
                 {

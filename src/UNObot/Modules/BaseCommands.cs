@@ -1,18 +1,20 @@
 using Discord;
 using Discord.Commands;
 using System;
+using System.Globalization;
 using System.Threading.Tasks;
+using UNObot.Services;
 
 namespace UNObot.Modules
 {
     public class BaseCommands : ModuleBase<SocketCommandContext>
     {
         [Command("info", RunMode = RunMode.Async)]
-        [Help(new string[] { ".info" }, "Get the current version of UNObot.", true, "UNObot 1.0")]
+        [Help(new[] { ".info" }, "Get the current version of UNObot.", true, "UNObot 1.0")]
         public async Task Info()
         {
             var (Commit, Build) = Program.ReadCommitBuild();
-            var Output = $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {Program.version}\nCurrent Time (PST): {DateTime.Now.ToString()}" +
+            var Output = $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {Program.version}\nCurrent Time (PST): {DateTime.Now.ToString(CultureInfo.InvariantCulture)}" +
                     $"\n\nCommit {Program.Commit}\nBuild #{Program.Build}";
             if (Commit != Program.Commit)
                 Output += $"\nThere is a pending update: Commit {Commit} Build #{Build}.";
@@ -20,7 +22,7 @@ namespace UNObot.Modules
         }
 
         [Command("testperms", RunMode = RunMode.Async), RequireUserPermission(GuildPermission.ManageGuild)]
-        [Help(new string[] { ".testperms" }, "Show all permissions that UNObot has. Added for security reasons.", true, "UNObot 1.4")]
+        [Help(new[] { ".testperms" }, "Show all permissions that UNObot has. Added for security reasons.", true, "UNObot 1.4")]
         public async Task TestPerms()
         {
             string response = "Permissions:\n";
@@ -33,7 +35,7 @@ namespace UNObot.Modules
             await ReplyAsync(response);
         }
         [Command("dogtestperms", RunMode = RunMode.Async), RequireOwner]
-        [Help(new string[] { ".dogtestperms" }, "Show all permissions that UNObot has. Added for security reasons.", false, "UNObot 1.4")]
+        [Help(new[] { ".dogtestperms" }, "Show all permissions that UNObot has. Added for security reasons.", false, "UNObot 1.4")]
         public async Task TestPerms2()
         {
             string response = "Permissions:\n";
@@ -46,7 +48,7 @@ namespace UNObot.Modules
             await ReplyAsync(response);
         }
         [Command("nick", RunMode = RunMode.Async), RequireOwner]
-        [Help(new string[] { ".nick (nickname)" }, "Change the nickname of UNObot.", false, "UNObot 2.0")]
+        [Help(new[] { ".nick (nickname)" }, "Change the nickname of UNObot.", false, "UNObot 2.0")]
         public async Task ChangeNick(string newnick)
         {
             var User = Context.Guild.GetUser(Context.Client.CurrentUser.Id);
@@ -57,7 +59,7 @@ namespace UNObot.Modules
         }
 
         [Command("fullhelp", RunMode = RunMode.Async)]
-        [Help(new string[] { ".fullhelp" }, "If you need help using help, you're truly lost.", true, "UNObot 1.0")]
+        [Help(new[] { ".fullhelp" }, "If you need help using help, you're truly lost.", true, "UNObot 1.0")]
         public async Task FullHelp()
         {
             await ReplyAsync("Help has been sent. Or, I think it has.");
@@ -169,12 +171,12 @@ namespace UNObot.Modules
         }
 
         [Command("help", RunMode = RunMode.Async), Alias("ahh", "ahhh", "ahhhh")]
-        [Help(new string[] { ".help (command)" }, "If you need help using help, you're truly lost.", true, "UNObot 1.0")]
+        [Help(new[] { ".help (command)" }, "If you need help using help, you're truly lost.", true, "UNObot 1.0")]
         public async Task Help(string cmdSearch)
         {
             string Response = "";
             int index = Program.commands.FindIndex(o => o.CommandName == cmdSearch);
-            int index2 = Program.commands.FindIndex(o => o.Aliases.Contains(cmdSearch) == true);
+            int index2 = Program.commands.FindIndex(o => o.Aliases.Contains(cmdSearch));
             Command cmd;
             if (index >= 0)
                 cmd = Program.commands[index];
@@ -199,7 +201,7 @@ namespace UNObot.Modules
         }
 
         [Command("credits", RunMode = RunMode.Async), Alias("asdf")]
-        [Help(new string[] { ".credits" }, "Wow, look at all of the victims during the making of this bot.", true, "UNObot 1.0")]
+        [Help(new[] { ".credits" }, "Wow, look at all of the victims during the making of this bot.", true, "UNObot 1.0")]
         public async Task Credits()
         {
             await ReplyAsync("UNObot: Programmed by DoggySazHi\n" +
@@ -211,7 +213,7 @@ namespace UNObot.Modules
         }
 
         [Command("invite", RunMode = RunMode.Async)]
-        [Help(new string[] { ".invite" }, "You actually want the bot? Wow.", true, "UNObot 3.1.4")]
+        [Help(new[] { ".invite" }, "You actually want the bot? Wow.", true, "UNObot 3.1.4")]
         public async Task Invite()
         {
             await ReplyAsync("If you want to add this bot to your server, use this link: \n" +

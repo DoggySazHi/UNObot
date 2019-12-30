@@ -1,11 +1,10 @@
-﻿using Discord;
-using Discord.WebSocket;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
+using Discord;
+using Discord.WebSocket;
 
-namespace UNObot.Modules
+namespace UNObot.Services
 {
     public static class InputHandlerService
     {
@@ -32,13 +31,14 @@ namespace UNObot.Modules
         public static async Task ReactionAdded(Cacheable<IUserMessage, ulong> reactmessage, ISocketMessageChannel channel, SocketReaction reaction)
         {
             //TODO add check for what type of message (kete)
-            string input = "";
+            string input;
             var message = await reactmessage.GetOrDownloadAsync();
             var reacter = Program._client.GetUser(reaction.UserId);
 
             if (reacter.IsBot || message.Author.Id != Program._client.CurrentUser.Id)
                 return;
 
+            /*
             Dictionary<IEmote, IUser[]> messagereactions = new Dictionary<IEmote, IUser[]>();
 
             foreach (var react in message.Reactions)
@@ -46,6 +46,7 @@ namespace UNObot.Modules
                 var users = await message.GetReactionUsersAsync(react.Key, 3).FlattenAsync();
                 messagereactions.Add(react.Key, users.ToArray());
             }
+            */
 
 #if(DEBUG)
             if (reactions.ContainsKey(reaction.Emote))

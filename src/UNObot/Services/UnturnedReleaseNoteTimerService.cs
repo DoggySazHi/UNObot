@@ -3,13 +3,13 @@ using System.ServiceModel.Syndication;
 using System.Timers;
 using System.Xml;
 
-namespace UNObot.Modules
+namespace UNObot.Services
 {
-    public class UnturnedReleaseNotes
+    public class UnturnedReleaseNotes : IDisposable
     {
         private static UnturnedReleaseNotes instance;
-        private string lastLink = "";
-        private Timer checkInterval;
+        private string lastLink;
+        private readonly Timer checkInterval;
 
         private UnturnedReleaseNotes()
         {
@@ -47,14 +47,14 @@ namespace UNObot.Modules
         public static string GetLatestLink()
         {
             string url = "https://steamcommunity.com/games/304930/rss/";
-            SyndicationFeed feed = null;
+            SyndicationFeed feed;
             using (XmlReader reader = XmlReader.Create(url))
                 feed = SyndicationFeed.Load(reader);
             string Link = "";
             foreach (SyndicationItem item in feed.Items)
             {
-                string subject = item.Title.Text;
-                string summary = item.Summary.Text;
+                //string subject = item.Title.Text;
+                //string summary = item.Summary.Text;
                 if (item.Links.Count > 0)
                 {
                     Link = item.Links[0].GetAbsoluteUri().ToString();
@@ -62,6 +62,11 @@ namespace UNObot.Modules
                 }
             }
             return Link;
+        }
+
+        public void Dispose()
+        {
+            checkInterval?.Dispose();
         }
     }
 }

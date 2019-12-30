@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace UNObot.Modules
+namespace UNObot.Services
 {
     public static class ShellService
     {

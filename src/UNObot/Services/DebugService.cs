@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace UNObot.Services
+﻿namespace UNObot.Services
 {
     public class DebugService
     {
@@ -14,8 +12,10 @@ namespace UNObot.Services
 
         private DebugService()
         {
+            /*
             if (!Program.version.Contains("Debug", StringComparison.OrdinalIgnoreCase))
                 return;
+                */
         }
     }
 }

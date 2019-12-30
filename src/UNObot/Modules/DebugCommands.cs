@@ -9,7 +9,7 @@ namespace UNObot.Modules
     public class DebugCommands : ModuleBase<SocketCommandContext>
     {
         [Command("purge", RunMode = RunMode.Async), RequireUserPermission(GuildPermission.Administrator), RequireBotPermission(ChannelPermission.ManageMessages)]
-        [Help(new string[] { ".purge (number of messages)" }, "Delete messages via a range. Testing command; do not rely on forever.", false, "UNObot 1.4")]
+        [Help(new[] { ".purge (number of messages)" }, "Delete messages via a range. Testing command; do not rely on forever.", false, "UNObot 1.4")]
         public async Task Purge(int length)
         {
             var messages = await Context.Channel.GetMessagesAsync(length + 1).FlattenAsync();

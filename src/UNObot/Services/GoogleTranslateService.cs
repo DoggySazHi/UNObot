@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Net;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Web;
 
 namespace UNObot.Services
@@ -53,7 +52,7 @@ namespace UNObot.Services
             }
 
             // Extract out trans":"...[Extracted]...","from the JSON string
-            string result = Regex.Match(html, "trans\":(\".*?\"),\"", RegexOptions.IgnoreCase).Groups[1].Value;
+            //string result = Regex.Match(html, "trans\":(\".*?\"),\"", RegexOptions.IgnoreCase).Groups[1].Value;
 
             if (string.IsNullOrEmpty(html))
             {

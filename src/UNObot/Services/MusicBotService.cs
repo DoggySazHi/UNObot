@@ -7,23 +7,22 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using UNObot.Modules;
 using YoutubeExplode.Models;
-using Timer = System.Timers.Timer;
 
 namespace UNObot.Services
 {
     // Can't use Struct, needs passing by reference.
     public class Song
     {
-        public string URL { get; private set; }
+        public string URL { get; }
         public string PathCached { get; set; }
-        public ulong RequestedBy { get; private set; }
-        public ulong RequestedGuild { get; private set; }
-        public string Name { get; private set; }
-        public string Duration { get; private set; }
-        public string ThumbnailURL { get; private set; }
+        public ulong RequestedBy { get; }
+        public ulong RequestedGuild { get; }
+        public string Name { get; }
+        public string Duration { get; }
+        public string ThumbnailURL { get; }
         public bool IsPlaying { get; private set; }
+
         private ManualResetEvent EndCache;
 
         public Song(string URL, Tuple<string, string, string> Data, ulong User, ulong Guild)
@@ -44,20 +43,19 @@ namespace UNObot.Services
                 Console.WriteLine($"Caching {Name}");
                 PathCached = "Caching...";
                 PathCached = await YoutubeService.GetSingleton().Download(URL, RequestedGuild);
-                if (EndCache != null)
-                    EndCache.Set();
+                EndCache?.Set();
                 Console.WriteLine("Finished caching.");
             }
         }
 
-        public void SetCacheEvent(ManualResetEvent EndCache)
+        public void SetCacheEvent(ManualResetEvent CacheFinished)
         {
             if (!string.IsNullOrEmpty(PathCached) && PathCached != "Caching...")
             {
-                EndCache.Set();
+                CacheFinished.Set();
                 return;
             }
-            this.EndCache = EndCache;
+            EndCache = CacheFinished;
         }
         public void SetPlaying() => IsPlaying = true;
     }
@@ -82,8 +80,6 @@ namespace UNObot.Services
         private readonly ManualResetEvent QuitEvent;
         private readonly ManualResetEvent CacheEvent;
         private readonly Stopwatch PlayPos;
-        private readonly Timer Timeout;
-
         private readonly IVoiceChannel AudioChannel;
         private IAudioClient AudioClient;
         private readonly ISocketMessageChannel MessageChannel;
@@ -100,7 +96,6 @@ namespace UNObot.Services
             CacheEvent = new ManualResetEvent(false);
             Songs = new List<Song>();
             PlayPos = new Stopwatch();
-            Timeout = new Timer(5000);
         }
 
         private bool HandlingError;
@@ -117,7 +112,7 @@ namespace UNObot.Services
             {
                 AudioClient = await AudioChannel.ConnectAsync();
                 AudioClient.Disconnected += FixConnection;
-                _ = MessageChannel.SendMessageAsync("Detected audio disconnection, reconnected. Use .playerdc to force the bot to leave.");
+                await MessageChannel.SendMessageAsync("Detected audio disconnection, reconnected. Use .playerdc to force the bot to leave.").ConfigureAwait(false);
                 if (PrevPlaying)
                 {
                     Console.WriteLine(TryPlay());
@@ -138,17 +133,27 @@ namespace UNObot.Services
 
                 CacheEvent.Reset();
                 NowPlaying.SetCacheEvent(CacheEvent);
-                if (NowPlaying.PathCached == null)
+                if (string.IsNullOrEmpty(NowPlaying.PathCached) || NowPlaying.PathCached == "Caching...")
                     await NowPlaying.Cache().ConfigureAwait(false);
 
                 CacheEvent.WaitOne();
+
+                for (int i = 0; i < 3; i++)
+                {
+                    if (File.Exists(NowPlaying.PathCached))
+                        continue;
+                    await Task.Delay(500);
+                }
+
+                if (!File.Exists(NowPlaying.PathCached))
+                    await MessageChannel.SendMessageAsync("Sorry, but I had a problem downloading this song...").ConfigureAwait(false);
 
                 NowPlaying.SetPlaying();
 
                 do
                 {
                     PlayPos.Restart();
-                    _ = MessageChannel.SendMessageAsync("", false, EmbedDisplayService.DisplayNowPlaying(NowPlaying, null));
+                    await MessageChannel.SendMessageAsync("", false, EmbedDisplayService.DisplayNowPlaying(NowPlaying, null)).ConfigureAwait(false);
                     await SendAudio(CreateStream(NowPlaying.PathCached), AudioClient.CreatePCMStream(AudioApplication.Music, AudioChannel.Bitrate)).ConfigureAwait(false);
                 }
                 while (LoopingSong);
@@ -160,7 +165,9 @@ namespace UNObot.Services
                 NowPlaying.PathCached = null;
 
                 NowPlaying = null;
-                _ = Task.Run(Cache).ConfigureAwait(false);
+#pragma warning disable 4014
+                Task.Run(Cache).ConfigureAwait(false);
+#pragma warning restore 4014
             }
             await DisposeAsync();
         }
@@ -189,14 +196,14 @@ namespace UNObot.Services
             }
         }
 
-        public void Add(string URL, Tuple<string, string, string> Data, ulong User, ulong Guild, bool InsertAtTop = false)
+        public void Add(string URL, Tuple<string, string, string> Data, ulong User, ulong GuildFrom, bool InsertAtTop = false)
         {
-            Song s = new Song(URL, Data, User, Guild);
+            Song s = new Song(URL, Data, User, GuildFrom);
             if (InsertAtTop)
                 Songs.Insert(0, s);
             else
                 Songs.Add(s);
-            _ = Task.Run(Cache);
+            Task.Run(Cache);
         }
 
         public string TryPause()
@@ -280,7 +287,7 @@ namespace UNObot.Services
             Songs.ForEach(o => o.PathCached = null);
             ThreadSafeRandom.Shuffle(Songs);
             // Let the Cacher delete, as if you try to kill the process too early, it throws an exception while caching.
-            _ = Task.Run(Cache).ConfigureAwait(false);
+            Task.Run(Cache);
         }
 
         private async Task SendAudio(Stream AudioStream, AudioOutStream DiscordStream)
@@ -292,9 +299,8 @@ namespace UNObot.Services
                 {
                     //Adjust?
                     int bufferSize = 1024;
-                    int bytesSent = 0;
+                    //int bytesSent = 0;
                     bool Fail = false;
-                    bool Exit = false;
                     byte[] buffer = new byte[bufferSize];
 
                     // Skip: User skipped the song.
@@ -302,7 +308,7 @@ namespace UNObot.Services
                     // Exit: Song ended.
                     // Quit: Program exiting.
 
-                    while (!Fail && !Exit && !Quit)
+                    while (!Fail && !Quit)
                     {
                         try
                         {
@@ -314,10 +320,7 @@ namespace UNObot.Services
 
                             int read = await AudioStream.ReadAsync(buffer, 0, bufferSize);
                             if (read == 0)
-                            {
-                                Exit = true;
                                 break;
-                            }
 
                             try
                             {
@@ -336,7 +339,7 @@ namespace UNObot.Services
                                 PlayPos.Start();
                             }
 
-                            bytesSent += read;
+                            //bytesSent += read;
                         }
                         catch (Exception ex)
                         {
@@ -372,7 +375,7 @@ namespace UNObot.Services
                 Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1",
                 UseShellExecute = false,
                 RedirectStandardOutput = true
-            }).StandardOutput.BaseStream;
+            })?.StandardOutput.BaseStream;
         }
 
         public async ValueTask DisposeAsync()
@@ -387,7 +390,7 @@ namespace UNObot.Services
                 if (IsPlaying)
                     QuitEvent.WaitOne();
                 await AudioClient.StopAsync();
-                try { await AudioChannel.DisconnectAsync(); } catch (Exception) { }
+                try { await AudioChannel.DisconnectAsync(); } catch (Exception) { /* ignored */ }
                 AudioClient.Dispose();
                 PauseEvent.Dispose();
             }
@@ -433,7 +436,9 @@ namespace UNObot.Services
             {
                 Player NewPlayer = new Player(Guild, AudioChannel, await AudioChannel.ConnectAsync(), MessageChannel);
                 MusicPlayers.Add(NewPlayer);
-                _ = Task.Run(NewPlayer.RunPlayer);
+#pragma warning disable 4014
+                Task.Run(NewPlayer.RunPlayer);
+#pragma warning restore 4014
                 Console.WriteLine("Generated new player.");
                 return new Tuple<Player, string>(NewPlayer, null);
             }
@@ -443,7 +448,9 @@ namespace UNObot.Services
                 MusicPlayers.RemoveAt(Player);
                 var NewPlayer = new Player(Guild, AudioChannel, await AudioChannel.ConnectAsync(), MessageChannel);
                 MusicPlayers.Add(NewPlayer);
-                _ = Task.Run(NewPlayer.RunPlayer);
+#pragma warning disable 4014
+                Task.Run(NewPlayer.RunPlayer);
+#pragma warning restore 4014
                 return new Tuple<Player, string>(NewPlayer, null);
             }
             Console.WriteLine("Returned existing player.");
@@ -670,7 +677,7 @@ namespace UNObot.Services
 
         public async Task<string> Skip(ulong User, ulong Guild, IVoiceChannel Channel)
         {
-            string Error = null;
+            string Error;
             try
             {
                 var Players = MusicPlayers.FindAll(o => o.Guild == Guild);
@@ -694,7 +701,7 @@ namespace UNObot.Services
 
         public async Task<string> Remove(ulong User, ulong Guild, IVoiceChannel Channel, int Index)
         {
-            string Error = null;
+            string Error;
             string SongName = null;
             try
             {
@@ -716,8 +723,8 @@ namespace UNObot.Services
 
             if (SongName != null)
             {
-                SongName.Replace("\\", "\\\\");
-                SongName.Replace("`", "\\`");
+                SongName = SongName.Replace("\\", "\\\\");
+                SongName = SongName.Replace("`", "\\`");
             }
             return string.IsNullOrWhiteSpace(Error) ? $"Removed ``{SongName}`` successfully." : "Error: " + Error;
         }

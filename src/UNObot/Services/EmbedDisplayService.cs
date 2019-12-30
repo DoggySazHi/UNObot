@@ -1,13 +1,12 @@
-﻿using Discord;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using UNObot.Services;
+using Discord;
 using YoutubeExplode.Models;
 
-namespace UNObot.Modules
+namespace UNObot.Services
 {
     public static class ImageHandler
     {
@@ -20,10 +19,9 @@ namespace UNObot.Modules
     {
         public static async Task<Embed> DisplayGame(ulong serverid)
         {
-            uint cardColor = 0xFF0000;
             var card = await UNODatabaseService.GetCurrentCard(serverid);
 
-            cardColor = card.Color switch
+            uint cardColor = card.Color switch
             {
                 "Red" => 0xFF0000,
                 "Blue" => 0x0000FF,
@@ -94,7 +92,6 @@ namespace UNObot.Modules
             string YellowCards = "";
             string WildCards = "";
 
-            string temp = cards[0].Color;
             foreach (Card c in cards)
             {
                 switch (c.Color)
@@ -318,7 +315,7 @@ namespace UNObot.Modules
 
         private static readonly int Attempts = 3;
 
-        public static bool UnturnedQueryEmbed(ulong Server, string IP, ushort Port, out Embed Result, ServerAverages Averages = null)
+        public static bool UnturnedQueryEmbed(string IP, ushort Port, out Embed Result, ServerAverages Averages = null)
         {
             A2S_INFO Information = null;
             bool InformationGet = false;
@@ -343,7 +340,6 @@ namespace UNObot.Modules
             }
 
             var Random = ThreadSafeRandom.ThisThreadsRandom;
-            string DiscordServerName = Program._client.GetGuild(Server).Name;
             string ServerName = Information.Name;
             string ServerImageURL = Rules.Rules.FirstOrDefault(o => o.Name.Contains("Browser_Icon", StringComparison.OrdinalIgnoreCase)).Value;
             string ServerDescription = "";
