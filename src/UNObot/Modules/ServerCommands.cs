@@ -84,8 +84,9 @@ namespace UNObot.Modules
                     o.Embed = Embed;
                 });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine(ex);
                 await Message.ModifyAsync(o => o.Content = "We had some difficulties displaying the status. Please try again?");
             }
         }

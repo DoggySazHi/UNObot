@@ -310,7 +310,6 @@ namespace UNObot.Services
                 Header = br.ReadByte();
                 if (Header != 0x56)
                 {
-                    Console.WriteLine("Server asked for a challenge.");
                     //Get challenge number, and plan to resend it.
                     byte[] Response = { 0xFF, 0xFF, 0xFF, 0xFF, 0x56, br.ReadByte(), br.ReadByte(), br.ReadByte(), br.ReadByte() };
 
@@ -322,8 +321,6 @@ namespace UNObot.Services
                     ms.Seek(4, SeekOrigin.Begin);
                     Header = br.ReadByte();
                 }
-                else
-                    Console.WriteLine("Server did not ask for a challenge.");
 
                 RuleCount = br.ReadInt16();
                 for (int i = 0; i < RuleCount; i++)

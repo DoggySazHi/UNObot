@@ -397,14 +397,14 @@ namespace UNObot.Services
             .AddField($"Versions", $"Unturned: {UnturnedVersion}{(RocketModVersion == "" ? "" : $"\nRocketMod: {RocketModVersion}")}", true);
             if (!string.IsNullOrWhiteSpace(RocketModPlugins))
                 builder.AddField($"RocketMod Plugins", RocketModPlugins, true);
-            builder.AddField($"Players: {Information.Players}/{Information.MaxPlayers}", PlayersOnline, true);
+            builder.AddField($"Players: {Information.Players}/{Information.MaxPlayers}", string.IsNullOrWhiteSpace(PlayersOnline) ? "Nobody's online!" : PlayersOnline, true);
             if (Averages != null)
                 builder.AddField("Server Averages",
-                    $"Last hour: {Averages.AverageLastHour.ToString("N2")} players\n" +
-                    $"Last 24 hours: {Averages.AverageLast24H.ToString("N2")} players\n" +
-                    $"Last week: {Averages.AverageLastWeek.ToString("N2")} players\n" +
-                    $"Last month: {Averages.AverageLastMonth.ToString("N2")} players\n" +
-                    $"Last year: {Averages.AverageLastYear.ToString("N2")} players\n", true);
+                    $"Last hour: {Averages.AverageLastHour:N2} players\n" +
+                    $"Last 24 hours: {Averages.AverageLast24H:N2} players\n" +
+                    $"Last week: {Averages.AverageLastWeek:N2} players\n" +
+                    $"Last month: {Averages.AverageLastMonth:N2} players\n" +
+                    $"Last year: {Averages.AverageLastYear:N2} players\n", true);
             Result = builder.Build();
             return true;
         }
