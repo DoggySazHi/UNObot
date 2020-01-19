@@ -131,7 +131,8 @@ namespace UNObot.Modules
             }
 
             var Result = await MusicBotService.GetSingleton().Skip(Context.User.Id, Context.Guild.Id, AudioChannel);
-            await ReplyAsync(Result);
+            if(!string.IsNullOrWhiteSpace(Result))
+                await ReplyAsync(Result);
         }
 
         [Command("playerloop", RunMode = RunMode.Async)]

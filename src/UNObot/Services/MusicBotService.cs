@@ -73,6 +73,7 @@ namespace UNObot.Services
         private bool _Disposed;
         public bool Disposed => _Disposed || AudioClient.ConnectionState == ConnectionState.Disconnected;
 
+        private bool Skip;
         private bool Quit;
         private bool IsPlaying;
         private bool Caching;
@@ -158,8 +159,10 @@ namespace UNObot.Services
                     do
                     {
                         PlayPos.Restart();
+                        string Message = Skip ? "Skipped song." : "";
+                        Skip = false;
                         await MessageChannel
-                            .SendMessageAsync("", false, EmbedDisplayService.DisplayNowPlaying(NowPlaying, null))
+                            .SendMessageAsync(Message, false, EmbedDisplayService.DisplayNowPlaying(NowPlaying, null))
                             .ConfigureAwait(false);
                         await SendAudio(CreateStream(NowPlaying.PathCached),
                                 AudioClient.CreatePCMStream(AudioApplication.Music, AudioChannel.Bitrate))
@@ -232,7 +235,7 @@ namespace UNObot.Services
             if (Paused || !PauseEvent.WaitOne(0))
             {
                 Paused = true;
-                return $"Player is already paused.";
+                return "Player is already paused.";
             }
             Paused = true;
             PauseEvent.Reset();
@@ -246,7 +249,7 @@ namespace UNObot.Services
             if (!Paused || PauseEvent.WaitOne(0))
             {
                 Paused = false;
-                return $"Player is already playing.";
+                return "Player is already playing.";
             }
             Paused = false;
             PauseEvent.Set();
@@ -261,6 +264,7 @@ namespace UNObot.Services
             PauseEvent.Set();
 
             Quit = true;
+            Skip = true;
             QuitEvent.WaitOne();
             QuitEvent.Reset();
             PauseEvent.Reset();
@@ -404,6 +408,7 @@ namespace UNObot.Services
                 Songs.Clear();
                 LoopingSong = false;
                 LoopingQueue = false;
+                Skip = false;
                 Paused = false;
                 Quit = true;
                 if (IsPlaying)
