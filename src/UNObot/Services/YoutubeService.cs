@@ -81,7 +81,7 @@ namespace UNObot.Services
                 {
                     var FileSkip = false;
                     foreach (var FileToSkip in Skip)
-                        if (FileToSkip.Contains(Filename))
+                        if (FileToSkip.Contains(Filename) || Filename.Contains(FileToSkip))
                             FileSkip = true;
                     if (FileSkip)
                         continue;
@@ -119,7 +119,7 @@ namespace UNObot.Services
 
             if (MediaStreams.Audio.Count == 0)
             {
-                string Path = GetNextFile(Guild, "mp3");
+                string Path = GetNextFile(Guild, Id, "mp3");
                 try
                 {
                     await Converter.DownloadVideoAsync(Id, Path).ConfigureAwait(false);
@@ -133,10 +133,10 @@ namespace UNObot.Services
                 return Path;
             }
             else
-                return await Download(Guild, MediaStreams.Audio.WithHighestBitrate());
+                return await Download(Guild, Id, MediaStreams.Audio.WithHighestBitrate());
         }
 
-        private async Task<string> Download(ulong Guild, AudioStreamInfo AudioStream)
+        private async Task<string> Download(ulong Guild, string Id, AudioStreamInfo AudioStream)
         {
             string Extension = "webm";
             try
@@ -149,7 +149,7 @@ namespace UNObot.Services
             }
             Console.WriteLine("Got Extension");
 
-            string FileName = GetNextFile(Guild, Extension);
+            string FileName = GetNextFile(Guild, Id, Extension);
 
 
             await Client.DownloadMediaStreamAsync(AudioStream, FileName);
@@ -164,14 +164,9 @@ namespace UNObot.Services
             throw new Exception("Failed to download file.");
         }
 
-        private string GetNextFile(ulong Guild, string Extension)
+        private string GetNextFile(ulong Guild, string Id, string Extension)
         {
-            string FileName;
-            int Count = 0;
-            do
-            {
-                FileName = Path.Combine(PathToGuildFolder(Guild), "downloadSong" + ++Count + "." + Extension);
-            } while (File.Exists(FileName));
+            string FileName = Path.Combine(PathToGuildFolder(Guild), $"{Id}.{Extension}");
             Console.WriteLine("Saving to " + FileName);
             return FileName;
         }

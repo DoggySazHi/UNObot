@@ -201,7 +201,7 @@ namespace UNObot.Services
 
     public class A2S_PLAYER
     {
-        public static readonly byte[] Handshake = { 0xFF, 0xFF, 0xFF, 0xFF, 0x55, 0xFF, 0xFF, 0xFF, 0xFF };
+        private static readonly byte[] Handshake = { 0xFF, 0xFF, 0xFF, 0xFF, 0x55, 0xFF, 0xFF, 0xFF, 0xFF };
 
         public struct Player
         {
@@ -211,11 +211,11 @@ namespace UNObot.Services
             public float Duration { get; set; }
         }
 
-        public byte Header { get; set; }
-        public byte PlayerCount { get; set; }
+        public byte Header { get; }
+        public byte PlayerCount { get; }
 
-        public bool ServerUp { get; set; }
-        public List<Player> Players { get; set; }
+        public bool ServerUp { get; }
+        public List<Player> Players { get; }
 
         public A2S_PLAYER(IPEndPoint ep)
         {
@@ -281,7 +281,7 @@ namespace UNObot.Services
 
     public class A2S_RULES
     {
-        public static readonly byte[] Handshake = { 0xFF, 0xFF, 0xFF, 0xFF, 0x56, 0xFF, 0xFF, 0xFF, 0xFF };
+        private static readonly byte[] Handshake = { 0xFF, 0xFF, 0xFF, 0xFF, 0x56, 0xFF, 0xFF, 0xFF, 0xFF };
 
         public struct Rule
         {
@@ -289,10 +289,10 @@ namespace UNObot.Services
             public string Value { get; set; }
         }
 
-        public byte Header { get; set; }
-        public short RuleCount { get; set; }
-        public List<Rule> Rules { get; set; }
-        public bool ServerUp { get; set; }
+        public byte Header { get; }
+        public short RuleCount { get; }
+        public List<Rule> Rules { get; }
+        public bool ServerUp { get; }
 
         public A2S_RULES(IPEndPoint ep)
         {

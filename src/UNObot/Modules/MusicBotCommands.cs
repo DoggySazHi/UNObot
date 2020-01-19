@@ -44,7 +44,7 @@ namespace UNObot.Modules
                 return;
             }
 
-            var Result = MusicBotService.GetSingleton().Play(Context.User.Id, Context.Guild.Id, AudioChannel);
+            var Result = await MusicBotService.GetSingleton().Play(Context.User.Id, Context.Guild.Id, AudioChannel);
             await ReplyAsync(Result);
         }
 
@@ -101,7 +101,7 @@ namespace UNObot.Modules
                 return;
             }
 
-            var Result = MusicBotService.GetSingleton().Shuffle(Context.User.Id, Context.Guild.Id, AudioChannel);
+            var Result = await MusicBotService.GetSingleton().Shuffle(Context.User.Id, Context.Guild.Id, AudioChannel);
             await ReplyAsync(Result);
         }
 
