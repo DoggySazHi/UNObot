@@ -18,6 +18,8 @@ namespace UNObot.Modules
                 return;
             }
 
+            var Loading = await ReplyAsync("Loading music... (this may take a while, but not more than 10 seconds)");
+
             var Result = await MusicBotService.GetSingleton().AddList(Context.User.Id, Context.Guild.Id, Link, AudioChannel, Context.Channel);
             if (Result.Item1 == null)
                 Result = await MusicBotService.GetSingleton().Add(Context.User.Id, Context.Guild.Id, Link, AudioChannel, Context.Channel);
@@ -31,7 +33,12 @@ namespace UNObot.Modules
             string Message = Result.Item2 ?? "";
             if (Result.Item1.Url.Contains("ixMHG0DIAK4") && Context.User.Id == 278524552462598145)
                 Message += "Aw crap, here we go again...";
-            await ReplyAsync(Message, false, Result.Item1);
+
+            await Loading.ModifyAsync(o =>
+            {
+                o.Content = Message;
+                o.Embed = Result.Item1;
+            });
         }
 
         [Command("playerplay", RunMode = RunMode.Async), Alias("playmusic", "pm")]
@@ -59,6 +66,8 @@ namespace UNObot.Modules
                 return;
             }
 
+            var Loading = await ReplyAsync("Loading music playlist... (this may take a while, but not more than 15 seconds)");
+
             var Result = await MusicBotService.GetSingleton().AddList(Context.User.Id, Context.Guild.Id, Link, AudioChannel, Context.Channel, true);
             if (Result.Item1 == null)
                 Result = await MusicBotService.GetSingleton().Add(Context.User.Id, Context.Guild.Id, Link, AudioChannel, Context.Channel, true);
@@ -72,7 +81,12 @@ namespace UNObot.Modules
             string Message = Result.Item2 ?? "";
             if (Result.Item1.Url.Contains("ixMHG0DIAK4") && Context.User.Id == 278524552462598145)
                 Message += "Aw crap, here we go again...";
-            await ReplyAsync(Message, false, Result.Item1);
+
+            await Loading.ModifyAsync(o =>
+            {
+                o.Content = Message;
+                o.Embed = Result.Item1;
+            });
         }
 
         [Command("playerpause", RunMode = RunMode.Async), Alias("pause", "pauseplayer")]
