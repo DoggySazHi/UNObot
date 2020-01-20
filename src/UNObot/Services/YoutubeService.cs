@@ -36,7 +36,8 @@ namespace UNObot.Services
 
         public async Task<Tuple<string, string, string>> GetInfo(string URL)
         {
-            URL = URL.TrimStart('<', '>').TrimEnd('<', '>');
+            URL = URL.Replace("<", "").Replace(">", "");
+            Console.WriteLine(URL);
             if (!YoutubeClient.TryParseVideoId(URL, out string Id))
                 throw new Exception("Could not get information from URL! Is the link valid?");
             var VideoData = await Client.GetVideoAsync(Id);
@@ -56,7 +57,8 @@ namespace UNObot.Services
 
         public async Task<Playlist> GetPlaylist(string URL)
         {
-            URL = URL.TrimStart('<', '>').TrimEnd('<', '>');
+            URL = URL.Replace("<", "").Replace(">", "");
+            Console.WriteLine(URL);
             if (!YoutubeClient.TryParsePlaylistId(URL, out string Id))
                 throw new Exception("Could not get playlist from URL! Is the link valid?");
             var VideoData = await Client.GetPlaylistAsync(Id);

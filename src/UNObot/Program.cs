@@ -293,6 +293,6 @@ namespace UNObot
             }
         }
         public static async Task SendPM(string text, ulong user)
-            => await UserExtensions.SendMessageAsync(_client.GetUser(user), text);
+            => await _client.GetUser(user).SendMessageAsync(text);
     }
 }

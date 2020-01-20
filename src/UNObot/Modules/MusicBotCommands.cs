@@ -27,7 +27,7 @@ namespace UNObot.Modules
                 Result = await MusicBotService.GetSingleton().Search(Context.User.Id, Context.Guild.Id, Link, AudioChannel, Context.Channel);
             if (Result.Item1 == null)
             {
-                await ReplyAsync($"Error: {Result.Item2 ?? "I... don't know."}");
+                await Loading.ModifyAsync(o => o.Content = $"Error: {Result.Item2 ?? "I... don't know."}");
                 return;
             }
             string Message = Result.Item2 ?? "";
@@ -66,7 +66,7 @@ namespace UNObot.Modules
                 return;
             }
 
-            var Loading = await ReplyAsync("Loading music playlist... (this may take a while, but not more than 15 seconds)");
+            var Loading = await ReplyAsync("Loading music... (this may take a while, but not more than 10 seconds)");
 
             var Result = await MusicBotService.GetSingleton().AddList(Context.User.Id, Context.Guild.Id, Link, AudioChannel, Context.Channel, true);
             if (Result.Item1 == null)
@@ -75,7 +75,7 @@ namespace UNObot.Modules
                 Result = await MusicBotService.GetSingleton().Search(Context.User.Id, Context.Guild.Id, Link, AudioChannel, Context.Channel, true);
             if (Result.Item1 == null)
             {
-                await ReplyAsync($"Error: {Result.Item2 ?? "I... don't know."}");
+                await Loading.ModifyAsync(o => o.Content = $"Error: {Result.Item2 ?? "I... don't know."}");
                 return;
             }
             string Message = Result.Item2 ?? "";

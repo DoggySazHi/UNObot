@@ -88,7 +88,7 @@ namespace UNObot.Modules
             //Style of Username#XXXX or Username XXXX
             if ((user.Contains('#') || user.Contains(' ')) && user.Length >= 6 && int.TryParse(user.Substring(user.Length - 4), out int discriminator))
             {
-                var userObj = Program._client.GetUser(user[0..^5], discriminator.ToString());
+                var userObj = Context.Client.GetUser(user[0..^5], discriminator.ToString());
                 //Negative one is only passed in because it cannot convert to ulong; it will fail the TryParse and give a "Mention the player..." error.
                 user = userObj != null ? userObj.Id.ToString() : (-1).ToString();
             }
@@ -109,7 +109,7 @@ namespace UNObot.Modules
             {
                 await ReplyAsync($"NOTE: {note}");
             }
-            await ReplyAsync($"{Program._client.GetUser(userid).Username}'s stats:\n"
+            await ReplyAsync($"{Context.Client.GetUser(userid).Username}'s stats:\n"
                                 + $"Games joined: {stats[0]}\n"
                                 + $"Games fully played: {stats[1]}\n"
                                 + $"Games won: {stats[2]}");

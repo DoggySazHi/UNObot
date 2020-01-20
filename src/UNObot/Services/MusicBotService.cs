@@ -730,7 +730,7 @@ namespace UNObot.Services
                 Error = ex.Message;
             }
 
-            return string.IsNullOrWhiteSpace(Error) ? "Skipped song." : "Error: " + Error;
+            return string.IsNullOrWhiteSpace(Error) ? "" : "Error: " + Error;
         }
 
         public async Task<string> Remove(ulong User, ulong Guild, IVoiceChannel Channel, int Index)
