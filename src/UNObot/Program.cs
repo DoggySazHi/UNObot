@@ -25,7 +25,7 @@ namespace UNObot
 
         static async Task Main()
         {
-            Console.WriteLine("UNObot Launcher 1.1");
+            LoggerService.Log(LogSeverity.Info, "UNObot Launcher 2.0");
             await new Program().MainAsync();
         }
 
@@ -46,8 +46,9 @@ namespace UNObot
             );
             _config = BuildConfig();
 
+            _client.Log += LoggerService.GetSingleton().LogDiscord;
+
             var services = ConfigureServices();
-            services.GetRequiredService<LoggerService>();
             await services.GetRequiredService<CommandHandlingService>().InitializeAsync(services);
 
             await _client.LoginAsync(TokenType.Bot, _config["token"]);
@@ -84,11 +85,11 @@ namespace UNObot
 
         private static async Task OnExit()
         {
-            Console.WriteLine("Quitting...");
+            LoggerService.Log(LogSeverity.Info, "Quitting...");
             await MusicBotService.GetSingleton().DisposeAsync();
             await _client.StopAsync().ConfigureAwait(false);
             _client.Dispose();
-            Console.WriteLine("Quit successfully.");
+            LoggerService.Log(LogSeverity.Info, "Quit successfully.");
             Environment.Exit(0);
         }
 
@@ -99,9 +100,6 @@ namespace UNObot
                 .AddSingleton(_client)
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
-                // Logging
-                .AddLogging()
-                .AddSingleton<LoggerService>()
                 // Extra
                 .AddSingleton(_config)
                 // Add additional services here...
@@ -110,10 +108,10 @@ namespace UNObot
 
         IConfiguration BuildConfig()
         {
-            Console.WriteLine($"Reading files in {Directory.GetCurrentDirectory()}");
+            LoggerService.Log(LogSeverity.Info, $"Reading files in {Directory.GetCurrentDirectory()}");
             if (!File.Exists("config.json"))
             {
-                Console.WriteLine("Config doesn't exist! The file has been created, please edit all fields to be correct. Exiting.");
+                LoggerService.Log(LogSeverity.Info, "Config doesn't exist! The file has been created, please edit all fields to be correct. Exiting.");
                 JObject obj = new JObject(new JProperty("token", "Replace With Private Key"),
                                           new JProperty("connStr", "server=127.0.0.1;user=UNObot;database=UNObot;port=3306;password=DBPassword"),
                                           new JProperty("version", "Unknown Version")
@@ -128,25 +126,25 @@ namespace UNObot
             int errors = 0;
             if (!json.ContainsKey("token") || json["token"].ToString() == "Replace With Private Key")
             {
-                Console.WriteLine("Error: Config is missing Bot Token (token)! Please add the property, or update the property to have a token."); errors++;
+                LoggerService.Log(LogSeverity.Error, "Error: Config is missing Bot Token (token)! Please add the property, or update the property to have a token."); errors++;
             }
             if (!json.ContainsKey("connStr"))
             {
-                Console.WriteLine("Error: Config is missing Database Connection String (connStr)!"); errors++;
+                LoggerService.Log(LogSeverity.Error, "Error: Config is missing Database Connection String (connStr)!"); errors++;
             }
             if (!json.ContainsKey("version"))
             {
-                Console.WriteLine("Error: Config is missing version (version)!"); errors++;
+                LoggerService.Log(LogSeverity.Error, "Error: Config is missing version (version)!"); errors++;
             }
             if (errors != 0)
             {
-                Console.WriteLine("Please fix all of these errors. Exiting.");
+                LoggerService.Log(LogSeverity.Error, "Please fix all of these errors. Exiting.");
                 Environment.Exit(1);
                 return null;
             }
             if (!File.Exists("commit"))
             {
-                Console.WriteLine("The build information seems to be missing. Either this is a debug copy, or has been deleted.");
+                LoggerService.Log(LogSeverity.Warning, "The build information seems to be missing. Either this is a debug copy, or has been deleted.");
             }
             else
             {
@@ -189,7 +187,7 @@ namespace UNObot
                     if (!(module.GetCustomAttribute(typeof(CommandAttribute)) is CommandAttribute nameatt)) continue;
 
                     var foundHelp = helpatt == null ? "Missing help." : "Found help.";
-                    Console.WriteLine($"Loaded \"{nameatt.Text}\". {foundHelp}");
+                    LoggerService.Log(LogSeverity.Verbose, $"Loaded \"{nameatt.Text}\". {foundHelp}");
                     var positioncmd = commands.FindIndex(o => o.CommandName == nameatt.Text);
                     if (aliasatt?.Aliases != null)
                         aliases = aliasatt.Aliases.ToList();
@@ -218,12 +216,12 @@ namespace UNObot
                 }
             }
             commands = commands.OrderBy(o => o.CommandName).ToList();
-            Console.WriteLine($"Loaded {commands.Count} commands!");
+            LoggerService.Log(LogSeverity.Info, $"Loaded {commands.Count} commands!");
 
             //Fallback to help.json, ex; Updates, Custom help messages, or temporary troll "fixes"
             if (File.Exists("help.json"))
             {
-                Console.WriteLine("Loading help.json into memory...");
+                LoggerService.Log(LogSeverity.Info, "Loading help.json into memory...");
 
                 using (StreamReader r = new StreamReader("help.json"))
                 {
@@ -235,14 +233,14 @@ namespace UNObot
                             commands[index] = c;
                         else if (index < 0)
                         {
-                            Console.WriteLine("A command was added that isn't in UNObot's code. It will be added to the help list, but will not be active.");
+                            LoggerService.Log(LogSeverity.Warning, "A command was added that isn't in UNObot's code. It will be added to the help list, but will not be active.");
                             var newcommand = c;
                             newcommand.Active = false;
                             commands.Add(newcommand);
                         }
                     }
                 }
-                Console.WriteLine($"Loaded {commands.Count} commands including from help.json!");
+                LoggerService.Log(LogSeverity.Info, $"Loaded {commands.Count} commands including from help.json!");
             }
         }
 
@@ -263,7 +261,7 @@ namespace UNObot
             }
             catch (Exception)
             {
-                Console.WriteLine("Build information file has not been created properly.");
+                LoggerService.Log(LogSeverity.Error, "Build information file has not been created properly.");
             }
             return ("Unknown Commit", "???");
         }
@@ -271,10 +269,10 @@ namespace UNObot
         public static async Task SendMessage(string text, ulong server)
         {
             ulong channel = _client.GetGuild(server).DefaultChannel.Id;
-            Console.WriteLine($"Channel: {channel}");
+            LoggerService.Log(LogSeverity.Info, $"Channel: {channel}");
             if (await UNODatabaseService.HasDefaultChannel(server))
                 channel = await UNODatabaseService.GetDefaultChannel(server);
-            Console.WriteLine($"Channel: {channel}");
+            LoggerService.Log(LogSeverity.Info, $"Channel: {channel}");
 
             try
             {
@@ -288,7 +286,7 @@ namespace UNObot
                 }
                 catch (Exception)
                 {
-                    Console.WriteLine("Ok what the heck is this? Can't post in the default OR secondary channel?");
+                    LoggerService.Log(LogSeverity.Error, "Ok what the heck is this? Can't post in the default OR secondary channel?");
                 }
             }
         }

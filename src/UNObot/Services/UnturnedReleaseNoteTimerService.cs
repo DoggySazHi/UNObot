@@ -2,6 +2,7 @@
 using System.ServiceModel.Syndication;
 using System.Timers;
 using System.Xml;
+using Discord;
 
 namespace UNObot.Services
 {
@@ -31,10 +32,10 @@ namespace UNObot.Services
                 lastLink = Link;
                 await Program._client.GetGuild(185593135458418701).GetTextChannel(477647595175411718).SendMessageAsync(Link);
                 //_ = Program.SendPM(Link, 191397590946807809);
-                Console.WriteLine("Found update.");
+                LoggerService.Log(LogSeverity.Verbose, "Found update.");
             }
             else
-                Console.WriteLine("No updates found.");
+                LoggerService.Log(LogSeverity.Verbose, "No updates found.");
         }
 
         public static UnturnedReleaseNotes GetInstance()

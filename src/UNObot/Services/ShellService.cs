@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Discord;
 
 namespace UNObot.Services
 {
@@ -14,7 +15,7 @@ namespace UNObot.Services
             new Thread(() =>
             {
                 var escapedArgs = cmd.Replace("\"", "\\\"");
-                Console.WriteLine(escapedArgs);
+                LoggerService.Log(LogSeverity.Debug, escapedArgs);
 
                 var process = new Process
                 {
@@ -33,7 +34,7 @@ namespace UNObot.Services
             }).Start();
 
             string awaited = await result.Task;
-            Console.WriteLine($"Shell result: {awaited}");
+            LoggerService.Log(LogSeverity.Debug, $"Shell result: {awaited}");
             if (awaited == null)
                 throw new Exception("Shell failed!");
             return awaited;
@@ -74,7 +75,7 @@ namespace UNObot.Services
             }).Start();
 
             string awaited = await result.Task;
-            Console.WriteLine($"Shell result: {awaited}");
+            LoggerService.Log(LogSeverity.Debug, $"Shell result: {awaited}");
             if (awaited == null)
                 throw new Exception("Shell failed!");
             return awaited;
@@ -102,7 +103,7 @@ namespace UNObot.Services
             }).Start();
 
             string awaited = await result.Task;
-            Console.WriteLine($"Shell result: {awaited}");
+            LoggerService.Log(LogSeverity.Debug, $"Shell result: {awaited}");
             if (awaited == null)
                 throw new Exception("Shell failed!");
             return awaited;
@@ -130,7 +131,7 @@ namespace UNObot.Services
             }).Start();
 
             string awaited = await result.Task;
-            Console.WriteLine($"Shell result: {awaited}");
+            LoggerService.Log(LogSeverity.Debug, $"Shell result: {awaited}");
             if (awaited == null)
                 throw new Exception("Shell failed!");
             return awaited;

@@ -5,6 +5,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using Discord;
 
 namespace UNObot.Services
 {
@@ -193,7 +194,7 @@ namespace UNObot.Services
             }
             catch (Exception Ex)
             {
-                Console.WriteLine(Ex);
+                LoggerService.Log(LogSeverity.Error, "Failed to query via A2S.", Ex);
                 ServerUp = false;
             }
         }
@@ -273,7 +274,7 @@ namespace UNObot.Services
             }
             catch (Exception Ex)
             {
-                Console.WriteLine(Ex);
+                LoggerService.Log(LogSeverity.Error, "Failed to query via A2S.", Ex);
                 ServerUp = false;
             }
         }
@@ -350,7 +351,7 @@ namespace UNObot.Services
             }
             catch (Exception Ex)
             {
-                Console.WriteLine(Ex);
+                LoggerService.Log(LogSeverity.Error, "Failed to query via A2S.", Ex);
                 ServerUp = false;
             }
         }

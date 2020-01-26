@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
@@ -57,7 +56,7 @@ namespace UNObot.Services
             }
             else
                 //probably a wrong icon
-                Console.WriteLine(reaction.Emote.Name);
+                LoggerService.Log(LogSeverity.Debug, reaction.Emote.Name);
 #endif
         }
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Discord;
 using Newtonsoft.Json;
 
 namespace UNObot.Services
@@ -30,7 +31,7 @@ namespace UNObot.Services
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"Failed to read localizations; generating a new one!\n{e}");
+                    LoggerService.Log(LogSeverity.Warning, $"Failed to read localizations; generating a new one!\n{e}");
                     CreateNewLocalization();
                 }
             }
@@ -43,7 +44,7 @@ namespace UNObot.Services
             Localizations = new Dictionary<string, string>();
             using StreamWriter sw = new StreamWriter(LocalizationFile);
             sw.Write(JsonConvert.SerializeObject(Localizations));
-            Console.WriteLine("Created empty localization file.");
+            LoggerService.Log(LogSeverity.Info, "Created empty localization file.");
         }
     }
 }

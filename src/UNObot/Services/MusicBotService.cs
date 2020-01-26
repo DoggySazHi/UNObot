@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using UNObot.TerminalCore;
 using YoutubeExplode.Models;
 
 namespace UNObot.Services
@@ -41,11 +40,11 @@ namespace UNObot.Services
         {
             if (string.IsNullOrEmpty(PathCached))
             {
-                Console.WriteLine($"Caching {Name}");
+                LoggerService.Log(LogSeverity.Debug, $"Caching {Name}");
                 PathCached = "Caching...";
                 PathCached = await YoutubeService.GetSingleton().Download(URL, RequestedGuild);
                 EndCache?.Set();
-                Console.WriteLine("Finished caching.");
+                LoggerService.Log(LogSeverity.Debug, "Finished caching.");
             }
         }
 
@@ -109,7 +108,7 @@ namespace UNObot.Services
             var PrevPlaying = !Paused;
 
             if (PrevPlaying)
-                Console.WriteLine(TryPause());
+                LoggerService.Log(LogSeverity.Debug, TryPause());
             if (!Disposed && AudioClient?.ConnectionState != ConnectionState.Connected)
             {
                 AudioClient = await AudioChannel.ConnectAsync();
@@ -117,8 +116,8 @@ namespace UNObot.Services
                 await MessageChannel.SendMessageAsync("Detected audio disconnection, reconnected. Use .playerdc to force the bot to leave.").ConfigureAwait(false);
                 if (PrevPlaying)
                 {
-                    Console.WriteLine(TryPlay());
-                    Console.WriteLine("Playing.");
+                    LoggerService.Log(LogSeverity.Debug, TryPlay());
+                    LoggerService.Log(LogSeverity.Debug, "Playing.");
                 }
             }
             HandlingError = false;
@@ -128,7 +127,7 @@ namespace UNObot.Services
         {
             try
             {
-                Console.WriteLine($"Player initialized for {Guild}");
+                LoggerService.Log(LogSeverity.Debug, $"Player initialized for {Guild}");
                 await FixConnection(null);
                 while (Songs.Count != 0)
                 {
@@ -139,7 +138,7 @@ namespace UNObot.Services
                     NowPlaying.SetCacheEvent(CacheEvent);
 
                     await NowPlaying.Cache().ConfigureAwait(false);
-                    Console.WriteLine($"Songs: {Songs.Count}");
+                    LoggerService.Log(LogSeverity.Debug, $"Songs: {Songs.Count}");
 
                     CacheEvent.WaitOne();
 
@@ -183,9 +182,7 @@ namespace UNObot.Services
             }
             catch (Exception ex)
             {
-                ColorConsole.WriteLine(ex.ToString(), ConsoleColor.Red);
-                ColorConsole.WriteLine(ex.StackTrace, ConsoleColor.Red);
-                ColorConsole.WriteLine(ex.Message, ConsoleColor.Red);
+                LoggerService.Log(LogSeverity.Error, "MusicBot has encountered a fatal error and needs to quit.", ex);
                 await MessageChannel.SendMessageAsync("Sorry, but I have encountered an error in the player's core. Please note this is a beta, sorry.");
             }
             finally
@@ -214,7 +211,7 @@ namespace UNObot.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                LoggerService.Log(LogSeverity.Debug, "Player Cache has encountered an error.", ex);
             }
         }
 
@@ -351,7 +348,7 @@ namespace UNObot.Services
                             }
                             catch (OperationCanceledException)
                             {
-                                Console.WriteLine("Failed to write!");
+                                LoggerService.Log(LogSeverity.Error, "Failed to write!");
                             }
 
                             if (Paused)
@@ -366,7 +363,7 @@ namespace UNObot.Services
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine("Error: " + ex);
+                            LoggerService.Log(LogSeverity.Error, "Error while writing a song from FFMPEG!", ex);
                             Fail = true;
                         }
                     }
@@ -420,12 +417,12 @@ namespace UNObot.Services
             }
             catch (Exception e)
             {
-                Console.WriteLine("Failed to dispose: " + e);
+                LoggerService.Log(LogSeverity.Error, "Failed to dispose MusicBot!", e);
             }
             finally
             {
                 _Disposed = true;
-                Console.WriteLine($"Disposed {Guild}");
+                LoggerService.Log(LogSeverity.Debug, $"Disposed {Guild}");
             }
         }
     }
@@ -463,12 +460,12 @@ namespace UNObot.Services
 #pragma warning disable 4014
                 Task.Run(NewPlayer.RunPlayer);
 #pragma warning restore 4014
-                Console.WriteLine("Generated new player.");
+                LoggerService.Log(LogSeverity.Debug, "Generated new player.");
                 return new Tuple<Player, string>(NewPlayer, null);
             }
             if (MusicPlayers[Player].Disposed)
             {
-                Console.WriteLine("Replaced player.");
+                LoggerService.Log(LogSeverity.Debug, "Replaced player.");
                 MusicPlayers.RemoveAt(Player);
                 var NewPlayer = new Player(Guild, AudioChannel, await AudioChannel.ConnectAsync(), MessageChannel);
                 MusicPlayers.Add(NewPlayer);
@@ -477,7 +474,7 @@ namespace UNObot.Services
 #pragma warning restore 4014
                 return new Tuple<Player, string>(NewPlayer, null);
             }
-            Console.WriteLine("Returned existing player.");
+            LoggerService.Log(LogSeverity.Debug, "Returned existing player.");
             return new Tuple<Player, string>(MusicPlayers[Player], null);
         }
 
@@ -826,6 +823,8 @@ namespace UNObot.Services
 
             foreach (var User in Users)
             {
+                if (User.IsBot)
+                    continue;
                 UserCount++;
                 UserFound |= User.Id == Caller;
             }

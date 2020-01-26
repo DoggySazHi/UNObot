@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Discord;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using UNObot.TerminalCore;
 
 namespace UNObot.Services
 {
@@ -21,7 +21,7 @@ namespace UNObot.Services
                 JObject jObject = JObject.Parse(json);
                 if (jObject["connStr"] == null)
                 {
-                    Console.WriteLine("ERROR: Database string has not been written in config.json!\nIt must contain a connStr.");
+                    LoggerService.Log(LogSeverity.Critical, "ERROR: Database string has not been written in config.json!\nIt must contain a connStr.");
                     return;
                 }
                 ConnString = (string)jObject["connStr"];
@@ -47,7 +47,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         public static async Task UpdateDescription(ulong server, string text)
@@ -71,7 +71,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         public static async Task<string> GetDescription(ulong server)
@@ -95,7 +95,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
             return description;
         }
@@ -126,7 +126,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         public static async Task<bool> IsServerInGame(ulong server)
@@ -151,7 +151,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
             return yesorno;
         }
@@ -201,7 +201,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         public static async Task AddUser(ulong id, string usrname)
@@ -230,7 +230,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         public static async Task RemoveUser(ulong id)
@@ -259,7 +259,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         public static async Task CleanAll()
@@ -270,11 +270,11 @@ namespace UNObot.Services
                 JObject jObject = JObject.Parse(json);
                 if (jObject["version"] == null)
                 {
-                    Console.WriteLine("ERROR: Version has not been written in config.json!\nIt must contain a version.");
+                    LoggerService.Log(LogSeverity.Error, "ERROR: Version has not been written in config.json!\nIt must contain a version.");
                     return;
                 }
                 Program.version = (string)jObject["version"];
-                Console.WriteLine($"Running {Program.version}!");
+                LoggerService.Log(LogSeverity.Info, $"Running {Program.version}!");
             }
             GetConnectionString();
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
@@ -301,7 +301,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         public static async Task AddGuild(ulong Guild, ushort ingame)
@@ -348,7 +348,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         public static async Task<ushort> GetGamemode(ulong server)
@@ -373,7 +373,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
             return gamemode;
         }
@@ -401,7 +401,7 @@ namespace UNObot.Services
                 }
                 catch (MySqlException ex)
                 {
-                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                    LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
                 }
             }
             return players;
@@ -429,7 +429,7 @@ namespace UNObot.Services
                 }
                 catch (MySqlException ex)
                 {
-                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                    LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
                 }
             }
             return server;
@@ -457,7 +457,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         public static async Task<Queue<ulong>> GetUsersWithServer(ulong server)
@@ -482,7 +482,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
             return players;
         }
@@ -509,7 +509,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
             return player;
         }
@@ -535,7 +535,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         public static async Task SetDefaultChannel(ulong server, ulong channel)
@@ -560,7 +560,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         public static async Task SetHasDefaultChannel(ulong server, bool hasDefault)
@@ -585,7 +585,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         public static async Task<bool> HasDefaultChannel(ulong server)
@@ -608,7 +608,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
             return yesorno;
         }
@@ -632,7 +632,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
             return yesorno;
         }
@@ -658,7 +658,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         public static async Task<ulong> GetDefaultChannel(ulong server)
@@ -683,7 +683,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
             return channel;
         }
@@ -707,7 +707,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
             return allowedChannels;
         }
@@ -733,7 +733,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         public static async Task<Card> GetCurrentCard(ulong server)
@@ -758,7 +758,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
             return card;
         }
@@ -785,7 +785,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         public static async Task<bool> IsPlayerInGame(ulong player)
@@ -810,7 +810,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
             return yesorno;
         }
@@ -836,7 +836,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
             return players.Contains(player);
         }
@@ -864,7 +864,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
             cards = JsonConvert.DeserializeObject<List<Card>>(jsonstring);
             return cards;
@@ -891,7 +891,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
             return exists;
         }
@@ -902,7 +902,7 @@ namespace UNObot.Services
             for (int i = 0; i < ThreadSafeRandom.ThisThreadsRandom.Next(0, players.Count - 1); i++)
                 players.Enqueue(players.Dequeue());
             if (players.Count == 0)
-                ColorConsole.WriteLine("[WARN] Why is the list empty whem I'm getting players?", ConsoleColor.Yellow);
+                LoggerService.Log(LogSeverity.Warning, "[WARN] Why is the list empty when I'm getting players?");
             string json = JsonConvert.SerializeObject(players);
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
             string CommandText = "UPDATE UNObot.Games SET queue = ? WHERE server = ? AND inGame = 1";
@@ -919,7 +919,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                ColorConsole.WriteLine($"A MySQL error has been caught, Error {ex}", ConsoleColor.Red);
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         public static async Task StarterCard(ulong server)
@@ -957,7 +957,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
             return stats;
         }
@@ -985,7 +985,7 @@ namespace UNObot.Services
                 }
                 catch (MySqlException ex)
                 {
-                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                    LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
                 }
             }
             return message;
@@ -1012,7 +1012,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         public static async Task RemoveNote(ulong player)
@@ -1032,7 +1032,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         public static async Task UpdateStats(ulong player, int mode)
@@ -1065,7 +1065,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         public static async Task AddCard(ulong player, Card card)
@@ -1095,7 +1095,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         public static async Task SetCards(ulong player, List<Card> cards)
@@ -1123,7 +1123,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         public static async Task<char> GetPrefix(ulong server)
@@ -1149,7 +1149,7 @@ namespace UNObot.Services
                 }
                 catch (MySqlException ex)
                 {
-                    Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                    LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
                 }
             }
             return prefix;
@@ -1175,7 +1175,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         public static async Task<bool> RemoveCard(ulong player, Card card)
@@ -1216,7 +1216,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
             return true;
         }
@@ -1241,7 +1241,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         public static async Task<string> GetServerCards(ulong server)
@@ -1265,7 +1265,7 @@ namespace UNObot.Services
             }
             catch (MySqlException ex)
             {
-                Console.WriteLine($"A MySQL error has been caught, Error {ex}");
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
             return description;
         }

@@ -142,7 +142,7 @@ namespace UNObot.Modules
 
             if (!(Context.Channel is ITextChannel textchannel))
             {
-                Console.WriteLine("error cast");
+                LoggerService.Log(LogSeverity.Warning, "error cast");
                 return;
             }
 

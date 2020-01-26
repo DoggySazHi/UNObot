@@ -1,6 +1,7 @@
 ﻿using Discord.Commands;
 using System;
 using System.Threading.Tasks;
+using Discord;
 using UNObot.Services;
 
 namespace UNObot.Modules
@@ -86,7 +87,7 @@ namespace UNObot.Modules
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                LoggerService.Log(LogSeverity.Error, "Error loading embeds for UBOWS.", ex);
                 await Message.ModifyAsync(o => o.Content = "We had some difficulties displaying the status. Please try again?");
             }
         }

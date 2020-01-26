@@ -1,6 +1,5 @@
 using Discord;
 using Discord.Commands;
-using System;
 using System.Threading.Tasks;
 using UNObot.Services;
 
@@ -16,7 +15,7 @@ namespace UNObot.Modules
 
             if (!(Context.Channel is ITextChannel textchannel))
             {
-                Console.WriteLine("error cast");
+                LoggerService.Log(LogSeverity.Warning, "error cast");
                 return;
             }
             await textchannel.DeleteMessagesAsync(messages);
@@ -29,7 +28,7 @@ namespace UNObot.Modules
 
             if (!(Context.Channel is ITextChannel textchannel))
             {
-                Console.WriteLine("error cast");
+                LoggerService.Log(LogSeverity.Warning, "error cast");
                 return;
             }
             await textchannel.DeleteMessagesAsync(messages);

@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
-using UNObot.TerminalCore;
+using Discord;
 
 namespace UNObot.Services
 {
@@ -21,7 +21,7 @@ namespace UNObot.Services
 
         private UBOWServerLoggerService()
         {
-            Console.WriteLine("Loading logger service...");
+            LoggerService.Log(LogSeverity.Info, "Loading logger service...");
             LogTimer = new Timer
             {
                 AutoReset = true,
@@ -53,14 +53,14 @@ namespace UNObot.Services
                 Logs = LogFile;
             else
             {
-                ColorConsole.WriteLine("Error: Failed to read logs! Created new logging service.", ConsoleColor.Red);
+                LoggerService.Log(LogSeverity.Error, "Failed to read logs! Created new logging service.");
                 Logs = new ServerLog
                 {
                     ListOLogs = new List<Log>()
                 };
             }
             LogTimer.Enabled = true;
-            Console.WriteLine("Initialized!");
+            LoggerService.Log(LogSeverity.Info, "UBOWS Logger initialized!");
         }
 
         private async Task SaveLogs()

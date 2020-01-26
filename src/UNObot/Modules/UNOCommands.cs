@@ -149,7 +149,7 @@ namespace UNObot.Modules
             {
                 response += $"- {c.ToString()} | \n";
             }
-            Console.WriteLine(response);
+            LoggerService.Log(LogSeverity.Debug, response);
             await ReplyAsync("UNObot was already succcessfully initialized in this server. But thank you.");
         }
 

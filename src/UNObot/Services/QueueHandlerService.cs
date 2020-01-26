@@ -1,8 +1,7 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using UNObot.TerminalCore;
+using Discord;
 
 namespace UNObot.Services
 {
@@ -25,7 +24,7 @@ namespace UNObot.Services
             Queue<ulong> players = await UNODatabaseService.GetPlayers(server);
             if (players.TryPeek(out ulong player))
                 return player;
-            ColorConsole.WriteLine("[ERR] No players!", ConsoleColor.Red);
+            LoggerService.Log(LogSeverity.Error, "[ERR] No players!");
             return player;
         }
         public static async Task<int> PlayerCount(ulong server)
@@ -44,7 +43,7 @@ namespace UNObot.Services
             bool attemptPeek = players.TryPeek(out ulong result);
             if (!attemptPeek)
             {
-                ColorConsole.WriteLine("Error: Couldn't read first player!", ConsoleColor.Red);
+                LoggerService.Log(LogSeverity.Error, "Error: Couldn't read first player!");
                 await UNODatabaseService.ResetGame(server);
             }
             else if (player == result)
@@ -58,7 +57,7 @@ namespace UNObot.Services
                 {
                     if (player == players.Peek())
                     {
-                        Console.WriteLine("RemovedPlayer");
+                        LoggerService.Log(LogSeverity.Debug, "RemovedPlayer");
                         players.Dequeue();
                         break;
                     }

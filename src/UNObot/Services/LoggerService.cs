@@ -2,66 +2,86 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Discord.WebSocket;
-using Microsoft.Extensions.Logging;
+using UNObot.TerminalCore;
 
 namespace UNObot.Services
 {
+    //TODO learn how to use dependency injection instead
     public class LoggerService
     {
-        readonly ILogger _discordLogger;
-        readonly ILogger _commandsLogger;
+        private static LoggerService instance;
 
-        // ReSharper disable once UnusedParameter.Local
-        public LoggerService(DiscordSocketClient discord, CommandService commands, ILoggerFactory loggerFactory)
+        public static LoggerService GetSingleton()
         {
-            var loggerFactory1 = ConfigureLogging();
-            _discordLogger = loggerFactory1.CreateLogger("discord");
-            _commandsLogger = loggerFactory1.CreateLogger("commands");
-
-            discord.Log += LogDiscord;
-            commands.Log += LogCommand;
+            if(instance == null)
+                instance = new LoggerService();
+            return instance;
         }
 
-        ILoggerFactory ConfigureLogging()
+        private LoggerService()
         {
-            return LoggerFactory.Create(builder => builder.AddConsole());
+
         }
 
-        Task LogDiscord(LogMessage message)
+        public async Task LogDiscord(LogMessage Message)
         {
-            _discordLogger.Log(
-                LogLevelFromSeverity(message.Severity),
-                0,
-                message,
-                message.Exception,
-                (_1, _2) => message.ToString(prependTimestamp: false));
-            return Task.CompletedTask;
+            await Task.Run(() =>
+            {
+                Log(Message.Severity,
+                    Message.Message,
+                    Message.Exception);
+            });
         }
 
-        Task LogCommand(LogMessage message)
+        public async Task LogCommand(LogMessage Message)
         {
             // Return an error message for async commands
-
-#if DEBUG
-            if (message.Exception is CommandException command)
+            string TextMessage = Message.Message;
+            if (Message.Exception is CommandException command)
             {
-                // Don't risk blocking the logging task by awaiting a message send; ratelimits!?
-                var _ = command.Context.Channel.SendMessageAsync($"Error: {command.Message}");
-            }
+#if DEBUG
+                var _ = command.Context.Channel.SendMessageAsync($"{command.Message}");
 #endif
+                TextMessage = command.Message;
+            }
 
-            _commandsLogger.Log(
-                LogLevelFromSeverity(message.Severity),
-                0,
-                message,
-                message.Exception,
-                (_1, _2) => message.ToString());
-            return Task.CompletedTask;
+            await Task.Run(() =>
+            {
+                Log(Message.Severity,
+                    TextMessage,
+                    Message.Exception);
+            });
         }
 
-        static LogLevel LogLevelFromSeverity(LogSeverity severity)
-            => (LogLevel)(Math.Abs((int)severity - 5));
-
+        public static void Log(LogSeverity Severity, string Message, Exception Exception = null)
+        {
+            Console.Write("[");
+            switch (Severity)
+            {
+                case LogSeverity.Verbose:
+                    ColorConsole.Write("VERBOSE", ConsoleColor.Magenta);
+                    break;
+                case LogSeverity.Debug:
+                    ColorConsole.Write("DEBUG", ConsoleColor.Green);
+                    break;
+                case LogSeverity.Error:
+                    ColorConsole.Write("ERROR", ConsoleColor.Red);
+                    break;
+                case LogSeverity.Critical:
+                    ColorConsole.Write("CRITICAL", ConsoleColor.Red);
+                    break;
+                case LogSeverity.Warning:
+                    ColorConsole.Write("DEBUG", ConsoleColor.Yellow);
+                    break;
+                case LogSeverity.Info:
+                    ColorConsole.Write("INFO", ConsoleColor.Cyan);
+                    break;
+            }
+            Console.Write($" {DateTime.Now:MM/dd/yyyy HH:mm:ss}] ");
+            Console.WriteLine(Message);
+            
+            if(Exception != null)
+                ColorConsole.WriteLine(Exception.ToString(), ConsoleColor.Red);
+        }
     }
 }

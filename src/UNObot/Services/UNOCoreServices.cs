@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Timers;
+using Discord;
 using Newtonsoft.Json;
-using UNObot.TerminalCore;
 
 namespace UNObot.Services
 {
@@ -192,7 +192,7 @@ namespace UNObot.Services
                         break;
                 }
             }
-            Console.WriteLine(card.Color + " " + card.Value + " " + myColor + " " + myCard);
+            LoggerService.Log(LogSeverity.Debug, card.Color + " " + card.Value + " " + myColor + " " + myCard);
             return card;
         }
     }
@@ -204,7 +204,7 @@ namespace UNObot.Services
         public static void ResetTimer(ulong server)
         {
             if (!playTimers.ContainsKey(server))
-                ColorConsole.WriteLine("ERROR: Attempted to reset timer that doesn't exist!", ConsoleColor.Red);
+                LoggerService.Log(LogSeverity.Error, "Attempted to reset timer that doesn't exist!");
             else
             {
                 playTimers[server].Stop();
@@ -213,9 +213,9 @@ namespace UNObot.Services
         }
         public static void StartTimer(ulong server)
         {
-            Console.WriteLine("Starting timer!");
+            LoggerService.Log(LogSeverity.Debug, "Starting timer!");
             if (playTimers.ContainsKey(server))
-                ColorConsole.WriteLine("WARNING: Attempted to start timer that already existed!", ConsoleColor.Yellow);
+                LoggerService.Log(LogSeverity.Warning, "Attempted to start timer that already existed!");
             else
             {
                 playTimers[server] = new Timer
@@ -229,7 +229,7 @@ namespace UNObot.Services
         }
         async static void TimerOver(object source, ElapsedEventArgs e)
         {
-            Console.WriteLine("Timer over!");
+            LoggerService.Log(LogSeverity.Debug, "Timer over!");
             ulong serverID = 0;
             foreach (ulong server in playTimers.Keys)
             {
@@ -239,13 +239,13 @@ namespace UNObot.Services
             }
             if (serverID == 0)
             {
-                ColorConsole.WriteLine("ERROR: Couldn't figure out what server timer belonged to!", ConsoleColor.Yellow);
+                LoggerService.Log(LogSeverity.Error, "Couldn't figure out what server timer belonged to!");
                 return;
             }
             ulong currentPlayer = await QueueHandlerService.GetCurrentPlayer(serverID);
             await UNODatabaseService.RemoveUser(currentPlayer);
             await QueueHandlerService.DropFrontPlayer(serverID);
-            Console.WriteLine("SayPlayer");
+            LoggerService.Log(LogSeverity.Debug, "SayPlayer");
             await Program.SendMessage($"<@{currentPlayer}>, you have been AFK removed.\n", serverID);
             await Program.SendPM("You have been AFK removed.", currentPlayer);
             if (await QueueHandlerService.PlayerCount(serverID) == 0)
@@ -264,7 +264,7 @@ namespace UNObot.Services
             if (playTimers.ContainsKey(server))
             {
                 if (playTimers[server] == null)
-                    ColorConsole.WriteLine("[WARN] Attempted to dispose a timer that was already disposed!", ConsoleColor.Yellow);
+                    LoggerService.Log(LogSeverity.Warning, "Attempted to dispose a timer that was already disposed!");
                 else
                     playTimers[server].Dispose();
             }
