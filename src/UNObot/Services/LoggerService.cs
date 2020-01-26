@@ -28,7 +28,7 @@ namespace UNObot.Services
             await Task.Run(() =>
             {
                 Log(Message.Severity,
-                    Message.Message,
+                    $"{Message.Source}: {Message.Message}",
                     Message.Exception);
             });
         }
