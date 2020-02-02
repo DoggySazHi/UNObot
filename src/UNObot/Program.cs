@@ -25,6 +25,7 @@ namespace UNObot
 
         static async Task Main()
         {
+            LoggerService.GetSingleton();
             LoggerService.Log(LogSeverity.Info, "UNObot Launcher 2.0");
             await new Program().MainAsync();
         }
@@ -90,6 +91,7 @@ namespace UNObot
             await _client.StopAsync().ConfigureAwait(false);
             _client.Dispose();
             LoggerService.Log(LogSeverity.Info, "Quit successfully.");
+            await LoggerService.GetSingleton().DisposeAsync();
             Environment.Exit(0);
         }
 

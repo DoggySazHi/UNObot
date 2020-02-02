@@ -21,11 +21,11 @@ namespace UNObot.Services
             TimeSpan TS = TimeSpan.FromSeconds(Time);
             string Output;
             if (TS.Hours != 0)
-                Output = $"{(int)TS.TotalHours}:{TS.Minutes.ToString("00")}:{TS.Seconds.ToString("00")}";
+                Output = $"{(int)TS.TotalHours}:{TS.Minutes:00}:{TS.Seconds:00}";
             else if (TS.Minutes != 0)
-                Output = $"{TS.Minutes}:{TS.Seconds.ToString("00")}";
+                Output = $"{TS.Minutes}:{TS.Seconds:00}";
             else
-                Output = $"{TS.Seconds} seconds";
+                Output = $"{TS.Seconds} second{(TS.Seconds == 1 ? "" : "s")}";
             return Output;
         }
 

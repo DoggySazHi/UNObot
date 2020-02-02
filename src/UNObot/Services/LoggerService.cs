@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.IO.Compression;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -6,21 +8,56 @@ using UNObot.TerminalCore;
 
 namespace UNObot.Services
 {
-    //TODO learn how to use dependency injection instead
-    public class LoggerService
+    public class LoggerService : IAsyncDisposable
     {
         private static LoggerService instance;
+        private static StreamWriter fileLog;
+        private const string LogFolder = "Logs";
+        private readonly string CurrentLog;
 
         public static LoggerService GetSingleton()
         {
-            if(instance == null)
-                instance = new LoggerService();
-            return instance;
+            return instance ??= new LoggerService();
         }
 
         private LoggerService()
         {
+            CurrentLog = $"{DateTime.Today:MM-dd-yyyy}.log";
+            if (!Directory.Exists(LogFolder))
+                Directory.CreateDirectory(LogFolder);
+            fileLog = new StreamWriter(Path.Combine(LogFolder, CurrentLog), true);
+            Task.Run(CompressOldLogs);
 
+            fileLog.WriteLineAsync();
+            fileLog.WriteLineAsync($"--- UNObot Starting at {DateTime.Now:G} ---");
+            fileLog.WriteLineAsync();
+
+            Log(LogSeverity.Info, "Logging service started!");
+        }
+
+        private async Task CompressOldLogs()
+        {
+            foreach (var file in new DirectoryInfo(LogFolder).GetFiles())
+            {
+                if (file.Name.Contains(CurrentLog) || CurrentLog.Contains(file.Name)) continue;
+                var compressed = false;
+                await using (var originalFileStream = file.OpenRead())
+                {
+                    if ((File.GetAttributes(file.FullName) & 
+                         FileAttributes.Hidden) != FileAttributes.Hidden & file.Extension != ".gz")
+                    {
+                        await using (var compressedFileStream = File.Create(file.FullName + ".gz"))
+                        {
+                            await using var compressionStream = new GZipStream(compressedFileStream, CompressionMode.Compress);
+                            originalFileStream.CopyTo(compressionStream);
+                        }
+
+                        compressed = true;
+                    }
+                }
+                if(compressed)
+                    file.Delete();
+            }
         }
 
         public async Task LogDiscord(LogMessage Message)
@@ -71,17 +108,30 @@ namespace UNObot.Services
                     ColorConsole.Write("CRITICAL", ConsoleColor.Red);
                     break;
                 case LogSeverity.Warning:
-                    ColorConsole.Write("DEBUG", ConsoleColor.Yellow);
+                    ColorConsole.Write("WARNING", ConsoleColor.Yellow);
                     break;
                 case LogSeverity.Info:
                     ColorConsole.Write("INFO", ConsoleColor.Cyan);
                     break;
             }
-            Console.Write($" {DateTime.Now:MM/dd/yyyy HH:mm:ss}] ");
+
+            string Time = $" {DateTime.Now:MM/dd/yyyy HH:mm:ss}] ";
+            Console.Write(Time);
             Console.WriteLine(Message);
-            
-            if(Exception != null)
-                ColorConsole.WriteLine(Exception.ToString(), ConsoleColor.Red);
+
+            string OutputMessage = $"[{Severity.ToString()}{Time}{Message}";
+            fileLog?.WriteLineAsync(OutputMessage);
+
+            if (Exception == null) return;
+
+            ColorConsole.WriteLine(Exception.ToString(), ConsoleColor.Red);
+            fileLog?.WriteLineAsync(Exception.ToString());
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            if(fileLog != null)
+                await fileLog.DisposeAsync();
         }
     }
 }
