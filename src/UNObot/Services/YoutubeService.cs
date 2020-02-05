@@ -123,6 +123,8 @@ namespace UNObot.Services
             if (MediaStreams.Audio.Count == 0)
             {
                 string Path = GetNextFile(Guild, Id, "mp3");
+                if (File.Exists(Path))
+                    return Path;
                 try
                 {
                     await Converter.DownloadVideoAsync(Id, Path).ConfigureAwait(false);
@@ -135,8 +137,7 @@ namespace UNObot.Services
                 LoggerService.Log(LogSeverity.Debug, "Downloaded");
                 return Path;
             }
-            else
-                return await Download(Guild, Id, MediaStreams.Audio.WithHighestBitrate());
+            return await Download(Guild, Id, MediaStreams.Audio.WithHighestBitrate());
         }
 
         private async Task<string> Download(ulong Guild, string Id, AudioStreamInfo AudioStream)
@@ -154,6 +155,8 @@ namespace UNObot.Services
 
             string FileName = GetNextFile(Guild, Id, Extension);
 
+            if (File.Exists(FileName))
+                return FileName;
 
             await Client.DownloadMediaStreamAsync(AudioStream, FileName);
             LoggerService.Log(LogSeverity.Debug, "Downloaded");
@@ -162,7 +165,7 @@ namespace UNObot.Services
 
             while ((DateTime.Now - StartTime).TotalSeconds < DL_TIMEOUT)
                 if (File.Exists(FileName))
-                    return FileName.Replace("\n", "").Replace(Environment.NewLine, "");
+                    return FileName;
 
             throw new Exception("Failed to download file.");
         }

@@ -8,16 +8,22 @@ using UNObot.TerminalCore;
 
 namespace UNObot.Services
 {
-    public class LoggerService : IAsyncDisposable
+    public class LoggerService : IDisposable
     {
         private static LoggerService instance;
         private static StreamWriter fileLog;
         private const string LogFolder = "Logs";
         private readonly string CurrentLog;
+        private static readonly object lockObj;
 
         public static LoggerService GetSingleton()
         {
             return instance ??= new LoggerService();
+        }
+
+        static LoggerService()
+        {
+            lockObj = new object();
         }
 
         private LoggerService()
@@ -92,46 +98,52 @@ namespace UNObot.Services
 
         public static void Log(LogSeverity Severity, string Message, Exception Exception = null)
         {
-            Console.Write("[");
-            switch (Severity)
+            lock (lockObj)
             {
-                case LogSeverity.Verbose:
-                    ColorConsole.Write("VERBOSE", ConsoleColor.Magenta);
-                    break;
-                case LogSeverity.Debug:
-                    ColorConsole.Write("DEBUG", ConsoleColor.Green);
-                    break;
-                case LogSeverity.Error:
-                    ColorConsole.Write("ERROR", ConsoleColor.Red);
-                    break;
-                case LogSeverity.Critical:
-                    ColorConsole.Write("CRITICAL", ConsoleColor.Red);
-                    break;
-                case LogSeverity.Warning:
-                    ColorConsole.Write("WARNING", ConsoleColor.Yellow);
-                    break;
-                case LogSeverity.Info:
-                    ColorConsole.Write("INFO", ConsoleColor.Cyan);
-                    break;
+                Console.Write("[");
+                switch (Severity)
+                {
+                    case LogSeverity.Verbose:
+                        ColorConsole.Write("VERBOSE", ConsoleColor.Magenta);
+                        break;
+                    case LogSeverity.Debug:
+                        ColorConsole.Write("DEBUG", ConsoleColor.Green);
+                        break;
+                    case LogSeverity.Error:
+                        ColorConsole.Write("ERROR", ConsoleColor.Red);
+                        break;
+                    case LogSeverity.Critical:
+                        ColorConsole.Write("CRITICAL", ConsoleColor.Red);
+                        break;
+                    case LogSeverity.Warning:
+                        ColorConsole.Write("WARNING", ConsoleColor.Yellow);
+                        break;
+                    case LogSeverity.Info:
+                        ColorConsole.Write("INFO", ConsoleColor.Cyan);
+                        break;
+                }
+
+                string Time = $" {DateTime.Now:MM/dd/yyyy HH:mm:ss}] ";
+                Console.Write(Time);
+                Console.WriteLine(Message);
+
+                string OutputMessage = $"[{Severity.ToString()}{Time}{Message}";
+                fileLog?.WriteLineAsync(OutputMessage);
+
+                if (Exception == null) return;
+
+                ColorConsole.WriteLine(Exception.ToString(), ConsoleColor.Red);
+                fileLog?.WriteLineAsync(Exception.ToString());
             }
-
-            string Time = $" {DateTime.Now:MM/dd/yyyy HH:mm:ss}] ";
-            Console.Write(Time);
-            Console.WriteLine(Message);
-
-            string OutputMessage = $"[{Severity.ToString()}{Time}{Message}";
-            fileLog?.WriteLineAsync(OutputMessage);
-
-            if (Exception == null) return;
-
-            ColorConsole.WriteLine(Exception.ToString(), ConsoleColor.Red);
-            fileLog?.WriteLineAsync(Exception.ToString());
         }
 
-        public async ValueTask DisposeAsync()
+        public void Dispose()
         {
-            if(fileLog != null)
-                await fileLog.DisposeAsync();
+            if (fileLog == null) return;
+            lock (lockObj)
+            {
+                fileLog.Dispose();
+            }
         }
     }
 }

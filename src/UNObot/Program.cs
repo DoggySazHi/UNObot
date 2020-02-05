@@ -91,7 +91,7 @@ namespace UNObot
             await _client.StopAsync().ConfigureAwait(false);
             _client.Dispose();
             LoggerService.Log(LogSeverity.Info, "Quit successfully.");
-            await LoggerService.GetSingleton().DisposeAsync();
+            LoggerService.GetSingleton().Dispose();
             Environment.Exit(0);
         }
 

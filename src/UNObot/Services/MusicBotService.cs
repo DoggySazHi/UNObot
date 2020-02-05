@@ -199,9 +199,9 @@ namespace UNObot.Services
                     return;
                 Caching = true;
                 List<string> FilesCached = new List<string>();
-                for (int i = 0; i < Math.Min(Songs.Count, CacheLength); i++)
+                for (var i = 0; i < Math.Min(Songs.Count, CacheLength); i++)
                 {
-                    Song s = Songs[i];
+                    var s = Songs[i];
                     if (string.IsNullOrWhiteSpace(s.PathCached))
                         await s.Cache().ConfigureAwait(true);
                     FilesCached.Add(s.PathCached);
