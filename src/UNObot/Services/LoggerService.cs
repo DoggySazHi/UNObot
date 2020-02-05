@@ -128,12 +128,12 @@ namespace UNObot.Services
                 Console.WriteLine(Message);
 
                 string OutputMessage = $"[{Severity.ToString()}{Time}{Message}";
-                fileLog?.WriteLineAsync(OutputMessage);
+                fileLog?.WriteLine(OutputMessage);
 
                 if (Exception == null) return;
 
                 ColorConsole.WriteLine(Exception.ToString(), ConsoleColor.Red);
-                fileLog?.WriteLineAsync(Exception.ToString());
+                fileLog?.WriteLine(Exception.ToString());
             }
         }
 
