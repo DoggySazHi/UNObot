@@ -402,6 +402,8 @@ namespace UNObot.Services
         {
             try
             {
+                if(Songs.Count != 0)
+                    LoggerService.Log(LogSeverity.Warning, "Attempted to dispose Music service with songs!");
                 Songs.Clear();
                 LoopingSong = false;
                 LoopingQueue = false;

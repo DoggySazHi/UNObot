@@ -45,12 +45,11 @@ namespace UNObot.Services
                 //start check
                 var allowedChannels = await UNODatabaseService.GetAllowedChannels(context.Guild.Id);
                 var currentChannels = context.Guild.TextChannels.ToList();
-                var currentChannelsIDs = new List<ulong>();
-                foreach (var channel in currentChannels)
-                    currentChannelsIDs.Add(channel.Id);
+                var currentChannelsIDs = currentChannels.Select(channel => channel.Id).ToList();
                 if (allowedChannels.Except(currentChannelsIDs).Any())
                 {
-                    foreach (var toRemove in allowedChannels.Except(currentChannelsIDs))
+                    var tempList = new List<ulong>(allowedChannels.Except(currentChannelsIDs));
+                    foreach (var toRemove in tempList)
                         allowedChannels.Remove(toRemove);
                     await UNODatabaseService.SetAllowedChannels(context.Guild.Id, allowedChannels);
                 }

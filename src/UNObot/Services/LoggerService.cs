@@ -98,43 +98,47 @@ namespace UNObot.Services
 
         public static void Log(LogSeverity Severity, string Message, Exception Exception = null)
         {
-            lock (lockObj)
+            // Don't hold the actions with a basic logger.
+            Task.Run(() =>
             {
-                Console.Write("[");
-                switch (Severity)
+                lock (lockObj)
                 {
-                    case LogSeverity.Verbose:
-                        ColorConsole.Write("VERBOSE", ConsoleColor.Magenta);
-                        break;
-                    case LogSeverity.Debug:
-                        ColorConsole.Write("DEBUG", ConsoleColor.Green);
-                        break;
-                    case LogSeverity.Error:
-                        ColorConsole.Write("ERROR", ConsoleColor.Red);
-                        break;
-                    case LogSeverity.Critical:
-                        ColorConsole.Write("CRITICAL", ConsoleColor.Red);
-                        break;
-                    case LogSeverity.Warning:
-                        ColorConsole.Write("WARNING", ConsoleColor.Yellow);
-                        break;
-                    case LogSeverity.Info:
-                        ColorConsole.Write("INFO", ConsoleColor.Cyan);
-                        break;
+                    Console.Write("[");
+                    switch (Severity)
+                    {
+                        case LogSeverity.Verbose:
+                            ColorConsole.Write("VERBOSE", ConsoleColor.Magenta);
+                            break;
+                        case LogSeverity.Debug:
+                            ColorConsole.Write("DEBUG", ConsoleColor.Green);
+                            break;
+                        case LogSeverity.Error:
+                            ColorConsole.Write("ERROR", ConsoleColor.Red);
+                            break;
+                        case LogSeverity.Critical:
+                            ColorConsole.Write("CRITICAL", ConsoleColor.Red);
+                            break;
+                        case LogSeverity.Warning:
+                            ColorConsole.Write("WARNING", ConsoleColor.Yellow);
+                            break;
+                        case LogSeverity.Info:
+                            ColorConsole.Write("INFO", ConsoleColor.Cyan);
+                            break;
+                    }
+
+                    var Time = $" {DateTime.Now:MM/dd/yyyy HH:mm:ss}] ";
+                    Console.Write(Time);
+                    Console.WriteLine(Message);
+
+                    var OutputMessage = $"[{Severity.ToString()}{Time}{Message}";
+                    fileLog?.WriteLine(OutputMessage);
+
+                    if (Exception == null) return;
+
+                    ColorConsole.WriteLine(Exception.ToString(), ConsoleColor.Red);
+                    fileLog?.WriteLine(Exception.ToString());
                 }
-
-                string Time = $" {DateTime.Now:MM/dd/yyyy HH:mm:ss}] ";
-                Console.Write(Time);
-                Console.WriteLine(Message);
-
-                string OutputMessage = $"[{Severity.ToString()}{Time}{Message}";
-                fileLog?.WriteLine(OutputMessage);
-
-                if (Exception == null) return;
-
-                ColorConsole.WriteLine(Exception.ToString(), ConsoleColor.Red);
-                fileLog?.WriteLine(Exception.ToString());
-            }
+            });
         }
 
         public void Dispose()
