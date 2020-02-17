@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading;
@@ -45,12 +46,19 @@ namespace UNObot.Services
             {
                 var context = Server.GetContext();
                 var request = context.Request;
+                LoggerService.Log(LogSeverity.Debug, $"Received request from {context.Request.RemoteEndPoint}.");
 
-                var response = context.Response;
+                using var data = request.InputStream;
+                using var sr = new StreamReader(data);
+                var text = sr.ReadToEnd();
+                LoggerService.Log(LogSeverity.Verbose, $"Data received: {text}");
+
+                using var response = context.Response;
+                response.StatusCode = 200;
+
                 using var output = response.OutputStream;
                 output.Write(DefaultResponse, 0, DefaultResponse.Length);
             }
-
             Exited.Set();
         }
 

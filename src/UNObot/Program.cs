@@ -59,6 +59,7 @@ namespace UNObot
             DebugService.GetSingleton();
 #endif
             UBOWServerLoggerService.GetSingleton();
+            WebhookListener.GetSingleton();
             await UNODatabaseService.CleanAll();
             await _client.SetGameAsync($"UNObot {version}");
             await LoadHelp();
@@ -88,6 +89,7 @@ namespace UNObot
         {
             LoggerService.Log(LogSeverity.Info, "Quitting...");
             await MusicBotService.GetSingleton().DisposeAsync();
+            WebhookListener.GetSingleton().Dispose();
             await _client.StopAsync().ConfigureAwait(false);
             _client.Dispose();
             LoggerService.Log(LogSeverity.Info, "Quit successfully.");
