@@ -5,9 +5,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using YoutubeExplode.Models;
+using Timer = System.Timers.Timer;
 
 namespace UNObot.Services
 {
@@ -84,6 +87,8 @@ namespace UNObot.Services
         private readonly IVoiceChannel AudioChannel;
         private IAudioClient AudioClient;
         private readonly ISocketMessageChannel MessageChannel;
+        private Timer autoDCTimer;
+        private Process ffmpegProcess;
 
         public Player(ulong Guild, IVoiceChannel AudioChannel, IAudioClient AudioClient, ISocketMessageChannel MessageChannel)
         {
@@ -129,6 +134,8 @@ namespace UNObot.Services
             {
                 LoggerService.Log(LogSeverity.Debug, $"Player initialized for {Guild}");
                 await FixConnection(null);
+
+
                 while (Songs.Count != 0)
                 {
                     NowPlaying = Songs[0];
@@ -163,9 +170,8 @@ namespace UNObot.Services
                         await MessageChannel
                             .SendMessageAsync(Message, false, EmbedDisplayService.DisplayNowPlaying(NowPlaying, null))
                             .ConfigureAwait(false);
-                        await SendAudio(CreateStream(NowPlaying.PathCached),
-                                AudioClient.CreatePCMStream(AudioApplication.Music, AudioChannel.Bitrate))
-                            .ConfigureAwait(false);
+                        // Runs a forever loop to quit when the quit boolean is true (if FFMPEG decides not to quit)
+                        await Task.WhenAny(SendAudio(CreateStream(NowPlaying.PathCached)), Task.Run(() => {while(!Quit){}}));
                     } while (LoopingSong);
 
                     if (LoopingQueue)
@@ -206,7 +212,8 @@ namespace UNObot.Services
                         await s.Cache().ConfigureAwait(true);
                     FilesCached.Add(s.PathCached);
                 }
-                YoutubeService.GetSingleton().DeleteGuildFolder(Guild, FilesCached.ToArray());
+                // TODO fix.
+                // YoutubeService.GetSingleton().DeleteGuildFolder(Guild, FilesCached.ToArray());
                 Caching = false;
             }
             catch (Exception ex)
@@ -310,76 +317,90 @@ namespace UNObot.Services
             Task.Run(Cache);
         }
 
-        private async Task SendAudio(Stream AudioStream, AudioOutStream DiscordStream)
+        private async Task SendAudio(Stream AudioStream)
         {
             IsPlaying = true;
-            using (AudioStream)
+            var DiscordStream = AudioClient.CreatePCMStream(AudioApplication.Music, AudioChannel.Bitrate);
+
+            //Adjust?
+            var BufferSize = 1024;
+            var Buffer = new byte[BufferSize];
+            //int bytesSent = 0;
+            var Fail = false;
+
+            // For the warning log.
+            var FailToWrite = false;
+
+            // Skip: User skipped the song.
+            // Fail: Failed to read, kill the song.
+            // Exit: Song ended.
+            // Quit: Program exiting.
+
+            while (!Fail && !Quit)
             {
-                using (DiscordStream)
+                try
                 {
-                    //Adjust?
-                    int bufferSize = 1024;
-                    //int bytesSent = 0;
-                    bool Fail = false;
-                    byte[] buffer = new byte[bufferSize];
-
-                    // Skip: User skipped the song.
-                    // Fail: Failed to read, kill the song.
-                    // Exit: Song ended.
-                    // Quit: Program exiting.
-
-                    while (!Fail && !Quit)
+                    if (AudioClient.ConnectionState == ConnectionState.Disconnected)
                     {
-                        try
+                        AudioClient = await AudioChannel.ConnectAsync();
+                        AudioClient.Disconnected += FixConnection;
+                    }
+
+                    var read = await AudioStream.ReadAsync(Buffer, 0, BufferSize);
+                    if (read == 0)
+                        break;
+
+                    try
+                    {
+                        await DiscordStream.WriteAsync(Buffer, 0, read);
+                        if (FailToWrite)
                         {
-                            if (AudioClient.ConnectionState == ConnectionState.Disconnected)
-                            {
-                                AudioClient = await AudioChannel.ConnectAsync();
-                                AudioClient.Disconnected += FixConnection;
-                            }
-
-                            int read = await AudioStream.ReadAsync(buffer, 0, bufferSize);
-                            if (read == 0)
-                                break;
-
-                            try
-                            {
-                                await DiscordStream.WriteAsync(buffer, 0, read);
-                            }
-                            catch (OperationCanceledException)
-                            {
-                                LoggerService.Log(LogSeverity.Error, "Failed to write!");
-                            }
-
-                            if (Paused)
-                            {
-                                PauseEvent.Reset();
-                                PlayPos.Stop();
-                                PauseEvent.WaitOne();
-                                PlayPos.Start();
-                            }
-
-                            //bytesSent += read;
-                        }
-                        catch (Exception ex)
-                        {
-                            LoggerService.Log(LogSeverity.Error, "Error while writing a song from FFMPEG!", ex);
-                            Fail = true;
+                            FailToWrite = false;
+                            LoggerService.Log(LogSeverity.Info,
+                                "Successfully reconnected.");
                         }
                     }
-                    //TODO Flush might break things
-                    PlayPos.Stop();
-                    await DiscordStream.FlushAsync();
-                    Paused = false;
+                    catch (OperationCanceledException)
+                    {
+                        if (!FailToWrite)
+                        {
+                            FailToWrite = true;
+                            LoggerService.Log(LogSeverity.Error,
+                                "Failed to write! Attempting to repair Discord service.");
+                            DiscordStream = AudioClient.CreatePCMStream(AudioApplication.Music, AudioChannel.Bitrate);
+                        }
+                    }
+
+                    if (Paused)
+                    {
+                        PauseEvent.Reset();
+                        PlayPos.Stop();
+                        PauseEvent.WaitOne();
+                        PlayPos.Start();
+                    }
+
+                    //bytesSent += read;
                 }
-                await AudioStream.FlushAsync();
+                catch (Exception ex)
+                {
+                    LoggerService.Log(LogSeverity.Error, "Error while writing a song from FFMPEG!", ex);
+                    Fail = true;
+                }
             }
+            //TODO Flush might break things
+            PlayPos.Stop();
+            await DiscordStream.FlushAsync();
+            Paused = false;
+            await AudioStream.FlushAsync();
             IsPlaying = false;
             if (Quit)
             {
                 QuitEvent.Set();
                 Quit = false;
             }
+
+            await AudioStream.DisposeAsync();
+            await DiscordStream.DisposeAsync();
         }
 
         public string GetPosition()
@@ -387,15 +408,52 @@ namespace UNObot.Services
             return YoutubeService.TimeString(PlayPos.Elapsed);
         }
 
+        public async Task CheckOnJoin()
+        {
+            LoggerService.Log(LogSeverity.Debug, "Detected someone joining a channel.");
+            var Users = (await AudioChannel.GetUsersAsync().FlattenAsync()).ToList();
+            var IsFilled = !Users.All(o => o.IsBot) && Users.Count >= 2;
+            if (IsFilled)
+            {
+                autoDCTimer?.Dispose();
+            }
+        }
+
+        public async Task CheckOnLeave()
+        {
+            LoggerService.Log(LogSeverity.Debug, "Detected someone leaving a channel.");
+            var Users = (await AudioChannel.GetUsersAsync().FlattenAsync()).ToList();
+            var IsEmpty = Users.All(o => o.IsBot) || Users.Count <= 1;
+            if (IsEmpty && autoDCTimer == null)
+            {
+                autoDCTimer = new Timer
+                {
+                    Interval = 60 * 1000,
+                    AutoReset = false,
+                    Enabled = true
+                };
+                autoDCTimer.Elapsed += async (sender, args) =>
+                {
+                    await DisposeAsync();
+                };
+            }
+        }
+
         private Stream CreateStream(string path)
         {
-            return Process.Start(new ProcessStartInfo
+            string FileName = "/usr/local/bin/ffmpeg";
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                FileName = "/usr/local/bin/ffmpeg",
+                FileName = @"C:\Users\William Le\Documents\Programming Projects\YTDownloader\ffmpeg.exe";
+            }
+            ffmpegProcess = Process.Start(new ProcessStartInfo
+            {
+                FileName = FileName,
                 Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1",
                 UseShellExecute = false,
                 RedirectStandardOutput = true
-            })?.StandardOutput.BaseStream;
+            });
+            return ffmpegProcess?.StandardOutput.BaseStream;
         }
 
         public async ValueTask DisposeAsync()
@@ -410,12 +468,14 @@ namespace UNObot.Services
                 Skip = false;
                 Paused = false;
                 Quit = true;
+                ffmpegProcess?.Kill(true);
                 if (IsPlaying)
                     QuitEvent.WaitOne();
                 await AudioClient.StopAsync();
                 try { await AudioChannel.DisconnectAsync(); } catch (Exception) { /* ignored */ }
                 AudioClient.Dispose();
                 PauseEvent.Dispose();
+                autoDCTimer?.Dispose();
             }
             catch (Exception e)
             {
@@ -436,7 +496,21 @@ namespace UNObot.Services
 
         private MusicBotService()
         {
+            Program._client.UserVoiceStateUpdated += UserVoiceStateUpdated;
+        }
 
+        private async Task UserVoiceStateUpdated(SocketUser user, SocketVoiceState oldState, SocketVoiceState newState)
+        {
+            if (oldState.VoiceChannel != null && newState.VoiceChannel == null)
+            {
+                foreach (var Player in MusicPlayers)
+                    await Player.CheckOnLeave().ConfigureAwait(false);
+            }
+            else if (oldState.VoiceChannel == null && newState.VoiceChannel != null)
+            {
+                foreach (var Player in MusicPlayers)
+                    await Player.CheckOnJoin().ConfigureAwait(false);
+            }
         }
 
         public static MusicBotService GetSingleton()

@@ -89,7 +89,9 @@ namespace UNObot
         {
             LoggerService.Log(LogSeverity.Info, "Quitting...");
             await MusicBotService.GetSingleton().DisposeAsync();
+            LoggerService.Log(LogSeverity.Info, "Music Bot service disabled.");
             WebhookListener.GetSingleton().Dispose();
+            LoggerService.Log(LogSeverity.Info, "Webhook Listener service disabled.");
             await _client.StopAsync().ConfigureAwait(false);
             _client.Dispose();
             LoggerService.Log(LogSeverity.Info, "Quit successfully.");

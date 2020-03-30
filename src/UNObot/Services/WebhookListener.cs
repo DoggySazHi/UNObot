@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -10,11 +11,13 @@ namespace UNObot.Services
 {
     public class WebhookListener : IDisposable
     {
+        private readonly Dictionary<string, ulong> bitbucketServers = new Dictionary<string, ulong>();
         private static WebhookListener Instance;
         private readonly HttpListener Server;
         private readonly byte[] DefaultResponse;
         private readonly ManualResetEvent Exited;
         private bool Stop;
+        private Task ServerThread;
 
         private WebhookListener()
         {
@@ -24,6 +27,7 @@ namespace UNObot.Services
                 return;
             }
 
+            //bitbucketServers.Add("aURMBj-_zAJi6nsCPim6ezNxM6LYtwGrZmgMbV3RcKCfwFFygqUz2jLSecPjEEBUIYIh1Xewdp-vtJi5tqCidyKazInmq-20dtBNybd4xilFElaaMb0PFh8ileaZ6CN6q2BUZw", 420005591155605535);
             DefaultResponse = Encoding.UTF8.GetBytes("mukyu!");
             Exited = new ManualResetEvent(false);
 
@@ -32,7 +36,7 @@ namespace UNObot.Services
             Server.Prefixes.Add("http://localhost:6860/");
 
             Server.Start();
-            Task.Run(Listener);
+            ServerThread = Task.Run(Listener);
         }
 
         public static WebhookListener GetSingleton()
@@ -51,7 +55,7 @@ namespace UNObot.Services
                 using var data = request.InputStream;
                 using var sr = new StreamReader(data);
                 var text = sr.ReadToEnd();
-                LoggerService.Log(LogSeverity.Verbose, $"Data received: {text}");
+                //LoggerService.Log(LogSeverity.Verbose, $"Data received: {text}");
 
                 using var response = context.Response;
                 response.StatusCode = 200;
@@ -59,13 +63,11 @@ namespace UNObot.Services
                 using var output = response.OutputStream;
                 output.Write(DefaultResponse, 0, DefaultResponse.Length);
             }
-            Exited.Set();
         }
 
         public void Dispose()
         {
             Stop = true;
-            Exited.WaitOne();
 
             try
             {
@@ -75,8 +77,9 @@ namespace UNObot.Services
                 ((IDisposable) Server)?.Dispose();
                 Exited.Dispose();
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                LoggerService.Log(LogSeverity.Error, "Failed to dispose WebhookListener properly: ", e);
                 // ignored
             }
         }
