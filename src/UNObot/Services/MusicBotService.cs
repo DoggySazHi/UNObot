@@ -177,7 +177,8 @@ namespace UNObot.Services
                     if (LoopingQueue)
                         Songs.Add(NowPlaying);
 
-                    File.Delete(NowPlaying.PathCached);
+                    if(Songs.All(o => o.PathCached != NowPlaying.PathCached))
+                        File.Delete(NowPlaying.PathCached);
                     NowPlaying.PathCached = null;
 
                     NowPlaying = null;
