@@ -18,6 +18,7 @@
 *.sh
 config.json
 src/UNObot/config.json
+src/UNObot/Logs
 *.yml
 
 # User-specific files (MonoDevelop/Xamarin Studio)
