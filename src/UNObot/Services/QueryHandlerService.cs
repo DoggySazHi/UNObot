@@ -31,39 +31,54 @@ namespace UNObot.Services
 
         public static bool GetInfo(string ip, ushort port, out A2S_INFO output)
         {
-            bool parseCheck = IPAddress.TryParse(ip, out IPAddress iP);
+            var parseCheck = IPAddress.TryParse(ip, out var server);
+            var addresses = Dns.GetHostAddresses(ip);
             if (!parseCheck)
             {
-                output = null;
-                return false;
+                if (addresses.Length == 0)
+                {
+                    output = null;
+                    return false;
+                }
+                server = addresses[0];
             }
-            IPEndPoint iPEndPoint = new IPEndPoint(iP, port);
+            var iPEndPoint = new IPEndPoint(server, port);
             output = new A2S_INFO(iPEndPoint);
             return output.ServerUp;
         }
 
         public static bool GetPlayers(string ip, ushort port, out A2S_PLAYER output)
         {
-            bool parseCheck = IPAddress.TryParse(ip, out IPAddress iP);
+            var parseCheck = IPAddress.TryParse(ip, out var server);
+            var addresses = Dns.GetHostAddresses(ip);
             if (!parseCheck)
             {
-                output = null;
-                return false;
+                if (addresses.Length == 0)
+                {
+                    output = null;
+                    return false;
+                }
+                server = addresses[0];
             }
-            IPEndPoint iPEndPoint = new IPEndPoint(iP, port);
+            var iPEndPoint = new IPEndPoint(server, port);
             output = new A2S_PLAYER(iPEndPoint);
             return output.ServerUp;
         }
 
         public static bool GetRules(string ip, ushort port, out A2S_RULES output)
         {
-            bool parseCheck = IPAddress.TryParse(ip, out IPAddress iP);
+            var parseCheck = IPAddress.TryParse(ip, out var server);
+            var addresses = Dns.GetHostAddresses(ip);
             if (!parseCheck)
             {
-                output = null;
-                return false;
+                if (addresses.Length == 0)
+                {
+                    output = null;
+                    return false;
+                }
+                server = addresses[0];
             }
-            IPEndPoint iPEndPoint = new IPEndPoint(iP, port);
+            var iPEndPoint = new IPEndPoint(server, port);
             output = new A2S_RULES(iPEndPoint);
             return output.ServerUp;
         }

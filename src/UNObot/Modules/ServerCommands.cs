@@ -45,7 +45,7 @@ namespace UNObot.Modules
         }
         [Command("checkmc", RunMode = RunMode.Async)]
         [Help(new[] { ".checkmc (ip) (port)" }, "Get basic server information about any Minecraft server.", true, "UNObot 2.4")]
-        public async Task CheckMC(string ip, ushort port)
+        public async Task CheckMC(string ip, ushort port = 25565)
         {
             var response = QueryHandlerService.GetInfoMC(ip, port);
             if (response.ServerUp)
@@ -58,7 +58,7 @@ namespace UNObot.Modules
         [Help(new[] { ".unofficialwiki" }, "Get basic server information about the Unofficial Wikia Server.", true, "UNObot 2.4")]
         public async Task UnoffWiki()
         {
-            await CheckUnturned("23.243.79.108", 27040);
+            await CheckUnturned("williamle.com", 27040);
         }
 
         [Command("checkunturned", RunMode = RunMode.Async), Alias("checku")]
