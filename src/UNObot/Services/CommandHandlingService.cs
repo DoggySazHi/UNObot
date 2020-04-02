@@ -40,6 +40,12 @@ namespace UNObot.Services
             int argPos = 0;
             var context = new SocketCommandContext(_discord, message);
 
+            if (context.IsPrivate)
+            {
+                await context.Channel.SendMessageAsync("I do not accept DM messages. Please use me in a guild/server.");
+                return;
+            }
+
             if (await UNODatabaseService.EnforceChannel(context.Guild.Id))
             {
                 //start check
@@ -64,11 +70,6 @@ namespace UNObot.Services
             }
             if (!(message.HasCharPrefix('.', ref argPos)) && !message.HasMentionPrefix(_discord.CurrentUser, ref argPos)) return;
 
-            if (context.IsPrivate)
-            {
-                await context.Channel.SendMessageAsync("I do not accept DM messages. Please use me in a guild/server.");
-                return;
-            }
             await UNODatabaseService.AddGame(context.Guild.Id);
             await UNODatabaseService.AddUser(context.User.Id, context.User.Username);
             try
