@@ -13,6 +13,9 @@ namespace UNObot.Services
     {
         // Seconds.
         private const double DL_TIMEOUT = 5.0;
+        private const int DL_ATTEMPTS = 3;
+        // Milliseconds.
+        private const int DL_DELAY = 5000;
         private static readonly string DownloadPath = Path.Combine(Directory.GetCurrentDirectory(), "Music");
 
         private static YoutubeService Instance;
@@ -158,8 +161,24 @@ namespace UNObot.Services
             if (File.Exists(FileName))
                 return FileName;
 
-            await Client.DownloadMediaStreamAsync(AudioStream, FileName);
-            LoggerService.Log(LogSeverity.Debug, "Downloaded");
+            for (int i = 0; i < DL_ATTEMPTS; i++)
+            {
+                try
+                {
+                    await Client.DownloadMediaStreamAsync(AudioStream, FileName);
+                    LoggerService.Log(LogSeverity.Debug, "Downloaded");
+                    break;
+                }
+                catch (Exception e)
+                {
+                    var Message = e.ToString();
+                    // I really hate this. But there's no enum for web status. And the Web stuff is embedded in the library.
+                    if(Message.Contains("429") || Message.Contains("too many requests", StringComparison.CurrentCultureIgnoreCase))
+                        LoggerService.Log(LogSeverity.Warning, "We're getting rate-limited by YouTube!!!");
+                    LoggerService.Log(LogSeverity.Error, $"Failed to download! This is attempt {i}/{DL_ATTEMPTS}. Waiting for {DL_DELAY/1000.0} seconds.", e);
+                    await Task.Delay(DL_DELAY);
+                }
+            }
 
             var StartTime = DateTime.Now;
 

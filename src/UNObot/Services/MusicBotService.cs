@@ -41,7 +41,7 @@ namespace UNObot.Services
 
         public async Task Cache()
         {
-            if (string.IsNullOrEmpty(PathCached))
+            if (string.IsNullOrEmpty(PathCached) || !File.Exists(PathCached))
             {
                 LoggerService.Log(LogSeverity.Debug, $"Caching {Name}");
                 PathCached = "Caching...";
