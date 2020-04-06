@@ -176,7 +176,8 @@ namespace UNObot.Services
 
                     if (LoopingQueue)
                         Songs.Add(NowPlaying);
-
+                    ffmpegProcess.Kill();
+                    ffmpegProcess = null;
                     if(Songs.All(o => o.PathCached != NowPlaying.PathCached))
                         File.Delete(NowPlaying.PathCached);
                     NowPlaying.PathCached = null;
@@ -339,6 +340,7 @@ namespace UNObot.Services
 
             while (!Fail && !Quit)
             {
+                var sw = new Stopwatch();
                 try
                 {
                     if (AudioClient.ConnectionState == ConnectionState.Disconnected)
@@ -347,13 +349,21 @@ namespace UNObot.Services
                         AudioClient.Disconnected += FixConnection;
                     }
 
+                    sw.Restart();
                     var read = await AudioStream.ReadAsync(Buffer, 0, BufferSize);
+                    sw.Stop();
+                    if(sw.ElapsedMilliseconds > 1000)
+                        LoggerService.Log(LogSeverity.Warning, $"Took too long to read from disk! Is the server lagging? Delay of {sw.ElapsedMilliseconds}ms.");
                     if (read == 0)
                         break;
 
                     try
                     {
+                        sw.Restart();
                         await DiscordStream.WriteAsync(Buffer, 0, read);
+                        sw.Stop();
+                        if(sw.ElapsedMilliseconds > 1000)
+                            LoggerService.Log(LogSeverity.Warning, $"Took too long to write to Discord! Is the server lagging? Delay of {sw.ElapsedMilliseconds}ms.");
                         if (FailToWrite)
                         {
                             FailToWrite = false;

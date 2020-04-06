@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ using Discord;
 
 namespace UNObot.Services
 {
+    //TODO Compress the JSON!
     public class UBOWServerLoggerService
     {
         private static readonly string FileName = "UBOWLog.json";
@@ -18,6 +20,7 @@ namespace UNObot.Services
         private static UBOWServerLoggerService Instance;
         private readonly Timer LogTimer;
         private ServerLog Logs;
+        private readonly Stopwatch DelayChecker;
 
         private UBOWServerLoggerService()
         {
@@ -28,6 +31,7 @@ namespace UNObot.Services
                 Interval = 1000 * 60
             };
             LogTimer.Elapsed += LogMinute;
+            DelayChecker = new Stopwatch();
             Task.Run(ReadLogs);
         }
 
@@ -36,17 +40,17 @@ namespace UNObot.Services
             if (!File.Exists(FileName))
             {
                 Console.WriteLine("Started new logging service.");
-                this.Logs = new ServerLog
+                Logs = new ServerLog
                 {
                     ListOLogs = new List<Log>()
                 };
-                using var sw = File.Create(FileName);
+                await using var sw = File.Create(FileName);
                 await SaveLogs();
                 LogTimer.Enabled = true;
                 return;
             }
             string Data;
-            using (StreamReader sr = new StreamReader(FileName))
+            using (var sr = new StreamReader(FileName))
                 Data = await sr.ReadToEndAsync();
             var Result = JsonConvert.DeserializeObject(Data, typeof(ServerLog));
             if (Result is ServerLog LogFile)
@@ -65,12 +69,19 @@ namespace UNObot.Services
 
         private async Task SaveLogs()
         {
-            string Value = JsonConvert.SerializeObject(Logs);
-            using StreamWriter sw = new StreamWriter(FileName, false);
+            DelayChecker.Restart();
+            var Value = JsonConvert.SerializeObject(Logs);
+            await using var sw = new StreamWriter(FileName, false);
             await sw.WriteAsync(Value);
+            DelayChecker.Stop();
+            if(DelayChecker.ElapsedMilliseconds < 1000)
+                LoggerService.Log(LogSeverity.Debug, $"Took {DelayChecker.ElapsedMilliseconds}ms to save JSON data.");
+            else
+                LoggerService.Log(LogSeverity.Warning, $"Took too long to save JSON! ({DelayChecker.ElapsedMilliseconds}ms.)");
         }
 
-        private static readonly int Attempts = 3;
+        private const int Attempts = 3;
+
         private async void LogMinute(object sender, ElapsedEventArgs e)
         {
             var Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
