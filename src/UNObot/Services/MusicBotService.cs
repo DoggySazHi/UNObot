@@ -89,6 +89,7 @@ namespace UNObot.Services
         private readonly ISocketMessageChannel MessageChannel;
         private Timer autoDCTimer;
         private Process ffmpegProcess;
+        private CancellationTokenSource StopAsync;
 
         public Player(ulong Guild, IVoiceChannel AudioChannel, IAudioClient AudioClient, ISocketMessageChannel MessageChannel)
         {
@@ -134,7 +135,7 @@ namespace UNObot.Services
             {
                 LoggerService.Log(LogSeverity.Debug, $"Player initialized for {Guild}");
                 await FixConnection(null);
-
+                StopAsync = new CancellationTokenSource();
 
                 while (Songs.Count != 0)
                 {
@@ -171,13 +172,16 @@ namespace UNObot.Services
                             .SendMessageAsync(Message, false, EmbedDisplayService.DisplayNowPlaying(NowPlaying, null))
                             .ConfigureAwait(false);
                         // Runs a forever loop to quit when the quit boolean is true (if FFMPEG decides not to quit)
-                        await Task.WhenAny(SendAudio(CreateStream(NowPlaying.PathCached)), Task.Run(() => {while(!Quit){}}));
+                        await SendAudio(CreateStream(NowPlaying.PathCached), StopAsync.Token);
                     } while (LoopingSong);
 
                     if (LoopingQueue)
                         Songs.Add(NowPlaying);
-                    ffmpegProcess.Kill();
-                    ffmpegProcess = null;
+                    if (Quit)
+                    {
+                        ffmpegProcess.Kill();
+                        ffmpegProcess = null;
+                    }
                     if(Songs.All(o => o.PathCached != NowPlaying.PathCached))
                         File.Delete(NowPlaying.PathCached);
                     NowPlaying.PathCached = null;
@@ -319,8 +323,9 @@ namespace UNObot.Services
             Task.Run(Cache);
         }
 
-        private async Task SendAudio(Stream AudioStream)
+        private async Task SendAudio(Stream AudioStream, CancellationToken ct)
         {
+            LoggerService.Log(LogSeverity.Debug, "Audio stream created.");
             IsPlaying = true;
             var DiscordStream = AudioClient.CreatePCMStream(AudioApplication.Music, AudioChannel.Bitrate);
 
@@ -350,30 +355,29 @@ namespace UNObot.Services
                     }
 
                     sw.Restart();
-                    var read = await AudioStream.ReadAsync(Buffer, 0, BufferSize);
+                    var read = await AudioStream.ReadAsync(Buffer, 0, BufferSize, ct);
                     sw.Stop();
                     if(sw.ElapsedMilliseconds > 1000)
-                        LoggerService.Log(LogSeverity.Warning, $"Took too long to read from disk! Is the server lagging? Delay of {sw.ElapsedMilliseconds}ms.");
+                        LoggerService.Log(LogSeverity.Warning, $"Took too lsong to read from disk! Is the server lagging? Delay of {sw.ElapsedMilliseconds}ms.");
                     if (read == 0)
                         break;
 
                     try
                     {
                         sw.Restart();
-                        await DiscordStream.WriteAsync(Buffer, 0, read);
+                        await DiscordStream.WriteAsync(Buffer, 0, read, ct);
                         sw.Stop();
                         if(sw.ElapsedMilliseconds > 1000)
                             LoggerService.Log(LogSeverity.Warning, $"Took too long to write to Discord! Is the server lagging? Delay of {sw.ElapsedMilliseconds}ms.");
                         if (FailToWrite)
                         {
                             FailToWrite = false;
-                            LoggerService.Log(LogSeverity.Info,
-                                "Successfully reconnected.");
+                            LoggerService.Log(LogSeverity.Info, "Successfully reconnected.");
                         }
                     }
                     catch (OperationCanceledException)
                     {
-                        if (!FailToWrite)
+                        if (!FailToWrite && !ct.IsCancellationRequested)
                         {
                             FailToWrite = true;
                             LoggerService.Log(LogSeverity.Error,
@@ -400,9 +404,9 @@ namespace UNObot.Services
             }
             //TODO Flush might break things
             PlayPos.Stop();
-            await DiscordStream.FlushAsync();
+            await DiscordStream.FlushAsync(ct);
             Paused = false;
-            await AudioStream.FlushAsync();
+            await AudioStream.FlushAsync(ct);
             IsPlaying = false;
             if (Quit)
             {
@@ -412,6 +416,7 @@ namespace UNObot.Services
 
             await AudioStream.DisposeAsync();
             await DiscordStream.DisposeAsync();
+            LoggerService.Log(LogSeverity.Debug, "Audio stream successfully destroyed.");
         }
 
         public string GetPosition()
@@ -479,6 +484,7 @@ namespace UNObot.Services
                 Skip = false;
                 Paused = false;
                 Quit = true;
+                StopAsync.Cancel();
                 ffmpegProcess?.Kill(true);
                 if (IsPlaying)
                     QuitEvent.WaitOne();
@@ -486,6 +492,7 @@ namespace UNObot.Services
                 try { await AudioChannel.DisconnectAsync(); } catch (Exception) { /* ignored */ }
                 AudioClient.Dispose();
                 PauseEvent.Dispose();
+                StopAsync.Dispose();
                 autoDCTimer?.Dispose();
             }
             catch (Exception e)

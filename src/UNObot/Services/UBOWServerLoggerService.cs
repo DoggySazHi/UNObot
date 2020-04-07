@@ -74,49 +74,54 @@ namespace UNObot.Services
             await using var sw = new StreamWriter(FileName, false);
             await sw.WriteAsync(Value);
             DelayChecker.Stop();
-            if(DelayChecker.ElapsedMilliseconds < 1000)
-                LoggerService.Log(LogSeverity.Debug, $"Took {DelayChecker.ElapsedMilliseconds}ms to save JSON data.");
-            else
+            if (DelayChecker.ElapsedMilliseconds >= 1000)
                 LoggerService.Log(LogSeverity.Warning, $"Took too long to save JSON! ({DelayChecker.ElapsedMilliseconds}ms.)");
+            //else
+            //    LoggerService.Log(LogSeverity.Debug, $"Took {DelayChecker.ElapsedMilliseconds}ms to save JSON data.");
         }
 
         private const int Attempts = 3;
 
-        private async void LogMinute(object sender, ElapsedEventArgs e)
+        private void LogMinute(object sender, ElapsedEventArgs e)
         {
-            var Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            byte PlayerCount = 0;
-            bool ServerUp = false;
-
-            for (int i = 0; i < Attempts; i++)
+#pragma warning disable 4014
+            Task.Run(async () =>
+#pragma warning restore 4014
             {
-                ServerUp = QueryHandlerService.GetInfo(IP, QueryPort, out var Output);
-                if (ServerUp)
-                {
-                    PlayerCount = Output.Players;
-                    break;
-                }
-            }
+                 var Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                 byte PlayerCount = 0;
+                 bool ServerUp = false;
 
-            Logs.ListOLogs.Add(new Log
-            {
-                Timestamp = Timestamp,
-                PlayerCount = PlayerCount,
-                ServerUp = ServerUp
-            });
-            if (Logs.ListOLogs.Count >= 365 * 24 * 60)
-                Logs.ListOLogs.RemoveRange(0, Logs.ListOLogs.Count - 365 * 24 * 60);
-            await Task.Run(RecalculateValues);
+                 for (int i = 0; i < Attempts; i++)
+                 {
+                     ServerUp = QueryHandlerService.GetInfo(IP, QueryPort, out var Output);
+                     if (ServerUp)
+                     {
+                         PlayerCount = Output.Players;
+                         break;
+                     }
+                 }
+
+                 Logs.ListOLogs.Add(new Log
+                 {
+                     Timestamp = Timestamp,
+                     PlayerCount = PlayerCount,
+                     ServerUp = ServerUp
+                 });
+                 if (Logs.ListOLogs.Count >= 365 * 24 * 60)
+                     Logs.ListOLogs.RemoveRange(0, Logs.ListOLogs.Count - 365 * 24 * 60);
+                 await RecalculateValues();
+             });
         }
 
         private async Task RecalculateValues()
         {
             var TimeNow = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            long TimeHour = 1000 * 60 * 60;
-            long TimeDay = TimeHour * 24;
-            long TimeWeek = TimeDay * 7;
-            long TimeMonth = TimeDay * 30;
-            long TimeYear = TimeDay * 365;
+            const long TimeHour = 1000 * 60 * 60;
+            const long TimeDay = TimeHour * 24;
+            const long TimeWeek = TimeDay * 7;
+            const long TimeMonth = TimeDay * 30;
+            const long TimeYear = TimeDay * 365;
 
             var LastHour = Logs.ListOLogs.FindAll(o => o.Timestamp > TimeNow - TimeHour);
             var LastDay = Logs.ListOLogs.FindAll(o => o.Timestamp > TimeNow - TimeDay);
