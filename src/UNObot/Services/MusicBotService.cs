@@ -466,7 +466,7 @@ namespace UNObot.Services
             ffmpegProcess = Process.Start(new ProcessStartInfo
             {
                 FileName = FileName,
-                Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le -ar {AudioChannel.Bitrate} pipe:1",
+                Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le pipe:1",
                 UseShellExecute = false,
                 RedirectStandardOutput = true
             });
