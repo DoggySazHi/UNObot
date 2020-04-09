@@ -210,7 +210,7 @@ namespace UNObot.Services
                 if (Caching)
                     return;
                 Caching = true;
-                List<string> FilesCached = new List<string>();
+                var FilesCached = new List<string>();
                 for (var i = 0; i < Math.Min(Songs.Count, CacheLength); i++)
                 {
                     var s = Songs[i];
@@ -325,9 +325,10 @@ namespace UNObot.Services
 
         private async Task SendAudio(Stream AudioStream, CancellationToken ct)
         {
-            LoggerService.Log(LogSeverity.Debug, "Audio stream created.");
+            LoggerService.Log(LogSeverity.Debug, $"Audio stream created at bit rate {AudioChannel.Bitrate}");
             IsPlaying = true;
             var DiscordStream = AudioClient.CreatePCMStream(AudioApplication.Music, AudioChannel.Bitrate);
+            
 
             //Adjust?
             var BufferSize = 1024;
@@ -402,11 +403,11 @@ namespace UNObot.Services
                     Fail = true;
                 }
             }
-            //TODO Flush might break things
             PlayPos.Stop();
-            await DiscordStream.FlushAsync(ct);
+            // ReSharper disable twice MethodSupportsCancellation
+            await DiscordStream.FlushAsync();
             Paused = false;
-            await AudioStream.FlushAsync(ct);
+            await AudioStream.FlushAsync();
             IsPlaying = false;
             if (Quit)
             {
@@ -465,7 +466,7 @@ namespace UNObot.Services
             ffmpegProcess = Process.Start(new ProcessStartInfo
             {
                 FileName = FileName,
-                Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1",
+                Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le -ar {AudioChannel.Bitrate} pipe:1",
                 UseShellExecute = false,
                 RedirectStandardOutput = true
             });

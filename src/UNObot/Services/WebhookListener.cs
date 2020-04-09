@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Discord;
 
 namespace UNObot.Services
@@ -17,7 +20,6 @@ namespace UNObot.Services
         private readonly byte[] DefaultResponse;
         private readonly ManualResetEvent Exited;
         private bool Stop;
-        private Task ServerThread;
 
         private WebhookListener()
         {
@@ -36,7 +38,7 @@ namespace UNObot.Services
             Server.Prefixes.Add("http://localhost:6860/");
 
             Server.Start();
-            ServerThread = Task.Run(Listener);
+            Task.Run(Listener);
         }
 
         public static WebhookListener GetSingleton()
@@ -56,6 +58,7 @@ namespace UNObot.Services
                 using var sr = new StreamReader(data);
                 var text = sr.ReadToEnd();
                 //LoggerService.Log(LogSeverity.Verbose, $"Data received: {text}");
+                ProcessMessage(text);
 
                 using var response = context.Response;
                 response.StatusCode = 200;
@@ -63,6 +66,30 @@ namespace UNObot.Services
                 using var output = response.OutputStream;
                 output.Write(DefaultResponse, 0, DefaultResponse.Length);
             }
+        }
+
+        private void ProcessMessage(string Message)
+        {
+            var Types = Assembly.GetExecutingAssembly().GetTypes()
+                .Where(t =>
+                    t.Namespace != null && 
+                    t.Namespace.Contains("BitbucketEntities", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            foreach (var Type in Types)
+            {
+                try
+                {
+                    var Processed = JsonConvert.DeserializeObject(Message, Type);
+                    LoggerService.Log(LogSeverity.Verbose, $"I processed an {Type.Name} successfully!");
+                    LoggerService.Log(LogSeverity.Verbose, $"Read {Processed.GetType()}");
+                    return;
+                }
+                catch (JsonException)
+                {
+
+                }
+            }
+            LoggerService.Log(LogSeverity.Verbose, $"Failed to match against {Types.Count()} modules.");
         }
 
         public void Dispose()
