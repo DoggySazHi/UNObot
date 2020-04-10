@@ -438,19 +438,21 @@ namespace UNObot.Services
             LoggerService.Log(LogSeverity.Debug, "Detected someone joining a channel.");
             var Users = (await AudioChannel.GetUsersAsync().FlattenAsync()).ToList();
             var IsFilled = !Users.All(o => o.IsBot) && Users.Count >= 2;
-            if (IsFilled)
+            if (IsFilled && autoDCTimer != null)
             {
+                LoggerService.Log(LogSeverity.Debug, "Destroyed DC Timer.");
                 autoDCTimer?.Dispose();
+                autoDCTimer = null;
             }
         }
 
         public async Task CheckOnLeave()
         {
-            LoggerService.Log(LogSeverity.Debug, "Detected someone leaving a channel.");
             var Users = (await AudioChannel.GetUsersAsync().FlattenAsync()).ToList();
             var IsEmpty = Users.All(o => o.IsBot) || Users.Count <= 1;
             if (IsEmpty && autoDCTimer == null)
             {
+                LoggerService.Log(LogSeverity.Debug, "Started DC timer.");
                 autoDCTimer = new Timer
                 {
                     Interval = 60 * 1000,
