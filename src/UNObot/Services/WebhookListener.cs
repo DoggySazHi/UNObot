@@ -57,27 +57,35 @@ namespace UNObot.Services
 
         private void Listener()
         {
-            while (!Stop)
+            try
             {
-                var context = Server.GetContext();
-                var request = context.Request;
-                var URL = context.Request.RawUrl;
-                LoggerService.Log(LogSeverity.Debug, $"Received request from {URL}.");
-                var ValidServers = bitbucketServers.Where(o => URL.Contains(o.Key)).ToList();
-                if(ValidServers.Any())
-                    LoggerService.Log(LogSeverity.Debug, $"Found server, points to {ValidServers[0]}.");
+                while (!Stop)
+                {
+                    var context = Server.GetContext();
+                    var request = context.Request;
+                    var URL = context.Request.RawUrl;
+                    LoggerService.Log(LogSeverity.Debug, $"Received request from {URL}.");
+                    var ValidServers = bitbucketServers.Where(o => URL.Contains(o.Key)).ToList();
+                    if(ValidServers.Any())
+                        LoggerService.Log(LogSeverity.Debug, $"Found server, points to {ValidServers[0]}.");
 
-                using var data = request.InputStream;
-                using var sr = new StreamReader(data);
-                var text = sr.ReadToEnd();
-                //LoggerService.Log(LogSeverity.Verbose, $"Data received: {text}");
-                ProcessMessage(text);
+                    using var data = request.InputStream;
+                    using var sr = new StreamReader(data);
+                    var text = sr.ReadToEnd();
+                    //LoggerService.Log(LogSeverity.Verbose, $"Data received: {text}");
+                    ProcessMessage(text);
 
-                using var response = context.Response;
-                response.StatusCode = 200;
+                    using var response = context.Response;
+                    response.StatusCode = 200;
 
-                using var output = response.OutputStream;
-                output.Write(DefaultResponse, 0, DefaultResponse.Length);
+                    using var output = response.OutputStream;
+                    output.Write(DefaultResponse, 0, DefaultResponse.Length);
+                }
+            }
+            catch (Exception e)
+            {
+                LoggerService.Log(LogSeverity.Critical, "Webhook Listener commit the die.", e);
+                throw;
             }
         }
 
@@ -103,7 +111,8 @@ namespace UNObot.Services
 
                 }
             }
-            LoggerService.Log(LogSeverity.Verbose, $"Failed to match against {Types.Count()} modules.");
+            LoggerService.Log(LogSeverity.Verbose, $"Failed to match against {Types.Count} modules.");
+            LoggerService.Log(LogSeverity.Verbose, Message);
         }
 
         public void Dispose()
