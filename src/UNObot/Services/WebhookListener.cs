@@ -16,6 +16,7 @@ namespace UNObot.Services
     {
         private readonly Dictionary<string, ulong> bitbucketServers = new Dictionary<string, ulong>();
         private static WebhookListener Instance;
+        private JsonSerializerSettings Settings;
         private readonly HttpListener Server;
         private readonly byte[] DefaultResponse;
         private readonly ManualResetEvent Exited;
@@ -29,13 +30,21 @@ namespace UNObot.Services
                 return;
             }
 
-            //bitbucketServers.Add("aURMBj-_zAJi6nsCPim6ezNxM6LYtwGrZmgMbV3RcKCfwFFygqUz2jLSecPjEEBUIYIh1Xewdp-vtJi5tqCidyKazInmq-20dtBNybd4xilFElaaMb0PFh8ileaZ6CN6q2BUZw", 420005591155605535);
+            bitbucketServers.Add("aURMBj-_zAJi6nsCPim6ezNxM6LYtwGrZmgMbV3RcKCfwFFygqUz2jLSecPjEEBUIYIh1Xewdp-vtJi5tqCidyKazInmq-20dtBNybd4xilFElaaMb0PFh8ileaZ6CN6q2BUZw", 420005591155605535);
             DefaultResponse = Encoding.UTF8.GetBytes("mukyu!");
             Exited = new ManualResetEvent(false);
 
             Server = new HttpListener();
             Server.Prefixes.Add("http://127.0.0.1:6860/");
             Server.Prefixes.Add("http://localhost:6860/");
+
+            Settings = new JsonSerializerSettings {MissingMemberHandling = MissingMemberHandling.Error};
+            /*
+            Settings.Error += (self, errorArgs) =>
+            {
+
+            };
+            */
 
             Server.Start();
             Task.Run(Listener);
@@ -52,7 +61,11 @@ namespace UNObot.Services
             {
                 var context = Server.GetContext();
                 var request = context.Request;
-                LoggerService.Log(LogSeverity.Debug, $"Received request from {context.Request.RemoteEndPoint}.");
+                var URL = context.Request.RawUrl;
+                LoggerService.Log(LogSeverity.Debug, $"Received request from {URL}.");
+                var ValidServers = bitbucketServers.Where(o => URL.Contains(o.Key)).ToList();
+                if(ValidServers.Any())
+                    LoggerService.Log(LogSeverity.Debug, $"Found server, points to {ValidServers[0]}.");
 
                 using var data = request.InputStream;
                 using var sr = new StreamReader(data);
@@ -75,11 +88,12 @@ namespace UNObot.Services
                     t.Namespace != null && 
                     t.Namespace.Contains("BitbucketEntities", StringComparison.OrdinalIgnoreCase))
                 .ToList();
+
             foreach (var Type in Types)
             {
                 try
                 {
-                    var Processed = JsonConvert.DeserializeObject(Message, Type);
+                    var Processed = JsonConvert.DeserializeObject(Message, Type, Settings);
                     LoggerService.Log(LogSeverity.Verbose, $"I processed an {Type.Name} successfully!");
                     LoggerService.Log(LogSeverity.Verbose, $"Read {Processed.GetType()}");
                     return;

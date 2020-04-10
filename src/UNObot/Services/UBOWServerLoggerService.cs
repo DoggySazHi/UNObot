@@ -1,26 +1,25 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
 using Discord;
 
 namespace UNObot.Services
 {
-    //TODO Compress the JSON!
     public class UBOWServerLoggerService
     {
-        private static readonly string FileName = "UBOWLog.json";
-        private static readonly string IP = "108.61.100.48";
-        private static readonly ushort QueryPort = 25444 + 1;
+        private const string JSONFileName = "UBOWLog.json";
+        private const string FileName = "UBOWLog.serverlog";
+        private const string IP = "108.61.100.48";
+        private const ushort QueryPort = 25444 + 1;
 
         private static UBOWServerLoggerService Instance;
         private readonly Timer LogTimer;
         private ServerLog Logs;
-        private readonly Stopwatch DelayChecker;
 
         private UBOWServerLoggerService()
         {
@@ -31,53 +30,45 @@ namespace UNObot.Services
                 Interval = 1000 * 60
             };
             LogTimer.Elapsed += LogMinute;
-            DelayChecker = new Stopwatch();
             Task.Run(ReadLogs);
         }
 
         private async Task ReadLogs()
         {
-            if (!File.Exists(FileName))
+            if (!File.Exists(FileName) && File.Exists(JSONFileName))
             {
-                Console.WriteLine("Started new logging service.");
+                LoggerService.Log(LogSeverity.Info, "Found old JSON file, please wait as we upgrade...");
+                string Data;
+                using (var sr = new StreamReader(JSONFileName))
+                    Data = await sr.ReadToEndAsync();
+                var Result = JsonConvert.DeserializeObject(Data, typeof(ServerLog));
+                if (Result is ServerLog LogFile)
+                {
+                    Logs = LogFile;
+                    await Logs.WriteToFile(FileName);
+                    LoggerService.Log(LogSeverity.Info, "Successfully upgraded file!");
+                }
+                else
+                {
+                    LoggerService.Log(LogSeverity.Error, "Failed to read logs! Created new logging service.");
+                    File.Delete(JSONFileName);
+                }
+            }
+            if (!File.Exists(FileName) && !File.Exists(JSONFileName))
+            {
+                LoggerService.Log(LogSeverity.Info, "Started new logging service.");
                 Logs = new ServerLog
                 {
                     ListOLogs = new List<Log>()
                 };
-                await using var sw = File.Create(FileName);
-                await SaveLogs();
+                await Logs.WriteToFile(FileName);
                 LogTimer.Enabled = true;
                 return;
             }
-            string Data;
-            using (var sr = new StreamReader(FileName))
-                Data = await sr.ReadToEndAsync();
-            var Result = JsonConvert.DeserializeObject(Data, typeof(ServerLog));
-            if (Result is ServerLog LogFile)
-                Logs = LogFile;
-            else
-            {
-                LoggerService.Log(LogSeverity.Error, "Failed to read logs! Created new logging service.");
-                Logs = new ServerLog
-                {
-                    ListOLogs = new List<Log>()
-                };
-            }
+            Logs = new ServerLog();
+            await Logs.ReadFromFile(FileName);
             LogTimer.Enabled = true;
             LoggerService.Log(LogSeverity.Info, "UBOWS Logger initialized!");
-        }
-
-        private async Task SaveLogs()
-        {
-            DelayChecker.Restart();
-            var Value = JsonConvert.SerializeObject(Logs);
-            await using var sw = new StreamWriter(FileName, false);
-            await sw.WriteAsync(Value);
-            DelayChecker.Stop();
-            if (DelayChecker.ElapsedMilliseconds >= 1000)
-                LoggerService.Log(LogSeverity.Warning, $"Took too long to save JSON! ({DelayChecker.ElapsedMilliseconds}ms.)");
-            //else
-            //    LoggerService.Log(LogSeverity.Debug, $"Took {DelayChecker.ElapsedMilliseconds}ms to save JSON data.");
         }
 
         private const int Attempts = 3;
@@ -90,9 +81,9 @@ namespace UNObot.Services
             {
                  var Timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                  byte PlayerCount = 0;
-                 bool ServerUp = false;
+                 var ServerUp = false;
 
-                 for (int i = 0; i < Attempts; i++)
+                 for (var i = 0; i < Attempts; i++)
                  {
                      ServerUp = QueryHandlerService.GetInfo(IP, QueryPort, out var Output);
                      if (ServerUp)
@@ -102,19 +93,21 @@ namespace UNObot.Services
                      }
                  }
 
-                 Logs.ListOLogs.Add(new Log
+                 var NowLog = new Log
                  {
                      Timestamp = Timestamp,
                      PlayerCount = PlayerCount,
                      ServerUp = ServerUp
-                 });
+                 };
+                 Logs.ListOLogs.Add(NowLog);
+                 await Logs.AppendToFile(FileName, NowLog);
                  if (Logs.ListOLogs.Count >= 365 * 24 * 60)
                      Logs.ListOLogs.RemoveRange(0, Logs.ListOLogs.Count - 365 * 24 * 60);
-                 await RecalculateValues();
+                 RecalculateValues();
              });
         }
 
-        private async Task RecalculateValues()
+        private void RecalculateValues()
         {
             var TimeNow = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             const long TimeHour = 1000 * 60 * 60;
@@ -134,15 +127,11 @@ namespace UNObot.Services
             Logs.AverageLastWeek = 1.0f * LastWeek.Sum(o => o.PlayerCount) / LastWeek.Count;
             Logs.AverageLastMonth = 1.0f * LastMonth.Sum(o => o.PlayerCount) / LastMonth.Count;
             Logs.AverageLastYear = 1.0f * LastYear.Sum(o => o.PlayerCount) / LastYear.Count;
-
-            await SaveLogs();
         }
 
         public static UBOWServerLoggerService GetSingleton()
         {
-            if (Instance == null)
-                Instance = new UBOWServerLoggerService();
-            return Instance;
+            return Instance ??= new UBOWServerLoggerService();
         }
 
         public ServerAverages GetAverages()
@@ -182,5 +171,91 @@ namespace UNObot.Services
         public float AverageLastMonth { get; set; }
         public float AverageLastYear { get; set; }
         public List<Log> ListOLogs { get; set; }
+
+        public async Task WriteToFile(string FileName)
+        {
+            await using var sw = new StreamWriter(FileName);
+            await sw.WriteLineAsync("LH" + AverageLastHour);
+            await sw.WriteLineAsync("LD" + AverageLast24H);
+            await sw.WriteLineAsync("LW" + AverageLastWeek);
+            await sw.WriteLineAsync("LM" + AverageLastMonth);
+            await sw.WriteLineAsync("LY" + AverageLastYear);
+            foreach (var item in ListOLogs)
+            {
+                await AppendToFile(FileName, item, sw);
+            }
+        }
+
+        public async Task AppendToFile(string FileName, Log Log, StreamWriter sw = null)
+        {
+            var selfCreated = false;
+            if (sw == null)
+            {
+                sw = new StreamWriter(FileName, true);
+                selfCreated = true;
+            }
+
+            var sb = new StringBuilder("L", 16);
+            sb.Append(Log.PlayerCount);
+            sb.Append(",");
+            sb.Append(Log.ServerUp ? 1 : 0);
+            sb.Append(",");
+            sb.Append(Log.Timestamp);
+            await sw.WriteLineAsync(sb);
+
+            if (selfCreated)
+                await sw.DisposeAsync();
+        }
+
+        public async Task ReadFromFile(string FileName)
+        {
+            if(ListOLogs == null)
+                ListOLogs = new List<Log>();
+            else if (ListOLogs.Count != 0)
+                ListOLogs.Clear();
+            using var sr = new StreamReader(FileName);
+            var Data = await sr.ReadLineAsync();
+            while (Data != null)
+            {
+                try
+                {
+                    if (Data.StartsWith("LH"))
+                        AverageLastHour = float.Parse(Data.Substring(2));
+                    else if (Data.StartsWith("LD"))
+                        AverageLast24H = float.Parse(Data.Substring(2));
+                    else if (Data.StartsWith("LW"))
+                        AverageLastWeek = float.Parse(Data.Substring(2));
+                    else if (Data.StartsWith("LM"))
+                        AverageLastMonth = float.Parse(Data.Substring(2));
+                    else if (Data.StartsWith("LY"))
+                        AverageLastYear = float.Parse(Data.Substring(2));
+                    else if (Data.StartsWith("L"))
+                    {
+                        var Split = Data.Substring(1).Split(",");
+                        if (Split.Length != 3)
+                        {
+                            LoggerService.Log(LogSeverity.Warning, $"Invalid record in file! Read {Data}.");
+                            continue;
+                        }
+
+                        var PlayerCount = byte.Parse(Split[0]);
+                        var ServerUp = int.Parse(Split[1]) == 1;
+                        var Timestamp = long.Parse(Split[2]);
+                        ListOLogs.Add(new Log
+                        {
+                            PlayerCount = PlayerCount,
+                            ServerUp = ServerUp,
+                            Timestamp = Timestamp
+                        });
+                    }
+                }
+                catch (FormatException e)
+                {
+                    LoggerService.Log(LogSeverity.Warning, $"Failed to convert numbers for this: {Data}", e);
+                }
+
+                Data = await sr.ReadLineAsync();
+            }
+        }
     }
 }

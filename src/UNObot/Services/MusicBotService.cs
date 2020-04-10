@@ -214,12 +214,20 @@ namespace UNObot.Services
                 for (var i = 0; i < Math.Min(Songs.Count, CacheLength); i++)
                 {
                     var s = Songs[i];
-                    if (string.IsNullOrWhiteSpace(s.PathCached))
-                        await s.Cache().ConfigureAwait(true);
-                    FilesCached.Add(s.PathCached);
+                    if (i < Math.Min(Songs.Count, CacheLength))
+                    {
+                        
+                        if (string.IsNullOrWhiteSpace(s.PathCached))
+                            await s.Cache().ConfigureAwait(true);
+                        FilesCached.Add(s.PathCached);
+                    }
+                    else
+                    {
+                        s.PathCached = null;
+                    }
                 }
                 // TODO fix.
-                // YoutubeService.GetSingleton().DeleteGuildFolder(Guild, FilesCached.ToArray());
+                YoutubeService.GetSingleton().DeleteGuildFolder(Guild, FilesCached.ToArray());
                 Caching = false;
             }
             catch (Exception ex)
