@@ -9,7 +9,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using YoutubeExplode.Models;
+using YoutubeExplode.Videos;
 using Timer = System.Timers.Timer;
 
 namespace UNObot.Services
@@ -619,7 +619,7 @@ namespace UNObot.Services
             {
                 var Playlist = await EmbedDisplayService.DisplayPlaylist(User, Guild, URL);
                 Display = Playlist.Item1;
-                var ResultPlay = Playlist.Item2.Videos;
+                var ResultPlay = await YoutubeService.GetSingleton().GetPlaylistVideos(Playlist.Item2.Id);
                 var Player = await ConnectAsync(Guild, Channel, MessageChannel);
                 if (Player.Item2 != null)
                     Message = Player.Item2;

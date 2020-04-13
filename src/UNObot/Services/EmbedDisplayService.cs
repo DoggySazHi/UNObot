@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
-using YoutubeExplode.Models;
+using YoutubeExplode.Playlists;
 
 namespace UNObot.Services
 {
@@ -226,10 +226,11 @@ namespace UNObot.Services
             string Servername = Program._client.GetGuild(ServerID).Name;
             Random r = ThreadSafeRandom.ThisThreadsRandom;
             var Playlist = await YoutubeService.GetSingleton().GetPlaylist(SongURL);
+            var Thumbnail = await YoutubeService.GetSingleton().GetPlaylistThumbnail(Playlist.Id);
 
             var builder = new EmbedBuilder()
                 .WithTitle(Playlist.Title)
-                .WithUrl(Playlist.GetUrl())
+                .WithUrl(Playlist.Url)
                 .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
@@ -238,7 +239,7 @@ namespace UNObot.Services
                         .WithText($"UNObot {Program.version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
-                .WithThumbnailUrl(Playlist.Videos.First().Thumbnails.MediumResUrl)
+                .WithThumbnailUrl(Thumbnail)
                 .WithAuthor(author =>
                 {
                     author

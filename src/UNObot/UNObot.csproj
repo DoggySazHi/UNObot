@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <LangVersion>8.0</LangVersion>
+    <LangVersion>latestmajor</LangVersion>
     <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
     <RunAnalyzersDuringLiveAnalysis>false</RunAnalyzersDuringLiveAnalysis>
   </PropertyGroup>
@@ -19,7 +19,7 @@
         <Command>
           <type>Custom</type>
           <name>Publish</name>
-          <command>dotnet build &amp;&amp; rm -rf src/UNObot/bin/Release/netcoreapp2.1/publish/ &amp;&amp; rm -rf src/UNObot/bin/Release/netcoreapp2.1/publish/ &amp;&amp; dotnet publish -c Release &amp;&amp; mv src/UNObot/bin/Release/netcoreapp2.1/publish/ src/UNObot/bin/Release/netcoreapp2.1/UNObot &amp;&amp; scp -r src/UNObot/bin/Release/netcoreapp2.1/UNObot doggysazhi@williamle.com:/mnt/backup/Projects/</command>
+          <command>dotnet build &amp;&amp; rm -rf src/UNObot/bin/Release/netcoreapp3.1/publish/ &amp;&amp; rm -rf src/UNObot/bin/Release/netcoreapp3.1/publish/ &amp;&amp; dotnet publish -c Release &amp;&amp; mv src/UNObot/bin/Release/netcoreapp3.1/publish/ src/UNObot/bin/Release/netcoreapp3.1/UNObot &amp;&amp; scp -r src/UNObot/bin/Release/netcoreapp3.1/UNObot doggysazhi@williamle.com:/mnt/backup/Projects/</command>
           <workingdir>${SolutionDir}</workingdir>
         </Command>
       </CustomCommands>
@@ -44,8 +44,9 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.1.3" />
     <PackageReference Include="MySql.Data" Version="8.0.19" />
     <PackageReference Include="Discord.Net" Version="2.1.1" />
-    <PackageReference Include="YoutubeExplode" Version="4.7.16" />
-    <PackageReference Include="YoutubeExplode.Converter" Version="1.4.3" />
+    <PackageReference Include="YoutubeExplode" Version="5.0.0" />
+    <PackageReference Include="YoutubeExplode.Converter" Version="1.4.4" />
+    <PackageReference Include="System.Linq.Async" Version="4.1.1" />
   </ItemGroup>
 
   <ItemGroup>

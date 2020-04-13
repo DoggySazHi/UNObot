@@ -1,11 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using YoutubeExplode;
 using YoutubeExplode.Converter;
-using YoutubeExplode.Models;
-using YoutubeExplode.Models.MediaStreams;
+using YoutubeExplode.Playlists;
+using YoutubeExplode.Videos;
+using YoutubeExplode.Videos.Streams;
 
 namespace UNObot.Services
 {
@@ -42,16 +46,14 @@ namespace UNObot.Services
         {
             URL = URL.Replace("<", "").Replace(">", "");
             LoggerService.Log(LogSeverity.Debug, URL);
-            if (!YoutubeClient.TryParseVideoId(URL, out string Id))
-                throw new Exception("Could not get information from URL! Is the link valid?");
-            var VideoData = await Client.GetVideoAsync(Id);
+            var VideoData = await Client.Videos.GetAsync(URL);
             var Duration = TimeString(VideoData.Duration);
             return new Tuple<string, string, string>(VideoData.Title, Duration, VideoData.Thumbnails.MediumResUrl);
         }
 
         public async Task<Tuple<Tuple<string, string, string>, string>> SearchVideo(string Query)
         {
-            var Data = await Client.SearchVideosAsync(Query, 1);
+            var Data = await Client.Search.GetVideosAsync(Query).ToListAsync();
             if (Data.Count == 0)
                 throw new Exception("No results found!");
             var VideoData = Data[0];
@@ -63,10 +65,20 @@ namespace UNObot.Services
         {
             URL = URL.Replace("<", "").Replace(">", "");
             LoggerService.Log(LogSeverity.Debug, URL);
-            if (!YoutubeClient.TryParsePlaylistId(URL, out string Id))
-                throw new Exception("Could not get playlist from URL! Is the link valid?");
-            var VideoData = await Client.GetPlaylistAsync(Id);
+            var VideoData = await Client.Playlists.GetAsync(URL);
             return VideoData;
+        }
+
+        public async Task<List<Video>> GetPlaylistVideos(PlaylistId Id)
+        {
+            var Videos = await Client.Playlists.GetVideosAsync(Id).ToListAsync();
+            return Videos;
+        }
+
+        public async Task<string> GetPlaylistThumbnail(PlaylistId Id)
+        {
+            var Video = await Client.Playlists.GetVideosAsync(Id).FirstAsync();
+            return Video.Thumbnails.MediumResUrl;
         }
 
         private string PathToGuildFolder(ulong Guild)
@@ -107,30 +119,18 @@ namespace UNObot.Services
         public async Task<string> Download(string URL, ulong Guild)
         {
             URL = URL.TrimStart('<', '>').TrimEnd('<', '>');
-            if (!YoutubeClient.TryParseVideoId(URL, out string Id))
-                throw new Exception("Invalid video link!");
 
-            LoggerService.Log(LogSeverity.Debug, "Id: " + Id);
-            if (Id == null)
+            LoggerService.Log(LogSeverity.Debug, "New URL: " + URL);
+            var Video = await Client.Videos.GetAsync(URL);
+            var MediaStreams = await Client.Videos.Streams.GetManifestAsync(Video.Id);
+            if (MediaStreams.GetAudio().Any())
             {
-                var StartIndex = URL.IndexOf("?v=", StringComparison.Ordinal) + 3;
-                var EndIndex = URL.IndexOf("&", StringComparison.Ordinal);
-                if (EndIndex < 0)
-                    EndIndex = URL.Length;
-                Id = URL[StartIndex..EndIndex];
-            }
-
-            LoggerService.Log(LogSeverity.Debug, "New Id: " + Id);
-            var MediaStreams = await Client.GetVideoMediaStreamInfosAsync(Id);
-
-            if (MediaStreams.Audio.Count == 0)
-            {
-                string Path = GetNextFile(Guild, Id, "mp3");
+                string Path = GetNextFile(Guild, URL, "mp3");
                 if (File.Exists(Path))
                     return Path;
                 try
                 {
-                    await Converter.DownloadVideoAsync(Id, Path).ConfigureAwait(false);
+                    await Converter.DownloadVideoAsync(URL, Path).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -140,15 +140,15 @@ namespace UNObot.Services
                 LoggerService.Log(LogSeverity.Debug, "Downloaded");
                 return Path;
             }
-            return await Download(Guild, Id, MediaStreams.Audio.WithHighestBitrate());
+            return await Download(Guild, URL, MediaStreams.Streams.WithHighestBitrate());
         }
 
-        private async Task<string> Download(ulong Guild, string Id, AudioStreamInfo AudioStream)
+        private async Task<string> Download(ulong Guild, string Id, IStreamInfo AudioStream)
         {
-            string Extension = "webm";
+            var Extension = "webm";
             try
             {
-                Extension = AudioStream.Container.GetFileExtension();
+                Extension = AudioStream.Container.Name;
             }
             catch (Exception ex)
             {
@@ -161,11 +161,11 @@ namespace UNObot.Services
             if (File.Exists(FileName))
                 return FileName;
 
-            for (int i = 0; i < DL_ATTEMPTS; i++)
+            for (var i = 0; i < DL_ATTEMPTS; i++)
             {
                 try
                 {
-                    await Client.DownloadMediaStreamAsync(AudioStream, FileName);
+                    await Client.Videos.Streams.DownloadAsync(AudioStream, FileName);
                     LoggerService.Log(LogSeverity.Debug, "Downloaded");
                     break;
                 }
