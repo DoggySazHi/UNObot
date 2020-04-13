@@ -172,7 +172,7 @@ namespace UNObot.Services
                             .SendMessageAsync(Message, false, EmbedDisplayService.DisplayNowPlaying(NowPlaying, null))
                             .ConfigureAwait(false);
                         // Runs a forever loop to quit when the quit boolean is true (if FFMPEG decides not to quit)
-                        await SendAudio(CreateStream(NowPlaying.PathCached), StopAsync.Token);
+                        await SendAudio(CreateStream(NowPlaying.PathCached, AudioChannel.Bitrate), StopAsync.Token);
                     } while (LoopingSong);
 
                     if (LoopingQueue)
@@ -466,7 +466,7 @@ namespace UNObot.Services
             }
         }
 
-        private Stream CreateStream(string path)
+        private Stream CreateStream(string path, int bitrate)
         {
             string FileName = "/usr/local/bin/ffmpeg";
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -476,7 +476,7 @@ namespace UNObot.Services
             ffmpegProcess = Process.Start(new ProcessStartInfo
             {
                 FileName = FileName,
-                Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le pipe:1",
+                Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le -b:a {bitrate} pipe:1",
                 UseShellExecute = false,
                 RedirectStandardOutput = true
             });
