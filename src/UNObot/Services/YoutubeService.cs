@@ -58,7 +58,7 @@ namespace UNObot.Services
                 throw new Exception("No results found!");
             var VideoData = Data[0];
             var Duration = TimeString(VideoData.Duration);
-            return new Tuple<Tuple<string, string, string>, string>(new Tuple<string, string, string>(VideoData.Title, Duration, VideoData.Thumbnails.MediumResUrl), VideoData.GetUrl());
+            return new Tuple<Tuple<string, string, string>, string>(new Tuple<string, string, string>(VideoData.Title, Duration, VideoData.Thumbnails.MediumResUrl), VideoData.Url);
         }
 
         public async Task<Playlist> GetPlaylist(string URL)
