@@ -125,7 +125,7 @@ namespace UNObot.Services
             var MediaStreams = await Client.Videos.Streams.GetManifestAsync(Video.Id);
             if (MediaStreams.GetAudio().Any())
             {
-                string Path = GetNextFile(Guild, URL, "mp3");
+                string Path = GetNextFile(Guild, Video.Id, "mp3");
                 if (File.Exists(Path))
                     return Path;
                 try
@@ -140,7 +140,7 @@ namespace UNObot.Services
                 LoggerService.Log(LogSeverity.Debug, "Downloaded");
                 return Path;
             }
-            return await Download(Guild, URL, MediaStreams.Streams.WithHighestBitrate());
+            return await Download(Guild, Video.Id.Value, MediaStreams.Streams.WithHighestBitrate());
         }
 
         private async Task<string> Download(ulong Guild, string Id, IStreamInfo AudioStream)

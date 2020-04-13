@@ -495,7 +495,7 @@ namespace UNObot.Services
                 Skip = false;
                 Paused = false;
                 Quit = true;
-                StopAsync.Cancel();
+                //StopAsync.Cancel();
                 ffmpegProcess?.Kill(true);
                 if (IsPlaying)
                     QuitEvent.WaitOne();
