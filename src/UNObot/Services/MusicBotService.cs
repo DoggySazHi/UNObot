@@ -172,7 +172,7 @@ namespace UNObot.Services
                             .SendMessageAsync(Message, false, EmbedDisplayService.DisplayNowPlaying(NowPlaying, null))
                             .ConfigureAwait(false);
                         // Runs a forever loop to quit when the quit boolean is true (if FFMPEG decides not to quit)
-                        await SendAudio(CreateStream(NowPlaying.PathCached, AudioChannel.Bitrate), StopAsync.Token);
+                        await SendAudio(CreateStream(NowPlaying.PathCached), StopAsync.Token, AudioChannel.Bitrate);
                     } while (LoopingSong);
 
                     if (LoopingQueue)
@@ -331,11 +331,11 @@ namespace UNObot.Services
             Task.Run(Cache);
         }
 
-        private async Task SendAudio(Stream AudioStream, CancellationToken ct)
+        private async Task SendAudio(Stream AudioStream, CancellationToken ct, int Bitrate)
         {
-            LoggerService.Log(LogSeverity.Debug, $"Audio stream created at bit rate {AudioChannel.Bitrate}");
+            LoggerService.Log(LogSeverity.Debug, $"Audio stream created at bit rate {Bitrate}");
             IsPlaying = true;
-            var DiscordStream = AudioClient.CreatePCMStream(AudioApplication.Music, AudioChannel.Bitrate);
+            var DiscordStream = AudioClient.CreatePCMStream(AudioApplication.Music, Bitrate);
             
 
             //Adjust?
@@ -466,7 +466,7 @@ namespace UNObot.Services
             }
         }
 
-        private Stream CreateStream(string path, int bitrate)
+        private Stream CreateStream(string path)
         {
             string FileName = "/usr/local/bin/ffmpeg";
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -476,7 +476,7 @@ namespace UNObot.Services
             ffmpegProcess = Process.Start(new ProcessStartInfo
             {
                 FileName = FileName,
-                Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le -b:a {bitrate} pipe:1",
+                Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le pipe:1",
                 UseShellExecute = false,
                 RedirectStandardOutput = true
             });

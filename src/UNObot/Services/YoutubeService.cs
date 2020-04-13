@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -123,7 +122,7 @@ namespace UNObot.Services
             LoggerService.Log(LogSeverity.Debug, "New URL: " + URL);
             var Video = await Client.Videos.GetAsync(URL);
             var MediaStreams = await Client.Videos.Streams.GetManifestAsync(Video.Id);
-            if (MediaStreams.GetAudio().Any())
+            if (!MediaStreams.GetAudio().Any())
             {
                 string Path = GetNextFile(Guild, Video.Id, "mp3");
                 if (File.Exists(Path))
@@ -166,7 +165,7 @@ namespace UNObot.Services
                 try
                 {
                     await Client.Videos.Streams.DownloadAsync(AudioStream, FileName);
-                    LoggerService.Log(LogSeverity.Debug, "Downloaded");
+                    LoggerService.Log(LogSeverity.Debug, $"Downloaded at {AudioStream.Bitrate}.");
                     break;
                 }
                 catch (Exception e)
