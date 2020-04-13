@@ -84,8 +84,8 @@ namespace UNObot.Services
             }
             catch (Exception e)
             {
-                LoggerService.Log(LogSeverity.Critical, "Webhook Listener commit the die.", e);
-                throw;
+                if(!e.Message.Contains("close", StringComparison.CurrentCultureIgnoreCase))
+                    LoggerService.Log(LogSeverity.Critical, "Webhook Listener commit the die.", e);
             }
         }
 
