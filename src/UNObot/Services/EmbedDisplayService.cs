@@ -447,7 +447,7 @@ namespace UNObot.Services
             }
 
             var builder = new EmbedBuilder()
-            .WithTitle("Description")
+            .WithTitle("MOTD")
             .WithDescription(ServerDescription)
             .WithColor(new Color(Random.Next(0, 256), Random.Next(0, 256), Random.Next(0, 256)))
             .WithTimestamp(DateTimeOffset.Now)

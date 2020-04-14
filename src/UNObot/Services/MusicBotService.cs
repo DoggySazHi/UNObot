@@ -629,7 +629,7 @@ namespace UNObot.Services
                         for (int i = ResultPlay.Count - 1; i >= 0; i--)
                         {
                             Video Video = ResultPlay[i];
-                            Player.Item1.Add($"https://www.youtube.com/watch?v={Video.Id}",
+                            Player.Item1.Add(Video.Url,
                                 new Tuple<string, string, string>(Video.Title, YoutubeService.TimeString(Video.Duration), Video.Thumbnails.MediumResUrl), User, Guild, true);
                         }
                     else
@@ -655,7 +655,9 @@ namespace UNObot.Services
                 return new Tuple<Embed, string>(null, "You do not have the power to run this command!");
             try
             {
+                LoggerService.Log(LogSeverity.Verbose, "Searching videos for embed...");
                 var Information = await YoutubeService.GetSingleton().SearchVideo(Query);
+                LoggerService.Log(LogSeverity.Verbose, "Attempting to embed...");
                 var Result = EmbedDisplayService.DisplayAddSong(User, Guild, Information.Item2, Information.Item1);
                 EmbedOut = Result.Item1;
                 var Data = Result.Item2;

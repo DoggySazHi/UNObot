@@ -52,11 +52,13 @@ namespace UNObot.Services
 
         public async Task<Tuple<Tuple<string, string, string>, string>> SearchVideo(string Query)
         {
+            LoggerService.Log(LogSeverity.Verbose, "Searching videos...");
             var Data = await Client.Search.GetVideosAsync(Query).ToListAsync();
             if (Data.Count == 0)
                 throw new Exception("No results found!");
             var VideoData = Data[0];
             var Duration = TimeString(VideoData.Duration);
+            LoggerService.Log(LogSeverity.Verbose, "Found video.");
             return new Tuple<Tuple<string, string, string>, string>(new Tuple<string, string, string>(VideoData.Title, Duration, VideoData.Thumbnails.MediumResUrl), VideoData.Url);
         }
 
@@ -165,7 +167,7 @@ namespace UNObot.Services
                 try
                 {
                     await Client.Videos.Streams.DownloadAsync(AudioStream, FileName);
-                    LoggerService.Log(LogSeverity.Debug, $"Downloaded at {AudioStream.Tag}.");
+                    LoggerService.Log(LogSeverity.Debug, $"Downloaded at {FileName}.");
                     break;
                 }
                 catch (Exception e)
