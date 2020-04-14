@@ -43,15 +43,32 @@ namespace UNObot.Modules
             else
                 await ReplyAsync("The server seems to be down from here...");
         }
+
         [Command("checkmc", RunMode = RunMode.Async)]
-        [Help(new[] { ".checkmc (ip) (port)" }, "Get basic server information about any Minecraft server.", true, "UNObot 2.4")]
-        public async Task CheckMC(string ip, ushort port = 25565)
+        [Help(new[] { ".checkmc (ip) (port)" }, "Get basic server information about any Minecraft server.", true, "UNObot 2.4, UNObot 4.0.11")]
+        public async Task CheckMCNew(string ip, ushort port = 25565)
         {
-            var response = QueryHandlerService.GetInfoMC(ip, port);
-            if (response.ServerUp)
-                await ReplyAsync($"Current players: {response.CurrentPlayers}/{response.MaximumPlayers}\nCurrently running on {response.Version}.");
-            else
-                await ReplyAsync("The server seems to be down from here...");
+            var Message = await ReplyAsync("I am now querying the server, please wait warmly...");
+            QueryHandlerService.GetInfoMCNew(ip, port, out var Status);
+            try
+            {
+                bool success = EmbedDisplayService.MinecraftQueryEmbed(ip, port, out var Embed);
+                if (!success || Embed == null)
+                {
+                    await Message.ModifyAsync(o => o.Content = "Error: Apparently we couldn't get any information about this server.");
+                    return;
+                }
+                await Message.ModifyAsync(o =>
+                {
+                    o.Content = "";
+                    o.Embed = Embed;
+                });
+            }
+            catch (Exception ex)
+            {
+                LoggerService.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
+                await Message.ModifyAsync(o => o.Content = "We had some difficulties displaying the status. Please try again?");
+            }
         }
 
         [Command("unofficialwiki", RunMode = RunMode.Async), Alias("unwiki")]
@@ -87,7 +104,7 @@ namespace UNObot.Modules
             }
             catch (Exception ex)
             {
-                LoggerService.Log(LogSeverity.Error, "Error loading embeds for UBOWS.", ex);
+                LoggerService.Log(LogSeverity.Error, "Error loading embeds for a server.", ex);
                 await Message.ModifyAsync(o => o.Content = "We had some difficulties displaying the status. Please try again?");
             }
         }

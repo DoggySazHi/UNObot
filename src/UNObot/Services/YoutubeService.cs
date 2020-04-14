@@ -165,7 +165,7 @@ namespace UNObot.Services
                 try
                 {
                     await Client.Videos.Streams.DownloadAsync(AudioStream, FileName);
-                    LoggerService.Log(LogSeverity.Debug, $"Downloaded at {AudioStream.Bitrate}.");
+                    LoggerService.Log(LogSeverity.Debug, $"Downloaded at {AudioStream.Tag}.");
                     break;
                 }
                 catch (Exception e)

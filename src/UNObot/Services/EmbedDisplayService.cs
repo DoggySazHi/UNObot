@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
+using Org.BouncyCastle.Crypto;
 using YoutubeExplode.Playlists;
 
 namespace UNObot.Services
@@ -406,6 +408,66 @@ namespace UNObot.Services
                     $"Last week: {Averages.AverageLastWeek:N2} players\n" +
                     $"Last month: {Averages.AverageLastMonth:N2} players\n" +
                     $"Last year: {Averages.AverageLastYear:N2} players\n", true);
+            Result = builder.Build();
+            return true;
+        }
+        public static bool MinecraftQueryEmbed(string IP, ushort Port, out Embed Result)
+        {
+            MCStatus DefaultStatus = null;
+            MinecraftStatus ExtendedStatus = null;
+            bool ExtendedGet = false;
+
+            for (int i = 0; i < Attempts; i++)
+            {
+                if (DefaultStatus == null)
+                    DefaultStatus = new MCStatus(IP, Port);
+                if (!ExtendedGet)
+                    ExtendedGet = QueryHandlerService.GetInfoMCNew(IP, Port, out ExtendedStatus);
+            }
+
+            if (!DefaultStatus.ServerUp && !ExtendedGet)
+            {
+                Result = null;
+                return false;
+            }
+
+            var Random = ThreadSafeRandom.ThisThreadsRandom;
+            var ServerDescription = DefaultStatus.Motd;
+            var PlayersOnline = DefaultStatus.CurrentPlayers == "0" ? "" : "Unknown (server doesn't have query on!)";
+
+            if (ExtendedStatus != null && ExtendedGet)
+            {
+                PlayersOnline = "";
+                for (int i = 0; i < ExtendedStatus.Players.Length; i++)
+                {
+                    PlayersOnline += $"{ExtendedStatus.Players[i]}";
+                    if (i != ExtendedStatus.Players.Length - 1)
+                        PlayersOnline += "\n";
+                }
+            }
+
+            var builder = new EmbedBuilder()
+            .WithTitle("Description")
+            .WithDescription(ServerDescription)
+            .WithColor(new Color(Random.Next(0, 256), Random.Next(0, 256), Random.Next(0, 256)))
+            .WithTimestamp(DateTimeOffset.Now)
+            .WithFooter(footer =>
+            {
+                footer
+                    .WithText($"UNObot {Program.version} - By DoggySazHi")
+                    .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
+            })
+            .WithAuthor(author =>
+            {
+                author
+                    .WithName($"Minecraft Server Query of {IP}")
+                    .WithIconUrl("https://williamle.com/unobot/unobot.png");
+            })
+            .AddField("IP", IP, true)
+            .AddField("Port", Port, true)
+            .AddField("Version", $"{DefaultStatus.Version}", true)
+            .AddField("Ping", $"{DefaultStatus.Delay} ms", true);
+            builder.AddField($"Players: {DefaultStatus.CurrentPlayers}/{DefaultStatus.MaximumPlayers}", string.IsNullOrWhiteSpace(PlayersOnline) ? "Nobody's online!" : PlayersOnline, true);
             Result = builder.Build();
             return true;
         }

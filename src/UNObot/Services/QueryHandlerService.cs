@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using Discord;
+using Microsoft.Extensions.Logging;
 
 namespace UNObot.Services
 {
@@ -80,6 +81,24 @@ namespace UNObot.Services
             }
             var iPEndPoint = new IPEndPoint(server, port);
             output = new A2S_RULES(iPEndPoint);
+            return output.ServerUp;
+        }
+
+        public static bool GetInfoMCNew(string ip, ushort port, out MinecraftStatus output)
+        {
+            var parseCheck = IPAddress.TryParse(ip, out var server);
+            var addresses = Dns.GetHostAddresses(ip);
+            if (!parseCheck)
+            {
+                if (addresses.Length == 0)
+                {
+                    output = null;
+                    return false;
+                }
+                server = addresses[0];
+            }
+            var iPEndPoint = new IPEndPoint(server, port);
+            output = new MinecraftStatus(iPEndPoint);
             return output.ServerUp;
         }
 
@@ -411,7 +430,11 @@ namespace UNObot.Services
             try
             {
                 var stopWatch = new Stopwatch();
-                var tcpclient = new TcpClient();
+                var tcpclient = new TcpClient
+                {
+                    ReceiveTimeout = 5000,
+                    SendTimeout = 5000
+                };
                 stopWatch.Start();
                 tcpclient.Connect(address, port);
                 stopWatch.Stop();
@@ -420,6 +443,7 @@ namespace UNObot.Services
                 stream.Write(payload, 0, payload.Length);
                 stream.Read(rawServerData, 0, dataSize);
                 tcpclient.Close();
+                tcpclient.Dispose();
                 Delay = stopWatch.ElapsedMilliseconds;
             }
             catch (Exception)
@@ -447,6 +471,132 @@ namespace UNObot.Services
                 {
                     ServerUp = false;
                 }
+            }
+        }
+    }
+
+    /// <summary>
+    /// William's proud of himself for writing this class.
+    /// </summary>
+    public class MinecraftStatus
+    {
+        private readonly byte[] SESSION_HANDSHAKE = { 0xFE, 0xFD, 0x09, 0x00, 0x00, 0x00, 0x01 };
+        public bool ServerUp { get; }
+        public int MaxPlayers { get; }
+        public string IP { get; }
+        public ushort Port { get; }
+        public string GameID { get; }
+        public string GameType { get; }
+        public string Plugins { get; }
+        public string Version { get; }
+        public string Map { get; }
+        public string MOTD { get; }
+        public string[] Players { get; }
+
+        public MinecraftStatus(IPEndPoint Server)
+        {
+            UdpClient Udp = null;
+            MemoryStream MemoryStream = null;
+            BinaryReader BinaryReader = null;
+            try
+            {
+                Udp = new UdpClient
+                {
+                    Client =
+                    {
+                        SendTimeout = 5000,
+                        ReceiveTimeout = 5000
+                    }
+                };
+
+                Udp.Send(SESSION_HANDSHAKE, SESSION_HANDSHAKE.Length, Server);
+                MemoryStream = new MemoryStream(Udp.Receive(ref Server));
+                BinaryReader = new BinaryReader(MemoryStream, Encoding.UTF8);
+                MemoryStream.Seek(5, SeekOrigin.Begin);
+                var challengeString = A2S_SHARED.ReadNullTerminatedString(ref BinaryReader);
+                var challengeNumber = int.Parse(challengeString);
+                var bytes = BitConverter.GetBytes(challengeNumber);
+
+                // Save challenge token.
+                byte[] Response =
+                {
+                    0xFE, 0xFD, 0x00, 0x00, 0x00, 0x00, 0x01, bytes[3], bytes[2], bytes[1], bytes[0], 0x00, 0x00, 0x00,
+                    0x00
+                };
+
+                BinaryReader.Close();
+                MemoryStream.Close();
+                Udp.Send(Response, Response.Length, Server);
+                MemoryStream = new MemoryStream(Udp.Receive(ref Server));
+                BinaryReader = new BinaryReader(MemoryStream, Encoding.UTF8);
+                MemoryStream.Seek(1 + 4 + 11, SeekOrigin.Begin);
+
+                string Input;
+                do
+                {
+                    Input = A2S_SHARED.ReadNullTerminatedString(ref BinaryReader);
+                    var Value = A2S_SHARED.ReadNullTerminatedString(ref BinaryReader).Trim();
+                    switch (Input.Trim().ToLower())
+                    {
+                        case "numplayers":
+                            Players = new string[int.Parse(Value)];
+                            break;
+                        case "maxplayers":
+                            MaxPlayers = int.Parse(Value);
+                            break;
+                        case "game_id":
+                            GameID = Value;
+                            break;
+                        case "gametype":
+                            GameType = Value;
+                            break;
+                        case "hostip":
+                            IP = Value;
+                            break;
+                        case "hostport":
+                            Port = ushort.Parse(Value);
+                            break;
+                        case "hostname":
+                            MOTD = Value;
+                            break;
+                        case "plugins":
+                            Plugins = Value;
+                            break;
+                        case "map":
+                            Map = Value;
+                            break;
+                        case "version":
+                            Version = Value;
+                            break;
+                    }
+                } while (Input.Length != 0);
+
+                var CurrentIndex = 0;
+                do
+                {
+                    Input = A2S_SHARED.ReadNullTerminatedString(ref BinaryReader);
+                    if(Input.Length >= 2 && Players != null && CurrentIndex < Players.Length)
+                        Players[CurrentIndex++] = Input;
+                } while (true);
+            }
+            catch (EndOfStreamException)
+            {
+                ServerUp = true;
+            }
+            catch (SocketException)
+            {
+                ServerUp = false;
+            }
+            catch (Exception Ex)
+            {
+                LoggerService.Log(LogSeverity.Error, "Failed to query via MCStatusFull.", Ex);
+                ServerUp = false;
+            }
+            finally
+            {
+                BinaryReader?.Close();
+                MemoryStream?.Close();
+                Udp?.Close();
             }
         }
     }
