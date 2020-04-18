@@ -180,7 +180,7 @@ namespace UNObot.Services
                     await Task.Delay(DL_DELAY);
                 }
             }
-
+            /*
             var StartTime = DateTime.Now;
 
             while ((DateTime.Now - StartTime).TotalSeconds < DL_TIMEOUT)
@@ -188,6 +188,8 @@ namespace UNObot.Services
                     return FileName;
 
             throw new Exception("Failed to download file.");
+                                */
+            return FileName;
         }
 
         private string GetNextFile(ulong Guild, string Id, string Extension)

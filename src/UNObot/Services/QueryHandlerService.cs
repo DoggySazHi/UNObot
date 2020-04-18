@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text;
 using Discord;
 using Microsoft.Extensions.Logging;
@@ -100,6 +101,24 @@ namespace UNObot.Services
             var iPEndPoint = new IPEndPoint(server, port);
             output = new MinecraftStatus(iPEndPoint);
             return output.ServerUp;
+        }
+
+        public static bool SendRCON(string ip, ushort port, string command, string password, out MinecraftRCON output)
+        {
+            var parseCheck = IPAddress.TryParse(ip, out var server);
+            var addresses = Dns.GetHostAddresses(ip);
+            if (!parseCheck)
+            {
+                if (addresses.Length == 0)
+                {
+                    output = null;
+                    return false;
+                }
+                server = addresses[0];
+            }
+            var iPEndPoint = new IPEndPoint(server, port);
+            output = new MinecraftRCON(iPEndPoint, command, password);
+            return output.Successful;
         }
 
         public static MCStatus GetInfoMC(string ip, ushort port = 25565)
@@ -598,6 +617,109 @@ namespace UNObot.Services
                 MemoryStream?.Close();
                 Udp?.Close();
             }
+        }
+    }
+
+    public class MinecraftRCON
+    {
+        private const ushort RX_SIZE = 4096;
+        private enum PacketType {SERVERDATA_RESPONSE_VALUE = 0, SERVERDATA_EXECCOMMAND = 2, SERVERDATA_AUTH_RESPONSE = 2, SERVERDATA_AUTH = 3}
+        public bool Successful { get; }
+        public string Data { get; }
+
+        public MinecraftRCON(IPEndPoint Server, string Command, string Password)
+        {
+            LoggerService.Log(LogSeverity.Verbose, "Started RCON!");
+            var RXData = new byte[RX_SIZE];
+
+            using var Client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
+            {
+                ReceiveTimeout = 5000,
+                SendTimeout = 5000
+            };
+            LoggerService.Log(LogSeverity.Verbose, "Attempting to connect...");
+            if (!Client.ConnectAsync(Server).Wait(5000))
+            {
+                LoggerService.Log(LogSeverity.Verbose, $"Failed to connect to {Server.Address} at {Server.Port}.");
+                Successful = false;
+                return;
+            }
+            LoggerService.Log(LogSeverity.Verbose, "Sending password payload...");
+            var Payload = MakePacketData(Password, PacketType.SERVERDATA_AUTH, 0);
+            Client.Send(Payload);
+            LoggerService.Log(LogSeverity.Verbose, "Sent password payload. Now reading...");
+            Client.Receive(RXData);
+            var ID = LittleEndianReader(ref RXData, 4);
+            var Type = LittleEndianReader(ref RXData, 8);
+            LoggerService.Log(LogSeverity.Verbose, $"Received data. ID: {ID}, Type: {Type}");
+            if (ID == -1 || Type != 2)
+            {
+                LoggerService.Log(LogSeverity.Verbose, "Failed to authenticate!");
+                return;
+            }
+
+            LoggerService.Log(LogSeverity.Verbose, $"Sending command payload of {Command}...");
+            Payload = MakePacketData(Command, PacketType.SERVERDATA_EXECCOMMAND, 0);
+            Client.Send(Payload);
+            LoggerService.Log(LogSeverity.Verbose, "Sent command payload. Now reading...");
+            Client.Receive(RXData);
+            ID = LittleEndianReader(ref RXData, 4);
+            Type = LittleEndianReader(ref RXData, 8);
+            LoggerService.Log(LogSeverity.Verbose, $"Received data. ID: {ID}, Type: {Type}");
+            if (ID == -1 || Type != 0)
+            {
+                LoggerService.Log(LogSeverity.Verbose, "Failed to execute command!");
+                return;
+            }
+
+            var StringConcat = new StringBuilder();
+            char CurrentChar;
+            var Position = 12;
+            do
+            {
+                CurrentChar = (char) RXData[Position++];
+                StringConcat.Append(CurrentChar);
+            } while (CurrentChar != '\x00');
+            LoggerService.Log(LogSeverity.Verbose, $"Received data. {StringConcat}");
+            Data = StringConcat.ToString();
+            Successful = true;
+        }
+
+        private static byte[] LittleEndianConverter(int data)
+        {
+            var b = new byte[4];
+            b[0] = (byte)data;
+            b[1] = (byte)(((uint)data >> 8) & 0xFF);
+            b[2] = (byte)(((uint)data >> 16) & 0xFF);
+            b[3] = (byte)(((uint)data >> 24) & 0xFF);
+            return b;
+        }
+
+        private static int LittleEndianReader(ref byte[] data, int startIndex) {
+            return (data[startIndex + 3] << 24)
+                   | (data[startIndex + 2] << 16)
+                   | (data[startIndex + 1] << 8)
+                   | data[startIndex];
+        }
+
+        private byte[] MakePacketData(string Body, PacketType Type, int ID)
+        {
+            var Length = LittleEndianConverter(Body.Length + 9);
+            var IDData = LittleEndianConverter(ID);
+            var PacketType = LittleEndianConverter((int) Type);
+            var BodyData = Encoding.UTF8.GetBytes(Body);
+            // Plus 1 for the null byte.
+            var Packet = new byte[Length.Length + IDData.Length + PacketType.Length + BodyData.Length + 1];
+            var Counter = 0;
+            foreach (var Byte in Length)
+                Packet[Counter++] = Byte;
+            foreach (var Byte in IDData)
+                Packet[Counter++] = Byte;
+            foreach (var Byte in PacketType)
+                Packet[Counter++] = Byte;
+            foreach (var Byte in BodyData)
+                Packet[Counter++] = Byte;
+            return Packet;
         }
     }
 }

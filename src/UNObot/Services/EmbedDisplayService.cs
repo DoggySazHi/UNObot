@@ -411,16 +411,41 @@ namespace UNObot.Services
             Result = builder.Build();
             return true;
         }
+
+        // NOTE: It's the query port!
+        private static Dictionary<string, string> GetOuchies(string IP, ushort Port, string Password)
+        {
+            var Output = new Dictionary<string, string>();
+            MinecraftRCON RCON;
+            MinecraftRCON RCON2;
+            if (QueryHandlerService.SendRCON(IP, Port, "scoreboard players list", Password, out RCON))
+            {
+                RCON.Data.Substring(RCON.Data.IndexOf(':') + 1).Split(',').ToList().ForEach(o =>
+                {
+                    o = o.Replace((char) 0, ' ').Trim();
+                    if (QueryHandlerService.SendRCON(IP, Port, $"scoreboard players get {o} Ouchies", Password,
+                        out RCON2))
+                    {
+                        Output.Add(o, RCON2.Data.Contains("has") ? RCON2.Data.Split(' ')[2] : "0");
+                    }
+                });
+            }
+
+            foreach (var Item in Output)
+            {
+                LoggerService.Log(LogSeverity.Debug, $"Key: {Item.Key}, Value: {Item.Value}");
+            }
+            return Output;
+        }
+
         public static bool MinecraftQueryEmbed(string IP, ushort Port, out Embed Result)
         {
             MCStatus DefaultStatus = null;
             MinecraftStatus ExtendedStatus = null;
-            bool ExtendedGet = false;
-
-            for (int i = 0; i < Attempts; i++)
+            var ExtendedGet = false;
+            for (var i = 0; i < Attempts; i++)
             {
-                if (DefaultStatus == null)
-                    DefaultStatus = new MCStatus(IP, Port);
+                DefaultStatus ??= new MCStatus(IP, Port);
                 if (!ExtendedGet)
                     ExtendedGet = QueryHandlerService.GetInfoMCNew(IP, Port, out ExtendedStatus);
             }
@@ -429,6 +454,12 @@ namespace UNObot.Services
             {
                 Result = null;
                 return false;
+            }
+
+            Dictionary<string, string> Ouchies = null;
+            if ((IP == "127.0.0.1" || IP == "williamle.com" || IP == "localhost") && Port == 27285)
+            {
+                Ouchies = GetOuchies("192.168.2.6", 27286, "mukyumukyu");
             }
 
             var Random = ThreadSafeRandom.ThisThreadsRandom;
@@ -441,6 +472,14 @@ namespace UNObot.Services
                 for (int i = 0; i < ExtendedStatus.Players.Length; i++)
                 {
                     PlayersOnline += $"{ExtendedStatus.Players[i]}";
+                    if(Ouchies != null)
+                        if (Ouchies.ContainsKey(ExtendedStatus.Players[i]))
+                        {
+                            Console.WriteLine("Found key.");
+                            PlayersOnline += $" - {Ouchies[ExtendedStatus.Players[i]]} Ouchies";
+                        }
+                        else
+                            PlayersOnline += " - 0 Ouchies";
                     if (i != ExtendedStatus.Players.Length - 1)
                         PlayersOnline += "\n";
                 }
@@ -466,8 +505,63 @@ namespace UNObot.Services
             .AddField("IP", IP, true)
             .AddField("Port", Port, true)
             .AddField("Version", $"{DefaultStatus.Version}", true)
-            .AddField("Ping", $"{DefaultStatus.Delay} ms", true);
-            builder.AddField($"Players: {DefaultStatus.CurrentPlayers}/{DefaultStatus.MaximumPlayers}", string.IsNullOrWhiteSpace(PlayersOnline) ? "Nobody's online!" : PlayersOnline, true);
+            .AddField("Ping", $"{DefaultStatus.Delay} ms", true)
+            .AddField($"Players: {DefaultStatus.CurrentPlayers}/{DefaultStatus.MaximumPlayers}", string.IsNullOrWhiteSpace(PlayersOnline) ? "Nobody's online!" : PlayersOnline, true);
+            Result = builder.Build();
+            return true;
+        }
+        public static bool OuchiesEmbed(string IP, ushort Port, out Embed Result)
+        {
+            if (IP != "127.0.0.1" && IP != "williamle.com" && IP == "localhost" || Port != 27285)
+            {
+                Result = null;
+                return false;
+            }
+
+            MinecraftStatus Status = null;
+            var ExtendedGet = false;
+            for (var i = 0; i < Attempts; i++)
+            {
+                if (!ExtendedGet)
+                    ExtendedGet = QueryHandlerService.GetInfoMCNew(IP, Port, out Status);
+            }
+
+            if (!ExtendedGet || Status == null)
+            {
+                Result = null;
+                return false;
+            }
+
+            Dictionary<string, string> Ouchies = Ouchies = GetOuchies("192.168.2.6", 27286, "mukyumukyu");
+
+            var Random = ThreadSafeRandom.ThisThreadsRandom;
+            string PlayersOnline = "";
+
+            foreach(var Item in Ouchies)
+                PlayersOnline += $"{Item.Key} - {Item.Value} Ouchies\n";
+            PlayersOnline.Substring(0, PlayersOnline.Length - 1);
+
+            var builder = new EmbedBuilder()
+                .WithTitle("MOTD")
+                .WithDescription(Status.MOTD)
+                .WithColor(new Color(Random.Next(0, 256), Random.Next(0, 256), Random.Next(0, 256)))
+                .WithTimestamp(DateTimeOffset.Now)
+                .WithFooter(footer =>
+                {
+                    footer
+                        .WithText($"UNObot {Program.version} - By DoggySazHi")
+                        .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
+                })
+                .WithAuthor(author =>
+                {
+                    author
+                        .WithName($"Ouchies of {IP}")
+                        .WithIconUrl("https://williamle.com/unobot/unobot.png");
+                })
+                .AddField("IP", IP, true)
+                .AddField("Port", Port, true)
+                .AddField("Version", $"{Status.Version}", true)
+                .AddField("Ouchies Listing", PlayersOnline, true);
             Result = builder.Build();
             return true;
         }

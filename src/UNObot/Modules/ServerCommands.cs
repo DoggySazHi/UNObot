@@ -26,7 +26,7 @@ namespace UNObot.Modules
         [Help(new[] { ".slamc" }, "Get basic server information about the Slightly Less Average Minecraft server.", true, "UNObot 2.4")]
         public async Task SLAMC()
         {
-            var response = QueryHandlerService.GetInfoMC("23.243.79.108");
+            var response = QueryHandlerService.GetInfoMC("williamle.com");
             if (response.ServerUp)
                 await ReplyAsync($"Current players: {response.CurrentPlayers}/{response.MaximumPlayers}\nCurrently running on {response.Version}.");
             else
@@ -37,7 +37,7 @@ namespace UNObot.Modules
         [Help(new[] { ".psurvival" }, "Get basic server information about the pSurvival Minecraft server.", true, "UNObot 2.4")]
         public async Task PSurvival()
         {
-            var response = QueryHandlerService.GetInfoMC("23.243.79.108", 25432);
+            var response = QueryHandlerService.GetInfoMC("williamle.com", 25432);
             if (response.ServerUp)
                 await ReplyAsync($"Current players: {response.CurrentPlayers}/{response.MaximumPlayers}\nCurrently running on {response.Version}.");
             else
@@ -49,10 +49,35 @@ namespace UNObot.Modules
         public async Task CheckMCNew(string ip, ushort port = 25565)
         {
             var Message = await ReplyAsync("I am now querying the server, please wait warmly...");
-            QueryHandlerService.GetInfoMCNew(ip, port, out var Status);
             try
             {
                 bool success = EmbedDisplayService.MinecraftQueryEmbed(ip, port, out var Embed);
+                if (!success || Embed == null)
+                {
+                    await Message.ModifyAsync(o => o.Content = "Error: Apparently we couldn't get any information about this server.");
+                    return;
+                }
+                await Message.ModifyAsync(o =>
+                {
+                    o.Content = "";
+                    o.Embed = Embed;
+                });
+            }
+            catch (Exception ex)
+            {
+                LoggerService.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
+                await Message.ModifyAsync(o => o.Content = "We had some difficulties displaying the status. Please try again?");
+            }
+        }
+
+        [Command("ouchies", RunMode = RunMode.Async)]
+        [Help(new[] { ".ouchies" }, "That must hurt.", true, "UNObot 4.0.12")]
+        public async Task GetOuchies()
+        {
+            var Message = await ReplyAsync("I am now querying the server, please wait warmly...");
+            try
+            {
+                bool success = EmbedDisplayService.OuchiesEmbed("192.168.2.6", 27285, out var Embed);
                 if (!success || Embed == null)
                 {
                     await Message.ModifyAsync(o => o.Content = "Error: Apparently we couldn't get any information about this server.");
