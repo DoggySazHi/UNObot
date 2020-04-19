@@ -110,6 +110,33 @@ namespace UNObot.Modules
             await CheckUnturned(ip, port);
         }
 
+        [Command("rcon", RunMode = RunMode.Async)]
+        [Help(new[] {".rcon (ip) (port) (password) (command)"},
+            "Run a command on a remote server. Limited to DoggySazHi ATM.", true, "UNObot 4.0.12")]
+        public async Task RunRCON(string IP, ushort Port, string Password, [Remainder] string Command)
+        {
+            var Message = await ReplyAsync("Executing...");
+            var Success = QueryHandlerService.SendRCON(IP, Port, Command, Password, out var Output);
+            if (!Success)
+            {
+                var Error = "Failed to execute command. ";
+                Error += Output.Status switch
+                {
+                    MinecraftRCON.RCONStatus.CONN_FAIL => "Is the server up, and the IP/port correct?",
+                    MinecraftRCON.RCONStatus.AUTH_FAIL => "Is the correct password used?",
+                    MinecraftRCON.RCONStatus.EXEC_FAIL => "Is the command valid, and authentication correct?",
+                    MinecraftRCON.RCONStatus.INT_FAIL => "Something failed internally, blame DoggySazHi.",
+                    MinecraftRCON.RCONStatus.SUCCESS => "I lied. It worked, but Doggy broke the programming.",
+                    _ => "I don't know what happened here."
+                };
+                await Message.ModifyAsync(o => o.Content = Error).ConfigureAwait(false);
+            }
+            else
+            {
+                await Message.ModifyAsync(o => o.Content = Output.Data).ConfigureAwait(false);
+            }
+        }
+
         public async Task CheckUnturned(string ip, ushort port = 27015, ServerAverages Averages = null)
         {
             var Message = await ReplyAsync("I am now querying the server, please wait warmly...");

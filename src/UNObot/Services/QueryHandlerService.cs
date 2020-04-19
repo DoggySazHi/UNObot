@@ -118,7 +118,7 @@ namespace UNObot.Services
             }
             var iPEndPoint = new IPEndPoint(server, port);
             output = new MinecraftRCON(iPEndPoint, command, password);
-            return output.Successful;
+            return output.Status == MinecraftRCON.RCONStatus.SUCCESS;
         }
 
         public static MCStatus GetInfoMC(string ip, ushort port = 25565)
@@ -624,7 +624,8 @@ namespace UNObot.Services
     {
         private const ushort RX_SIZE = 4096;
         private enum PacketType {SERVERDATA_RESPONSE_VALUE = 0, SERVERDATA_EXECCOMMAND = 2, SERVERDATA_AUTH_RESPONSE = 2, SERVERDATA_AUTH = 3}
-        public bool Successful { get; }
+        public enum RCONStatus {CONN_FAIL, AUTH_FAIL, EXEC_FAIL, INT_FAIL, SUCCESS}
+        public RCONStatus Status { get; }
         public string Data { get; }
 
         public MinecraftRCON(IPEndPoint Server, string Command, string Password)
@@ -637,52 +638,74 @@ namespace UNObot.Services
                 ReceiveTimeout = 5000,
                 SendTimeout = 5000
             };
-            LoggerService.Log(LogSeverity.Verbose, "Attempting to connect...");
-            if (!Client.ConnectAsync(Server).Wait(5000))
+
+            try
             {
-                LoggerService.Log(LogSeverity.Verbose, $"Failed to connect to {Server.Address} at {Server.Port}.");
-                Successful = false;
-                return;
+                LoggerService.Log(LogSeverity.Verbose, "Attempting to connect...");
+                if (!Client.ConnectAsync(Server).Wait(5000))
+                {
+                    LoggerService.Log(LogSeverity.Verbose, $"Failed to connect to {Server.Address} at {Server.Port}.");
+                    Status = RCONStatus.CONN_FAIL;
+                    return;
+                }
             }
-            LoggerService.Log(LogSeverity.Verbose, "Sending password payload...");
-            var Payload = MakePacketData(Password, PacketType.SERVERDATA_AUTH, 0);
-            Client.Send(Payload);
-            LoggerService.Log(LogSeverity.Verbose, "Sent password payload. Now reading...");
-            Client.Receive(RXData);
-            var ID = LittleEndianReader(ref RXData, 4);
-            var Type = LittleEndianReader(ref RXData, 8);
-            LoggerService.Log(LogSeverity.Verbose, $"Received data. ID: {ID}, Type: {Type}");
-            if (ID == -1 || Type != 2)
+            catch (Exception)
             {
-                LoggerService.Log(LogSeverity.Verbose, "Failed to authenticate!");
+                Status = RCONStatus.CONN_FAIL;
                 return;
             }
 
-            LoggerService.Log(LogSeverity.Verbose, $"Sending command payload of {Command}...");
-            Payload = MakePacketData(Command, PacketType.SERVERDATA_EXECCOMMAND, 0);
-            Client.Send(Payload);
-            LoggerService.Log(LogSeverity.Verbose, "Sent command payload. Now reading...");
-            Client.Receive(RXData);
-            ID = LittleEndianReader(ref RXData, 4);
-            Type = LittleEndianReader(ref RXData, 8);
-            LoggerService.Log(LogSeverity.Verbose, $"Received data. ID: {ID}, Type: {Type}");
-            if (ID == -1 || Type != 0)
+            try
             {
-                LoggerService.Log(LogSeverity.Verbose, "Failed to execute command!");
-                return;
-            }
+                LoggerService.Log(LogSeverity.Verbose, "Sending password payload...");
+                var Payload = MakePacketData(Password, PacketType.SERVERDATA_AUTH, 0);
+                Client.Send(Payload);
+                LoggerService.Log(LogSeverity.Verbose, "Sent password payload. Now reading...");
+                Client.Receive(RXData);
+                var ID = LittleEndianReader(ref RXData, 4);
+                var Type = LittleEndianReader(ref RXData, 8);
+                LoggerService.Log(LogSeverity.Verbose, $"Received data. ID: {ID}, Type: {Type}");
+                if (ID == -1 || Type != 2)
+                {
+                    LoggerService.Log(LogSeverity.Verbose, "Failed to authenticate!");
+                    Status = RCONStatus.AUTH_FAIL;
+                    return;
+                }
 
-            var StringConcat = new StringBuilder();
-            char CurrentChar;
-            var Position = 12;
-            do
-            {
+                LoggerService.Log(LogSeverity.Verbose, $"Sending command payload of {Command}...");
+                Payload = MakePacketData(Command, PacketType.SERVERDATA_EXECCOMMAND, 0);
+                Client.Send(Payload);
+                LoggerService.Log(LogSeverity.Verbose, "Sent command payload. Now reading...");
+                Client.Receive(RXData);
+                ID = LittleEndianReader(ref RXData, 4);
+                Type = LittleEndianReader(ref RXData, 8);
+                LoggerService.Log(LogSeverity.Verbose, $"Received data. ID: {ID}, Type: {Type}");
+                if (ID == -1 || Type != 0)
+                {
+                    LoggerService.Log(LogSeverity.Verbose, "Failed to execute command!");
+                    Status = RCONStatus.AUTH_FAIL;
+                    return;
+                }
+
+                var StringConcat = new StringBuilder();
+                char CurrentChar;
+                var Position = 12;
                 CurrentChar = (char) RXData[Position++];
-                StringConcat.Append(CurrentChar);
-            } while (CurrentChar != '\x00');
-            LoggerService.Log(LogSeverity.Verbose, $"Received data. {StringConcat}");
-            Data = StringConcat.ToString();
-            Successful = true;
+                while (CurrentChar != '\x00')
+                {
+                    StringConcat.Append(CurrentChar);
+                    CurrentChar = (char) RXData[Position++];
+                }
+                LoggerService.Log(LogSeverity.Verbose, $"Received data. {StringConcat}");
+                Data = StringConcat.ToString();
+                Status = RCONStatus.SUCCESS;
+            }
+            catch (Exception)
+            {
+                Status = RCONStatus.INT_FAIL;
+                return;
+            }
+            
         }
 
         private static byte[] LittleEndianConverter(int data)

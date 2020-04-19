@@ -174,6 +174,7 @@ namespace UNObot
                 {
                     var helpatt = module.GetCustomAttribute(typeof(Help)) as Help;
                     var aliasatt = module.GetCustomAttribute(typeof(AliasAttribute)) as AliasAttribute;
+                    var disabledms = module.GetCustomAttribute(typeof(DisableDMs)) as DisableDMs;
 
                     /*
 
@@ -193,6 +194,7 @@ namespace UNObot
                     if (!(module.GetCustomAttribute(typeof(CommandAttribute)) is CommandAttribute nameatt)) continue;
 
                     var foundHelp = helpatt == null ? "Missing help." : "Found help.";
+                    var disabledForDMs = disabledms != null;
                     LoggerService.Log(LogSeverity.Verbose, $"Loaded \"{nameatt.Text}\". {foundHelp}");
                     var positioncmd = commands.FindIndex(o => o.CommandName == nameatt.Text);
                     if (aliasatt?.Aliases != null)
@@ -203,10 +205,11 @@ namespace UNObot
                             ? new Command(nameatt.Text, aliases, helpatt.Usages.ToList(), helpatt.HelpMsg,
                                 helpatt.Active, helpatt.Version)
                             : new Command(nameatt.Text, aliases, new List<string> {$".{nameatt.Text}"},
-                                "No help is given for this command.", true, "Unknown Version"));
+                                "No help is given for this command.", true, "Unknown Version", disabledForDMs));
                     }
                     else
                     {
+                        commands[positioncmd].DisableDMs = disabledForDMs;
                         if (helpatt != null)
                         {
                             if (commands[positioncmd].Help == "No help is given for this command.")
@@ -252,23 +255,24 @@ namespace UNObot
 
         public static (string Commit, string Build) ReadCommitBuild()
         {
-            try
-            {
-                using StreamReader sr = new StreamReader("commit");
-                if (sr.EndOfStream)
-                    throw new Exception("");
-                var input = sr.ReadLine();
-                if (input == null)
-                    throw new Exception();
-                var words = input.Split(' ');
-                if (words.Length < 2 || words[0].Length < 7)
-                    throw new Exception();
-                return (words[0].Trim().Substring(0, 7), words[1].Trim());
-            }
-            catch (Exception)
-            {
-                LoggerService.Log(LogSeverity.Error, "Build information file has not been created properly.");
-            }
+            if(File.Exists("commit"))
+                try
+                {
+                    using StreamReader sr = new StreamReader("commit");
+                    if (sr.EndOfStream)
+                        throw new Exception("");
+                    var input = sr.ReadLine();
+                    if (input == null)
+                        throw new Exception();
+                    var words = input.Split(' ');
+                    if (words.Length < 2 || words[0].Length < 7)
+                        throw new Exception();
+                    return (words[0].Trim().Substring(0, 7), words[1].Trim());
+                }
+                catch (Exception)
+                {
+                    LoggerService.Log(LogSeverity.Error, "Build information file has not been created properly.");
+                }
             return ("Unknown Commit", "???");
         }
 

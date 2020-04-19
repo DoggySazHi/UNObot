@@ -48,7 +48,7 @@ namespace UNObot.Modules
         [Command("upupdowndownleftrightleftrightbastart", RunMode = RunMode.Async)]
         [Help(new[] { ".upupdowndownleftrightleftrightbastart" }, "Wow, an ancient easter egg. It's still ancient.", false, "UNObot 1.4")]
         public async Task OldEasterEgg()
-            => await ReplyAsync("lol, that's outdated");
+            => await ReplyAsync("...Did you seriously think that would work?");
 
         [Command("moltthink", RunMode = RunMode.Async)]
         [Help(new[] { ".moltthink" }, "Think like Molt.", true, "UNObot 3.0 Beta 1")]
@@ -90,6 +90,7 @@ namespace UNObot.Modules
         }
 
         [Command("calculateemote", RunMode = RunMode.Async)]
+        [DisableDMs]
         public async Task CalculateEmote([Remainder] string Input)
         {
             await ReplyAsync($"Server: ``{Context.Guild.Id}`` Emote: ``{Input}``").ConfigureAwait(false);

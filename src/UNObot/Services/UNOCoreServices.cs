@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection.Metadata.Ecma335;
 using System.Timers;
 using Discord;
 using Newtonsoft.Json;
@@ -9,10 +10,10 @@ namespace UNObot.Services
     [AttributeUsage(AttributeTargets.Method)]
     public class Help : Attribute
     {
-        public string[] Usages { get; set; }
-        public string HelpMsg { get; set; }
-        public bool Active { get; set; }
-        public string Version { get; set; }
+        public string[] Usages { get; }
+        public string HelpMsg { get; }
+        public bool Active { get; }
+        public string Version { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="T:UNObot.Services.Help"/> class.
@@ -31,6 +32,26 @@ namespace UNObot.Services
         }
     }
 
+    [AttributeUsage(AttributeTargets.Method)]
+    public class DisableDMs : Attribute
+    {
+        public bool Disabled { get; }
+
+        public bool Enabled => !Disabled;
+
+        [JsonConstructor]
+        public DisableDMs()
+        {
+            Disabled = true;
+        }
+
+        [JsonConstructor]
+        public DisableDMs(bool Disabled)
+        {
+            this.Disabled = Disabled;
+        }
+    }
+
     public class Command
     {
         public string CommandName { get; set; }
@@ -39,6 +60,7 @@ namespace UNObot.Services
         public string Help { get; set; }
         public bool Active { get; set; }
         public string Version { get; set; }
+        public bool DisableDMs { get; set; }
 
         [JsonConstructor]
         public Command(string CommandName, List<string> Aliases, List<string> Usages, string Help, bool Active, string Version)
@@ -49,6 +71,12 @@ namespace UNObot.Services
             this.Help = Help;
             this.Active = Active;
             this.Version = Version;
+        }
+
+        [JsonConstructor]
+        public Command(string CommandName, List<string> Aliases, List<string> Usages, string Help, bool Active, string Version, bool DisableDMs) : this (CommandName, Aliases, Usages, Help, Active, Version)
+        {
+            this.DisableDMs = DisableDMs;
         }
     }
 

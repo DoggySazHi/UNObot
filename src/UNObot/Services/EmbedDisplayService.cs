@@ -430,11 +430,6 @@ namespace UNObot.Services
                     }
                 });
             }
-
-            foreach (var Item in Output)
-            {
-                LoggerService.Log(LogSeverity.Debug, $"Key: {Item.Key}, Value: {Item.Value}");
-            }
             return Output;
         }
 

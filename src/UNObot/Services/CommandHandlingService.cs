@@ -40,13 +40,15 @@ namespace UNObot.Services
             int argPos = 0;
             var context = new SocketCommandContext(_discord, message);
 
+            /*
             if (context.IsPrivate)
             {
                 await context.Channel.SendMessageAsync("I do not accept DM messages. Please use me in a guild/server.");
                 return;
             }
+            */
 
-            if (await UNODatabaseService.EnforceChannel(context.Guild.Id))
+            if (!context.IsPrivate && await UNODatabaseService.EnforceChannel(context.Guild.Id))
             {
                 //start check
                 var allowedChannels = await UNODatabaseService.GetAllowedChannels(context.Guild.Id);
@@ -68,12 +70,37 @@ namespace UNObot.Services
                 else if (!(allowedChannels.Contains(context.Channel.Id)))
                     return;
             }
-            if (!(message.HasCharPrefix('.', ref argPos)) && !message.HasMentionPrefix(_discord.CurrentUser, ref argPos)) return;
+            if (!message.HasCharPrefix('.', ref argPos) && !message.HasMentionPrefix(_discord.CurrentUser, ref argPos)) return;
 
-            await UNODatabaseService.AddGame(context.Guild.Id);
+            if(!context.IsPrivate)
+                await UNODatabaseService.AddGame(context.Guild.Id);
             await UNODatabaseService.AddUser(context.User.Id, context.User.Username);
             try
             {
+                if (context.IsPrivate)
+                {
+                    var MessageString = message.ToString();
+                    var EndOfCommand = MessageString.IndexOf(' ', argPos);
+                    var AttemptCommandExecute =
+                        MessageString.Substring(argPos,
+                            (EndOfCommand == -1 ? MessageString.Length : EndOfCommand) - argPos);
+                    foreach (var Command in Program.commands)
+                    {
+                        if (!Command.DisableDMs) continue;
+                        bool SameCommand =
+                            Command.CommandName.Equals(AttemptCommandExecute,
+                                StringComparison.CurrentCultureIgnoreCase) ||
+                            Command.Aliases.Any(o =>
+                                o.Equals(AttemptCommandExecute, StringComparison.CurrentCultureIgnoreCase));
+                        if (SameCommand)
+                        {
+                            await context.Channel.SendMessageAsync(
+                                "This command cannot be run in DMs. Please try again in a server.");
+                            return;
+                        }
+                    }
+                }
+
                 var result = await _commands.ExecuteAsync(context, argPos, _provider);
                 if (result.Error.HasValue)
                 {

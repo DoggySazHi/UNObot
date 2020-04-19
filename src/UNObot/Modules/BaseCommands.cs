@@ -22,6 +22,7 @@ namespace UNObot.Modules
         }
 
         [Command("testperms", RunMode = RunMode.Async), RequireUserPermission(GuildPermission.ManageGuild)]
+        [DisableDMs]
         [Help(new[] { ".testperms" }, "Show all permissions that UNObot has. Added for security reasons.", true, "UNObot 1.4")]
         public async Task TestPerms()
         {
@@ -35,6 +36,7 @@ namespace UNObot.Modules
             await ReplyAsync(response);
         }
         [Command("dogtestperms", RunMode = RunMode.Async), RequireOwner]
+        [DisableDMs]
         [Help(new[] { ".dogtestperms" }, "Show all permissions that UNObot has. Added for security reasons.", false, "UNObot 1.4")]
         public async Task TestPerms2()
         {
@@ -48,6 +50,7 @@ namespace UNObot.Modules
             await ReplyAsync(response);
         }
         [Command("nick", RunMode = RunMode.Async), RequireOwner]
+        [DisableDMs]
         [Help(new[] { ".nick (nickname)" }, "Change the nickname of UNObot.", false, "UNObot 2.0")]
         public async Task ChangeNick(string newnick)
         {
@@ -62,7 +65,8 @@ namespace UNObot.Modules
         [Help(new[] { ".fullhelp" }, "If you need help using help, you're truly lost.", true, "UNObot 1.0")]
         public async Task FullHelp()
         {
-            await ReplyAsync("Help has been sent. Or, I think it has.");
+            if(!Context.IsPrivate)
+                await ReplyAsync("Help has been sent. Or, I think it has.");
             string Response = "```Commands: @UNOBot#4308 command/ .command\n (Required) {May be required} [Optional]\n \n";
             foreach (Command cmd in Program.commands)
             {
@@ -78,7 +82,7 @@ namespace UNObot.Modules
                     if (Response.Length > 1996)
                     {
                         OldResponse += "```";
-                        await UserExtensions.SendMessageAsync(Context.Message.Author, OldResponse);
+                        await Context.Message.Author.SendMessageAsync(OldResponse);
                         Response = "```";
                         Response += $"- {cmd.CommandName}: {cmd.Help}\n";
                         if (cmd.Usages.Count > 0)
@@ -92,12 +96,12 @@ namespace UNObot.Modules
                 {
                     Response = OldResponse;
                     Response += "```";
-                    await UserExtensions.SendMessageAsync(Context.Message.Author, Response);
+                    await Context.Message.Author.SendMessageAsync(Response);
                     Response = "```\n";
                 }
             }
             Response += "```";
-            await UserExtensions.SendMessageAsync(Context.Message.Author, Response);
+            await Context.Message.Author.SendMessageAsync(Response);
         }
 
         [Command("help", RunMode = RunMode.Async), Alias("ahh", "ahhh", "ahhhh", "commands", "command")]
@@ -116,8 +120,11 @@ namespace UNObot.Modules
                 })
                 .WithAuthor(author =>
                 {
+                    string GuildName = $"{Context.User.Username}'s DMs";
+                    if (!Context.IsPrivate)
+                        GuildName = Context.Guild.Name;
                     author
-                        .WithName($"Playing in {Context.Guild.Name}")
+                        .WithName($"Playing in {GuildName}")
                         .WithIconUrl("https://williamle.com/unobot/unobot.png");
                 })
                 .AddField("Usages", "@UNOBot#4308 *commandtorun*\n.*commandtorun*")
@@ -151,8 +158,11 @@ namespace UNObot.Modules
                 })
                 .WithAuthor(author =>
                 {
+                    string GuildName = $"{Context.User.Username}'s DMs";
+                    if (!Context.IsPrivate)
+                        GuildName = Context.Guild.Name;
                     author
-                        .WithName($"Playing in {Context.Guild.Name}")
+                        .WithName($"Playing in {GuildName}")
                         .WithIconUrl("https://williamle.com/unobot/unobot.png");
                 })
                 .AddField("Usages", "@UNOBot#4308 *commandtorun*\n.*commandtorun*")

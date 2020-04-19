@@ -13,6 +13,7 @@ namespace UNObot.Modules
         readonly UNOPlayCardService playCard = new UNOPlayCardService();
 
         [Command("join", RunMode = RunMode.Async), Help(new[] { ".join" }, "Join the queue in the current server.", true, "UNObot 0.1")]
+        [DisableDMs]
         public async Task Join()
         {
             await UNODatabaseService.AddGame(Context.Guild.Id);
@@ -32,6 +33,7 @@ namespace UNObot.Modules
         }
 
         [Command("leave", RunMode = RunMode.Async)]
+        [DisableDMs]
         [Help(new[] { ".leave" }, "Leave the queue (or game) in the current server.", true, "UNObot 0.2")]
         public async Task Leave()
         {
@@ -181,6 +183,7 @@ namespace UNObot.Modules
             await ReplyAsync("Successfully removed note!");
         }
         [Command("draw", RunMode = RunMode.Async), Alias("take", "dr", "tk")]
+        [DisableDMs]
         [Help(new[] { ".draw" }, "Draw a randomized card, which is based off probabilities instead of the real deck.", true, "UNObot 0.2")]
         public async Task Draw()
         {
@@ -213,6 +216,7 @@ namespace UNObot.Modules
         }
 
         [Command("deck", RunMode = RunMode.Async), Alias("hand", "cards", "d", "h")]
+        [DisableDMs]
         [Help(new[] { ".deck" }, "View all of the cards you possess.", true, "UNObot 0.2")]
         public async Task Deck()
         {
@@ -258,6 +262,7 @@ namespace UNObot.Modules
         */
 
         [Command("skip", RunMode = RunMode.Async), Alias("s")]
+        [DisableDMs]
         [Help(new[] { ".skip" }, "Skip your turn if the game is in fast mode. However, you are forced to draw two cards.", true, "UNObot 2.7")]
         public async Task Skip()
         {
@@ -310,6 +315,7 @@ namespace UNObot.Modules
                 await ReplyAsync("You are not in any game!");
         }
         [Command("card", RunMode = RunMode.Async), Alias("top", "c")]
+        [DisableDMs]
         [Help(new[] { ".card" }, "See the most recently placed card.", true, "UNObot 0.2")]
         public async Task Card()
         {
@@ -334,6 +340,7 @@ namespace UNObot.Modules
                 await ReplyAsync("You are not in any game!");
         }
         [Command("quickplay", RunMode = RunMode.Async), Alias("quickdraw", "autoplay", "autodraw", "qp", "qd", "ap", "ad")]
+        [DisableDMs]
         [Help(new[] { ".quickplay" }, "Autodraw/play the first card possible. This is very inefficient, and should only be used if you are saving a wild card, or you don't have usable cards left.", true, "UNObot 2.4")]
         public async Task QuickPlay()
         {
@@ -408,13 +415,16 @@ namespace UNObot.Modules
                 await ReplyAsync("You are not in any game!");
         }
         [Command("players", RunMode = RunMode.Async), Alias("users", "pl")]
+        [DisableDMs]
         [Help(new[] { ".players" }, "See all players in the game, as well as the amount of cards they have. Note however that if the server is running in private mode, it will not show the exact amount of cards that they have.", false, "UNObot 1.0")]
         public async Task Players()
         {
             await ReplyAsync(".players has been deprecated and has been replaced with .game.");
             await Game();
         }
+
         [Command("game", RunMode = RunMode.Async), Help(new[] { ".displayembed" }, "Display all information about the current game.", true, "UNObot 3.0")]
+        [DisableDMs]
         public async Task Game()
         {
             await UNODatabaseService.AddGame(Context.Guild.Id);
@@ -424,7 +434,9 @@ namespace UNObot.Modules
             else
                 await ReplyAsync("The game has not started!");
         }
+
         [Command("queue", RunMode = RunMode.Async), Alias("q")]
+        [DisableDMs]
         [Help(new[] { ".queue" }, "See which players are currently waiting to play a game.", true, "UNObot 2.4")]
         public async Task Queue()
         {
@@ -447,7 +459,9 @@ namespace UNObot.Modules
                 Response += $"- <@{player}>\n";
             await ReplyAsync(Response);
         }
+
         [Command("uno", RunMode = RunMode.Async), Alias("u")]
+        [DisableDMs]
         [Help(new[] { ".uno" }, "Quickly use this when you have one card left.", true, "UNObot 0.2")]
         public async Task UNOcmd()
         {
@@ -480,13 +494,16 @@ namespace UNObot.Modules
             else
                 await ReplyAsync("You are not in any game!");
         }
+
         [Command("start", RunMode = RunMode.Async)]
+        [DisableDMs]
         [Help(new[] { ".start" }, "Start the game you have joined in the current server. Now, you can also add an option to it, which currently include \"fast\", which allows the skip command, and \"private\", preventing others to see the exact amount of cards you have.", true, "UNObot 0.2")]
         public async Task Start()
         {
             await Start("normal");
         }
         [Command("start", RunMode = RunMode.Async)]
+        [DisableDMs]
         [Help(new[] { ".start (gamemode)" }, "Start the game you have joined in the current server. Now, you can also add an option to it, which currently include \"fast\", which allows the skip command, and \"private\", preventing others to see the exact amount of cards you have.", true, "UNObot 0.2")]
 
         public async Task Start(string mode)
@@ -563,6 +580,7 @@ namespace UNObot.Modules
                 await ReplyAsync("You have not joined a game!");
         }
         [Command("play", RunMode = RunMode.Async), Priority(2), Alias("put", "place", "p")]
+        [DisableDMs]
         [Help(new[] { ".play (color) (value)" }, "Play a card that is of the same color or value. Exceptions include all Wild cards, which you can play on any card.", true, "UNObot 0.2")]
         public async Task Play(string color, string value)
         {
@@ -597,6 +615,7 @@ namespace UNObot.Modules
                 await ReplyAsync("You are not in any game!");
         }
         [Command("play", RunMode = RunMode.Async), Priority(1), Alias("put", "place", "p")]
+        [DisableDMs]
         [Help(new[] { ".play (color) (value) (new color)" }, "Play a card that is of the same color or value. Exceptions include all Wild cards, which you can play on any card.", true, "UNObot 0.2")]
         public async Task PlayWild(string color, string value, string wild)
         {
@@ -624,6 +643,7 @@ namespace UNObot.Modules
                 await ReplyAsync("You are not in any game!");
         }
         [Command("setdefaultchannel", RunMode = RunMode.Async), RequireUserPermission(GuildPermission.ManageChannels), Alias("adddefaultchannel")]
+        [DisableDMs]
         [Help(new[] { ".setdefaultchannel" }, "Set the default channel for UNObot to chat in. Managers only.", true, "UNObot 2.0")]
         public async Task SetDefaultChannel()
         {
@@ -637,6 +657,7 @@ namespace UNObot.Modules
             await UNODatabaseService.SetAllowedChannels(Context.Guild.Id, currentChannels);
         }
         [Command("removedefaultchannel", RunMode = RunMode.Async), RequireUserPermission(GuildPermission.ManageChannels), Alias("deletedefaultchannel")]
+        [DisableDMs]
         [Help(new[] { ".removedefaultchannel" }, "Remove the default channel for UNObot to chat in. Managers only.", true, "UNObot 2.0")]
         public async Task RemoveDefaultChannel()
         {
@@ -654,6 +675,7 @@ namespace UNObot.Modules
             await UNODatabaseService.SetHasDefaultChannel(Context.Guild.Id, false);
         }
         [Command("enforcechannels", RunMode = RunMode.Async), RequireUserPermission(GuildPermission.ManageChannels), Alias("forcechannels")]
+        [DisableDMs]
         [Help(new[] { ".enforcechannels" }, "Only allow UNObot to recieve commands from enforced channels. Managers only.", true, "UNObot 2.0")]
         public async Task EnforceChannel()
         {
@@ -688,6 +710,7 @@ namespace UNObot.Modules
                 await ReplyAsync($":white_check_mark: Currently allowing UNObot to respond to messages from anywhere.");
         }
         [Command("addallowedchannel", RunMode = RunMode.Async), RequireUserPermission(GuildPermission.ManageChannels)]
+        [DisableDMs]
         [Help(new[] { ".addallowedchannel" }, "Allow the current channel to accept commands. Managers only.", true, "UNObot 2.0")]
 
         public async Task AddAllowedChannel()
@@ -707,6 +730,7 @@ namespace UNObot.Modules
             }
         }
         [Command("listallowedchannels", RunMode = RunMode.Async), RequireUserPermission(GuildPermission.ManageChannels)]
+        [DisableDMs]
         [Help(new[] { ".listallowedchannels" }, "See all channels that UNObot can accept commands if enforced mode was on.", true, "UNObot 2.0")]
         public async Task ListAllowedChannels()
         {
@@ -736,6 +760,7 @@ namespace UNObot.Modules
             await ReplyAsync(response);
         }
         [Command("removeallowedchannel", RunMode = RunMode.Async), RequireUserPermission(GuildPermission.ManageChannels)]
+        [DisableDMs]
         [Help(new[] { ".removeallowedchannel" }, "Remove a channel that UNObot previously was allowed to accept commands from.", true, "UNObot 2.0")]
         public async Task RemoveAllowedChannel()
         {
@@ -762,6 +787,7 @@ namespace UNObot.Modules
                 await ReplyAsync("This channel was never an allowed channel.");
         }
         [Command("emergency", RunMode = RunMode.Async), RequireUserPermission(GuildPermission.ManageMessages), Alias("em", "leaveserver")]
+        [DisableDMs]
         [Help(new[] { ".emergency" }, "Kick the bot from the server.", false, "UNObot 2.0")]
         public async Task Emergency()
         {

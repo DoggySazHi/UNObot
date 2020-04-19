@@ -8,6 +8,7 @@ namespace UNObot.Modules
     public class MusicBotCommands : ModuleBase<SocketCommandContext>
     {
         [Command("playerplay", RunMode = RunMode.Async), Alias("playmusic", "pm")]
+        [DisableDMs]
         [Help(new[] { ".playerplay", ".playerplay (link)", ".playerplay (search)" }, "Wait, MusicBot functionality in UNObot?", true, "UNObot 3.2 Beta 1")]
         public async Task PlayMusic([Remainder] string Link)
         {
@@ -42,6 +43,7 @@ namespace UNObot.Modules
         }
 
         [Command("playerplay", RunMode = RunMode.Async), Alias("playmusic", "pm")]
+        [DisableDMs]
         public async Task Play()
         {
             var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
@@ -56,6 +58,7 @@ namespace UNObot.Modules
         }
 
         [Command("playerplaytop", RunMode = RunMode.Async), Alias("playmusictop", "pmt")]
+        [DisableDMs]
         [Help(new[] { ".playerplay", ".playerplay (link)", ".playerplay (search)" }, "Wait, MusicBot functionality in UNObot?", true, "UNObot 3.2 Beta 1")]
         public async Task PlayMusicTop([Remainder] string Link)
         {
@@ -90,6 +93,7 @@ namespace UNObot.Modules
         }
 
         [Command("playerpause", RunMode = RunMode.Async), Alias("pause", "pauseplayer")]
+        [DisableDMs]
         [Help(new[] { ".playerpause" }, "Pause the player.", true, "UNObot 3.2 Beta 2")]
         public async Task Pause()
         {
@@ -105,6 +109,7 @@ namespace UNObot.Modules
         }
 
         [Command("playershuffle", RunMode = RunMode.Async), Alias("shuffle")]
+        [DisableDMs]
         [Help(new[] { ".playershuffle" }, "Shuffle the player.", true, "UNObot 3.2 Beta 3")]
         public async Task Shuffle()
         {
@@ -120,6 +125,7 @@ namespace UNObot.Modules
         }
 
         [Command("playerskip", RunMode = RunMode.Async)]
+        [DisableDMs]
         [Help(new[] { ".playerskip" }, "Skip the current song.", true, "UNObot 3.2 Beta 3")]
         public async Task Skip()
         {
@@ -136,6 +142,7 @@ namespace UNObot.Modules
         }
 
         [Command("playerloop", RunMode = RunMode.Async)]
+        [DisableDMs]
         [Help(new[] { ".playerloop" }, "Loop the current song.", true, "UNObot 3.2 Beta 4")]
         public async Task Loop()
         {
@@ -150,6 +157,7 @@ namespace UNObot.Modules
         }
 
         [Command("playerloopqueue", RunMode = RunMode.Async)]
+        [DisableDMs]
         [Help(new[] { ".playerloopqueue" }, "Loop the entire queue.", true, "UNObot 3.2 Beta 4")]
         public async Task LoopQueue()
         {
@@ -165,6 +173,7 @@ namespace UNObot.Modules
         }
 
         [Command("playerdc", RunMode = RunMode.Async), Alias("dc", "playerdisconnect")]
+        [DisableDMs]
         [Help(new[] { ".playerdc" }, "Disconnect the bot from the channel.", true, "UNObot 3.2 Beta 4")]
         public async Task Disconnect()
         {
@@ -180,6 +189,7 @@ namespace UNObot.Modules
         }
 
         [Command("playernp", RunMode = RunMode.Async), Alias("playernowplaying", "np")]
+        [DisableDMs]
         [Help(new[] { ".playernp" }, "Get the song playing.", true, "UNObot 3.2 Beta 2")]
         public async Task NowPlaying()
         {
@@ -191,6 +201,7 @@ namespace UNObot.Modules
         }
 
         [Command("playerqueue", RunMode = RunMode.Async), Alias("pq")]
+        [DisableDMs]
         [Help(new[] { ".playerqueue", ".playerqueue (page)" }, "Get the songs in the player's queue.", true, "UNObot 3.2 Beta 2")]
         public async Task Queue()
         {
@@ -202,6 +213,7 @@ namespace UNObot.Modules
         }
 
         [Command("playerqueue", RunMode = RunMode.Async), Alias("pq")]
+        [DisableDMs]
         public async Task Queue(int Page)
         {
             var Result = MusicBotService.GetSingleton().GetMusicQueue(Context.Guild.Id, Page);
@@ -212,6 +224,7 @@ namespace UNObot.Modules
         }
 
         [Command("playerremove", RunMode = RunMode.Async), Alias("prm, rm")]
+        [DisableDMs]
         [Help(new[] { ".playerremove" }, "Remove the song.", true, "UNObot 3.2 Beta 3")]
         public async Task Remove(int Index)
         {
@@ -228,6 +241,7 @@ namespace UNObot.Modules
 
         /*
         [Command("vctest1", RunMode = RunMode.Async)]
+        [DisableDMs]
         [RequireOwner]
         public async Task VCTest1([Remainder] string Link)
         {
@@ -263,6 +277,7 @@ namespace UNObot.Modules
         
 
         [Command("vctest2", RunMode = RunMode.Async)]
+        [DisableDMs]
         [RequireOwner]
         public async Task VCTest2([Remainder] string song)
         {
