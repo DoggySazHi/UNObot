@@ -111,6 +111,7 @@ namespace UNObot.Modules
         }
 
         [Command("rcon", RunMode = RunMode.Async)]
+        [RequireOwner]
         [Help(new[] {".rcon (ip) (port) (password) (command)"},
             "Run a command on a remote server. Limited to DoggySazHi ATM.", true, "UNObot 4.0.12")]
         public async Task RunRCON(string IP, ushort Port, string Password, [Remainder] string Command)
