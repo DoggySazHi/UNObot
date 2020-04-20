@@ -110,6 +110,8 @@ namespace UNObot.Modules
             await CheckUnturned(ip, port);
         }
 
+        private const string TooLong = "[Message is too long; trimmed.]\n";
+
         [Command("rcon", RunMode = RunMode.Async)]
         [RequireOwner]
         [Help(new[] {".rcon (ip) (port) (password) (command)"},
@@ -134,7 +136,12 @@ namespace UNObot.Modules
             }
             else
             {
-                await Message.ModifyAsync(o => o.Content = Output.Data).ConfigureAwait(false);
+                var RCONMessage = Output.Data;
+                if (string.IsNullOrWhiteSpace(RCONMessage))
+                    RCONMessage = "Command executed successfully; server returned nothing.";
+                if (RCONMessage.Length > 1995 - TooLong.Length)
+                    RCONMessage = TooLong + RCONMessage.Substring(0, 1995 - TooLong.Length);
+                await Message.ModifyAsync(o => o.Content = RCONMessage).ConfigureAwait(false);
             }
         }
 

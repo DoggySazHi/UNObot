@@ -641,7 +641,6 @@ namespace UNObot.Services
 
             try
             {
-                LoggerService.Log(LogSeverity.Verbose, "Attempting to connect...");
                 if (!Client.ConnectAsync(Server).Wait(5000))
                 {
                     LoggerService.Log(LogSeverity.Verbose, $"Failed to connect to {Server.Address} at {Server.Port}.");
@@ -657,32 +656,25 @@ namespace UNObot.Services
 
             try
             {
-                LoggerService.Log(LogSeverity.Verbose, "Sending password payload...");
                 var Payload = MakePacketData(Password, PacketType.SERVERDATA_AUTH, 0);
                 Client.Send(Payload);
-                LoggerService.Log(LogSeverity.Verbose, "Sent password payload. Now reading...");
                 Client.Receive(RXData);
                 var ID = LittleEndianReader(ref RXData, 4);
                 var Type = LittleEndianReader(ref RXData, 8);
-                LoggerService.Log(LogSeverity.Verbose, $"Received data. ID: {ID}, Type: {Type}");
                 if (ID == -1 || Type != 2)
                 {
-                    LoggerService.Log(LogSeverity.Verbose, "Failed to authenticate!");
                     Status = RCONStatus.AUTH_FAIL;
                     return;
                 }
 
-                LoggerService.Log(LogSeverity.Verbose, $"Sending command payload of {Command}...");
                 Payload = MakePacketData(Command, PacketType.SERVERDATA_EXECCOMMAND, 0);
                 Client.Send(Payload);
-                LoggerService.Log(LogSeverity.Verbose, "Sent command payload. Now reading...");
                 Client.Receive(RXData);
                 ID = LittleEndianReader(ref RXData, 4);
                 Type = LittleEndianReader(ref RXData, 8);
-                LoggerService.Log(LogSeverity.Verbose, $"Received data. ID: {ID}, Type: {Type}");
                 if (ID == -1 || Type != 0)
                 {
-                    LoggerService.Log(LogSeverity.Verbose, "Failed to execute command!");
+                    LoggerService.Log(LogSeverity.Verbose, $"Failed to execute \"{Command}\"!");
                     Status = RCONStatus.AUTH_FAIL;
                     return;
                 }
@@ -696,7 +688,6 @@ namespace UNObot.Services
                     StringConcat.Append(CurrentChar);
                     CurrentChar = (char) RXData[Position++];
                 }
-                LoggerService.Log(LogSeverity.Verbose, $"Received data. {StringConcat}");
                 Data = StringConcat.ToString();
                 Status = RCONStatus.SUCCESS;
             }
