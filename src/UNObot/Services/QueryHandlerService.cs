@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.InteropServices;
 using System.Text;
 using Discord;
-using Microsoft.Extensions.Logging;
+using Renci.SshNet.Messages.Authentication;
 
 namespace UNObot.Services
 {
@@ -34,10 +34,10 @@ namespace UNObot.Services
         public static bool GetInfo(string ip, ushort port, out A2S_INFO output)
         {
             var parseCheck = IPAddress.TryParse(ip, out var server);
-            var addresses = Dns.GetHostAddresses(ip);
+            var addresses = ResolveDNS(ip);
             if (!parseCheck)
             {
-                if (addresses.Length == 0)
+                if (addresses == null || addresses.Length == 0)
                 {
                     output = null;
                     return false;
@@ -52,10 +52,10 @@ namespace UNObot.Services
         public static bool GetPlayers(string ip, ushort port, out A2S_PLAYER output)
         {
             var parseCheck = IPAddress.TryParse(ip, out var server);
-            var addresses = Dns.GetHostAddresses(ip);
+            var addresses = ResolveDNS(ip);
             if (!parseCheck)
             {
-                if (addresses.Length == 0)
+                if (addresses == null || addresses.Length == 0)
                 {
                     output = null;
                     return false;
@@ -70,10 +70,10 @@ namespace UNObot.Services
         public static bool GetRules(string ip, ushort port, out A2S_RULES output)
         {
             var parseCheck = IPAddress.TryParse(ip, out var server);
-            var addresses = Dns.GetHostAddresses(ip);
+            var addresses = ResolveDNS(ip);
             if (!parseCheck)
             {
-                if (addresses.Length == 0)
+                if (addresses == null || addresses.Length == 0)
                 {
                     output = null;
                     return false;
@@ -88,10 +88,10 @@ namespace UNObot.Services
         public static bool GetInfoMCNew(string ip, ushort port, out MinecraftStatus output)
         {
             var parseCheck = IPAddress.TryParse(ip, out var server);
-            var addresses = Dns.GetHostAddresses(ip);
+            var addresses = ResolveDNS(ip);
             if (!parseCheck)
             {
-                if (addresses.Length == 0)
+                if (addresses == null || addresses.Length == 0)
                 {
                     output = null;
                     return false;
@@ -106,10 +106,10 @@ namespace UNObot.Services
         public static bool SendRCON(string ip, ushort port, string command, string password, out MinecraftRCON output)
         {
             var parseCheck = IPAddress.TryParse(ip, out var server);
-            var addresses = Dns.GetHostAddresses(ip);
+            var addresses = ResolveDNS(ip);
             if (!parseCheck)
             {
-                if (addresses.Length == 0)
+                if (addresses == null || addresses.Length == 0)
                 {
                     output = null;
                     return false;
@@ -117,8 +117,71 @@ namespace UNObot.Services
                 server = addresses[0];
             }
             var iPEndPoint = new IPEndPoint(server, port);
-            output = new MinecraftRCON(iPEndPoint, command, password);
+            output = new MinecraftRCON(iPEndPoint, password, false, command);
             return output.Status == MinecraftRCON.RCONStatus.SUCCESS;
+        }
+
+        public static bool CreateRCON(string ip, ushort port, string password, ulong User, out MinecraftRCON output)
+        {
+            var PossibleRCON = MinecraftRCON.GetRCON(User);
+            if (PossibleRCON != null)
+            {
+                output = PossibleRCON;
+                return false;
+            }
+
+            var parseCheck = IPAddress.TryParse(ip, out var server);
+            var addresses = ResolveDNS(ip);
+            if (!parseCheck)
+            {
+                if (addresses == null || addresses.Length == 0)
+                {
+                    output = null;
+                    return false;
+                }
+                server = addresses[0];
+            }
+            var iPEndPoint = new IPEndPoint(server, port);
+            output = new MinecraftRCON(iPEndPoint, password, true);
+            return output.Status == MinecraftRCON.RCONStatus.SUCCESS;
+        }
+
+        public static bool ExecuteRCON(ulong User, string Command, out MinecraftRCON output)
+        {
+            var PossibleRCON = MinecraftRCON.GetRCON(User);
+            output = PossibleRCON;
+            if (PossibleRCON == null)
+                return false;
+
+            PossibleRCON.Execute(Command, true);
+            return output.Status == MinecraftRCON.RCONStatus.SUCCESS;
+        }
+        public static bool CloseRCON(ulong User)
+        {
+            var PossibleRCON = MinecraftRCON.GetRCON(User);
+            if (PossibleRCON == null)
+                return false;
+
+            PossibleRCON.Dispose();
+            return true;
+        }
+
+        private static IPAddress[] ResolveDNS(string ip)
+        {
+            IPAddress[] addresses = null;
+            try
+            {
+                addresses = Dns.GetHostAddresses(ip);
+            }
+            catch (SocketException)
+            {
+
+            }
+            catch (ArgumentException)
+            {
+
+            }
+            return addresses;
         }
 
         public static MCStatus GetInfoMC(string ip, ushort port = 25565)
@@ -163,30 +226,30 @@ namespace UNObot.Services
             SourceTV = 0x70   //p
         }
         #endregion
-        public byte Header { get; set; }        // I
-        public byte Protocol { get; set; }
-        public string Name { get; set; }
-        public string Map { get; set; }
-        public string Folder { get; set; }
-        public string Game { get; set; }
-        public short ID { get; set; }
-        public byte Players { get; set; }
-        public byte MaxPlayers { get; set; }
-        public byte Bots { get; set; }
-        public ServerTypeFlags ServerType { get; set; }
-        public EnvironmentFlags Environment { get; set; }
-        public VisibilityFlags Visibility { get; set; }
-        public VACFlags VAC { get; set; }
-        public string Version { get; set; }
-        public ExtraDataFlags ExtraDataFlag { get; set; }
+        public byte Header { get; }        // I
+        public byte Protocol { get; }
+        public string Name { get; }
+        public string Map { get;}
+        public string Folder { get; }
+        public string Game { get; }
+        public short ID { get; }
+        public byte Players { get; }
+        public byte MaxPlayers { get; }
+        public byte Bots { get; }
+        public ServerTypeFlags ServerType { get; }
+        public EnvironmentFlags Environment { get; }
+        public VisibilityFlags Visibility { get; }
+        public VACFlags VAC { get; }
+        public string Version { get; }
+        public ExtraDataFlags ExtraDataFlag { get; }
         #region Extra Data Flag Members
-        public ulong GameID { get; set; }           //0x01
-        public ulong SteamID { get; set; }          //0x10
-        public string Keywords { get; set; }        //0x20
-        public string Spectator { get; set; }       //0x40
-        public short SpectatorPort { get; set; }   //0x40
-        public short Port { get; set; }             //0x80
-        public bool ServerUp { get; set; }
+        public ulong GameID { get; }           //0x01
+        public ulong SteamID { get; }          //0x10
+        public string Keywords { get; }        //0x20
+        public string Spectator { get; }       //0x40
+        public short SpectatorPort { get; }   //0x40
+        public short Port { get; }             //0x80
+        public bool ServerUp { get; }
 
         #endregion
 
@@ -620,20 +683,23 @@ namespace UNObot.Services
         }
     }
 
-    public class MinecraftRCON
+    public class MinecraftRCON : IDisposable
     {
+        private static List<MinecraftRCON> ReusableRCONSockets = new List<MinecraftRCON>();
+        public ulong Owner { get; set; }
+        public bool Disposed { get; private set; }
+        private Socket Client;
         private const ushort RX_SIZE = 4096;
         private enum PacketType {SERVERDATA_RESPONSE_VALUE = 0, SERVERDATA_EXECCOMMAND = 2, SERVERDATA_AUTH_RESPONSE = 2, SERVERDATA_AUTH = 3}
         public enum RCONStatus {CONN_FAIL, AUTH_FAIL, EXEC_FAIL, INT_FAIL, SUCCESS}
-        public RCONStatus Status { get; }
-        public string Data { get; }
+        public RCONStatus Status { get; private set; }
+        public string Data { get; private set; }
+        private string Password { get; }
 
-        public MinecraftRCON(IPEndPoint Server, string Command, string Password)
+        public MinecraftRCON(IPEndPoint Server, string Password, bool Reuse = false, string Command = null)
         {
-            LoggerService.Log(LogSeverity.Verbose, "Started RCON!");
-            var RXData = new byte[RX_SIZE];
-
-            using var Client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
+            this.Password = Password;
+            Client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
             {
                 ReceiveTimeout = 5000,
                 SendTimeout = 5000
@@ -654,6 +720,29 @@ namespace UNObot.Services
                 return;
             }
 
+            if(Authenticate() && Command != null)
+                Execute(Command);
+            if (Status == RCONStatus.SUCCESS && Reuse)
+            {
+                ReusableRCONSockets.Add(this);
+            }
+            LoggerService.Log(LogSeverity.Verbose, Status + " " + Reuse);
+        }
+
+        public bool Authenticate()
+        {
+            var Data = new byte[RX_SIZE];
+            return Authenticate(ref Data);
+        }
+
+        public void Execute(string Command, bool Reuse = false)
+        {
+            var Data = new byte[RX_SIZE];
+            Execute(Command, ref Data, Reuse);
+        }
+
+        public bool Authenticate(ref byte[] RXData)
+        {
             try
             {
                 var Payload = MakePacketData(Password, PacketType.SERVERDATA_AUTH, 0);
@@ -664,14 +753,28 @@ namespace UNObot.Services
                 if (ID == -1 || Type != 2)
                 {
                     Status = RCONStatus.AUTH_FAIL;
-                    return;
+                    return false;
                 }
 
-                Payload = MakePacketData(Command, PacketType.SERVERDATA_EXECCOMMAND, 0);
+                Status = RCONStatus.SUCCESS;
+                return true;
+            }
+            catch (Exception)
+            {
+                Status = RCONStatus.INT_FAIL;
+                return false;
+            }
+        }
+
+        public void Execute(string Command, ref byte[] RXData, bool Reuse = false)
+        {
+            try
+            {
+                var Payload = MakePacketData(Command, PacketType.SERVERDATA_EXECCOMMAND, 0);
                 Client.Send(Payload);
                 Client.Receive(RXData);
-                ID = LittleEndianReader(ref RXData, 4);
-                Type = LittleEndianReader(ref RXData, 8);
+                var ID = LittleEndianReader(ref RXData, 4);
+                var Type = LittleEndianReader(ref RXData, 8);
                 if (ID == -1 || Type != 0)
                 {
                     LoggerService.Log(LogSeverity.Verbose, $"Failed to execute \"{Command}\"!");
@@ -680,9 +783,8 @@ namespace UNObot.Services
                 }
 
                 var StringConcat = new StringBuilder();
-                char CurrentChar;
                 var Position = 12;
-                CurrentChar = (char) RXData[Position++];
+                var CurrentChar = (char) RXData[Position++];
                 while (CurrentChar != '\x00')
                 {
                     StringConcat.Append(CurrentChar);
@@ -694,9 +796,9 @@ namespace UNObot.Services
             catch (Exception)
             {
                 Status = RCONStatus.INT_FAIL;
-                return;
             }
-            
+            if(Status != RCONStatus.SUCCESS || !Reuse)
+                Dispose();
         }
 
         private static byte[] LittleEndianConverter(int data)
@@ -734,6 +836,40 @@ namespace UNObot.Services
             foreach (var Byte in BodyData)
                 Packet[Counter++] = Byte;
             return Packet;
+        }
+        public bool Connected()
+        {
+            if (Status != RCONStatus.SUCCESS) return false;
+            try
+            {
+                return !(Client.Poll(1, SelectMode.SelectRead) && Client.Available == 0);
+            }
+            catch (SocketException) { return false; }
+        }
+
+        public void Dispose()
+        {
+            Disposed = true;
+            Client?.Dispose();
+            ReusableRCONSockets.RemoveAll(o => o == this);
+        }
+
+        public static MinecraftRCON GetRCON(ulong User)
+        {
+            var Saved = ReusableRCONSockets.Where(o => o.Owner == User).ToList();
+            LoggerService.Log(LogSeverity.Verbose, Saved.Count + (Saved.Count > 0 ? "" + Saved[0].Connected() : "None."));
+            if (Saved.Count != 0)
+                if (Saved[0].Connected())
+                    return Saved[0];
+                else
+                    Saved[0].Dispose();
+            return null;
+        }
+
+        public static void DisposeAll()
+        {
+            foreach(var RCON in ReusableRCONSockets)
+                RCON.Dispose();
         }
     }
 }

@@ -145,6 +145,97 @@ namespace UNObot.Modules
             }
         }
 
+        [Command("rconexec", RunMode = RunMode.Async)]
+        [RequireOwner]
+        [Help(new[] {".rconexec (command)"},
+            "Run a command on a remote server. Limited to DoggySazHi ATM.", true, "UNObot 4.0.12")]
+        public async Task ExecRCON([Remainder] string command)
+        {
+            var Message = await ReplyAsync("Executing...");
+            var Success = QueryHandlerService.ExecuteRCON(Context.User.Id, command, out var Output);
+            if (!Success)
+            {
+                var Error = "Failed to execute command. ";
+                if (Output == null)
+                {
+                    Error += "You did not open a connection with .rcon!";
+                }
+                else
+                {
+                    Error += Output.Status switch
+                    {
+                        MinecraftRCON.RCONStatus.CONN_FAIL => "Is the server up, and the IP/port correct?",
+                        MinecraftRCON.RCONStatus.AUTH_FAIL => "Is the correct password used?",
+                        MinecraftRCON.RCONStatus.EXEC_FAIL => "Is the command valid, and authentication correct? This should never appear.",
+                        MinecraftRCON.RCONStatus.INT_FAIL => "Something failed internally, blame DoggySazHi.",
+                        MinecraftRCON.RCONStatus.SUCCESS => "I lied. It worked, but Doggy broke the programming.",
+                        _ => "I don't know what happened here."
+                    };
+                }
+                
+                await Message.ModifyAsync(o => o.Content = Error).ConfigureAwait(false);
+            }
+            else
+            {
+                var RCONMessage = Output.Data;
+                if (string.IsNullOrWhiteSpace(RCONMessage))
+                    RCONMessage = "Command executed successfully; server returned nothing.";
+                if (RCONMessage.Length > 1995 - TooLong.Length)
+                    RCONMessage = TooLong + RCONMessage.Substring(0, 1995 - TooLong.Length);
+                await Message.ModifyAsync(o => o.Content = RCONMessage).ConfigureAwait(false);
+            }
+        }
+
+        [Command("rcon", RunMode = RunMode.Async)]
+        [RequireOwner]
+        [Help(new[] {".rcon (ip) (port) (password)"},
+            "Run a command on a remote server. Limited to DoggySazHi ATM.", true, "UNObot 4.0.12")]
+        public async Task RunRCON(string IP, ushort Port, string Password)
+        {
+            var Message = await ReplyAsync("Initializing...");
+            var Success = QueryHandlerService.CreateRCON(IP, Port, Password, Context.User.Id, out var Output);
+            if (!Success)
+            {
+                var Error = "Failed to login. ";
+                Error += Output.Status switch
+                {
+                    MinecraftRCON.RCONStatus.CONN_FAIL => "Is the server up, and the IP/port correct?",
+                    MinecraftRCON.RCONStatus.AUTH_FAIL => "Is the correct password used?",
+                    MinecraftRCON.RCONStatus.EXEC_FAIL => "Is the command valid, and authentication correct? This should never appear.",
+                    MinecraftRCON.RCONStatus.INT_FAIL => "Something failed internally, blame DoggySazHi.",
+                    MinecraftRCON.RCONStatus.SUCCESS => "An existing RCON connection exists for your user. Please close it first.",
+                    _ => "I don't know what happened here."
+                };
+                await Message.ModifyAsync(o => o.Content = Error).ConfigureAwait(false);
+            }
+            else
+            {
+                Output.Owner = Context.User.Id;
+                var RCONMessage = Output.Data;
+                if (string.IsNullOrWhiteSpace(RCONMessage))
+                    RCONMessage = "Connection created!";
+                await Message.ModifyAsync(o => o.Content = RCONMessage).ConfigureAwait(false);
+            }
+        }
+
+        [Command("rcon", RunMode = RunMode.Async)]
+        [RequireOwner]
+        [Help(new[] {".rcon (command)"},
+            "Run a command on a remote server. Limited to DoggySazHi ATM.", true, "UNObot 4.0.12")]
+        public async Task RunRCON(string trigger)
+        {
+            var Message = await ReplyAsync("Searching...");
+            var Success = QueryHandlerService.CloseRCON(Context.User.Id);
+            if (!Success)
+            {
+                await Message.ModifyAsync(o => o.Content = "Could not find an open connection owned by you.");
+            }
+            else
+            {
+                await Message.ModifyAsync(o => o.Content = "Successfully closed your connection.");
+            }
+        }
+
         public async Task CheckUnturned(string ip, ushort port = 27015, ServerAverages Averages = null)
         {
             var Message = await ReplyAsync("I am now querying the server, please wait warmly...");
