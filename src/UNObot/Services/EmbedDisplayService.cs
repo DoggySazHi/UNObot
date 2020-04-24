@@ -416,20 +416,29 @@ namespace UNObot.Services
         private static Dictionary<string, string> GetOuchies(string IP, ushort Port, string Password)
         {
             var Output = new Dictionary<string, string>();
-            MinecraftRCON RCON;
-            MinecraftRCON RCON2;
-            if (QueryHandlerService.SendRCON(IP, Port, "scoreboard players list", Password, out RCON))
+
+            // Smaller than ulong keys, big enough for RNG.
+            var RandomKey = (ulong) new Random().Next(0, 10000);
+            var Success = QueryHandlerService.CreateRCON(IP, Port, Password, RandomKey, out var Client);
+
+            if (!Success) return Output;
+
+            Client.Execute("scoreboard players list", true);
+
+            if (Client.Status != MinecraftRCON.RCONStatus.SUCCESS) return Output;
+
+            var Players = Client.Data;
+            Players.Substring(Players.IndexOf(':') + 1).Split(',').ToList().ForEach(o =>
             {
-                RCON.Data.Substring(RCON.Data.IndexOf(':') + 1).Split(',').ToList().ForEach(o =>
+                o = o.Replace((char) 0, ' ').Trim();
+                Client.Execute($"scoreboard players get {o} Ouchies", true);
+                if (Client.Status == MinecraftRCON.RCONStatus.SUCCESS)
                 {
-                    o = o.Replace((char) 0, ' ').Trim();
-                    if (QueryHandlerService.SendRCON(IP, Port, $"scoreboard players get {o} Ouchies", Password,
-                        out RCON2))
-                    {
-                        Output.Add(o, RCON2.Data.Contains("has") ? RCON2.Data.Split(' ')[2] : "0");
-                    }
-                });
-            }
+                    Output.Add(o, Client.Data.Contains("has") ? Client.Data.Split(' ')[2] : "0");
+                }
+            });
+
+            Client.Dispose();
             return Output;
         }
 
@@ -469,10 +478,7 @@ namespace UNObot.Services
                     PlayersOnline += $"{ExtendedStatus.Players[i]}";
                     if(Ouchies != null)
                         if (Ouchies.ContainsKey(ExtendedStatus.Players[i]))
-                        {
-                            Console.WriteLine("Found key.");
                             PlayersOnline += $" - {Ouchies[ExtendedStatus.Players[i]]} Ouchies";
-                        }
                         else
                             PlayersOnline += " - 0 Ouchies";
                     if (i != ExtendedStatus.Players.Length - 1)
@@ -527,7 +533,7 @@ namespace UNObot.Services
                 return false;
             }
 
-            Dictionary<string, string> Ouchies = Ouchies = GetOuchies("192.168.2.6", 27286, "mukyumukyu");
+            Dictionary<string, string> Ouchies = GetOuchies("192.168.2.6", 27286, "mukyumukyu");
 
             var Random = ThreadSafeRandom.ThisThreadsRandom;
             string PlayersOnline = "";
