@@ -478,10 +478,10 @@ namespace UNObot.Services
 
             var Players = Client.Data;
             var PlayerList = Players.Substring(Players.IndexOf(':') + 1).Split(',').ToList();
-
             foreach (var o in PlayerList)
             {
                 var Name = o.Replace((char) 0, ' ').Trim();
+                if (string.IsNullOrWhiteSpace(Name)) continue;
                 Client.Execute(
                     $"execute as {Name} at @s run summon minecraft:armor_stand ~ ~ ~ {{Invisible:1b,PersistenceRequired:1b,Tags:[\"coordfinder\"]}}",
                     true);
@@ -665,8 +665,7 @@ namespace UNObot.Services
             var Locations = GetLocations("192.168.2.6", 27286, "mukyumukyu");
 
             var Random = ThreadSafeRandom.ThisThreadsRandom;
-            string PlayersOnline = "";
-
+            string PlayersOnline = "Nobody's online!";
             foreach(var Item in Locations)
                 PlayersOnline += $"{Item.Key} - **X:** {Item.Value[0]:N2} **Y:** {Item.Value[1]:N2} **Z:** {Item.Value[2]:N2}\n";
             // Doesn't seem to affect embeds. PlayersOnline = PlayersOnline.Substring(0, PlayersOnline.Length - 1);
