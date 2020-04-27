@@ -96,6 +96,39 @@ namespace UNObot.Modules
             }
         }
 
+        [Command("locate", RunMode = RunMode.Async)]
+        [Help(new[] { ".locate" }, "¿Dónde están?", true, "UNObot 4.0.16")]
+        public async Task GetLocations()
+        {
+            var Message = await ReplyAsync("I am now querying the server, please wait warmly...");
+            try
+            {
+                bool success = EmbedDisplayService.LocationsEmbed("192.168.2.6", 27285, out var Embed);
+                if (!success || Embed == null)
+                {
+                    await Message.ModifyAsync(o => o.Content = "Error: Apparently we couldn't get any information about this server.");
+                    return;
+                }
+                await Message.ModifyAsync(o =>
+                {
+                    o.Content = "";
+                    o.Embed = Embed;
+                });
+            }
+            catch (Exception ex)
+            {
+                LoggerService.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
+                await Message.ModifyAsync(o => o.Content = "We had some difficulties displaying the status. Please try again?");
+            }
+        }
+
+        [Command("mctime", RunMode = RunMode.Async)]
+        [Help(new[] { ".mctime" }, "SLEEP GUYS", true, "UNObot 4.0.16")]
+        public async Task GetMCTime()
+        {
+            await RunRCON("192.168.2.6", 27286, "mukyumukyu", "time query daytime");
+        }
+
         [Command("unofficialwiki", RunMode = RunMode.Async), Alias("unwiki")]
         [Help(new[] { ".unofficialwiki" }, "Get basic server information about the Unofficial Wikia Server.", true, "UNObot 2.4")]
         public async Task UnoffWiki()

@@ -726,7 +726,6 @@ namespace UNObot.Services
             {
                 ReusableRCONSockets.Add(this);
             }
-            LoggerService.Log(LogSeverity.Verbose, Status + " " + Reuse);
         }
 
         public bool Authenticate()
@@ -857,7 +856,6 @@ namespace UNObot.Services
         public static MinecraftRCON GetRCON(ulong User)
         {
             var Saved = ReusableRCONSockets.Where(o => o.Owner == User).ToList();
-            LoggerService.Log(LogSeverity.Verbose, Saved.Count + (Saved.Count > 0 ? "" + Saved[0].Connected() : "None."));
             if (Saved.Count != 0)
                 if (Saved[0].Connected())
                     return Saved[0];
