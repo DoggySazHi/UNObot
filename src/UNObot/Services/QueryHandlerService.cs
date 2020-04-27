@@ -7,7 +7,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using Discord;
-using Renci.SshNet.Messages.Authentication;
 
 namespace UNObot.Services
 {
@@ -690,7 +689,7 @@ namespace UNObot.Services
         public bool Disposed { get; private set; }
         private Socket Client;
         private const ushort RX_SIZE = 4096;
-        private enum PacketType {SERVERDATA_RESPONSE_VALUE = 0, SERVERDATA_EXECCOMMAND = 2, SERVERDATA_AUTH_RESPONSE = 2, SERVERDATA_AUTH = 3}
+        private enum PacketType {SERVERDATA_EXECCOMMAND = 2, SERVERDATA_AUTH = 3}
         public enum RCONStatus {CONN_FAIL, AUTH_FAIL, EXEC_FAIL, INT_FAIL, SUCCESS}
         public RCONStatus Status { get; private set; }
         public string Data { get; private set; }
@@ -730,14 +729,14 @@ namespace UNObot.Services
 
         public bool Authenticate()
         {
-            var Data = new byte[RX_SIZE];
-            return Authenticate(ref Data);
+            var PreAlloc = new byte[RX_SIZE];
+            return Authenticate(ref PreAlloc);
         }
 
         public void Execute(string Command, bool Reuse = false)
         {
-            var Data = new byte[RX_SIZE];
-            Execute(Command, ref Data, Reuse);
+            var PreAlloc = new byte[RX_SIZE];
+            Execute(Command, ref PreAlloc, Reuse);
         }
 
         public bool Authenticate(ref byte[] RXData)

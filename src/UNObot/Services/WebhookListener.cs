@@ -103,7 +103,7 @@ namespace UNObot.Services
                 {
                     var Processed = JsonConvert.DeserializeObject(Message, Type, Settings);
                     LoggerService.Log(LogSeverity.Verbose, $"I processed an {Type.Name} successfully!");
-                    LoggerService.Log(LogSeverity.Verbose, $"Read {Processed.GetType()}");
+                    LoggerService.Log(LogSeverity.Verbose, $"Read {Processed?.GetType()}");
                     return;
                 }
                 catch (JsonException)

@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Discord;
-using Org.BouncyCastle.Crypto;
 using YoutubeExplode.Playlists;
 
 namespace UNObot.Services
@@ -449,15 +447,16 @@ namespace UNObot.Services
             if (Client.Status != MinecraftRCON.RCONStatus.SUCCESS) return Output;
 
             var Players = Client.Data;
-            Players.Substring(Players.IndexOf(':') + 1).Split(',').ToList().ForEach(o =>
+            var PlayerList = Players.Substring(Players.IndexOf(':') + 1).Split(',').ToList();
+            foreach(var Player in PlayerList)
             {
-                o = o.Replace((char) 0, ' ').Trim();
-                Client.Execute($"scoreboard players get {o} Ouchies", true);
+                var Name = Player.Replace((char) 0, ' ').Trim();
+                Client.Execute($"scoreboard players get {Name} Ouchies", true);
                 if (Client.Status == MinecraftRCON.RCONStatus.SUCCESS)
                 {
-                    Output.Add(o, Client.Data.Contains("has") ? Client.Data.Split(' ')[2] : "0");
+                    Output.Add(Name, Client.Data.Contains("has") ? Client.Data.Split(' ')[2] : "0");
                 }
-            });
+            }
 
             Client.Dispose();
             return Output;
@@ -492,7 +491,7 @@ namespace UNObot.Services
                     try
                     {
                         var CoordinateMessage = Regex.Replace(Client.Data, @"[^0-9\+\-\. ]", "").Trim().Split(' ');
-                        var Coordinates = new double[]
+                        var Coordinates = new[]
                         {
                             double.Parse(CoordinateMessage[0]),
                             double.Parse(CoordinateMessage[1]),
@@ -500,7 +499,7 @@ namespace UNObot.Services
                         };
                         Output.Add(Name, Coordinates);
                     }
-                    catch (FormatException e)
+                    catch (FormatException)
                     {
                         Console.WriteLine("Failed to process coordinates. Response: " + Client.Data);
                         throw;
@@ -526,7 +525,7 @@ namespace UNObot.Services
                     ExtendedGet = QueryHandlerService.GetInfoMCNew(IP, Port, out ExtendedStatus);
             }
 
-            if (!DefaultStatus.ServerUp && !ExtendedGet)
+            if (DefaultStatus == null || !DefaultStatus.ServerUp && !ExtendedGet)
             {
                 Result = null;
                 return false;
@@ -614,7 +613,7 @@ namespace UNObot.Services
 
             foreach (var Item in Ouchies)
                 PlayersOnline += $"{Item.Key} - {Item.Value} Ouchies\n";
-            PlayersOnline.Substring(0, PlayersOnline.Length - 1);
+            // Doesn't seem to affect embeds. PlayersOnline = PlayersOnline.Substring(0, PlayersOnline.Length - 1);
 
             var builder = new EmbedBuilder()
                 .WithTitle("MOTD")
@@ -670,7 +669,7 @@ namespace UNObot.Services
 
             foreach(var Item in Locations)
                 PlayersOnline += $"{Item.Key} - **X:** {Item.Value[0]:N2} **Y:** {Item.Value[1]:N2} **Z:** {Item.Value[2]:N2}\n";
-            PlayersOnline.Substring(0, PlayersOnline.Length - 1);
+            // Doesn't seem to affect embeds. PlayersOnline = PlayersOnline.Substring(0, PlayersOnline.Length - 1);
 
             var builder = new EmbedBuilder()
                 .WithTitle("MOTD")

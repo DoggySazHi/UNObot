@@ -132,7 +132,7 @@ namespace UNObot
             }
             var json = JObject.Parse(File.ReadAllText("config.json"));
             int errors = 0;
-            if (!json.ContainsKey("token") || json["token"].ToString() == "Replace With Private Key")
+            if (!json.ContainsKey("token") || json["token"]?.ToString() == "Replace With Private Key")
             {
                 LoggerService.Log(LogSeverity.Error, "Error: Config is missing Bot Token (token)! Please add the property, or update the property to have a token."); errors++;
             }
