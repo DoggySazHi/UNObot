@@ -19,9 +19,9 @@ namespace UNObot.Services
 
     public static class EmbedDisplayService
     {
-        public static async Task<Embed> DisplayGame(ulong serverid)
+        public static async Task<Embed> DisplayGame(ulong ServerID)
         {
-            var card = await UNODatabaseService.GetCurrentCard(serverid);
+            var card = await UNODatabaseService.GetCurrentCard(ServerID);
 
             uint cardColor = card.Color switch
             {
@@ -31,15 +31,15 @@ namespace UNObot.Services
                 _ => 0x00FF00,
             };
             string response = "";
-            ushort isPrivate = await UNODatabaseService.GetGamemode(serverid);
-            string server = Program._client.GetGuild(serverid).Name;
-            foreach (ulong id in await UNODatabaseService.GetPlayers(serverid))
+            ushort isPrivate = await UNODatabaseService.GetGamemode(ServerID);
+            string server = Program._client.GetGuild(ServerID).Name;
+            foreach (ulong id in await UNODatabaseService.GetPlayers(ServerID))
             {
                 var user = Program._client.GetUser(id);
                 var cardCount = (await UNODatabaseService.GetCards(id)).Count();
                 if (isPrivate != 2)
                 {
-                    if (id == (await UNODatabaseService.GetPlayers(serverid)).Peek())
+                    if (id == (await UNODatabaseService.GetPlayers(ServerID)).Peek())
                         response += $"**{user.Username}** - {cardCount} card";
                     else
                         response += $"{user.Username} - {cardCount} card";
@@ -50,7 +50,7 @@ namespace UNObot.Services
                 }
                 else
                 {
-                    if (id == (await UNODatabaseService.GetPlayers(serverid)).Peek())
+                    if (id == (await UNODatabaseService.GetPlayers(ServerID)).Peek())
                         response += $"**{user.Username}** - ??? cards\n";
                     else
                         response += $"{user.Username} - ??? cards\n";
@@ -59,7 +59,7 @@ namespace UNObot.Services
 
             var builder = new EmbedBuilder()
                 .WithTitle("Current Game")
-                .WithDescription(await UNODatabaseService.GetDescription(serverid))
+                .WithDescription(await UNODatabaseService.GetDescription(ServerID))
                 .WithColor(new Color(cardColor))
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
@@ -82,10 +82,10 @@ namespace UNObot.Services
             //Remember to ReplyAsync("It is now <@832983482589>'s turn.", Embed);
         }
 
-        public static async Task<Embed> DisplayCards(ulong userid, ulong serverid)
+        public static async Task<Embed> DisplayCards(ulong userid, ulong ServerID)
         {
-            string server = Program._client.GetGuild(serverid).Name;
-            var currentCard = await UNODatabaseService.GetCurrentCard(serverid);
+            string server = Program._client.GetGuild(ServerID).Name;
+            var currentCard = await UNODatabaseService.GetCurrentCard(ServerID);
             var cards = await UNODatabaseService.GetCards(userid);
             cards = cards.OrderBy(o => o.Color).ThenBy(o => o.Value).ToList();
 
@@ -323,7 +323,7 @@ namespace UNObot.Services
             return builder.Build();
         }
 
-        private static readonly int Attempts = 3;
+        private const int Attempts = 3;
 
         public static bool UnturnedQueryEmbed(string IP, ushort Port, out Embed Result, ServerAverages Averages = null)
         {
@@ -362,11 +362,9 @@ namespace UNObot.Services
             string RocketModVersion = "";
             string RocketModPlugins = "";
 
-            if (ServerImageURL == null)
-                ServerImageURL = "";
+            ServerImageURL ??= "";
 
-            if (UnturnedVersion == null)
-                UnturnedVersion = $"Unknown Version ({Information.Version}?)";
+            UnturnedVersion ??= $"Unknown Version ({Information.Version}?)";
 
             int DescriptionLines = Convert.ToInt32(Rules.Rules
                 .Find(o => o.Name.Contains("Browser_Desc_Full_Count", StringComparison.OrdinalIgnoreCase)).Value
@@ -665,9 +663,11 @@ namespace UNObot.Services
             var Locations = GetLocations("192.168.2.6", 27286, "mukyumukyu");
 
             var Random = ThreadSafeRandom.ThisThreadsRandom;
-            string PlayersOnline = "Nobody's online!";
-            foreach(var Item in Locations)
-                PlayersOnline += $"{Item.Key} - **X:** {Item.Value[0]:N2} **Y:** {Item.Value[1]:N2} **Z:** {Item.Value[2]:N2}\n";
+            var PlayersOnline = "";
+            if (Locations.Count == 0)
+                PlayersOnline = "Nobody's online!";
+            else foreach(var (Name, Coordinates) in Locations)
+                PlayersOnline += $"{Name} - **X:** {Coordinates[0]:N2} **Y:** {Coordinates[1]:N2} **Z:** {Coordinates[2]:N2}\n";
             // Doesn't seem to affect embeds. PlayersOnline = PlayersOnline.Substring(0, PlayersOnline.Length - 1);
 
             var builder = new EmbedBuilder()
