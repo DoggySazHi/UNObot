@@ -33,15 +33,11 @@ namespace UNObot.Modules
                 await ReplyAsync("The server seems to be down from here...");
         }
 
-        [Command("psurvival", RunMode = RunMode.Async)]
-        [Help(new[] { ".psurvival" }, "Get basic server information about the pSurvival Minecraft server.", true, "UNObot 2.4")]
-        public async Task PSurvival()
+        [Command("pcreative", RunMode = RunMode.Async)]
+        [Help(new[] { ".pcreative" }, "Get basic server information about the pCreative Minecraft server.", true, "UNObot 2.4")]
+        public async Task PCreative()
         {
-            var response = QueryHandlerService.GetInfoMC("williamle.com", 25432);
-            if (response.ServerUp)
-                await ReplyAsync($"Current players: {response.CurrentPlayers}/{response.MaximumPlayers}\nCurrently running on {response.Version}.");
-            else
-                await ReplyAsync("The server seems to be down from here...");
+            await CheckMCNew("williamle.com", 25432);
         }
 
         [Command("checkmc", RunMode = RunMode.Async)]
@@ -68,6 +64,13 @@ namespace UNObot.Modules
                 LoggerService.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
                 await Message.ModifyAsync(o => o.Content = "We had some difficulties displaying the status. Please try again?");
             }
+        }
+
+        [Command("psurvival", RunMode = RunMode.Async)]
+        [Help(new[] { ".psurvival" }, "Get basic server information about the pSurvival Minecraft server.", true, "UNObot 2.4")]
+        public async Task PSurvival()
+        {
+            await CheckMCNew("williamle.com", 27285);
         }
 
         [Command("ouchies", RunMode = RunMode.Async)]
@@ -255,7 +258,24 @@ namespace UNObot.Modules
         [RequireOwner]
         [Help(new[] {".rcon (command)"},
             "Run a command on a remote server. Limited to DoggySazHi ATM.", true, "UNObot 4.0.12")]
-        public async Task RunRCON(string trigger)
+        public async Task RunRCON(string Trigger)
+        {
+            switch (Trigger.ToLower().Trim())
+            {
+                case "close":
+                    await CloseRCON();
+                    break;
+                case "status":
+                    await GetRCON();
+                    break;
+                default:
+                    await ReplyAsync("Invalid command. Use \"close\" or \"status\".");
+                    break;
+            }
+            
+        }
+
+        private async Task CloseRCON()
         {
             var Message = await ReplyAsync("Searching...");
             var Success = QueryHandlerService.CloseRCON(Context.User.Id);
@@ -266,6 +286,20 @@ namespace UNObot.Modules
             else
             {
                 await Message.ModifyAsync(o => o.Content = "Successfully closed your connection.");
+            }
+        }
+
+        private async Task GetRCON()
+        {
+            var Message = await ReplyAsync("Searching...");
+            var Success = QueryHandlerService.ExecuteRCON(Context.User.Id, "", out var Output);
+            if (!Success)
+            {
+                await Message.ModifyAsync(o => o.Content = "Could not find an open connection owned by you.");
+            }
+            else
+            {
+                await Message.ModifyAsync(o => o.Content = $"Connected to {Output.Server.Address} on {Output.Server.Port}.");
             }
         }
 

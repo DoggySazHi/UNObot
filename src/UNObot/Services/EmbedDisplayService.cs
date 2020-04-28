@@ -429,54 +429,49 @@ namespace UNObot.Services
             return true;
         }
 
-        // NOTE: It's the query port!
-        private static Dictionary<string, string> GetOuchies(string IP, ushort Port, string Password)
+        class MCUser
         {
-            var Output = new Dictionary<string, string>();
+            public string Username { get; set; }
+            public string Ouchies { get; set; }
+            public bool Online { get; set; }
+            public double[] Coordinates { get; set; }
+            public string Health { get; set; }
+            public string Food { get; set; }
+        }
+
+        // NOTE: It's the query port!
+        private static List<MCUser> GetMCUsers(string IP, ushort Port, string Password)
+        {
+            var Output = new List<MCUser>();
 
             // Smaller than ulong keys, big enough for RNG.
             var RandomKey = (ulong) new Random().Next(0, 10000);
             var Success = QueryHandlerService.CreateRCON(IP, Port, Password, RandomKey, out var Client);
-
             if (!Success) return Output;
 
-            Client.Execute("scoreboard players list", true);
-
+            Client.Execute("list", true);
             if (Client.Status != MinecraftRCON.RCONStatus.SUCCESS) return Output;
+            var PlayerListOnline = Client.Data.Substring(Client.Data.IndexOf(':') + 1).Split(',').ToList();
 
-            var Players = Client.Data;
-            var PlayerList = Players.Substring(Players.IndexOf(':') + 1).Split(',').ToList();
-            foreach(var Player in PlayerList)
+            Client.Execute("scoreboard players list", true);
+            var PlayerListTotal = Client.Data.Substring(Client.Data.IndexOf(':') + 1).Split(',').ToList();
+
+            foreach(var Player in PlayerListTotal)
             {
                 var Name = Player.Replace((char) 0, ' ').Trim();
                 Client.Execute($"scoreboard players get {Name} Ouchies", true);
                 if (Client.Status == MinecraftRCON.RCONStatus.SUCCESS)
                 {
-                    Output.Add(Name, Client.Data.Contains("has") ? Client.Data.Split(' ')[2] : "0");
+                    var Ouchies = Client.Data.Contains("has") ? Client.Data.Split(' ')[2] : "0";
+                    Output.Add(new MCUser
+                    {
+                        Username = Name,
+                        Ouchies = Ouchies
+                    });
                 }
             }
 
-            Client.Dispose();
-            return Output;
-        }
-
-        private static Dictionary<string, double[]> GetLocations(string IP, ushort Port, string Password)
-        {
-            var Output = new Dictionary<string, double[]>();
-
-            // Smaller than ulong keys, big enough for RNG.
-            var RandomKey = (ulong) new Random().Next(0, 10000);
-            var Success = QueryHandlerService.CreateRCON(IP, Port, Password, RandomKey, out var Client);
-
-            if (!Success) return Output;
-
-            Client.Execute("list", true);
-
-            if (Client.Status != MinecraftRCON.RCONStatus.SUCCESS) return Output;
-
-            var Players = Client.Data;
-            var PlayerList = Players.Substring(Players.IndexOf(':') + 1).Split(',').ToList();
-            foreach (var o in PlayerList)
+            foreach (var o in PlayerListOnline)
             {
                 var Name = o.Replace((char) 0, ' ').Trim();
                 if (string.IsNullOrWhiteSpace(Name)) continue;
@@ -484,26 +479,35 @@ namespace UNObot.Services
                     $"execute as {Name} at @s run summon minecraft:armor_stand ~ ~ ~ {{Invisible:1b,PersistenceRequired:1b,Tags:[\"coordfinder\"]}}",
                     true);
                 Client.Execute("execute as @e[tag=coordfinder] at @s run tp @s ~ ~ ~", true);
+                double[] Coordinates = null;
                 if (Client.Status == MinecraftRCON.RCONStatus.SUCCESS)
                 {
                     try
                     {
                         var CoordinateMessage = Regex.Replace(Client.Data, @"[^0-9\+\-\. ]", "").Trim().Split(' ');
-                        var Coordinates = new[]
+                        Coordinates = new[]
                         {
                             double.Parse(CoordinateMessage[0]),
                             double.Parse(CoordinateMessage[1]),
                             double.Parse(CoordinateMessage[2])
                         };
-                        Output.Add(Name, Coordinates);
                     }
                     catch (FormatException)
                     {
-                        Console.WriteLine("Failed to process coordinates. Response: " + Client.Data);
-                        throw;
+                        LoggerService.Log(LogSeverity.Warning, $"Failed to process coordinates. Response: {Client.Data}");
                     }
                 }
-
+                Client.Execute($"scoreboard players get {Name} Health", true);
+                var Health = Client.Data.Contains("has") ? Client.Data.Split(' ')[2] : "??";
+                Client.Execute($"scoreboard players get {Name} Food", true);
+                var Food = Client.Data.Contains("has") ? Client.Data.Split(' ')[2] : "??";
+                foreach (var CorrectUser in Output.Where(User => User.Username == Name))
+                {
+                    CorrectUser.Coordinates = Coordinates;
+                    CorrectUser.Health = Health;
+                    CorrectUser.Food = Food;
+                    CorrectUser.Online = true;
+                }
                 Client.Execute("execute as @e[tag=coordfinder] at @s run kill @s", true);
             }
 
@@ -529,10 +533,10 @@ namespace UNObot.Services
                 return false;
             }
 
-            Dictionary<string, string> Ouchies = null;
+            List<MCUser> MCUserInfo = null;
             if ((IP == "127.0.0.1" || IP == "williamle.com" || IP == "localhost") && Port == 27285)
             {
-                Ouchies = GetOuchies("192.168.2.6", 27286, "mukyumukyu");
+                MCUserInfo = GetMCUsers("192.168.2.6", 27286, "mukyumukyu");
             }
 
             var Random = ThreadSafeRandom.ThisThreadsRandom;
@@ -545,11 +549,15 @@ namespace UNObot.Services
                 for (int i = 0; i < ExtendedStatus.Players.Length; i++)
                 {
                     PlayersOnline += $"{ExtendedStatus.Players[i]}";
-                    if (Ouchies != null)
-                        if (Ouchies.ContainsKey(ExtendedStatus.Players[i]))
-                            PlayersOnline += $" - {Ouchies[ExtendedStatus.Players[i]]} Ouchies";
+                    if (MCUserInfo != null)
+                    {
+                        var UserInfo = MCUserInfo.Where(o => o.Username == ExtendedStatus.Players[i]).ToList();
+                        if (UserInfo.Count != 0)
+                            PlayersOnline += $"\n- **Ouchies: **{UserInfo[0].Ouchies} | **Health:** {UserInfo[0].Health} | **Food:** {UserInfo[0].Food}";
                         else
-                            PlayersOnline += " - 0 Ouchies";
+                            PlayersOnline += "\n Unknown stats.";
+                    }
+
                     if (i != ExtendedStatus.Players.Length - 1)
                         PlayersOnline += "\n";
                 }
@@ -604,13 +612,13 @@ namespace UNObot.Services
                 return false;
             }
 
-            Dictionary<string, string> Ouchies = GetOuchies("192.168.2.6", 27286, "mukyumukyu");
+            var Ouchies = GetMCUsers("192.168.2.6", 27286, "mukyumukyu");
 
             var Random = ThreadSafeRandom.ThisThreadsRandom;
             string PlayersOnline = "";
 
             foreach (var Item in Ouchies)
-                PlayersOnline += $"{Item.Key} - {Item.Value} Ouchies\n";
+                PlayersOnline += $"{Item.Username} - {Item.Ouchies} Ouchies\n";
             // Doesn't seem to affect embeds. PlayersOnline = PlayersOnline.Substring(0, PlayersOnline.Length - 1);
 
             var builder = new EmbedBuilder()
@@ -660,14 +668,15 @@ namespace UNObot.Services
                 return false;
             }
 
-            var Locations = GetLocations("192.168.2.6", 27286, "mukyumukyu");
+            var Users = GetMCUsers("192.168.2.6", 27286, "mukyumukyu");
 
             var Random = ThreadSafeRandom.ThisThreadsRandom;
             var PlayersOnline = "";
-            if (Locations.Count == 0)
+            if (Users.Count == 0)
                 PlayersOnline = "Nobody's online!";
-            else foreach(var (Name, Coordinates) in Locations)
-                PlayersOnline += $"{Name} - **X:** {Coordinates[0]:N2} **Y:** {Coordinates[1]:N2} **Z:** {Coordinates[2]:N2}\n";
+            else foreach(var User in Users)
+                if(User.Online)
+                    PlayersOnline += $"{User.Username} - **X:** {User.Coordinates[0]:N2} **Y:** {User.Coordinates[1]:N2} **Z:** {User.Coordinates[2]:N2}\n";
             // Doesn't seem to affect embeds. PlayersOnline = PlayersOnline.Substring(0, PlayersOnline.Length - 1);
 
             var builder = new EmbedBuilder()

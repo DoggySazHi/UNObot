@@ -694,6 +694,7 @@ namespace UNObot.Services
         public RCONStatus Status { get; private set; }
         public string Data { get; private set; }
         private string Password { get; }
+        public IPEndPoint Server { get; }
 
         public MinecraftRCON(IPEndPoint Server, string Password, bool Reuse = false, string Command = null)
         {
@@ -703,7 +704,7 @@ namespace UNObot.Services
                 ReceiveTimeout = 5000,
                 SendTimeout = 5000
             };
-
+            this.Server = Server;
             try
             {
                 if (!Client.ConnectAsync(Server).Wait(5000))
