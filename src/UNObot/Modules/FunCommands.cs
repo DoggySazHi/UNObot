@@ -89,14 +89,16 @@ namespace UNObot.Modules
             await BaseReact(numMessages, emote);
         }
 
-        // [Command("calculateemote", RunMode = RunMode.Async)]
+        [Command("calculateemote", RunMode = RunMode.Async)]
+        [RequireOwner]
         [DisableDMs]
         public async Task CalculateEmote([Remainder] string Input)
         {
             await ReplyAsync($"Server: ``{Context.Guild.Id}`` Emote: ``{Input}``").ConfigureAwait(false);
         }
 
-        // [Command("emote", RunMode = RunMode.Async)]
+        [Command("emote", RunMode = RunMode.Async)]
+        [RequireOwner]
         public async Task Emote(ulong Server, ulong Emote)
         {
             try
@@ -110,7 +112,8 @@ namespace UNObot.Modules
             }
         }
 
-        // [Command("emotereact", RunMode = RunMode.Async)]
+        [Command("emotereact", RunMode = RunMode.Async)]
+        [RequireOwner]
         public async Task EmoteReact(ulong Server, ulong Emote, int numMessages)
         {
             try
