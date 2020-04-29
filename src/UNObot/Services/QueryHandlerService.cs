@@ -850,7 +850,7 @@ namespace UNObot.Services
         {
             Disposed = true;
             Client?.Dispose();
-            ReusableRCONSockets.RemoveAll(o => o == this);
+            ReusableRCONSockets.Remove(this);
         }
 
         public static MinecraftRCON GetRCON(ulong User)
@@ -866,8 +866,8 @@ namespace UNObot.Services
 
         public static void DisposeAll()
         {
-            foreach(var RCON in ReusableRCONSockets)
-                RCON.Dispose();
+            while(ReusableRCONSockets.Count != 0)
+                ReusableRCONSockets[0].Dispose();
         }
     }
 }
