@@ -125,6 +125,32 @@ namespace UNObot.Modules
             }
         }
 
+        [Command("expay", RunMode = RunMode.Async)]
+        [Help(new[] { ".expay (target) (amount)" }, "Where's my experience?", true, "UNObot 4.0.17")]
+        public async Task GetLocations(string Target, int Amount)
+        {
+            var Message = await ReplyAsync("I am now contacting the server, please wait warmly...");
+            try
+            {
+                var success = EmbedDisplayService.TransferEmbed("192.168.2.6", 27285, Context.User.Id, Target, Amount, out var Embed);
+                if (!success || Embed == null)
+                {
+                    await Message.ModifyAsync(o => o.Content = "We had some difficulties displaying the status. Please try again?");
+                    return;
+                }
+                await Message.ModifyAsync(o =>
+                {
+                    o.Content = "";
+                    o.Embed = Embed;
+                });
+            }
+            catch (Exception ex)
+            {
+                LoggerService.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
+                await Message.ModifyAsync(o => o.Content = "We had some difficulties displaying the status. Please try again?");
+            }
+        }
+
         [Command("mctime", RunMode = RunMode.Async)]
         [Help(new[] { ".mctime" }, "SLEEP GUYS", true, "UNObot 4.0.16")]
         public async Task GetMCTime()

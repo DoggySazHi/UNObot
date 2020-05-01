@@ -437,16 +437,17 @@ namespace UNObot.Services
             public double[] Coordinates { get; set; }
             public string Health { get; set; }
             public string Food { get; set; }
+            public int Experience { get; set; }
         }
 
         // NOTE: It's the query port!
-        private static List<MCUser> GetMCUsers(string IP, ushort Port, string Password)
+        private static List<MCUser> GetMCUsers(string IP, ushort Port, string Password, out MinecraftRCON Client, bool Dispose = true)
         {
             var Output = new List<MCUser>();
 
             // Smaller than ulong keys, big enough for RNG.
             var RandomKey = (ulong) new Random().Next(0, 10000);
-            var Success = QueryHandlerService.CreateRCON(IP, Port, Password, RandomKey, out var Client);
+            var Success = QueryHandlerService.CreateRCON(IP, Port, Password, RandomKey, out Client);
             if (!Success) return Output;
 
             Client.Execute("list", true);
@@ -501,18 +502,45 @@ namespace UNObot.Services
                 var Health = Client.Data.Contains("has") ? Client.Data.Split(' ')[2] : "??";
                 Client.Execute($"scoreboard players get {Name} Food", true);
                 var Food = Client.Data.Contains("has") ? Client.Data.Split(' ')[2] : "??";
+                Client.Execute("execute as @e[tag=coordfinder] at @s run kill @s", true);
+                Client.Execute($"execute as {Name} at @s run experience query @s points", true);
+                var PointData = Client.Data;
+                Client.Execute($"execute as {Name} at @s run experience query @s levels", true);
+                var Experience = 0;
+                if (Client.Status == MinecraftRCON.RCONStatus.SUCCESS)
+                {
+                    try
+                    {
+                        var Points = int.Parse(PointData.Split(' ')[2]);
+                        var Levels = int.Parse(Client.Data.Split(' ')[2]);
+                        Experience = (int) Exp(Levels, Points);
+                    }
+                    catch (FormatException)
+                    {
+                        LoggerService.Log(LogSeverity.Warning, $"Failed to process coordinates. Response: {Client.Data}");
+                    }
+                }
                 foreach (var CorrectUser in Output.Where(User => User.Username == Name))
                 {
                     CorrectUser.Coordinates = Coordinates;
                     CorrectUser.Health = Health;
                     CorrectUser.Food = Food;
                     CorrectUser.Online = true;
+                    CorrectUser.Experience = Experience;
                 }
-                Client.Execute("execute as @e[tag=coordfinder] at @s run kill @s", true);
             }
 
-            Client.Dispose();
+            if(Dispose)
+                Client.Dispose();
             return Output;
+        }
+        private static double Exp(int levels, int points)
+        {
+            if(levels <= 16)
+                return Math.Pow(levels, 2) + 6 * levels + points;
+            if (levels <= 31)
+                return 2.5 * Math.Pow(levels, 2) - 40.5 * levels + 360 + points;
+            return 4.5 * Math.Pow(levels, 2) - 162.5 * levels + 2220 + points;
         }
 
         public static bool MinecraftQueryEmbed(string IP, ushort Port, out Embed Result)
@@ -534,9 +562,9 @@ namespace UNObot.Services
             }
 
             List<MCUser> MCUserInfo = null;
-            if ((IP == "127.0.0.1" || IP == "williamle.com" || IP == "localhost") && Port == 27285)
+            if ((IP == "127.0.0.1" || IP == "williamle.com" || IP == "localhost" || IP == "192.168.2.6") && Port == 27285)
             {
-                MCUserInfo = GetMCUsers("192.168.2.6", 27286, "mukyumukyu");
+                MCUserInfo = GetMCUsers("192.168.2.6", 27286, "mukyumukyu", out _);
             }
 
             var Random = ThreadSafeRandom.ThisThreadsRandom;
@@ -592,7 +620,7 @@ namespace UNObot.Services
 
         public static bool OuchiesEmbed(string IP, ushort Port, out Embed Result)
         {
-            if (IP != "127.0.0.1" && IP != "williamle.com" && IP == "localhost" || Port != 27285)
+            if (IP != "127.0.0.1" && IP != "williamle.com" && IP != "localhost" && IP != "192.168.2.6" || Port != 27285)
             {
                 Result = null;
                 return false;
@@ -612,7 +640,7 @@ namespace UNObot.Services
                 return false;
             }
 
-            var Ouchies = GetMCUsers("192.168.2.6", 27286, "mukyumukyu");
+            var Ouchies = GetMCUsers("192.168.2.6", 27286, "mukyumukyu", out _);
 
             var Random = ThreadSafeRandom.ThisThreadsRandom;
             string PlayersOnline = "";
@@ -648,7 +676,7 @@ namespace UNObot.Services
 
         public static bool LocationsEmbed(string IP, ushort Port, out Embed Result)
         {
-            if (IP != "127.0.0.1" && IP != "williamle.com" && IP == "localhost" || Port != 27285)
+            if (IP != "127.0.0.1" && IP != "williamle.com" && IP != "localhost" && IP != "192.168.2.6" || Port != 27285)
             {
                 Result = null;
                 return false;
@@ -668,7 +696,7 @@ namespace UNObot.Services
                 return false;
             }
 
-            var Users = GetMCUsers("192.168.2.6", 27286, "mukyumukyu");
+            var Users = GetMCUsers("192.168.2.6", 27286, "mukyumukyu", out _);
 
             var Random = ThreadSafeRandom.ThisThreadsRandom;
             var PlayersOnline = "";
@@ -700,6 +728,87 @@ namespace UNObot.Services
                 .AddField("Port", Port, true)
                 .AddField("Version", $"{Status.Version}", true)
                 .AddField("Players", PlayersOnline, true);
+            Result = builder.Build();
+            return true;
+        }
+
+        public static bool TransferEmbed(string IP, ushort Port, ulong Source, string Target, int Amount, out Embed Result)
+        {
+            var MessageTitle = "Mukyu~";
+            var Message = "General error; IDK what happened, see UNObot logs.";
+
+            try
+            {
+                if (IP != "127.0.0.1" && IP != "williamle.com" && IP != "localhost" && IP != "192.168.2.6" || Port != 27285)
+                {
+                    Message = "This server does not support experience transfer.";
+                }
+                else
+                {
+                    MinecraftStatus Status = null;
+                    var ExtendedGet = false;
+                    for (var i = 0; i < Attempts; i++)
+                    {
+                        if (!ExtendedGet)
+                            ExtendedGet = QueryHandlerService.GetInfoMCNew(IP, Port, out Status);
+                    }
+
+                    if (!ExtendedGet || Status == null)
+                    {
+                        Message = "Could not connect to the server!";
+                    }
+                    else
+                    {
+                        var Users = GetMCUsers("192.168.2.6", 27286, "mukyumukyu", out var Client, false);
+                        var SourceMCUsername = UNODatabaseService.GetMinecraftUser(Source).GetAwaiter().GetResult();
+                        var SourceUser = Users.Find(o => o.Online && o.Username == SourceMCUsername);
+                        var TargetUser = Users.Find(o => o.Online && o.Username == Target);
+
+                        if (Amount <= 0)
+                            Message = "Invalid amount! It must be a positive number.";
+                        else if (SourceMCUsername == null)
+                            Message = "Failed to find a username associated to this Discord account.";
+                        else if (SourceUser == null)
+                            Message = "You must be online to make this request.";
+                        else if (TargetUser == null)
+                            Message = "The target user must be online to make this request.";
+                        else if (SourceUser.Experience < Amount)
+                            Message = $"You have {SourceUser.Experience}, but you're trying to give {Amount}.";
+                        else
+                        {
+                            Client.Execute($"xp add {SourceUser.Username} -{Amount} points", true);
+                            Client.Execute($"xp add {TargetUser.Username} {Amount} points");
+                            MessageTitle = "Nice.";
+                            Message = "Transfer successful.\n" +
+                                      $"{SourceUser.Username}: {SourceUser.Experience} → {SourceUser.Experience - Amount}\n" +
+                                      $"{TargetUser.Username}: {TargetUser.Experience} → {TargetUser.Experience + Amount}\n";
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                LoggerService.Log(LogSeverity.Error, Message, e);
+            }
+
+            var Random = ThreadSafeRandom.ThisThreadsRandom;
+            
+            var builder = new EmbedBuilder()
+                .WithColor(new Color(Random.Next(0, 256), Random.Next(0, 256), Random.Next(0, 256)))
+                .WithTimestamp(DateTimeOffset.Now)
+                .WithFooter(footer =>
+                {
+                    footer
+                        .WithText($"UNObot {Program.version} - By DoggySazHi")
+                        .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
+                })
+                .WithAuthor(author =>
+                {
+                    author
+                        .WithName("Experience Transfer")
+                        .WithIconUrl("https://williamle.com/unobot/unobot.png");
+                })
+                .AddField(MessageTitle, Message);
             Result = builder.Build();
             return true;
         }

@@ -1269,5 +1269,31 @@ namespace UNObot.Services
             }
             return description;
         }
+
+        public static async Task<string> GetMinecraftUser(ulong User)
+        {
+            string Username = null;
+            var Parameters = new List<MySqlParameter>();
+
+            const string CommandText = "SELECT minecraftUsername FROM UNObot.Players WHERE userid = ?";
+
+            var p1 = new MySqlParameter
+            {
+                Value = User
+            };
+            Parameters.Add(p1);
+            await using var dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            try
+            {
+                while (dr.Read())
+                    if (!dr.IsDBNull(0))
+                        Username = dr.GetString(0);
+            }
+            catch (MySqlException ex)
+            {
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+            }
+            return Username;
+        }
     }
 }
