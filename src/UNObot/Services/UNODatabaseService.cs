@@ -12,8 +12,9 @@ namespace UNObot.Services
 {
     public static class UNODatabaseService
     {
-        public static string ConnString = "";
-        public static void GetConnectionString()
+        private static string ConnString = "";
+
+        private static void GetConnectionString()
         {
             using (StreamReader r = new StreamReader("config.json"))
             {
@@ -29,8 +30,51 @@ namespace UNObot.Services
             //ha, damn the limited encodings.
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             Encoding.GetEncoding("windows-1254");
-
         }
+        
+        public static async Task CleanAll()
+        {
+            using (StreamReader r = new StreamReader("config.json"))
+            {
+                string json = r.ReadToEnd();
+                JObject jObject = JObject.Parse(json);
+                if (jObject["version"] == null)
+                {
+                    LoggerService.Log(LogSeverity.Error, "ERROR: Version has not been written in config.json!\nIt must contain a version.");
+                    return;
+                }
+                Program.version = (string)jObject["version"];
+                LoggerService.Log(LogSeverity.Info, $"Running {Program.version}!");
+            }
+            GetConnectionString();
+            List<MySqlParameter> Parameters = new List<MySqlParameter>();
+
+            string CommandText = "SET SQL_SAFE_UPDATES = 0; UPDATE UNObot.Players SET cards = ?, inGame = 0, server = null, gameName = null; UPDATE Games SET inGame = 0, currentCard = ?, `order` = 1, oneCardLeft = 0, queue = ?, description = null; SET SQL_SAFE_UPDATES = 1;";
+            MySqlParameter p1 = new MySqlParameter
+            {
+                Value = "[]"
+            };
+            Parameters.Add(p1);
+            MySqlParameter p2 = new MySqlParameter
+            {
+                Value = "[]"
+            };
+            Parameters.Add(p2);
+            MySqlParameter p3 = new MySqlParameter
+            {
+                Value = "[]"
+            };
+            Parameters.Add(p3);
+            try
+            {
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, CommandText, Parameters.ToArray());
+            }
+            catch (MySqlException ex)
+            {
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+            }
+        }
+        
         public static async Task AddGame(ulong server)
         {
             string CommandText = "INSERT IGNORE INTO Games (server) VALUES(?)";
@@ -84,7 +128,7 @@ namespace UNObot.Services
                 Value = server
             };
             Parameters.Add(p1);
-            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            await using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
             try
             {
                 while (dr.Read())
@@ -141,7 +185,7 @@ namespace UNObot.Services
                 Value = server
             };
             Parameters.Add(p1);
-            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            await using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
             try
             {
                 while (dr.Read())
@@ -262,48 +306,7 @@ namespace UNObot.Services
                 LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
-        public static async Task CleanAll()
-        {
-            using (StreamReader r = new StreamReader("config.json"))
-            {
-                string json = r.ReadToEnd();
-                JObject jObject = JObject.Parse(json);
-                if (jObject["version"] == null)
-                {
-                    LoggerService.Log(LogSeverity.Error, "ERROR: Version has not been written in config.json!\nIt must contain a version.");
-                    return;
-                }
-                Program.version = (string)jObject["version"];
-                LoggerService.Log(LogSeverity.Info, $"Running {Program.version}!");
-            }
-            GetConnectionString();
-            List<MySqlParameter> Parameters = new List<MySqlParameter>();
-
-            string CommandText = "SET SQL_SAFE_UPDATES = 0; UPDATE UNObot.Players SET cards = ?, inGame = 0, server = null, gameName = null; UPDATE Games SET inGame = 0, currentCard = ?, `order` = 1, oneCardLeft = 0, queue = ?, description = null; SET SQL_SAFE_UPDATES = 1;";
-            MySqlParameter p1 = new MySqlParameter
-            {
-                Value = "[]"
-            };
-            Parameters.Add(p1);
-            MySqlParameter p2 = new MySqlParameter
-            {
-                Value = "[]"
-            };
-            Parameters.Add(p2);
-            MySqlParameter p3 = new MySqlParameter
-            {
-                Value = "[]"
-            };
-            Parameters.Add(p3);
-            try
-            {
-                await MySqlHelper.ExecuteNonQueryAsync(ConnString, CommandText, Parameters.ToArray());
-            }
-            catch (MySqlException ex)
-            {
-                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
-            }
-        }
+        
         public static async Task AddGuild(ulong Guild, ushort ingame)
         => await AddGuild(Guild, ingame, 1);
 
@@ -363,7 +366,7 @@ namespace UNObot.Services
                 Value = server
             };
             Parameters.Add(p1);
-            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            await using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
             try
             {
                 while (dr.Read())
@@ -390,7 +393,7 @@ namespace UNObot.Services
             };
             Parameters.Add(p1);
             Queue<ulong> players = new Queue<ulong>();
-            using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
+            await using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
             {
                 try
                 {
@@ -418,7 +421,7 @@ namespace UNObot.Services
                 Value = player
             };
             Parameters.Add(p1);
-            using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
+            await using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
             {
                 try
                 {
@@ -472,7 +475,7 @@ namespace UNObot.Services
                 Value = server
             };
             Parameters.Add(p1);
-            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            await using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
             try
             {
                 while (dr.Read())
@@ -498,7 +501,7 @@ namespace UNObot.Services
             };
             Parameters.Add(p1);
             ulong player = 0;
-            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            await using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
             try
             {
                 while (dr.Read())
@@ -600,7 +603,7 @@ namespace UNObot.Services
                 Value = server
             };
             Parameters.Add(p1);
-            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            await using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
             try
             {
                 while (dr.Read())
@@ -624,7 +627,7 @@ namespace UNObot.Services
                 Value = server
             };
             Parameters.Add(p1);
-            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            await using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
             try
             {
                 while (dr.Read())
@@ -673,7 +676,7 @@ namespace UNObot.Services
                 Value = server
             };
             Parameters.Add(p1);
-            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            await using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
             try
             {
                 while (dr.Read())
@@ -699,7 +702,7 @@ namespace UNObot.Services
                 Value = server
             };
             Parameters.Add(p1);
-            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            await using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
             try
             {
                 while (dr.Read())
@@ -748,7 +751,7 @@ namespace UNObot.Services
             };
             Parameters.Add(p1);
             Card card = new Card();
-            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            await using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
             try
             {
                 while (dr.Read())
@@ -800,7 +803,7 @@ namespace UNObot.Services
                 Value = player
             };
             Parameters.Add(p1);
-            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            await using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
             try
             {
                 while (dr.Read())
@@ -826,7 +829,7 @@ namespace UNObot.Services
                 Value = server
             };
             Parameters.Add(p1);
-            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            await using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
             try
             {
                 while (dr.Read())
@@ -854,7 +857,7 @@ namespace UNObot.Services
             };
             Parameters.Add(p1);
             List<Card> cards;
-            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            await using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
             try
             {
                 while (dr.Read())
@@ -881,7 +884,7 @@ namespace UNObot.Services
                 Value = player
             };
             Parameters.Add(p1);
-            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            await using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
             try
             {
                 while (dr.Read())
@@ -945,7 +948,7 @@ namespace UNObot.Services
             };
             Parameters.Add(p1);
             int[] stats = { 0, 0, 0 };
-            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            await using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
             try
             {
                 while (dr.Read())
@@ -973,7 +976,7 @@ namespace UNObot.Services
             };
             Parameters.Add(p1);
             String message = null;
-            using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
+            await using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
             {
                 try
                 {
@@ -1138,7 +1141,7 @@ namespace UNObot.Services
                 Value = server
             };
             Parameters.Add(p1);
-            using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
+            await using (MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray()))
             {
                 try
                 {
@@ -1254,7 +1257,7 @@ namespace UNObot.Services
                 Value = server
             };
             Parameters.Add(p1);
-            using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            await using MySqlDataReader dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
             try
             {
                 while (dr.Read())
@@ -1294,6 +1297,103 @@ namespace UNObot.Services
                 LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
             return Username;
+        }
+        
+        public static async Task AddWebhook(string Key, ulong Guild, ulong Channel, string Type = "bitbucket")
+        {
+            const string CommandText = "INSERT INTO UNObot.Webhooks (webhookKey, channel, guild, type) VALUES (?, ?, ?, ?)";
+            var Parameters = new List<MySqlParameter>();
+            var p1 = new MySqlParameter
+            {
+                Value = Key.Substring(50)
+            };
+            Parameters.Add(p1);
+            var p2 = new MySqlParameter
+            {
+                Value = Channel
+            };
+            Parameters.Add(p2);
+            var p3 = new MySqlParameter
+            {
+                Value = Guild
+            };
+            Parameters.Add(p3);
+            var p4 = new MySqlParameter
+            {
+                Value = Type
+            };
+            Parameters.Add(p4);
+
+            try
+            {
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, CommandText, Parameters.ToArray());
+            }
+            catch (MySqlException ex)
+            {
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+            }
+        }
+        
+        public static async Task DeleteWebhook(string Key, ulong Guild, ulong Channel, string Type = "bitbucket")
+        {
+            const string CommandText = "INSERT INTO UNObot.Webhooks (webhookKey, channel, guild, type) VALUES (?, ?, ?, ?)";
+            var Parameters = new List<MySqlParameter>();
+            var p1 = new MySqlParameter
+            {
+                Value = Key.Substring(50)
+            };
+            Parameters.Add(p1);
+            var p2 = new MySqlParameter
+            {
+                Value = Channel
+            };
+            Parameters.Add(p2);
+            var p3 = new MySqlParameter
+            {
+                Value = Guild
+            };
+            Parameters.Add(p3);
+            var p4 = new MySqlParameter
+            {
+                Value = Type
+            };
+            Parameters.Add(p4);
+
+            try
+            {
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, CommandText, Parameters.ToArray());
+            }
+            catch (MySqlException ex)
+            {
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+            }
+        }
+        
+        public static async Task<(ulong, ulong)> GetWebhook(ulong channel)
+        {
+            var CommandText = "SELECT guild, channel FROM UNObot.Webhooks WHERE webhookKey = ?";
+            ulong Guild = 0;
+            ulong Channel = 0;
+            var Parameters = new List<MySqlParameter>();
+            var p1 = new MySqlParameter
+            {
+                Value = channel
+            };
+            Parameters.Add(p1);
+            await using var dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            try
+            {
+                while (dr.Read())
+                {
+                    Guild = dr.GetUInt64(0);
+                    Channel = dr.GetUInt64(1);
+                }
+            }
+            catch (MySqlException ex)
+            {
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+            }
+            return (Guild, Channel);
         }
     }
 }

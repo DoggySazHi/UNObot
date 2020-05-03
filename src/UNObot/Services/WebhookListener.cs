@@ -30,7 +30,7 @@ namespace UNObot.Services
                 return;
             }
 
-            bitbucketServers.Add("aURMBj-_zAJi6nsCPim6ezNxM6LYtwGrZmgMbV3RcKCfwFFygqUz2jLSecPjEEBUIYIh1Xewdp-vtJi5tqCidyKazInmq-20dtBNybd4xilFElaaMb0PFh8ileaZ6CN6q2BUZw", 420005591155605535);
+            bitbucketServers.Add("aURMBj-_zAJi6nsCPim6ezNxM6LYtwGrZmgMbV3RcKCfwFFygq", 420005591155605535);
             DefaultResponse = Encoding.UTF8.GetBytes("mukyu!");
             Exited = new ManualResetEvent(false);
 

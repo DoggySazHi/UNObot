@@ -579,9 +579,9 @@ namespace UNObot.Services
                     PlayersOnline += $"{ExtendedStatus.Players[i]}";
                     if (MCUserInfo != null)
                     {
-                        var UserInfo = MCUserInfo.Where(o => o.Username == ExtendedStatus.Players[i]).ToList();
-                        if (UserInfo.Count != 0)
-                            PlayersOnline += $"\n- **Ouchies: **{UserInfo[0].Ouchies} | **Health:** {UserInfo[0].Health} | **Food:** {UserInfo[0].Food}";
+                        var UserInfo = MCUserInfo.Find(o => o.Username == ExtendedStatus.Players[i]);
+                        if (UserInfo != null)
+                            PlayersOnline += $"\n- **Ouchies:** {UserInfo.Ouchies} | **Health:** {UserInfo.Health} | **Food:** {UserInfo.Food}\n- **Experience:** {UserInfo.Experience}";
                         else
                             PlayersOnline += "\n Unknown stats.";
                     }
@@ -643,7 +643,7 @@ namespace UNObot.Services
             var Ouchies = GetMCUsers("192.168.2.6", 27286, "mukyumukyu", out _);
 
             var Random = ThreadSafeRandom.ThisThreadsRandom;
-            string PlayersOnline = "";
+            var PlayersOnline = "";
 
             foreach (var Item in Ouchies)
                 PlayersOnline += $"{Item.Username} - {Item.Ouchies} Ouchies\n";
@@ -732,7 +732,7 @@ namespace UNObot.Services
             return true;
         }
 
-        public static bool TransferEmbed(string IP, ushort Port, ulong Source, string Target, int Amount, out Embed Result)
+        public static bool TransferEmbed(string IP, ushort Port, ulong Source, string Target, string AmountIn, out Embed Result)
         {
             var MessageTitle = "Mukyu~";
             var Message = "General error; IDK what happened, see UNObot logs.";
@@ -764,24 +764,34 @@ namespace UNObot.Services
                         var SourceUser = Users.Find(o => o.Online && o.Username == SourceMCUsername);
                         var TargetUser = Users.Find(o => o.Online && o.Username == Target);
 
-                        if (Amount <= 0)
-                            Message = "Invalid amount! It must be a positive number.";
-                        else if (SourceMCUsername == null)
+                        var TextAmount = AmountIn.ToLower().Trim();
+                        var NumAmount = int.TryParse(AmountIn, out var Amount);
+                        if (TextAmount == "all" || TextAmount == "max")
+                        {
+                            Amount = 1;
+                            NumAmount = true;
+                        }
+                        if (SourceMCUsername == null)
                             Message = "Failed to find a username associated to this Discord account.";
                         else if (SourceUser == null)
                             Message = "You must be online to make this request.";
                         else if (TargetUser == null)
                             Message = "The target user must be online to make this request.";
+                        else if (!NumAmount || Amount <= 0)
+                            Message = "Invalid amount! It must be a positive number.";
                         else if (SourceUser.Experience < Amount)
                             Message = $"You have {SourceUser.Experience}, but you're trying to give {Amount}.";
                         else
                         {
+                            if (TextAmount == "all" || TextAmount == "max")
+                                Amount = SourceUser.Experience;
                             Client.Execute($"xp add {SourceUser.Username} -{Amount} points", true);
                             Client.Execute($"xp add {TargetUser.Username} {Amount} points");
                             MessageTitle = "Nice.";
-                            Message = "Transfer successful.\n" +
-                                      $"{SourceUser.Username}: {SourceUser.Experience} → {SourceUser.Experience - Amount}\n" +
-                                      $"{TargetUser.Username}: {TargetUser.Experience} → {TargetUser.Experience + Amount}\n";
+                            
+                            Message = $"Transfer successful.{(SourceUser == TargetUser ? " But why?" : "")}\n" +
+                                      $"{SourceUser.Username}: {SourceUser.Experience} → {SourceUser.Experience -= Amount}\n" +
+                                      $"{TargetUser.Username}: {TargetUser.Experience} → {TargetUser.Experience += Amount}\n";
                         }
                     }
                 }

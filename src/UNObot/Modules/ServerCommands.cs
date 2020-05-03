@@ -127,7 +127,7 @@ namespace UNObot.Modules
 
         [Command("expay", RunMode = RunMode.Async)]
         [Help(new[] { ".expay (target) (amount)" }, "Where's my experience?", true, "UNObot 4.0.17")]
-        public async Task GetLocations(string Target, int Amount)
+        public async Task GetLocations(string Target, string Amount)
         {
             var Message = await ReplyAsync("I am now contacting the server, please wait warmly...");
             try
