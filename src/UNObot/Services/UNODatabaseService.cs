@@ -1302,31 +1302,27 @@ namespace UNObot.Services
         public static async Task AddWebhook(string Key, ulong Guild, ulong Channel, string Type = "bitbucket")
         {
             const string CommandText = "INSERT INTO UNObot.Webhooks (webhookKey, channel, guild, type) VALUES (?, ?, ?, ?)";
-            var Parameters = new List<MySqlParameter>();
+
             var p1 = new MySqlParameter
             {
                 Value = Key.Substring(50)
             };
-            Parameters.Add(p1);
             var p2 = new MySqlParameter
             {
                 Value = Channel
             };
-            Parameters.Add(p2);
             var p3 = new MySqlParameter
             {
                 Value = Guild
             };
-            Parameters.Add(p3);
             var p4 = new MySqlParameter
             {
                 Value = Type
             };
-            Parameters.Add(p4);
 
             try
             {
-                await MySqlHelper.ExecuteNonQueryAsync(ConnString, CommandText, Parameters.ToArray());
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, CommandText, p1, p2, p3, p4);
             }
             catch (MySqlException ex)
             {
