@@ -1305,7 +1305,7 @@ namespace UNObot.Services
 
             var p1 = new MySqlParameter
             {
-                Value = Key.Substring(50)
+                Value = Key.Substring(0, 50)
             };
             var p2 = new MySqlParameter
             {
@@ -1330,30 +1330,15 @@ namespace UNObot.Services
             }
         }
         
-        public static async Task DeleteWebhook(string Key, ulong Guild, ulong Channel, string Type = "bitbucket")
+        public static async Task DeleteWebhook(string Key)
         {
-            const string CommandText = "INSERT INTO UNObot.Webhooks (webhookKey, channel, guild, type) VALUES (?, ?, ?, ?)";
+            const string CommandText = "DELETE FROM UNObot.Webhooks WHERE webhookKey = ?";
             var Parameters = new List<MySqlParameter>();
             var p1 = new MySqlParameter
             {
-                Value = Key.Substring(50)
+                Value = Key.Substring(0, 50)
             };
             Parameters.Add(p1);
-            var p2 = new MySqlParameter
-            {
-                Value = Channel
-            };
-            Parameters.Add(p2);
-            var p3 = new MySqlParameter
-            {
-                Value = Guild
-            };
-            Parameters.Add(p3);
-            var p4 = new MySqlParameter
-            {
-                Value = Type
-            };
-            Parameters.Add(p4);
 
             try
             {
@@ -1365,7 +1350,7 @@ namespace UNObot.Services
             }
         }
         
-        public static async Task<(ulong, ulong)> GetWebhook(ulong channel)
+        public static async Task<(ulong Guild, ulong Channel)> GetWebhook(string Key)
         {
             var CommandText = "SELECT guild, channel FROM UNObot.Webhooks WHERE webhookKey = ?";
             ulong Guild = 0;
@@ -1373,7 +1358,7 @@ namespace UNObot.Services
             var Parameters = new List<MySqlParameter>();
             var p1 = new MySqlParameter
             {
-                Value = channel
+                Value = Key.Substring(0, 50)
             };
             Parameters.Add(p1);
             await using var dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());

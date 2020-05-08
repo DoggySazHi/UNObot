@@ -61,6 +61,14 @@ namespace UNObot.Modules
             await ShellService.GitFetch().ConfigureAwait(false);
             await ReplyAsync(await ShellService.GitStatus().ConfigureAwait(false)).ConfigureAwait(false);
         }
+
+        [Command("rconlongpackettest", RunMode = RunMode.Async)]
+        public async Task RCONLongPacketTest()
+        {
+            QueryHandlerService.SendRCON("192.168.2.6", 27286, "data get entity PuppySazHi", "mukyumukyu", out var Data);
+            await ReplyAsync("" + Data.Status);
+            LoggerService.Log(LogSeverity.Verbose, Data.Data);
+        }
 #endif
 
         /*

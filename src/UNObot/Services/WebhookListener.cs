@@ -30,7 +30,6 @@ namespace UNObot.Services
                 return;
             }
 
-            bitbucketServers.Add("aURMBj-_zAJi6nsCPim6ezNxM6LYtwGrZmgMbV3RcKCfwFFygq", 420005591155605535);
             DefaultResponse = Encoding.UTF8.GetBytes("mukyu!");
             Exited = new ManualResetEvent(false);
 
@@ -65,9 +64,9 @@ namespace UNObot.Services
                     var request = context.Request;
                     var URL = context.Request.RawUrl;
                     LoggerService.Log(LogSeverity.Debug, $"Received request from {URL}.");
-                    var ValidServers = bitbucketServers.Where(o => URL.Contains(o.Key)).ToList();
-                    if(ValidServers.Any())
-                        LoggerService.Log(LogSeverity.Debug, $"Found server, points to {ValidServers[0]}.");
+                    var ID = URL.Substring(1);
+                    var ValidServers = UNODatabaseService.GetWebhook(ID).GetAwaiter().GetResult();
+                    LoggerService.Log(LogSeverity.Debug, $"Found server, points to {ValidServers.Guild}, {ValidServers.Channel}.");
 
                     using var data = request.InputStream;
                     using var sr = new StreamReader(data);

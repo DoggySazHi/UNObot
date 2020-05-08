@@ -685,11 +685,13 @@ namespace UNObot.Services
     public class MinecraftRCON : IDisposable
     {
         private static List<MinecraftRCON> ReusableRCONSockets = new List<MinecraftRCON>();
+        private static readonly byte[] MultiPacketRequestEnd = MakePacketData("", PacketType.SERVERDATA_RESPONSE_VALUE, 0);
+        private static readonly byte[] MultiPacketResponseEnd = {0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00 };
         public ulong Owner { get; set; }
         public bool Disposed { get; private set; }
         private Socket Client;
         private const ushort RX_SIZE = 4096;
-        private enum PacketType {SERVERDATA_EXECCOMMAND = 2, SERVERDATA_AUTH = 3}
+        private enum PacketType {SERVERDATA_RESPONSE_VALUE = 0, SERVERDATA_EXECCOMMAND = 2, SERVERDATA_AUTH = 3}
         public enum RCONStatus {CONN_FAIL, AUTH_FAIL, EXEC_FAIL, INT_FAIL, SUCCESS}
         public RCONStatus Status { get; private set; }
         public string Data { get; private set; }
@@ -767,37 +769,87 @@ namespace UNObot.Services
 
         public void Execute(string Command, ref byte[] RXData, bool Reuse = false)
         {
+            var StringConcat = new StringBuilder();
+            var PacketCount = 0;
             try
             {
                 var Payload = MakePacketData(Command, PacketType.SERVERDATA_EXECCOMMAND, 0);
                 Client.Send(Payload);
-                Client.Receive(RXData);
-                var ID = LittleEndianReader(ref RXData, 4);
-                var Type = LittleEndianReader(ref RXData, 8);
-                if (ID == -1 || Type != 0)
+                //Client.Send(MultiPacketRequestEnd);
+                var End = false;
+                do
                 {
-                    LoggerService.Log(LogSeverity.Verbose, $"Failed to execute \"{Command}\"!");
-                    Status = RCONStatus.AUTH_FAIL;
-                    return;
-                }
+                    Wipe(ref RXData);
+                    // Subtract 1 to ignore null.
+                    var Size = Client.Receive(RXData) - 1;
+#if DEBUG
+                    using (var fs = new FileStream($"packet{PacketCount}", FileMode.Create, FileAccess.Write))
+                        fs.Write(RXData, 0, RXData.Length);
+                    StringConcat.Append($"\nPacket {PacketCount}\n\n");
+#endif
+                    var ID = LittleEndianReader(ref RXData, 4);
+                    var Type = LittleEndianReader(ref RXData, 8);
+                    if ((ID == -1 || Type != 0) && PacketCount == 0)
+                    {
+                        LoggerService.Log(LogSeverity.Verbose,
+                            $"Failed to execute \"{Command}\", type of {Type} after reading {PacketCount} packets!!");
+                        Status = RCONStatus.AUTH_FAIL;
+                        return;
+                    }
 
-                var StringConcat = new StringBuilder();
-                var Position = 12;
-                var CurrentChar = (char) RXData[Position++];
-                while (CurrentChar != '\x00')
-                {
-                    StringConcat.Append(CurrentChar);
-                    CurrentChar = (char) RXData[Position++];
-                }
+                    var Position = PacketCount == 0 ? 12 : 4;
+                    var CurrentChar = (char) RXData[Position++];
+                    var PeekChar = Position < RXData.Length ? (char) RXData[Position] : '\x00';
+                    while (Position < Size)
+                    {
+                        if (CurrentChar != '\x00' && RXData[Position] != 0)
+                            StringConcat.Append(CurrentChar);
+                        CurrentChar = (char) RXData[Position++];
+                        
+                    }
+                    if (RXData[Size - 1] == '\x00')
+                        End = true;
+
+                    PacketCount++;
+                    LoggerService.Log(LogSeverity.Verbose,
+                        $"Finished reading {PacketCount} packets. Last position: {Position}, Size: {Size}");
+                    if (PacketCount == 20)
+                    {
+                        LoggerService.Log(LogSeverity.Verbose,
+                            "Something internally failed; attempted to read infinite packets!");
+                        End = true;
+                    }
+                } while (!End);
+
+                LoggerService.Log(LogSeverity.Verbose, $"Read {PacketCount} packets!");
                 Data = StringConcat.ToString();
                 Status = RCONStatus.SUCCESS;
             }
-            catch (Exception)
+            catch (SocketException ex)
+            {
+                if (ex.ErrorCode == 10060)
+                {
+                    Status = RCONStatus.SUCCESS;
+                    Data = StringConcat.ToString();
+                }
+                else
+                {
+                    Status = RCONStatus.INT_FAIL;
+                    LoggerService.Log(LogSeverity.Verbose, "Something went wrong while querying!", ex);
+                }
+            }
+            catch (Exception ex)
             {
                 Status = RCONStatus.INT_FAIL;
+                LoggerService.Log(LogSeverity.Verbose, "Something went wrong while querying!", ex);
             }
             if(Status != RCONStatus.SUCCESS || !Reuse)
                 Dispose();
+        }
+
+        private static bool IsEndByte(ref byte[] data)
+        {
+            return false;
         }
 
         private static byte[] LittleEndianConverter(int data)
@@ -810,14 +862,21 @@ namespace UNObot.Services
             return b;
         }
 
-        private static int LittleEndianReader(ref byte[] data, int startIndex) {
+        private static int LittleEndianReader(ref byte[] data, int startIndex)
+        {
             return (data[startIndex + 3] << 24)
                    | (data[startIndex + 2] << 16)
                    | (data[startIndex + 1] << 8)
                    | data[startIndex];
         }
 
-        private byte[] MakePacketData(string Body, PacketType Type, int ID)
+        private static void Wipe(ref byte[] data)
+        {
+            for (var i = 0; i < data.Length; i++)
+                data[i] = (byte) '\x00';
+        }
+
+        private static byte[] MakePacketData(string Body, PacketType Type, int ID)
         {
             var Length = LittleEndianConverter(Body.Length + 9);
             var IDData = LittleEndianConverter(ID);
