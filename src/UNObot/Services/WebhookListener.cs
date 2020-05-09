@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -14,7 +13,6 @@ namespace UNObot.Services
 {
     public class WebhookListener : IDisposable
     {
-        private readonly Dictionary<string, ulong> bitbucketServers = new Dictionary<string, ulong>();
         private static WebhookListener Instance;
         private JsonSerializerSettings Settings;
         private readonly HttpListener Server;

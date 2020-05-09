@@ -16,10 +16,10 @@ namespace UNObot.Services
 
         private static void GetConnectionString()
         {
-            using (StreamReader r = new StreamReader("config.json"))
+            using (var r = new StreamReader("config.json"))
             {
-                string json = r.ReadToEnd();
-                JObject jObject = JObject.Parse(json);
+                var json = r.ReadToEnd();
+                var jObject = JObject.Parse(json);
                 if (jObject["connStr"] == null)
                 {
                     LoggerService.Log(LogSeverity.Critical, "ERROR: Database string has not been written in config.json!\nIt must contain a connStr.");
