@@ -80,7 +80,7 @@ namespace UNObot.Modules
             var Message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
             {
-                bool success = EmbedDisplayService.OuchiesEmbed("192.168.2.6", 27285, out var Embed);
+                bool success = EmbedDisplayService.OuchiesEmbed(QueryHandlerService.PSurvival, 27285, out var Embed);
                 if (!success || Embed == null)
                 {
                     await Message.ModifyAsync(o => o.Content = "Error: Apparently we couldn't get any information about this server.");
@@ -106,7 +106,7 @@ namespace UNObot.Modules
             var Message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
             {
-                bool success = EmbedDisplayService.LocationsEmbed("192.168.2.6", 27285, out var Embed);
+                bool success = EmbedDisplayService.LocationsEmbed(QueryHandlerService.PSurvival, 27285, out var Embed);
                 if (!success || Embed == null)
                 {
                     await Message.ModifyAsync(o => o.Content = "Error: Apparently we couldn't get any information about this server.");
@@ -132,7 +132,7 @@ namespace UNObot.Modules
             var Message = await ReplyAsync("I am now contacting the server, please wait warmly...");
             try
             {
-                var success = EmbedDisplayService.TransferEmbed("192.168.2.6", 27285, Context.User.Id, Target, Amount, out var Embed);
+                var success = EmbedDisplayService.TransferEmbed(QueryHandlerService.PSurvival, 27285, Context.User.Id, Target, Amount, out var Embed);
                 if (!success || Embed == null)
                 {
                     await Message.ModifyAsync(o => o.Content = "We had some difficulties displaying the status. Please try again?");
@@ -155,7 +155,7 @@ namespace UNObot.Modules
         [Help(new[] { ".mctime" }, "SLEEP GUYS", true, "UNObot 4.0.16")]
         public async Task GetMCTime()
         {
-            await RunRCON("192.168.2.6", 27286, "mukyumukyu", "time query daytime");
+            await RunRCON(QueryHandlerService.PSurvival, 27286, "mukyumukyu", "time query daytime");
         }
 
         [Command("unofficialwiki", RunMode = RunMode.Async), Alias("unwiki")]

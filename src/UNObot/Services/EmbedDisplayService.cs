@@ -431,26 +431,20 @@ namespace UNObot.Services
         
         public static bool MinecraftQueryEmbed(string IP, ushort Port, out Embed Result)
         {
-            MCStatus DefaultStatus = null;
-            MinecraftStatus ExtendedStatus = null;
-            var ExtendedGet = false;
-            for (var i = 0; i < Attempts; i++)
-            {
-                DefaultStatus ??= new MCStatus(IP, Port);
-                if (!ExtendedGet)
-                    ExtendedGet = QueryHandlerService.GetInfoMCNew(IP, Port, out ExtendedStatus);
-            }
+            //TODO with the new option to disable status, it might be that queries work but not simple statuses.
+            var DefaultStatus = new MCStatus(IP, Port);
+            var ExtendedGet = QueryHandlerService.GetInfoMCNew(IP, Port, out var ExtendedStatus);
 
-            if (DefaultStatus == null || !DefaultStatus.ServerUp && !ExtendedGet)
+            if (!DefaultStatus.ServerUp && !ExtendedGet)
             {
                 Result = null;
                 return false;
             }
 
             List<MCUser> MCUserInfo = null;
-            if ((IP == "127.0.0.1" || IP == "williamle.com" || IP == "localhost" || IP == "192.168.2.6") && Port == 27285)
+            if ((IP == "127.0.0.1" || IP == "williamle.com" || IP == "localhost" || IP == QueryHandlerService.PSurvival) && Port == 27285)
             {
-                MCUserInfo = GetMCUsers("192.168.2.6", 27286, "mukyumukyu", out _);
+                MCUserInfo = GetMCUsers(QueryHandlerService.PSurvival, 27286, "mukyumukyu", out _);
             }
 
             var Random = ThreadSafeRandom.ThisThreadsRandom;
@@ -506,7 +500,7 @@ namespace UNObot.Services
 
         public static bool OuchiesEmbed(string IP, ushort Port, out Embed Result)
         {
-            if (IP != "127.0.0.1" && IP != "williamle.com" && IP != "localhost" && IP != "192.168.2.6" || Port != 27285)
+            if (IP != "127.0.0.1" && IP != "williamle.com" && IP != "localhost" && IP != QueryHandlerService.PSurvival || Port != 27285)
             {
                 Result = null;
                 return false;
@@ -526,7 +520,7 @@ namespace UNObot.Services
                 return false;
             }
 
-            var Ouchies = GetMCUsers("192.168.2.6", 27286, "mukyumukyu", out _);
+            var Ouchies = GetMCUsers(QueryHandlerService.PSurvival, 27286, "mukyumukyu", out _);
 
             var Random = ThreadSafeRandom.ThisThreadsRandom;
             var PlayersOnline = "";
@@ -562,7 +556,7 @@ namespace UNObot.Services
 
         public static bool LocationsEmbed(string IP, ushort Port, out Embed Result)
         {
-            if (IP != "127.0.0.1" && IP != "williamle.com" && IP != "localhost" && IP != "192.168.2.6" || Port != 27285)
+            if (IP != "127.0.0.1" && IP != "williamle.com" && IP != "localhost" && IP != QueryHandlerService.PSurvival || Port != 27285)
             {
                 Result = null;
                 return false;
@@ -582,7 +576,7 @@ namespace UNObot.Services
                 return false;
             }
 
-            var Users = GetMCUsers("192.168.2.6", 27286, "mukyumukyu", out _);
+            var Users = GetMCUsers(QueryHandlerService.PSurvival, 27286, "mukyumukyu", out _);
 
             var Random = ThreadSafeRandom.ThisThreadsRandom;
             var PlayersOnline = "";
@@ -625,19 +619,14 @@ namespace UNObot.Services
 
             try
             {
-                if (IP != "127.0.0.1" && IP != "williamle.com" && IP != "localhost" && IP != "192.168.2.6" || Port != 27285)
+                if (IP != "127.0.0.1" && IP != "williamle.com" && IP != "localhost" && IP != QueryHandlerService.PSurvival || Port != 27285)
                 {
                     Message = "This server does not support experience transfer.";
                 }
                 else
                 {
-                    MinecraftStatus Status = null;
-                    var ExtendedGet = false;
-                    for (var i = 0; i < Attempts; i++)
-                    {
-                        if (!ExtendedGet)
-                            ExtendedGet = QueryHandlerService.GetInfoMCNew(IP, Port, out Status);
-                    }
+                    // One-shot query, since it takes too long if it does fail. Plus, it's only one query instead of multi-A2S.
+                    var ExtendedGet = QueryHandlerService.GetInfoMCNew(IP, Port, out var Status);
 
                     if (!ExtendedGet || Status == null)
                     {
@@ -645,7 +634,7 @@ namespace UNObot.Services
                     }
                     else
                     {
-                        var Users = GetMCUsers("192.168.2.6", 27286, "mukyumukyu", out var Client, false);
+                        var Users = GetMCUsers(QueryHandlerService.PSurvival, 27286, "mukyumukyu", out var Client, false);
                         var SourceMCUsername = UNODatabaseService.GetMinecraftUser(Source).GetAwaiter().GetResult();
                         var SourceUser = Users.Find(o => o.Online && o.Username == SourceMCUsername);
                         var TargetUser = Users.Find(o => o.Online && o.Username == Target);

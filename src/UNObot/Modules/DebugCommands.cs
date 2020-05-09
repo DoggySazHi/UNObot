@@ -63,9 +63,9 @@ namespace UNObot.Modules
         }
 
         [Command("rconlongpackettest", RunMode = RunMode.Async)]
-        public async Task RCONLongPacketTest()
+        public async Task RCONLongPacketTest([Remainder] string Command)
         {
-            QueryHandlerService.SendRCON("192.168.2.6", 27286, "data get entity PuppySazHi", "mukyumukyu", out var Data);
+            QueryHandlerService.SendRCON(QueryHandlerService.PSurvival, 27286, Command, "mukyumukyu", out var Data);
             await ReplyAsync("" + Data.Status);
             LoggerService.Log(LogSeverity.Verbose, Data.Data);
         }

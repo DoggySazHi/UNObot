@@ -15,8 +15,11 @@ namespace UNObot.Services
     //Dealing with network-level stuff is hard
 
     //Credit to https://github.com/maxime-paquatte/csharp-minecraft-query/blob/master/src/Status.cs
+    //Mukyu... but I implemented the Minecraft RCON (Valve RCON) protocol by hand, as well as the query.
     public static class QueryHandlerService
     {
+        public static string PSurvival = "192.168.2.42";
+        
         public static string HumanReadable(float Time)
         {
             TimeSpan TS = TimeSpan.FromSeconds(Time);
@@ -685,8 +688,9 @@ namespace UNObot.Services
     public class MinecraftRCON : IDisposable
     {
         private static List<MinecraftRCON> ReusableRCONSockets = new List<MinecraftRCON>();
-        private static readonly byte[] MultiPacketRequestEnd = MakePacketData("", PacketType.SERVERDATA_RESPONSE_VALUE, 0);
-        private static readonly byte[] MultiPacketResponseEnd = {0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00 };
+        private static readonly byte[] MultiPacketRequestEnd = MakePacketData("", PacketType.SERVERDATA_RESPONSE_VALUE, 100);
+        private const string MultiPacketResponseEnd = "Unknown request X";
+        
         public ulong Owner { get; set; }
         public bool Disposed { get; private set; }
         private Socket Client;
@@ -701,12 +705,17 @@ namespace UNObot.Services
         public MinecraftRCON(IPEndPoint Server, string Password, bool Reuse = false, string Command = null)
         {
             this.Password = Password;
+            this.Server = Server;
+            CreateConnection(Reuse, Command);
+        }
+        
+        private void CreateConnection(bool Reuse = false, string Command = null)
+        {
             Client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
             {
                 ReceiveTimeout = 5000,
                 SendTimeout = 5000
             };
-            this.Server = Server;
             try
             {
                 if (!Client.ConnectAsync(Server).Wait(5000))
@@ -775,13 +784,12 @@ namespace UNObot.Services
             {
                 var Payload = MakePacketData(Command, PacketType.SERVERDATA_EXECCOMMAND, 0);
                 Client.Send(Payload);
-                //Client.Send(MultiPacketRequestEnd);
+                Client.Send(MultiPacketRequestEnd);
                 var End = false;
                 do
                 {
                     Wipe(ref RXData);
-                    // Subtract 1 to ignore null.
-                    var Size = Client.Receive(RXData) - 1;
+                    var Size = Client.Receive(RXData);
 #if DEBUG
                     using (var fs = new FileStream($"packet{PacketCount}", FileMode.Create, FileAccess.Write))
                         fs.Write(RXData, 0, RXData.Length);
@@ -797,22 +805,26 @@ namespace UNObot.Services
                         return;
                     }
 
-                    var Position = PacketCount == 0 ? 12 : 4;
+                    var Position = PacketCount == 0 ? 12 : 0;
                     var CurrentChar = (char) RXData[Position++];
-                    var PeekChar = Position < RXData.Length ? (char) RXData[Position] : '\x00';
                     while (Position < Size)
                     {
-                        if (CurrentChar != '\x00' && RXData[Position] != 0)
+                        if (CurrentChar != '\x00' && CurrentChar != 0 && CurrentChar != 0x1b)
                             StringConcat.Append(CurrentChar);
+                        WackDataProcessor(ref RXData, ref Position);
                         CurrentChar = (char) RXData[Position++];
-                        
                     }
-                    if (RXData[Size - 1] == '\x00')
+                    if (CurrentChar != '\x00' && CurrentChar != 0)
+                        StringConcat.Append(CurrentChar);
+                    LoggerService.Log(LogSeverity.Verbose, $"Size: {Size - 1} {RXData.Length}");
+
+                    if (Size == 0 || RXData[Size - 1] == '\x00')
                         End = true;
 
                     PacketCount++;
                     LoggerService.Log(LogSeverity.Verbose,
-                        $"Finished reading {PacketCount} packets. Last position: {Position}, Size: {Size}");
+                        $"Finished reading {PacketCount} packets. Last position: {Position}, Size: {Size}, LastChar: {CurrentChar}");
+                    
                     if (PacketCount == 20)
                     {
                         LoggerService.Log(LogSeverity.Verbose,
@@ -822,15 +834,23 @@ namespace UNObot.Services
                 } while (!End);
 
                 LoggerService.Log(LogSeverity.Verbose, $"Read {PacketCount} packets!");
+                if(PacketCount > 1)
+                    StringConcat.Remove(StringConcat.Length - MultiPacketResponseEnd.Length, MultiPacketResponseEnd.Length);
                 Data = StringConcat.ToString();
                 Status = RCONStatus.SUCCESS;
             }
             catch (SocketException ex)
             {
-                if (ex.ErrorCode == 10060)
+                if (ex.ErrorCode == 10060 && StringConcat.Length >= 0)
                 {
+                    LoggerService.Log(LogSeverity.Warning, "Timed out, but got data... did we try to read another packet?", ex);
                     Status = RCONStatus.SUCCESS;
                     Data = StringConcat.ToString();
+                } else if (ex.ErrorCode == 10053 && Reuse)
+                {
+                    LoggerService.Log(LogSeverity.Warning, "We were closed, however attempting to reopen connection...", ex);
+                    Status = RCONStatus.INT_FAIL;
+                    CreateConnection(true);
                 }
                 else
                 {
@@ -845,11 +865,6 @@ namespace UNObot.Services
             }
             if(Status != RCONStatus.SUCCESS || !Reuse)
                 Dispose();
-        }
-
-        private static bool IsEndByte(ref byte[] data)
-        {
-            return false;
         }
 
         private static byte[] LittleEndianConverter(int data)
@@ -868,6 +883,14 @@ namespace UNObot.Services
                    | (data[startIndex + 2] << 16)
                    | (data[startIndex + 1] << 8)
                    | data[startIndex];
+        }
+
+        // Fixes those random 14 byte sequences in RCON output.
+        private static void WackDataProcessor(ref byte[] data, ref int pos)
+        {
+            if (pos >= data.Length - 14) return;
+            if (data[pos] == 0 && data[pos + 1] == 0)
+                pos += 13;
         }
 
         private static void Wipe(ref byte[] data)
