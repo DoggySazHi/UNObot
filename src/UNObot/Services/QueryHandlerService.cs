@@ -18,18 +18,18 @@ namespace UNObot.Services
     //Mukyu... but I implemented the Minecraft RCON (Valve RCON) protocol by hand, as well as the query.
     public static class QueryHandlerService
     {
-        public static string PSurvival = "192.168.2.42";
-        
+        public const string PSurvival = "192.168.2.42";
+
         public static string HumanReadable(float Time)
         {
-            TimeSpan TS = TimeSpan.FromSeconds(Time);
+            var Formatted = TimeSpan.FromSeconds(Time);
             string Output;
-            if (TS.Hours != 0)
-                Output = $"{(int)TS.TotalHours}:{TS.Minutes:00}:{TS.Seconds:00}";
-            else if (TS.Minutes != 0)
-                Output = $"{TS.Minutes}:{TS.Seconds:00}";
+            if (Formatted.Hours != 0)
+                Output = $"{(int)Formatted.TotalHours}:{Formatted.Minutes:00}:{Formatted.Seconds:00}";
+            else if (Formatted.Minutes != 0)
+                Output = $"{Formatted.Minutes}:{Formatted.Seconds:00}";
             else
-                Output = $"{TS.Seconds} second{(TS.Seconds == 1 ? "" : "s")}";
+                Output = $"{Formatted.Seconds} second{(Formatted.Seconds == 1 ? "" : "s")}";
             return Output;
         }
 
@@ -688,8 +688,6 @@ namespace UNObot.Services
     public class MinecraftRCON : IDisposable
     {
         private static List<MinecraftRCON> ReusableRCONSockets = new List<MinecraftRCON>();
-        private static readonly byte[] MultiPacketRequestEnd = MakePacketData("", PacketType.SERVERDATA_RESPONSE_VALUE, 100);
-        private const string MultiPacketResponseEnd = "Unknown request X";
         
         public ulong Owner { get; set; }
         public bool Disposed { get; private set; }
@@ -751,7 +749,7 @@ namespace UNObot.Services
             Execute(Command, ref PreAlloc, Reuse);
         }
 
-        public bool Authenticate(ref byte[] RXData)
+        private bool Authenticate(ref byte[] RXData)
         {
             try
             {
@@ -775,7 +773,7 @@ namespace UNObot.Services
                 return false;
             }
         }
-
+        
         public void Execute(string Command, ref byte[] RXData, bool Reuse = false)
         {
             var StringConcat = new StringBuilder();
@@ -784,7 +782,6 @@ namespace UNObot.Services
             {
                 var Payload = MakePacketData(Command, PacketType.SERVERDATA_EXECCOMMAND, 0);
                 Client.Send(Payload);
-                Client.Send(MultiPacketRequestEnd);
                 var End = false;
                 do
                 {
@@ -793,7 +790,7 @@ namespace UNObot.Services
 #if DEBUG
                     using (var fs = new FileStream($"packet{PacketCount}", FileMode.Create, FileAccess.Write))
                         fs.Write(RXData, 0, RXData.Length);
-                    StringConcat.Append($"\nPacket {PacketCount}\n\n");
+                    // StringConcat.Append($"\nPacket {PacketCount}\n\n");
 #endif
                     var ID = LittleEndianReader(ref RXData, 4);
                     var Type = LittleEndianReader(ref RXData, 8);
@@ -834,10 +831,11 @@ namespace UNObot.Services
                 } while (!End);
 
                 LoggerService.Log(LogSeverity.Verbose, $"Read {PacketCount} packets!");
-                if(PacketCount > 1)
-                    StringConcat.Remove(StringConcat.Length - MultiPacketResponseEnd.Length, MultiPacketResponseEnd.Length);
                 Data = StringConcat.ToString();
                 Status = RCONStatus.SUCCESS;
+
+                // Purge extra data in feed, ESPECIALLY if we're reusing!
+                if (Client.Available > 0) Client.Receive(RXData);
             }
             catch (SocketException ex)
             {
