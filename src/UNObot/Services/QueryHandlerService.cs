@@ -693,7 +693,7 @@ namespace UNObot.Services
         public bool Disposed { get; private set; }
         private Socket Client;
         private const ushort RX_SIZE = 4096;
-        private enum PacketType {SERVERDATA_RESPONSE_VALUE = 0, SERVERDATA_EXECCOMMAND = 2, SERVERDATA_AUTH = 3}
+        private enum PacketType {/* SERVERDATA_RESPONSE_VALUE = 0, */ SERVERDATA_EXECCOMMAND = 2, SERVERDATA_AUTH = 3}
         public enum RCONStatus {CONN_FAIL, AUTH_FAIL, EXEC_FAIL, INT_FAIL, SUCCESS}
         public RCONStatus Status { get; private set; }
         public string Data { get; private set; }
