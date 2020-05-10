@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using AngleSharp.Common;
 using Newtonsoft.Json;
 using Discord;
 
@@ -56,12 +57,17 @@ namespace UNObot.Services
         {
             try
             {
+                //TODO Split by Client ID and then Key to optimize database.
                 while (!Stop)
                 {
                     var context = Server.GetContext();
                     var request = context.Request;
                     var URL = context.Request.RawUrl;
                     LoggerService.Log(LogSeverity.Debug, $"Received request from {URL}.");
+                    var Headers = "Headers: ";
+                    foreach (var Header in request.Headers.ToDictionary())
+                        Headers += $"{Header.Key}, {Header.Value}";
+                    LoggerService.Log(LogSeverity.Debug, Headers);
                     var ID = URL.Substring(1);
                     var ValidServers = UNODatabaseService.GetWebhook(ID).GetAwaiter().GetResult();
                     LoggerService.Log(LogSeverity.Debug, $"Found server, points to {ValidServers.Guild}, {ValidServers.Channel}.");

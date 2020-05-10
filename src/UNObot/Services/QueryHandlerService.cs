@@ -18,7 +18,7 @@ namespace UNObot.Services
     //Mukyu... but I implemented the Minecraft RCON (Valve RCON) protocol by hand, as well as the query.
     public static class QueryHandlerService
     {
-        public const string PSurvival = "192.168.2.42";
+        public const string PSurvival = "192.168.2.6";
 
         public static string HumanReadable(float Time)
         {
