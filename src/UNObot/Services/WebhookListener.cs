@@ -68,9 +68,18 @@ namespace UNObot.Services
                     foreach (var Key in request.Headers.AllKeys)
                         Headers += $"{Key}, {request.Headers[Key]}\n";
                     LoggerService.Log(LogSeverity.Debug, Headers);
-                    var ID = URL.Substring(1);
-                    var ValidServers = UNODatabaseService.GetWebhook(ID).GetAwaiter().GetResult();
-                    LoggerService.Log(LogSeverity.Debug, $"Found server, points to {ValidServers.Guild}, {ValidServers.Channel}.");
+                    
+                    if (URL.Length >= 1)
+                    {
+                        var ID = URL.Substring(1);
+                        var ValidServers = UNODatabaseService.GetWebhook(ID).GetAwaiter().GetResult();
+                        if(ValidServers.Guild != 0)
+                            LoggerService.Log(LogSeverity.Debug,
+                                $"Found server, points to {ValidServers.Guild}, {ValidServers.Channel}.");
+                        else
+                            LoggerService.Log(LogSeverity.Debug,
+                                $"Does not seem to point to a server.");
+                    }
 
                     using var data = request.InputStream;
                     using var sr = new StreamReader(data);

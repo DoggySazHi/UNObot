@@ -1336,7 +1336,7 @@ namespace UNObot.Services
             var Parameters = new List<MySqlParameter>();
             var p1 = new MySqlParameter
             {
-                Value = Key.Substring(0, 50)
+                Value = Key.Substring(0, Math.Min(Key.Length, 50))
             };
             Parameters.Add(p1);
 
@@ -1358,7 +1358,7 @@ namespace UNObot.Services
             var Parameters = new List<MySqlParameter>();
             var p1 = new MySqlParameter
             {
-                Value = Key.Substring(0, 50)
+                Value = Key.Substring(0, Math.Min(Key.Length, 50))
             };
             Parameters.Add(p1);
             await using var dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
