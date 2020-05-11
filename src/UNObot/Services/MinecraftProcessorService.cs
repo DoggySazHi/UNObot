@@ -121,7 +121,7 @@ namespace UNObot.Services
                 catch (JsonReaderException ex)
                 {
                     LoggerService.Log(LogSeverity.Error, "Failed to process JSON! Falling back...", ex);
-                    OldUserProcessor(Output, Name, Client);
+                    OldUserProcessor(ref Output, Name, Client);
                 }
             }
 
@@ -130,12 +130,12 @@ namespace UNObot.Services
             return Output;
         }
 
-        private static void OldUserProcessor(List<MCUser> Users, string Name, MinecraftRCON Client)
+        private static void OldUserProcessor(ref List<MCUser> Users, string Name, MinecraftRCON Client)
         {
             Client.Execute(
                     $"execute as {Name} at @s run summon minecraft:armor_stand ~ ~ ~ {{Invisible:1b,PersistenceRequired:1b,Tags:[\"coordfinder\"]}}",
                     true);
-                Client.Execute("execute as @e[tag=coordfinder] at @s run tp @s ~ ~ ~", true);
+            Client.Execute("execute as @e[tag=coordfinder] at @s run tp @s ~ ~ ~", true);
             double[] Coordinates = null;
             if (Client.Status == MinecraftRCON.RCONStatus.SUCCESS)
             {
@@ -154,11 +154,13 @@ namespace UNObot.Services
                     LoggerService.Log(LogSeverity.Warning, $"Failed to process coordinates. Response: {Client.Data}");
                 }
             }
+            Client.Execute("execute as @e[tag=coordfinder] at @s run kill @s", true);
+
             Client.Execute($"scoreboard players get {Name} Health", true);
             var Health = Client.Data.Contains("has") ? Client.Data.Split(' ')[2] : "??";
             Client.Execute($"scoreboard players get {Name} Food", true);
             var Food = Client.Data.Contains("has") ? Client.Data.Split(' ')[2] : "??";
-            Client.Execute("execute as @e[tag=coordfinder] at @s run kill @s", true);
+            
             Client.Execute($"execute as {Name} at @s run experience query @s points", true);
             var PointData = Client.Data;
             Client.Execute($"execute as {Name} at @s run experience query @s levels", true);
@@ -173,7 +175,7 @@ namespace UNObot.Services
                 }
                 catch (FormatException)
                 {
-                    LoggerService.Log(LogSeverity.Warning, $"Failed to process coordinates. Response: {Client.Data}");
+                    LoggerService.Log(LogSeverity.Warning, $"Failed to process experience. Response: {Client.Data}");
                 }
             }
             foreach (var CorrectUser in Users.Where(User => User.Username == Name))
