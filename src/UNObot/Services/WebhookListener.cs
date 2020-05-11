@@ -65,8 +65,8 @@ namespace UNObot.Services
                     var URL = context.Request.RawUrl;
                     LoggerService.Log(LogSeverity.Debug, $"Received request from {URL}.");
                     var Headers = "Headers: ";
-                    foreach (var Header in request.Headers.ToDictionary())
-                        Headers += $"{Header.Key}, {Header.Value}";
+                    foreach (var Key in request.Headers.AllKeys)
+                        Headers += $"{Key}, {request.Headers[Key]}\n";
                     LoggerService.Log(LogSeverity.Debug, Headers);
                     var ID = URL.Substring(1);
                     var ValidServers = UNODatabaseService.GetWebhook(ID).GetAwaiter().GetResult();
