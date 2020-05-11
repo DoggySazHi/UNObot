@@ -65,15 +65,16 @@ namespace UNObot.Services
                 if (Client.Data.Equals("No entity was found", StringComparison.CurrentCultureIgnoreCase))
                     continue;
 
+                // Ignore the (PLAYERNAME) has the following data: 
+                var JSONString = Client.Data.Substring(Client.Data.IndexOf('{'));
+                // For UUIDs, they start an array with I; to indicate all values are integers; ignore it.
+                JSONString = JSONString.Replace("I;", "");
+                // Regex to completely ignore the b, s, l, f, and d patterns. Probably the worst RegEx I ever wrote.
+                JSONString = Regex.Replace(JSONString, @"([:|\[|\,]\s*\-?\d*.?\d+)[s|b|l|f|d]", "${1}");
+                
                 try
                 {
                     double[] Coordinates = null;
-                    // Ignore the (PLAYERNAME) has the following data: 
-                    var JSONString = Client.Data.Substring(Client.Data.IndexOf('{'));
-                    // For UUIDs, they start an array with I; to indicate all values are integers; ignore it.
-                    JSONString = JSONString.Replace("I;", "");
-                    // Regex to completely ignore the b, s, l, f, and d patterns. Probably the worst RegEx I ever wrote.
-                    JSONString = Regex.Replace(JSONString, @"([:|\[|\,]\s*\-?\d*.?\d+)[s|b|l|f|d]", "${1}");
                     var JSON = JObject.Parse(JSONString);
                     var Dimension = JSON["Dimension"];
                     var Position = JSON["Pos"];
@@ -120,7 +121,7 @@ namespace UNObot.Services
                 }
                 catch (JsonReaderException ex)
                 {
-                    LoggerService.Log(LogSeverity.Error, "Failed to process JSON! Falling back...", ex);
+                    LoggerService.Log(LogSeverity.Error, $"Failed to process JSON! Falling back...\n{JSONString}", ex);
                     OldUserProcessor(ref Output, Name, Client);
                 }
             }
