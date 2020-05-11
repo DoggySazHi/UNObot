@@ -583,8 +583,19 @@ namespace UNObot.Services
             if (Users.Count == 0)
                 PlayersOnline = "Nobody's online!";
             else foreach(var User in Users)
-                if(User.Online)
-                    PlayersOnline += $"{User.Username} - **X:** {User.Coordinates[0]:N2} **Y:** {User.Coordinates[1]:N2} **Z:** {User.Coordinates[2]:N2}\n";
+                if (User.Online)
+                {
+                    PlayersOnline +=
+                        $"{User.Username} - **X:** {User.Coordinates[0]:N2} **Y:** {User.Coordinates[1]:N2} **Z:** {User.Coordinates[2]:N2} ";
+                    if(User.Coordinates.Length == 4)
+                        PlayersOnline += User.Coordinates[3] switch
+                        {
+                            1 => "**End**",
+                            -1 => "**Nether**",
+                            _ => "**Overworld**"
+                        };
+                    PlayersOnline += "\n";
+                }
             // Doesn't seem to affect embeds. PlayersOnline = PlayersOnline.Substring(0, PlayersOnline.Length - 1);
 
             var builder = new EmbedBuilder()

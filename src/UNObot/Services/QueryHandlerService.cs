@@ -797,7 +797,7 @@ namespace UNObot.Services
                     if ((ID == -1 || Type != 0) && PacketCount == 0)
                     {
                         LoggerService.Log(LogSeverity.Verbose,
-                            $"Failed to execute \"{Command}\", type of {Type} after reading {PacketCount} packets!!");
+                            $"Failed to execute \"{Command}\", type of {Type}!");
                         Status = RCONStatus.AUTH_FAIL;
                         return;
                     }
@@ -813,24 +813,15 @@ namespace UNObot.Services
                     }
                     if (CurrentChar != '\x00' && CurrentChar != 0)
                         StringConcat.Append(CurrentChar);
-                    LoggerService.Log(LogSeverity.Verbose, $"Size: {Size - 1} {RXData.Length}");
 
                     if (Size == 0 || RXData[Size - 1] == '\x00')
                         End = true;
 
                     PacketCount++;
-                    LoggerService.Log(LogSeverity.Verbose,
-                        $"Finished reading {PacketCount} packets. Last position: {Position}, Size: {Size}, LastChar: {CurrentChar}");
-                    
                     if (PacketCount == 20)
-                    {
-                        LoggerService.Log(LogSeverity.Verbose,
-                            "Something internally failed; attempted to read infinite packets!");
                         End = true;
-                    }
                 } while (!End);
 
-                LoggerService.Log(LogSeverity.Verbose, $"Read {PacketCount} packets!");
                 Data = StringConcat.ToString();
                 Status = RCONStatus.SUCCESS;
 

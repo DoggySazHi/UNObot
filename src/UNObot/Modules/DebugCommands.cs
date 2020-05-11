@@ -1,6 +1,10 @@
+using System;
+using System.Text.RegularExpressions;
 using Discord;
 using Discord.Commands;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UNObot.Services;
 
 namespace UNObot.Modules
@@ -62,12 +66,44 @@ namespace UNObot.Modules
             await ReplyAsync(await ShellService.GitStatus().ConfigureAwait(false)).ConfigureAwait(false);
         }
 
-        [Command("rconlongpackettest", RunMode = RunMode.Async)]
-        public async Task RCONLongPacketTest([Remainder] string Command)
+        [Command("getplayerdata", RunMode = RunMode.Async)]
+        public async Task RCONLongPacketTest(string User)
         {
-            QueryHandlerService.SendRCON(QueryHandlerService.PSurvival, 27286, Command, "mukyumukyu", out var Data);
-            await ReplyAsync("" + Data.Status);
-            LoggerService.Log(LogSeverity.Verbose, Data.Data);
+            QueryHandlerService.SendRCON(QueryHandlerService.PSurvival, 27286, $"data get entity {User}", "mukyumukyu", out var Data);
+            if (Data.Data.Equals("No entity was found", StringComparison.CurrentCultureIgnoreCase))
+            {
+                await ReplyAsync("Mukyu... Cannot find user...");
+                return;
+            }
+
+            if (Data.Status != MinecraftRCON.RCONStatus.SUCCESS)
+            {
+                await ReplyAsync(Data.Status.ToString());
+                return;
+            }
+            
+            try
+            {
+                // Ignore the (PLAYERNAME) has the following data: 
+                var JSONString = Data.Data.Substring(Data.Data.IndexOf('{'));
+                // For UUIDs, they start an array with I; to indicate all values are integers; ignore it.
+                JSONString = JSONString.Replace("I;", "");
+                // Regex to completely ignore the b, s, l, f, and d patterns. Probably the worst RegEx I ever wrote.
+                JSONString = Regex.Replace(JSONString, @"([:|\[|\,]\s*\-?\d*.?\d+)[s|b|l|f|d]", "${1}");
+                var JSON = JObject.Parse(JSONString);
+                var Dimension = JSON["Dimension"];
+                var Position = JSON["Pos"];
+                if (Position != null)
+                    await ReplyAsync($"Position: {Position[0]}, {Position[1]}, {Position[2]} In ${Dimension}");
+                else
+                    await ReplyAsync("Failed to process coordinates.");
+            }
+            catch (JsonReaderException ex)
+            {
+                LoggerService.Log(LogSeverity.Error, "Failed to process JSON!", ex);
+                
+                await ReplyAsync("JSON_FAIL");
+            }
         }
 #endif
 
