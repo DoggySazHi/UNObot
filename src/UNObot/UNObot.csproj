@@ -25,6 +25,8 @@
       </CustomCommands>
     </CustomCommands>
     <LangVersion>latestmajor</LangVersion>
+    <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
