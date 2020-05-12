@@ -580,9 +580,7 @@ namespace UNObot.Services
 
             var Random = ThreadSafeRandom.ThisThreadsRandom;
             var PlayersOnline = "";
-            if (Users.Count == 0)
-                PlayersOnline = "Nobody's online!";
-            else foreach(var User in Users)
+            foreach(var User in Users)
                 if (User.Online)
                 {
                     PlayersOnline +=
@@ -596,6 +594,9 @@ namespace UNObot.Services
                         };
                     PlayersOnline += "\n";
                 }
+
+            if (PlayersOnline == "")
+                PlayersOnline = "Nobody's online!";
             // Doesn't seem to affect embeds. PlayersOnline = PlayersOnline.Substring(0, PlayersOnline.Length - 1);
 
             var builder = new EmbedBuilder()

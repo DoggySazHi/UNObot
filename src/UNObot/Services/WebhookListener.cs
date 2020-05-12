@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using AngleSharp.Common;
 using Newtonsoft.Json;
 using Discord;
 
@@ -32,19 +31,27 @@ namespace UNObot.Services
             DefaultResponse = Encoding.UTF8.GetBytes("mukyu!");
             Exited = new ManualResetEvent(false);
 
-            Server = new HttpListener();
-            Server.Prefixes.Add("http://127.0.0.1:6860/");
-            Server.Prefixes.Add("http://localhost:6860/");
-
-            Settings = new JsonSerializerSettings {MissingMemberHandling = MissingMemberHandling.Error};
-            /*
-            Settings.Error += (self, errorArgs) =>
+            try
             {
+                Server = new HttpListener();
+                Server.Prefixes.Add("http://127.0.0.1:6860/");
+                Server.Prefixes.Add("http://localhost:6860/");
 
-            };
-            */
+                Settings = new JsonSerializerSettings {MissingMemberHandling = MissingMemberHandling.Error};
+                /*
+                Settings.Error += (self, errorArgs) =>
+                {
+    
+                };
+                */
 
-            Server.Start();
+                Server.Start();
+            }
+            catch (HttpListenerException ex)
+            {
+                LoggerService.Log(LogSeverity.Critical, "Webhook Listener failed!", ex);
+            }
+            
             Task.Run(Listener);
         }
 

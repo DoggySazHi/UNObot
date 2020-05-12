@@ -57,15 +57,17 @@ namespace UNObot.Services
             {
                 var Name = o.Replace((char) 0, ' ').Trim();
                 if (string.IsNullOrWhiteSpace(Name)) continue;
-                
-                Client.Execute($"data get entity {Name}", true);
+
+                var Command = $"data get entity {Name}";
+                Client.Execute(Command, true);
                 
                 if (Client.Status != MinecraftRCON.RCONStatus.SUCCESS)
                     continue;
                 if (Client.Data.Equals("No entity was found", StringComparison.CurrentCultureIgnoreCase))
                     continue;
 
-                // Ignore the (PLAYERNAME) has the following data: 
+                // Ignore the (PLAYERNAME) has the following data:
+                LoggerService.Log(LogSeverity.Debug, Command + " | " + Client.Data);
                 var JSONString = Client.Data.Substring(Client.Data.IndexOf('{'));
                 // For UUIDs, they start an array with I; to indicate all values are integers; ignore it.
                 JSONString = JSONString.Replace("I;", "");
@@ -80,26 +82,11 @@ namespace UNObot.Services
                     var Position = JSON["Pos"];
                     var Food = JSON["foodLevel"]?.ToObject<string>() ?? "20";
                     var HealthNum = JSON["Health"]?.ToObject<float>();
+                    var XPLevels = JSON["XpLevel"].ToObject<int>();
+                    var XPPercent = JSON["XpP"].ToObject<float>();
+                    var XPPoints = (Exp(XPLevels + 1, 0) - Exp(XPLevels, 0)) * XPPercent;
+                    var Experience = (int) Exp(XPLevels, (int) Math.Floor(XPPoints));
                     var Health = HealthNum != null ? Math.Ceiling((float) HealthNum).ToString("#") : "20";
-
-                    // Too lazy to calculate experience via NBT.
-                    Client.Execute($"execute as {Name} at @s run experience query @s points", true);
-                    var PointData = Client.Data;
-                    Client.Execute($"execute as {Name} at @s run experience query @s levels", true);
-                    var Experience = 0;
-                    if (Client.Status == MinecraftRCON.RCONStatus.SUCCESS)
-                    {
-                        try
-                        {
-                            var Points = int.Parse(PointData.Split(' ')[2]);
-                            var Levels = int.Parse(Client.Data.Split(' ')[2]);
-                            Experience = (int) Exp(Levels, Points);
-                        }
-                        catch (FormatException)
-                        {
-                            LoggerService.Log(LogSeverity.Warning, $"Failed to process coordinates. Response: {Client.Data}");
-                        }
-                    }
                     
                     if (Position?[0] != null && Position[1] != null && Position[2] != null && Dimension != null)
                         Coordinates = new []
@@ -143,12 +130,15 @@ namespace UNObot.Services
                 try
                 {
                     var CoordinateMessage = Regex.Replace(Client.Data, @"[^0-9\+\-\. ]", "").Trim().Split(' ');
-                    Coordinates = new[]
-                    {
-                        double.Parse(CoordinateMessage[0]),
-                        double.Parse(CoordinateMessage[1]),
-                        double.Parse(CoordinateMessage[2])
-                    };
+                    if (CoordinateMessage.Length == 3)
+                        Coordinates = new[]
+                        {
+                            double.Parse(CoordinateMessage[0]),
+                            double.Parse(CoordinateMessage[1]),
+                            double.Parse(CoordinateMessage[2])
+                        };
+                    else
+                        Coordinates = new[] {0.0, 0.0, 0.0};
                 }
                 catch (FormatException)
                 {

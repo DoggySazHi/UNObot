@@ -18,7 +18,7 @@ namespace UNObot.Services
     //Mukyu... but I implemented the Minecraft RCON (Valve RCON) protocol by hand, as well as the query.
     public static class QueryHandlerService
     {
-        public const string PSurvival = "127.0.0.1";
+        public const string PSurvival = "192.168.2.6";
 
         public static string HumanReadable(float Time)
         {
@@ -688,12 +688,14 @@ namespace UNObot.Services
     public class MinecraftRCON : IDisposable
     {
         private static List<MinecraftRCON> ReusableRCONSockets = new List<MinecraftRCON>();
+        private static readonly byte[] EndOfCommandPacket = MakePacketData("", PacketType.TYPE_100, 0);
+        private readonly object Lock = new object();
         
         public ulong Owner { get; set; }
         public bool Disposed { get; private set; }
         private Socket Client;
         private const ushort RX_SIZE = 4096;
-        private enum PacketType {/* SERVERDATA_RESPONSE_VALUE = 0, */ SERVERDATA_EXECCOMMAND = 2, SERVERDATA_AUTH = 3}
+        private enum PacketType {/* SERVERDATA_RESPONSE_VALUE = 0, */ SERVERDATA_EXECCOMMAND = 2, SERVERDATA_AUTH = 3, TYPE_100 = 100}
         public enum RCONStatus {CONN_FAIL, AUTH_FAIL, EXEC_FAIL, INT_FAIL, SUCCESS}
         public RCONStatus Status { get; private set; }
         public string Data { get; private set; }
@@ -776,84 +778,116 @@ namespace UNObot.Services
         
         public void Execute(string Command, ref byte[] RXData, bool Reuse = false)
         {
-            var StringConcat = new StringBuilder();
-            var PacketCount = 0;
-            try
+            lock (Lock)
             {
-                var Payload = MakePacketData(Command, PacketType.SERVERDATA_EXECCOMMAND, 0);
-                Client.Send(Payload);
-                var End = false;
-                do
+                var PacketCollector = new List<byte>(RX_SIZE);
+                var PacketCount = 0;
+                try
                 {
-                    Wipe(ref RXData);
-                    var Size = Client.Receive(RXData);
+                    var Payload = MakePacketData(Command, PacketType.SERVERDATA_EXECCOMMAND, 0);
+                    try
+                    {
+                        Client.Send(Payload);
+                    }
+                    catch (ObjectDisposedException e)
+                    {
+                        CreateConnection(Reuse);
+                        Client.Send(Payload);
+                    }
+                    Client.Send(EndOfCommandPacket);
+                    var End = false;
+                    do
+                    {
+                        Wipe(ref RXData);
+                        var Size = Client.Receive(RXData);
 #if DEBUG
-                    using (var fs = new FileStream($"packet{PacketCount}", FileMode.Create, FileAccess.Write))
-                        fs.Write(RXData, 0, RXData.Length);
-                    // StringConcat.Append($"\nPacket {PacketCount}\n\n");
+                        using (var fs = new FileStream($"packet{PacketCount}", FileMode.Create, FileAccess.Write))
+                            fs.Write(RXData, 0, RXData.Length);
+                        // StringConcat.Append($"\nPacket {PacketCount}\n\n");
 #endif
-                    var ID = LittleEndianReader(ref RXData, 4);
-                    var Type = LittleEndianReader(ref RXData, 8);
-                    if ((ID == -1 || Type != 0) && PacketCount == 0)
-                    {
-                        LoggerService.Log(LogSeverity.Verbose,
-                            $"Failed to execute \"{Command}\", type of {Type}!");
-                        Status = RCONStatus.AUTH_FAIL;
-                        return;
-                    }
+                        var ID = LittleEndianReader(ref RXData, 4);
+                        var Type = LittleEndianReader(ref RXData, 8);
+                        if ((ID == -1 || Type != 0) && PacketCount == 0)
+                        {
+                            LoggerService.Log(LogSeverity.Verbose,
+                                $"Failed to execute \"{Command}\", type of {Type}!");
+                            Status = RCONStatus.AUTH_FAIL;
+                            return;
+                        }
 
-                    var Position = PacketCount == 0 ? 12 : 0;
-                    var CurrentChar = (char) RXData[Position++];
-                    while (Position < Size)
-                    {
-                        if (CurrentChar != '\x00' && CurrentChar != 0 && CurrentChar != 0x1b)
-                            StringConcat.Append(CurrentChar);
-                        WackDataProcessor(ref RXData, ref Position);
-                        CurrentChar = (char) RXData[Position++];
-                    }
-                    if (CurrentChar != '\x00' && CurrentChar != 0)
-                        StringConcat.Append(CurrentChar);
+                        var Position = PacketCount == 0 ? 12 : 0;
+                        var CurrentByte = RXData[Position++];
+                        while (Position < Size)
+                        {
+                            /*
+                            if (CurrentChar != '\x00' && CurrentChar != 0 && CurrentChar != 0x1b)
+                                StringConcat.Append(CurrentChar);
+                            WackDataProcessor(ref RXData, ref Position);
+                            */
+                            PacketCollector.Add(CurrentByte);
+                            CurrentByte = RXData[Position++];
+                        }
 
-                    if (Size == 0 || RXData[Size - 1] == '\x00')
-                        End = true;
+                        if (CurrentByte != '\x00' && CurrentByte != 0)
+                            PacketCollector.Add(CurrentByte);
 
-                    PacketCount++;
-                    if (PacketCount == 20)
-                        End = true;
-                } while (!End);
+                        /*
+                        if (RXData[Size - 1] == '\x00')
+                            End = true;
+                            */
+                        if (Contains(PacketCollector, "Unknown", out var Remove))
+                        {
+                            PacketCollector.RemoveRange(Remove, PacketCollector.Count - Remove);
+                            End = true;
+                        }
 
-                Data = StringConcat.ToString();
-                Status = RCONStatus.SUCCESS;
+                        PacketCount++;
+                        LoggerService.Log(LogSeverity.Debug, $"Packet {PacketCount}, Size {Size}");
 
-                // Purge extra data in feed, ESPECIALLY if we're reusing!
-                if (Client.Available > 0) Client.Receive(RXData);
-            }
-            catch (SocketException ex)
-            {
-                if (ex.ErrorCode == 10060 && StringConcat.Length >= 0)
-                {
-                    LoggerService.Log(LogSeverity.Warning, "Timed out, but got data... did we try to read another packet?", ex);
+                        // Excess packets.
+                        if (PacketCount == 100)
+                        {
+                            LoggerService.Log(LogSeverity.Warning, $"Over-read {PacketCount} packets!");
+                            End = true;
+                        }
+                    } while (!End);
+
+                    Data = Stringifier(ref PacketCollector);
+                    LoggerService.Log(LogSeverity.Verbose, Data);
                     Status = RCONStatus.SUCCESS;
-                    Data = StringConcat.ToString();
-                } else if (ex.ErrorCode == 10053 && Reuse)
-                {
-                    LoggerService.Log(LogSeverity.Warning, "We were closed, however attempting to reopen connection...", ex);
-                    Status = RCONStatus.INT_FAIL;
-                    CreateConnection(true);
                 }
-                else
+                catch (SocketException ex)
+                {
+                    if (ex.ErrorCode == 10060 && PacketCollector.Count > 0)
+                    {
+                        LoggerService.Log(LogSeverity.Warning,
+                            "Timed out, but got data... did we try to read another packet?", ex);
+                        Status = RCONStatus.SUCCESS;
+                        Data = Stringifier(ref PacketCollector);
+                        LoggerService.Log(LogSeverity.Verbose, Data);
+                    }
+                    else if ((ex.ErrorCode == 10053 || ex.ErrorCode == 32) && Reuse)
+                    {
+                        LoggerService.Log(LogSeverity.Warning,
+                            "We were closed, however attempting to reopen connection...", ex);
+                        Status = RCONStatus.INT_FAIL;
+                        CreateConnection(true);
+                    }
+                    else
+                    {
+                        Status = RCONStatus.INT_FAIL;
+                        LoggerService.Log(LogSeverity.Verbose, "Something went wrong while querying!", ex);
+                    }
+                }
+                catch (Exception ex)
                 {
                     Status = RCONStatus.INT_FAIL;
                     LoggerService.Log(LogSeverity.Verbose, "Something went wrong while querying!", ex);
                 }
+
+                if (Status != RCONStatus.SUCCESS || !Reuse)
+                    Dispose();
             }
-            catch (Exception ex)
-            {
-                Status = RCONStatus.INT_FAIL;
-                LoggerService.Log(LogSeverity.Verbose, "Something went wrong while querying!", ex);
-            }
-            if(Status != RCONStatus.SUCCESS || !Reuse)
-                Dispose();
         }
 
         private static byte[] LittleEndianConverter(int data)
@@ -875,17 +909,37 @@ namespace UNObot.Services
         }
 
         // Fixes those random 14 byte sequences in RCON output.
-        private static void WackDataProcessor(ref byte[] data, ref int pos)
+        private static void WackDataProcessor(ref List<byte> data)
         {
-            if (pos >= data.Length - 14) return;
-            if (data[pos] == 0 && data[pos + 1] == 0)
-                pos += 13;
+            for(var i = 0; i < data.Count; i++)
+                if (data[i] == 0)
+                {
+                    var start = i;
+                    while (i < data.Count && data[i] == 0)
+                        i++;
+                    while (i < data.Count && data[i] != 0)
+                        i++;
+                    while (i < data.Count && data[i] == 0)
+                        i++;
+                    var end = i;
+                    data.RemoveRange(start, end - start - 1);
+                }
         }
 
         private static void Wipe(ref byte[] data)
         {
             for (var i = 0; i < data.Length; i++)
                 data[i] = (byte) '\x00';
+        }
+
+        private static string Stringifier(ref List<byte> Data)
+        {
+            var sb = new StringBuilder(Data.Count);
+            WackDataProcessor(ref Data);
+            foreach (var character in Data)
+                if(character != 0)
+                    sb.Append((char) character);
+            return sb.ToString();
         }
 
         private static byte[] MakePacketData(string Body, PacketType Type, int ID)
@@ -907,6 +961,24 @@ namespace UNObot.Services
                 Packet[Counter++] = Byte;
             return Packet;
         }
+
+        private static bool Contains(IReadOnlyList<byte> Data, string Content, out int Position)
+        {
+            Position = -1;
+            if (Content.Length > Data.Count) return false;
+            for (Position = Data.Count - 1 - Content.Length; Position >= 0; Position--)
+            {
+                var Success = true;
+                for (var j = Position; j < Position + Content.Length; j++)
+                    if (Data[j] != Content[j - Position])
+                        Success = false;
+                if (Success)
+                    return true;
+            }
+            Position = -1;
+            return false;
+        }
+
         public bool Connected()
         {
             if (Status != RCONStatus.SUCCESS) return false;
