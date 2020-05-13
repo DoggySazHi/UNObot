@@ -695,12 +695,14 @@ namespace UNObot.Services
         public bool Disposed { get; private set; }
         private Socket Client;
         private const ushort RX_SIZE = 4096;
+        private List<byte> PacketCollector = new List<byte>(RX_SIZE);
         private enum PacketType {/* SERVERDATA_RESPONSE_VALUE = 0, */ SERVERDATA_EXECCOMMAND = 2, SERVERDATA_AUTH = 3, TYPE_100 = 100}
         public enum RCONStatus {CONN_FAIL, AUTH_FAIL, EXEC_FAIL, INT_FAIL, SUCCESS}
         public RCONStatus Status { get; private set; }
         public string Data { get; private set; }
         private string Password { get; }
         public IPEndPoint Server { get; }
+
 
         public MinecraftRCON(IPEndPoint Server, string Password, bool Reuse = false, string Command = null)
         {
@@ -731,6 +733,7 @@ namespace UNObot.Services
                 return;
             }
 
+            LoggerService.Log(LogSeverity.Verbose, "Successfully created RCON connection!");
             if(Authenticate() && Command != null)
                 Execute(Command);
             if (Status == RCONStatus.SUCCESS && Reuse)
@@ -763,9 +766,11 @@ namespace UNObot.Services
                 if (ID == -1 || Type != 2)
                 {
                     Status = RCONStatus.AUTH_FAIL;
+                    LoggerService.Log(LogSeverity.Verbose, "RCON failed to authenticate!");
                     return false;
                 }
 
+                LoggerService.Log(LogSeverity.Verbose, "RCON login successful!");
                 Status = RCONStatus.SUCCESS;
                 return true;
             }
@@ -780,21 +785,24 @@ namespace UNObot.Services
         {
             lock (Lock)
             {
-                var PacketCollector = new List<byte>(RX_SIZE);
                 var PacketCount = 0;
                 try
                 {
                     var Payload = MakePacketData(Command, PacketType.SERVERDATA_EXECCOMMAND, 0);
                     try
                     {
+                        LoggerService.Log(LogSeverity.Verbose, "Sending payload...");
                         Client.Send(Payload);
                     }
-                    catch (ObjectDisposedException e)
+                    catch (ObjectDisposedException)
                     {
+                        LoggerService.Log(LogSeverity.Warning, "Socket was disposed, attempting to re-auth...");
                         CreateConnection(Reuse);
                         Client.Send(Payload);
                     }
+                    LoggerService.Log(LogSeverity.Verbose, "Sending bad type...");
                     Client.Send(EndOfCommandPacket);
+                    LoggerService.Log(LogSeverity.Verbose, $"Now reading... Connection status: {Connected()}");
                     var End = false;
                     do
                     {
@@ -853,7 +861,8 @@ namespace UNObot.Services
                     } while (!End);
 
                     Data = Stringifier(ref PacketCollector);
-                    LoggerService.Log(LogSeverity.Verbose, Data);
+                    PacketCollector.Clear();
+                    LoggerService.Log(LogSeverity.Verbose, Command + "\n\n" + Data);
                     Status = RCONStatus.SUCCESS;
                 }
                 catch (SocketException ex)

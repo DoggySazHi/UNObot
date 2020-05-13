@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Discord;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace UNObot.Services
@@ -106,7 +105,7 @@ namespace UNObot.Services
                         CorrectUser.Experience = Experience;
                     }
                 }
-                catch (JsonReaderException ex)
+                catch (Exception ex)
                 {
                     LoggerService.Log(LogSeverity.Error, $"Failed to process JSON! Falling back...\n{JSONString}", ex);
                     OldUserProcessor(ref Output, Name, Client);
