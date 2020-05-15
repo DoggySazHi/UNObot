@@ -52,4 +52,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command='xcopy /y "$(SolutionDir)out\build\x64-Debug\*.dll" "$(ProjectDir)$(OutDir)"'/>
+    <Exec Command='xcopy /y "$(SolutionDir)out\build\x64-Debug\*.lib" "$(ProjectDir)$(OutDir)"'/>
+  </Target>
 </Project>

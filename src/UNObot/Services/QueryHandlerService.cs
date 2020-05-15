@@ -18,7 +18,7 @@ namespace UNObot.Services
     //Mukyu... but I implemented the Minecraft RCON (Valve RCON) protocol by hand, as well as the query.
     public static class QueryHandlerService
     {
-        public const string PSurvival = "192.168.2.6";
+        public const string PSurvival = "127.0.0.1";
 
         public static string HumanReadable(float Time)
         {
@@ -808,6 +808,16 @@ namespace UNObot.Services
                     {
                         Wipe(ref RXData);
                         var Size = Client.Receive(RXData);
+                        if (Size == 0)
+                        {
+                            // Connection failed.
+                            LoggerService.Log(LogSeverity.Warning, "Failed to execute. Attempting to retry...");
+                            PacketCount = 0;
+                            PacketCollector.Clear();
+                            CreateConnection(Reuse);
+                            Client.Send(Payload);
+                            Client.Send(EndOfCommandPacket);
+                        }
 #if DEBUG
                         using (var fs = new FileStream($"packet{PacketCount}", FileMode.Create, FileAccess.Write))
                             fs.Write(RXData, 0, RXData.Length);
