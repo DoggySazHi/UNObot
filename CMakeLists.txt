@@ -8,4 +8,5 @@ file(GLOB RCONHelper_SRC
         "src/RCONHelper/*.c"
         )
 
-add_library(libRCON SHARED ${RCONHelper_SRC})
+add_library(RCONHelper SHARED ${RCONHelper_SRC})
+add_executable(RCONHelper_Test ${RCONHelper_SRC})

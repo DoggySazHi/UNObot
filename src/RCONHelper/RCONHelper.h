@@ -1,4 +1,6 @@
-﻿#ifdef __cplusplus
+﻿#include <string>
+
+#ifdef __cplusplus
 extern "C" {
 #endif
 	
@@ -13,9 +15,13 @@ extern "C" {
 #endif
 
 // Start exposing APIs here
+    const unsigned short PORT = 27286;
+    const int BUFFER_SIZE = 4096;
 	MODULE_API void mukyu();
 // Stop exposing APIs here
 	
 #ifdef __cplusplus
 }
 #endif
+
+void sendPacket(std::string& ip, int port);
