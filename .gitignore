@@ -321,3 +321,4 @@ cmake-build-debug
 
 # Misc
 Publish.bat
+cmake-build-debug*/

@@ -54,7 +54,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command='xcopy /y "$(SolutionDir)out\build\x64-Debug\*.dll" "$(ProjectDir)$(OutDir)"'/>
-    <Exec Command='xcopy /y "$(SolutionDir)out\build\x64-Debug\*.lib" "$(ProjectDir)$(OutDir)"'/>
+    <Exec Command='xcopy /y "$(SolutionDir)cmake-build-debug-visual-studio-x64\*.dll" "$(ProjectDir)$(OutDir)"'/>
+    <Exec Command='xcopy /y "$(SolutionDir)cmake-build-debug-visual-studio-x64\*.lib" "$(ProjectDir)$(OutDir)"'/>
   </Target>
 </Project>

@@ -107,7 +107,7 @@ namespace UNObot.Modules
             }
         }
 
-        [DllImport(@"libRCON.dll")]
+        [DllImport(@"RCONHelper.dll")]
         public static extern void mukyu();
 
         [Command("cppinterop", RunMode = RunMode.Async)]
