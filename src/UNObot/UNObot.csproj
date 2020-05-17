@@ -36,10 +36,10 @@
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="System.ServiceModel.Syndication" Version="4.7.0" />
     <PackageReference Include="System.Threading.Timer" Version="4.3.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.3" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.3" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.3" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.1.3" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.4" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.4" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.4" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.1.4" />
     <PackageReference Include="MySql.Data" Version="8.0.20" />
     <PackageReference Include="Discord.Net" Version="2.2.0" />
     <PackageReference Include="YoutubeExplode" Version="5.0.4" />
@@ -54,7 +54,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command='xcopy /y "$(SolutionDir)cmake-build-debug-visual-studio-x64\*.dll" "$(ProjectDir)$(OutDir)"'/>
-    <Exec Command='xcopy /y "$(SolutionDir)cmake-build-debug-visual-studio-x64\*.lib" "$(ProjectDir)$(OutDir)"'/>
+    <Exec Command="xcopy /y &quot;$(SolutionDir)cmake-build-debug-visual-studio-x64\*.dll&quot; &quot;$(ProjectDir)$(OutDir)&quot;" />
+    <Exec Command="xcopy /y &quot;$(SolutionDir)cmake-build-debug-visual-studio-x64\*.lib&quot; &quot;$(ProjectDir)$(OutDir)&quot;" />
   </Target>
 </Project>
