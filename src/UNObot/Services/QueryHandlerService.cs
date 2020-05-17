@@ -18,7 +18,7 @@ namespace UNObot.Services
     //Mukyu... but I implemented the Minecraft RCON (Valve RCON) protocol by hand, as well as the query.
     public static class QueryHandlerService
     {
-        public const string PSurvival = "127.0.0.1";
+        public const string PSurvival = "192.168.2.42";
 
         public static string HumanReadable(float Time)
         {
@@ -231,7 +231,7 @@ namespace UNObot.Services
         public byte Header { get; }        // I
         public byte Protocol { get; }
         public string Name { get; }
-        public string Map { get;}
+        public string Map { get; }
         public string Folder { get; }
         public string Game { get; }
         public short ID { get; }
@@ -659,7 +659,7 @@ namespace UNObot.Services
                 do
                 {
                     Input = A2S_SHARED.ReadNullTerminatedString(ref BinaryReader);
-                    if(Input.Length >= 2 && Players != null && CurrentIndex < Players.Length)
+                    if (Input.Length >= 2 && Players != null && CurrentIndex < Players.Length)
                         Players[CurrentIndex++] = Input;
                 } while (true);
             }
@@ -690,14 +690,14 @@ namespace UNObot.Services
         private static List<MinecraftRCON> ReusableRCONSockets = new List<MinecraftRCON>();
         private static readonly byte[] EndOfCommandPacket = MakePacketData("", PacketType.TYPE_100, 0);
         private readonly object Lock = new object();
-        
+
         public ulong Owner { get; set; }
         public bool Disposed { get; private set; }
         private Socket Client;
         private const ushort RX_SIZE = 4096;
         private List<byte> PacketCollector = new List<byte>(RX_SIZE);
-        private enum PacketType {/* SERVERDATA_RESPONSE_VALUE = 0, */ SERVERDATA_EXECCOMMAND = 2, SERVERDATA_AUTH = 3, TYPE_100 = 100}
-        public enum RCONStatus {CONN_FAIL, AUTH_FAIL, EXEC_FAIL, INT_FAIL, SUCCESS}
+        private enum PacketType {/* SERVERDATA_RESPONSE_VALUE = 0, */ SERVERDATA_EXECCOMMAND = 2, SERVERDATA_AUTH = 3, TYPE_100 = 100 }
+        public enum RCONStatus { CONN_FAIL, AUTH_FAIL, EXEC_FAIL, INT_FAIL, SUCCESS }
         public RCONStatus Status { get; private set; }
         public string Data { get; private set; }
         private string Password { get; }
@@ -710,7 +710,7 @@ namespace UNObot.Services
             this.Server = Server;
             CreateConnection(Reuse, Command);
         }
-        
+
         private void CreateConnection(bool Reuse = false, string Command = null)
         {
             Client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
@@ -734,7 +734,7 @@ namespace UNObot.Services
             }
 
             LoggerService.Log(LogSeverity.Verbose, "Successfully created RCON connection!");
-            if(Authenticate() && Command != null)
+            if (Authenticate() && Command != null)
                 Execute(Command);
             if (Status == RCONStatus.SUCCESS && Reuse)
             {
@@ -780,7 +780,7 @@ namespace UNObot.Services
                 return false;
             }
         }
-        
+
         public void Execute(string Command, ref byte[] RXData, bool Reuse = false)
         {
             lock (Lock)
@@ -930,7 +930,7 @@ namespace UNObot.Services
         // Fixes those random 14 byte sequences in RCON output.
         private static void WackDataProcessor(ref List<byte> data)
         {
-            for(var i = 0; i < data.Count; i++)
+            for (var i = 0; i < data.Count; i++)
                 if (data[i] == 0)
                 {
                     var start = i;
@@ -948,7 +948,7 @@ namespace UNObot.Services
         private static void Wipe(ref byte[] data)
         {
             for (var i = 0; i < data.Length; i++)
-                data[i] = (byte) '\x00';
+                data[i] = (byte)'\x00';
         }
 
         private static string Stringifier(ref List<byte> Data)
@@ -956,8 +956,8 @@ namespace UNObot.Services
             var sb = new StringBuilder(Data.Count);
             WackDataProcessor(ref Data);
             foreach (var character in Data)
-                if(character != 0)
-                    sb.Append((char) character);
+                if (character != 0)
+                    sb.Append((char)character);
             return sb.ToString();
         }
 
@@ -965,7 +965,7 @@ namespace UNObot.Services
         {
             var Length = LittleEndianConverter(Body.Length + 9);
             var IDData = LittleEndianConverter(ID);
-            var PacketType = LittleEndianConverter((int) Type);
+            var PacketType = LittleEndianConverter((int)Type);
             var BodyData = Encoding.UTF8.GetBytes(Body);
             // Plus 1 for the null byte.
             var Packet = new byte[Length.Length + IDData.Length + PacketType.Length + BodyData.Length + 1];
@@ -1028,7 +1028,7 @@ namespace UNObot.Services
 
         public static void DisposeAll()
         {
-            while(ReusableRCONSockets.Count != 0)
+            while (ReusableRCONSockets.Count != 0)
                 ReusableRCONSockets[0].Dispose();
         }
     }

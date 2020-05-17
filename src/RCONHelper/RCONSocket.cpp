@@ -14,6 +14,6 @@ RCONSocket::RCONSocket(std::string& ip, std::string& password, bool reuse) : RCO
 
 RCONSocket::RCONSocket(std::string& ip, std::string& password, bool reuse, std::string& command)
 {
-    if(command == nullptr)
+    if(command.length() == 2)
         std::cout << "gay" << std::endl;
 }
