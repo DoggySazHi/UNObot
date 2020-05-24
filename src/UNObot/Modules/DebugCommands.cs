@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Discord;
 using Discord.Commands;
@@ -105,16 +104,6 @@ namespace UNObot.Modules
                 
                 await ReplyAsync("JSON_FAIL");
             }
-        }
-
-        [DllImport(@"RCONHelper.dll")]
-        public static extern void mukyu();
-
-        [Command("cppinterop", RunMode = RunMode.Async)]
-        public async Task CPPInteropTest()
-        {
-            mukyu();
-            await ReplyAsync("Executed.").ConfigureAwait(false);
         }
 #endif
 

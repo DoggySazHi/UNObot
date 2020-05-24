@@ -1,4 +1,5 @@
 ﻿#include <string>
+#include "RCONSocket.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,13 +16,12 @@ extern "C" {
 #endif
 
 // Start exposing APIs here
-    const unsigned short PORT = 27286;
-    const int BUFFER_SIZE = 4096;
-	MODULE_API void mukyu();
+	MODULE_API inline void Mukyu(RCONSocket* obj) { obj->Mukyu(); }
+    MODULE_API RCONSocket* CreateObjectA(std::string& ip, std::string& password, bool reuse, std::string& command);
+    MODULE_API RCONSocket* CreateObjectB(std::string& ip, std::string& password, bool reuse);
+    MODULE_API RCONSocket* CreateObjectC(std::string& ip, std::string& password);
 // Stop exposing APIs here
 	
 #ifdef __cplusplus
 }
 #endif
-
-void sendPacket(std::string& ip, int port);

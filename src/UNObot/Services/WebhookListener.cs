@@ -28,7 +28,7 @@ namespace UNObot.Services
                 return;
             }
 
-            DefaultResponse = Encoding.UTF8.GetBytes("mukyu!");
+            DefaultResponse = Encoding.UTF8.GetBytes("Mukyu!");
             Exited = new ManualResetEvent(false);
 
             try
