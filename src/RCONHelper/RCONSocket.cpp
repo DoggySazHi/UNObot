@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <array>
+#include <thread>
 
 RCONSocket::RCONSocket(IPEndpoint& server, std::string& password) : RCONSocket(server, password, false)
 {
@@ -65,6 +66,7 @@ void RCONSocket::CreateConnection()
     send(socket_descriptor , hello.c_str() , hello.length() , 0 );
     printf("Hello message sent\n");
     int count = read(socket_descriptor , rx_data->data(), BUFFER_SIZE);
+    std::thread readWait([]() {std::cout << "test" << '\n'; }, 3);
     printf("%s\n", rx_data->data());
 }
 
