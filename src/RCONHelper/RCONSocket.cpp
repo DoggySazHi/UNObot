@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <array>
+#include <thread>
 
 RCONSocket::RCONSocket(IPEndpoint& server, std::string& password) : RCONSocket(server, password, false)
 {
@@ -101,8 +102,7 @@ void RCONSocket::WipeBuffer()
     memset(rx_data->data(), '\0', BUFFER_SIZE);
 }
 
-std::vector<uint8_t> RCONSocket::MakePacketData(std::string body, PacketType Type, int ID)
-{
+std::vector<uint8_t> RCONSocket::MakePacketData(std::string body, PacketType Type, int ID) {
     auto Length = LittleEndianConverter(body.length() + 9);
     auto IDData = LittleEndianConverter(ID);
     auto PacketType = LittleEndianConverter(Type);
