@@ -11,6 +11,8 @@ using Discord;
 
 namespace UNObot.Services
 {
+    public enum WebhookType : byte { Bitbucket = 0, OctoPrint = 1 }
+    
     public class WebhookListener : IDisposable
     {
         private static WebhookListener Instance;
@@ -64,37 +66,50 @@ namespace UNObot.Services
         {
             try
             {
-                //TODO Split by Client ID and then Key to optimize database.
                 while (!Stop)
                 {
-                    var context = Server.GetContext();
-                    var request = context.Request;
-                    var URL = context.Request.RawUrl;
+                    var Context = Server.GetContext();
+                    var Request = Context.Request;
+                    var URL = Context.Request.RawUrl;
                     LoggerService.Log(LogSeverity.Debug, $"Received request from {URL}.");
                     var Headers = "Headers: ";
-                    foreach (var Key in request.Headers.AllKeys)
-                        Headers += $"{Key}, {request.Headers[Key]}\n";
+                    foreach (var Key in Request.Headers.AllKeys)
+                        Headers += $"{Key}, {Request.Headers[Key]}\n";
                     LoggerService.Log(LogSeverity.Debug, Headers);
+
+                    var Sections = URL.Split("/");
                     
-                    if (URL.Length >= 1)
+                    if (Sections.Length >= 3)
                     {
-                        var ID = URL.Substring(1);
-                        var ValidServers = UNODatabaseService.GetWebhook(ID).GetAwaiter().GetResult();
-                        if(ValidServers.Guild != 0)
-                            LoggerService.Log(LogSeverity.Debug,
-                                $"Found server, points to {ValidServers.Guild}, {ValidServers.Channel}.");
+                        var ChannelParse = ulong.TryParse(Sections[1], out var Channel);
+                        if (ChannelParse)
+                        {
+                            var Key = Sections[2];
+                            var (Guild, Type) = UNODatabaseService.GetWebhook(Channel, Key).GetAwaiter().GetResult();
+                            if (Guild != 0)
+                            {
+                                LoggerService.Log(LogSeverity.Debug, 
+                                    $"Found server, points to {Guild}, {Channel} of type {(WebhookType) Type}.");
+                                using var Data = Request.InputStream;
+                                using var Reader = new StreamReader(Data);
+                                var Text = Reader.ReadToEnd();
+                                //LoggerService.Log(LogSeverity.Verbose, $"Data received: {text}");
+                                Task.Run(() => ProcessMessage(Text, (WebhookType) Type));
+                            }
+                            else
+                            {
+                                LoggerService.Log(LogSeverity.Debug, "Does not seem to point to a server.");
+                            }
+                            
+                        }
                         else
+                        {
                             LoggerService.Log(LogSeverity.Debug,
-                                $"Does not seem to point to a server.");
+                                $"Given an invalid channel!");
+                        }
                     }
 
-                    using var data = request.InputStream;
-                    using var sr = new StreamReader(data);
-                    var text = sr.ReadToEnd();
-                    //LoggerService.Log(LogSeverity.Verbose, $"Data received: {text}");
-                    ProcessMessage(text);
-
-                    using var response = context.Response;
+                    using var response = Context.Response;
                     response.StatusCode = 200;
 
                     using var output = response.OutputStream;
@@ -108,30 +123,34 @@ namespace UNObot.Services
             }
         }
 
-        private void ProcessMessage(string Message)
+        private void ProcessMessage(string Message, WebhookType WType)
         {
-            var Types = Assembly.GetExecutingAssembly().GetTypes()
-                .Where(t =>
-                    t.Namespace != null && 
-                    t.Namespace.Contains("BitbucketEntities", StringComparison.OrdinalIgnoreCase))
-                .ToList();
-
-            foreach (var Type in Types)
+            if (WType == WebhookType.Bitbucket)
             {
-                try
-                {
-                    var Processed = JsonConvert.DeserializeObject(Message, Type, Settings);
-                    LoggerService.Log(LogSeverity.Verbose, $"I processed an {Type.Name} successfully!");
-                    LoggerService.Log(LogSeverity.Verbose, $"Read {Processed?.GetType()}");
-                    return;
-                }
-                catch (JsonException)
-                {
+                var Types = Assembly.GetExecutingAssembly().GetTypes()
+                    .Where(t =>
+                        t.Namespace != null &&
+                        t.Namespace.Contains("BitbucketEntities", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
 
+                foreach (var Type in Types)
+                {
+                    try
+                    {
+                        var Processed = JsonConvert.DeserializeObject(Message, Type, Settings);
+                        LoggerService.Log(LogSeverity.Verbose, $"I processed an {Type.Name} successfully!");
+                        LoggerService.Log(LogSeverity.Verbose, $"Read {Processed?.GetType()}");
+                        return;
+                    }
+                    catch (JsonException)
+                    {
+
+                    }
                 }
+
+                LoggerService.Log(LogSeverity.Verbose, $"Failed to match against {Types.Count} modules.");
+                LoggerService.Log(LogSeverity.Verbose, Message);
             }
-            LoggerService.Log(LogSeverity.Verbose, $"Failed to match against {Types.Count} modules.");
-            LoggerService.Log(LogSeverity.Verbose, Message);
         }
 
         public void Dispose()

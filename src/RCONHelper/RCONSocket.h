@@ -24,13 +24,13 @@ class RCONSocket {
 
     private:
         IPEndpoint server;
-        int socket_descriptor;
+        int socket_descriptor{};
         std::array<uint8_t, 4096>* rx_data = new std::array<uint8_t, BUFFER_SIZE>();
         std::string NULL_STR = "";
-        void SendPacket(std::string &ip, int port);
         static std::array<uint8_t, 4> LittleEndianConverter(int data);
         void CreateConnection();
         static int LittleEndianReader(std::array<uint8_t, BUFFER_SIZE>* data, int startIndex);
-        std::vector<uint8_t> MakePacketData(std::string body, PacketType Type, int ID);
+        static std::vector<uint8_t> MakePacketData(std::string body, PacketType Type, int ID);
         void WipeBuffer();
+        void SendPacket();
 };

@@ -49,7 +49,7 @@ namespace UNObot.Services
             GetConnectionString();
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "SET SQL_SAFE_UPDATES = 0; UPDATE UNObot.Players SET cards = ?, inGame = 0, server = null, gameName = null; UPDATE Games SET inGame = 0, currentCard = ?, `order` = 1, oneCardLeft = 0, queue = ?, description = null; SET SQL_SAFE_UPDATES = 1;";
+            const string CommandText = "SET SQL_SAFE_UPDATES = 0; UPDATE UNObot.Players SET cards = ?, inGame = 0, server = null, gameName = null; UPDATE Games SET inGame = 0, currentCard = ?, `order` = 1, oneCardLeft = 0, queue = ?, description = null; SET SQL_SAFE_UPDATES = 1;";
             MySqlParameter p1 = new MySqlParameter
             {
                 Value = "[]"
@@ -77,7 +77,7 @@ namespace UNObot.Services
         
         public static async Task AddGame(ulong server)
         {
-            string CommandText = "INSERT IGNORE INTO Games (server) VALUES(?)";
+            const string CommandText = "INSERT IGNORE INTO Games (server) VALUES(?)";
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
             MySqlParameter p1 = new MySqlParameter
             {
@@ -96,7 +96,7 @@ namespace UNObot.Services
         }
         public static async Task UpdateDescription(ulong server, string text)
         {
-            string CommandText = "UPDATE Games SET description = ? WHERE server = ?";
+            const string CommandText = "UPDATE Games SET description = ? WHERE server = ?";
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
             MySqlParameter p1 = new MySqlParameter
             {
@@ -120,7 +120,7 @@ namespace UNObot.Services
         }
         public static async Task<string> GetDescription(ulong server)
         {
-            string CommandText = "SELECT description FROM UNObot.Games WHERE server = ?";
+            const string CommandText = "SELECT description FROM UNObot.Games WHERE server = ?";
             string description = "";
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
             MySqlParameter p1 = new MySqlParameter
@@ -147,7 +147,7 @@ namespace UNObot.Services
         {
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "UPDATE Games SET inGame = 0, currentCard = ?, `order` = 1, oneCardLeft = 0, queue = ?, description = null WHERE server = ?";
+            const string CommandText = "UPDATE Games SET inGame = 0, currentCard = ?, `order` = 1, oneCardLeft = 0, queue = ?, description = null WHERE server = ?";
             AFKtimer.DeleteTimer(server);
             MySqlParameter p1 = new MySqlParameter
             {
@@ -178,7 +178,7 @@ namespace UNObot.Services
             bool yesorno = false;
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "SELECT inGame FROM UNObot.Games WHERE server = ?";
+            const string CommandText = "SELECT inGame FROM UNObot.Games WHERE server = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -203,7 +203,7 @@ namespace UNObot.Services
         {
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "INSERT INTO Players (userid, username, inGame, cards, server) VALUES(?, ?, 1, ?, ?) ON DUPLICATE KEY UPDATE username = ?, inGame = 1, cards = ?, server = ?";
+            const string CommandText = "INSERT INTO Players (userid, username, inGame, cards, server) VALUES(?, ?, 1, ?, ?) ON DUPLICATE KEY UPDATE username = ?, inGame = 1, cards = ?, server = ?";
             MySqlParameter p1 = new MySqlParameter
             {
                 Value = id
@@ -252,7 +252,7 @@ namespace UNObot.Services
         {
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "INSERT INTO Players (userid, username) VALUES(?, ?) ON DUPLICATE KEY UPDATE username = ?";
+            const string CommandText = "INSERT INTO Players (userid, username) VALUES(?, ?) ON DUPLICATE KEY UPDATE username = ?";
             MySqlParameter p1 = new MySqlParameter
             {
                 Value = id
@@ -281,7 +281,7 @@ namespace UNObot.Services
         {
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "INSERT INTO Players (userid, inGame, cards, server) VALUES(?, 0, ?, null) ON DUPLICATE KEY UPDATE inGame = 0, cards = ?, server = null";
+            const string CommandText = "INSERT INTO Players (userid, inGame, cards, server) VALUES(?, 0, ?, null) ON DUPLICATE KEY UPDATE inGame = 0, cards = ?, server = null";
             MySqlParameter p1 = new MySqlParameter
             {
                 Value = id
@@ -318,7 +318,7 @@ namespace UNObot.Services
              * 3 (maybe?) - Allows skipping of a turn after drawing 2 cards.
             */
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
-            string CommandText = "INSERT INTO Games (server, inGame, gameMode) VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE inGame = ?, gameMode = ?";
+            const string CommandText = "INSERT INTO Games (server, inGame, gameMode) VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE inGame = ?, gameMode = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -359,7 +359,7 @@ namespace UNObot.Services
             ushort gamemode = 1;
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "SELECT gameMode FROM UNObot.Games WHERE server = ?";
+            const string CommandText = "SELECT gameMode FROM UNObot.Games WHERE server = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -385,7 +385,7 @@ namespace UNObot.Services
         {
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "SELECT queue FROM Games WHERE inGame = 1 AND server = ?";
+            const string CommandText = "SELECT queue FROM Games WHERE inGame = 1 AND server = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -414,7 +414,7 @@ namespace UNObot.Services
             ulong server = 0;
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "SELECT server FROM Players WHERE inGame = 1";
+            const string CommandText = "SELECT server FROM Players WHERE inGame = 1";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -442,7 +442,7 @@ namespace UNObot.Services
             string json = JsonConvert.SerializeObject(players);
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "UPDATE Games SET queue = ? WHERE inGame = 1 AND server = ?";
+            const string CommandText = "UPDATE Games SET queue = ? WHERE inGame = 1 AND server = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -468,7 +468,7 @@ namespace UNObot.Services
             Queue<ulong> players = new Queue<ulong>();
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "SELECT userid FROM Players WHERE inGame = 1 AND server = ?";
+            const string CommandText = "SELECT userid FROM Players WHERE inGame = 1 AND server = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -493,7 +493,7 @@ namespace UNObot.Services
         {
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "SELECT oneCardLeft FROM Games WHERE inGame = 1 AND server = ?";
+            const string CommandText = "SELECT oneCardLeft FROM Games WHERE inGame = 1 AND server = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -520,7 +520,7 @@ namespace UNObot.Services
         {
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "UPDATE Games SET oneCardLeft = ? WHERE inGame = 1 AND server = ?";
+            const string CommandText = "UPDATE Games SET oneCardLeft = ? WHERE inGame = 1 AND server = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -545,7 +545,7 @@ namespace UNObot.Services
         {
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "UPDATE Games SET playChannel = ? WHERE server = ?";
+            const string CommandText = "UPDATE Games SET playChannel = ? WHERE server = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -570,7 +570,7 @@ namespace UNObot.Services
         {
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "UPDATE Games SET hasDefaultChannel = ? WHERE server = ?";
+            const string CommandText = "UPDATE Games SET hasDefaultChannel = ? WHERE server = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -596,7 +596,7 @@ namespace UNObot.Services
             bool yesorno = false;
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "SELECT hasDefaultChannel FROM UNObot.Games WHERE server = ?";
+            const string CommandText = "SELECT hasDefaultChannel FROM UNObot.Games WHERE server = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -620,7 +620,7 @@ namespace UNObot.Services
             bool yesorno = false;
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "SELECT enforceChannel FROM UNObot.Games WHERE server = ?";
+            const string CommandText = "SELECT enforceChannel FROM UNObot.Games WHERE server = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -643,7 +643,7 @@ namespace UNObot.Services
         {
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "UPDATE Games SET enforceChannel = ? WHERE server = ?";
+            const string CommandText = "UPDATE Games SET enforceChannel = ? WHERE server = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -669,7 +669,7 @@ namespace UNObot.Services
             ulong channel = 0;
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "SELECT playChannel FROM UNObot.Games WHERE server = ?";
+            const string CommandText = "SELECT playChannel FROM UNObot.Games WHERE server = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -695,7 +695,7 @@ namespace UNObot.Services
             List<ulong> allowedChannels = new List<ulong>();
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "SELECT allowedChannels FROM UNObot.Games WHERE server = ?";
+            const string CommandText = "SELECT allowedChannels FROM UNObot.Games WHERE server = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -718,7 +718,7 @@ namespace UNObot.Services
         {
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "UPDATE Games SET allowedChannels = ? WHERE server = ?";
+            const string CommandText = "UPDATE Games SET allowedChannels = ? WHERE server = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -743,7 +743,7 @@ namespace UNObot.Services
         {
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "SELECT currentCard FROM Games WHERE inGame = 1 AND server = ?";
+            const string CommandText = "SELECT currentCard FROM Games WHERE inGame = 1 AND server = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -770,7 +770,7 @@ namespace UNObot.Services
             string cardJSON = JsonConvert.SerializeObject(card);
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "UPDATE Games SET currentCard = ? WHERE inGame = 1 AND server = ?";
+            const string CommandText = "UPDATE Games SET currentCard = ? WHERE inGame = 1 AND server = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -796,7 +796,7 @@ namespace UNObot.Services
             bool yesorno = false;
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "SELECT inGame FROM UNObot.Players WHERE userid = ?";
+            const string CommandText = "SELECT inGame FROM UNObot.Players WHERE userid = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -821,7 +821,7 @@ namespace UNObot.Services
         {
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "SELECT queue FROM UNObot.Games WHERE server = ?";
+            const string CommandText = "SELECT queue FROM UNObot.Games WHERE server = ?";
 
             Queue<ulong> players = new Queue<ulong>();
             MySqlParameter p1 = new MySqlParameter
@@ -849,7 +849,7 @@ namespace UNObot.Services
             string jsonstring = "";
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "SELECT cards FROM UNObot.Players WHERE userid = ?";
+            const string CommandText = "SELECT cards FROM UNObot.Players WHERE userid = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -877,7 +877,7 @@ namespace UNObot.Services
             bool exists = false;
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "SELECT EXISTS(SELECT 1 FROM UNObot.Players WHERE userid = ?)";
+            const string CommandText = "SELECT EXISTS(SELECT 1 FROM UNObot.Players WHERE userid = ?)";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -908,7 +908,7 @@ namespace UNObot.Services
                 LoggerService.Log(LogSeverity.Warning, "[WARN] Why is the list empty when I'm getting players?");
             string json = JsonConvert.SerializeObject(players);
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
-            string CommandText = "UPDATE UNObot.Games SET queue = ? WHERE server = ? AND inGame = 1";
+            const string CommandText = "UPDATE UNObot.Games SET queue = ? WHERE server = ? AND inGame = 1";
 
             MySqlParameter p1 = new MySqlParameter();
             MySqlParameter p2 = new MySqlParameter();
@@ -940,7 +940,7 @@ namespace UNObot.Services
         {
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "SELECT gamesJoined,gamesPlayed,gamesWon FROM UNObot.Players WHERE userid = ?";
+            const string CommandText = "SELECT gamesJoined,gamesPlayed,gamesWon FROM UNObot.Players WHERE userid = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -968,7 +968,7 @@ namespace UNObot.Services
         {
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "SELECT note FROM UNObot.Players WHERE userid = ?";
+            const string CommandText = "SELECT note FROM UNObot.Players WHERE userid = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -997,7 +997,7 @@ namespace UNObot.Services
         {
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "UPDATE UNObot.Players SET note = ? WHERE userid = ?";
+            const string CommandText = "UPDATE UNObot.Players SET note = ? WHERE userid = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -1022,7 +1022,7 @@ namespace UNObot.Services
         {
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "UPDATE UNObot.Players SET note = NULL WHERE userid = ?";
+            const string CommandText = "UPDATE UNObot.Players SET note = NULL WHERE userid = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -1080,7 +1080,7 @@ namespace UNObot.Services
             string json = JsonConvert.SerializeObject(cards);
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "UPDATE UNObot.Players SET cards = ? WHERE userid = ?";
+            const string CommandText = "UPDATE UNObot.Players SET cards = ? WHERE userid = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -1108,7 +1108,7 @@ namespace UNObot.Services
             string json = JsonConvert.SerializeObject(cards);
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "UPDATE UNObot.Players SET cards = ? WHERE userid = ?";
+            const string CommandText = "UPDATE UNObot.Players SET cards = ? WHERE userid = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -1134,7 +1134,7 @@ namespace UNObot.Services
             char prefix = '!';
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "SELECT commandPrefix FROM Games WHERE server = ?";
+            const string CommandText = "SELECT commandPrefix FROM Games WHERE server = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -1160,7 +1160,7 @@ namespace UNObot.Services
         public static async Task SetPrefix(ulong server, char prefix)
         {
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
-            string CommandText = "UPDATE Games SET commandPrefix = ? WHERE server = ?";
+            const string CommandText = "UPDATE Games SET commandPrefix = ? WHERE server = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -1201,7 +1201,7 @@ namespace UNObot.Services
             string json = JsonConvert.SerializeObject(cards);
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
-            string CommandText = "UPDATE UNObot.Players SET cards = ? WHERE userid = ?";
+            const string CommandText = "UPDATE UNObot.Players SET cards = ? WHERE userid = ?";
 
             MySqlParameter p1 = new MySqlParameter
             {
@@ -1225,7 +1225,7 @@ namespace UNObot.Services
         }
         public static async Task UpdateServerCards(ulong server, string text)
         {
-            string CommandText = "UPDATE Games SET cards = ? WHERE server = ?";
+            const string CommandText = "UPDATE Games SET cards = ? WHERE server = ?";
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
             MySqlParameter p1 = new MySqlParameter
             {
@@ -1249,7 +1249,7 @@ namespace UNObot.Services
         }
         public static async Task<string> GetServerCards(ulong server)
         {
-            string CommandText = "SELECT cards FROM UNObot.Games WHERE server = ?";
+            const string CommandText = "SELECT cards FROM UNObot.Games WHERE server = ?";
             string description = "";
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
             MySqlParameter p1 = new MySqlParameter
@@ -1350,31 +1350,36 @@ namespace UNObot.Services
             }
         }
         
-        public static async Task<(ulong Guild, ulong Channel)> GetWebhook(string Key)
+        public static async Task<(ulong Guild, byte Type)> GetWebhook(ulong Channel, string Key)
         {
-            var CommandText = "SELECT guild, channel FROM UNObot.Webhooks WHERE webhookKey = ?";
+            const string CommandText = "SELECT guild, type FROM UNObot.Webhooks WHERE channel = ? AND webhookKey = ?";
             ulong Guild = 0;
-            ulong Channel = 0;
+            byte Type = 0;
             var Parameters = new List<MySqlParameter>();
             var p1 = new MySqlParameter
+            {
+                Value = Channel
+            };
+            var p2 = new MySqlParameter
             {
                 Value = Key.Substring(0, Math.Min(Key.Length, 50))
             };
             Parameters.Add(p1);
+            Parameters.Add(p2);
             await using var dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
             try
             {
                 while (dr.Read())
                 {
                     Guild = dr.GetUInt64(0);
-                    Channel = dr.GetUInt64(1);
+                    Type = dr.GetByte(1);
                 }
             }
             catch (MySqlException ex)
             {
                 LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
-            return (Guild, Channel);
+            return (Guild, Type);
         }
     }
 }

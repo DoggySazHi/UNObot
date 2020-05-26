@@ -1,5 +1,6 @@
 #include "RCONSocket.h"
 #include <string>
+#include <cstring>
 #include <iostream>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -19,6 +20,7 @@ RCONSocket::RCONSocket(IPEndpoint& server, std::string& password, bool reuse) : 
 RCONSocket::RCONSocket(IPEndpoint& server, std::string& password, bool reuse, std::string& command)
 {
     this->server = server;
+    this->socket_descriptor = 0;
     WipeBuffer();
     CreateConnection();
 }
@@ -42,7 +44,7 @@ void RCONSocket::CreateConnection()
     std::string hello = "Hello from client";
     if ((socket_descriptor = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
-        printf("\n Socket creation error \n");
+        std::cout << "Socket failure..." << '\n';
         return;
     }
 
@@ -52,55 +54,28 @@ void RCONSocket::CreateConnection()
     // Convert IPv4 and IPv6 addresses from text to binary form
     if(inet_pton(AF_INET, server.ip.c_str(), &serv_addr.sin_addr) <= 0)
     {
-        printf("\nInvalid address/ Address not supported \n");
+        std::cout << "Address parsing failed..." << '\n';
         return;
     }
 
     if (connect(socket_descriptor, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
     {
-        printf("\nConnection Failed \n");
+        std::cout << "Connection failed..." << '\n';
         return;
     }
 
-    send(socket_descriptor , hello.c_str() , hello.length() , 0 );
-    printf("Hello message sent\n");
-    int count = read(socket_descriptor , rx_data->data(), BUFFER_SIZE);
-    printf("%s\n", rx_data->data());
+    SendPacket();
 }
 
-void RCONSocket::SendPacket(std::string& ip, int port)
+void RCONSocket::SendPacket()
 {
-    int socket_descriptor;
-    struct sockaddr_in serv_addr{};
     std::string hello = "Hello from client";
-    char buffer[BUFFER_SIZE] = {0};
-    if ((socket_descriptor = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-    {
-        printf("\n Socket creation error \n");
-        return;
-    }
 
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(port);
-
-    // Convert IPv4 and IPv6 addresses from text to binary form
-    if(inet_pton(AF_INET, ip.c_str(), &serv_addr.sin_addr) <= 0)
-    {
-        printf("\nInvalid address/ Address not supported \n");
-        return;
-    }
-
-    if (connect(socket_descriptor, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-    {
-        printf("\nConnection Failed \n");
-        return;
-    }
     send(socket_descriptor , hello.c_str() , hello.length() , 0 );
-    printf("Hello message sent\n");
-    int count = read(socket_descriptor , buffer, BUFFER_SIZE);
-    printf("%s\n",buffer );
-
-    std::cout << count << std::endl;
+    std::cout << "Sent data." << '\n';
+    int count = read(socket_descriptor , rx_data->data(), BUFFER_SIZE);
+    std::cout << rx_data->data() << '\n';
+    std::cout << "Count: " << count << '\n';
 }
 
 std::array<uint8_t, 4> RCONSocket::LittleEndianConverter(int data)
@@ -123,8 +98,7 @@ int RCONSocket::LittleEndianReader(std::array<uint8_t, BUFFER_SIZE>* data, int s
 
 void RCONSocket::WipeBuffer()
 {
-    for (unsigned char & i : *rx_data)
-        i = '\0';
+    memset(rx_data->data(), '\0', BUFFER_SIZE);
 }
 
 std::vector<uint8_t> RCONSocket::MakePacketData(std::string body, PacketType Type, int ID)
