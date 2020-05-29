@@ -31,17 +31,17 @@ namespace UNObot.Services
             var Success = QueryHandlerService.CreateRCON(IP, Port, Password, RandomKey, out Client);
             if (!Success) return Output;
 
-            Client.Execute("list", true);
+            Client.ExecuteSingle("list", true);
             if (Client.Status != MinecraftRCON.RCONStatus.SUCCESS) return Output;
             var PlayerListOnline = Client.Data.Substring(Client.Data.IndexOf(':') + 1).Split(',').ToList();
 
-            Client.Execute("scoreboard players list", true);
+            Client.ExecuteSingle("scoreboard players list", true);
             var PlayerListTotal = Client.Data.Substring(Client.Data.IndexOf(':') + 1).Split(',').ToList();
 
             foreach(var Player in PlayerListTotal)
             {
                 var Name = Player.Replace((char) 0, ' ').Trim();
-                Client.Execute($"scoreboard players get {Name} Ouchies", true);
+                Client.ExecuteSingle($"scoreboard players get {Name} Ouchies", true);
                 if (Client.Status == MinecraftRCON.RCONStatus.SUCCESS)
                 {
                     var Ouchies = Client.Data.Contains("has") ? Client.Data.Split(' ')[2] : "0";
