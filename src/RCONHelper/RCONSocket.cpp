@@ -1,4 +1,5 @@
 #include "RCONSocket.h"
+#include "Utilities.h"
 #include <string>
 #include <cstring>
 #include <iostream>
@@ -8,18 +9,14 @@
 #include <array>
 #include <thread>
 
-RCONSocket::RCONSocket(IPEndpoint& server, std::string& password) : RCONSocket(server, password, false)
+RCONSocket::RCONSocket(IPEndpoint& server, std::string& password) : RCONSocket(server, password, NULL_STR)
 {
 
 }
 
-RCONSocket::RCONSocket(IPEndpoint& server, std::string& password, bool reuse) : RCONSocket(server, password, reuse, NULL_STR)
+RCONSocket::RCONSocket(IPEndpoint& server, std::string& password, const std::string& command) : password(password)
 {
-
-}
-
-RCONSocket::RCONSocket(IPEndpoint& server, std::string& password, bool reuse, std::string& command)
-{
+    status = CONN_FAIL;
     this->server = server;
     this->socket_descriptor = 0;
     WipeBuffer();
@@ -27,7 +24,8 @@ RCONSocket::RCONSocket(IPEndpoint& server, std::string& password, bool reuse, st
 }
 
 RCONSocket::~RCONSocket() {
-    delete rx_data;
+    if(!disposed)
+        Dispose();
 }
 
 #pragma clang diagnostic push
@@ -39,15 +37,29 @@ void RCONSocket::Mukyu()
 }
 #pragma clang diagnostic pop
 
-void RCONSocket::CreateConnection()
+void RCONSocket::CreateConnection(const std::string& command)
 {
     struct sockaddr_in serv_addr{};
-    std::string hello = "Hello from client";
     if ((socket_descriptor = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
-        std::cout << "Socket failure..." << '\n';
+        std::cerr << "Socket failure..." << '\n';
         return;
     }
+
+    // Allow for the reusing of addresses (ESPECIALLY IF IT FORGETS TO CLOSE)
+    int yes = 1; // ok, why do you want a pointer to a true
+    auto success = setsockopt(socket_descriptor , SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == 0;
+
+    // Set the timeouts
+    struct timeval timeout {};
+    timeout.tv_sec = 5;
+    timeout.tv_usec = 0;
+
+    success |= setsockopt (socket_descriptor, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) == 0;
+    success |= setsockopt (socket_descriptor, SOL_SOCKET, SO_SNDTIMEO, (char *)&timeout, sizeof(timeout)) == 0;
+
+    if(!success)
+        std::cerr << "Failed to set socket options!" << '\n';
 
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(server.port);
@@ -55,68 +67,194 @@ void RCONSocket::CreateConnection()
     // Convert IPv4 and IPv6 addresses from text to binary form
     if(inet_pton(AF_INET, server.ip.c_str(), &serv_addr.sin_addr) <= 0)
     {
-        std::cout << "Address parsing failed..." << '\n';
+        std::cerr << "Address parsing failed..." << '\n';
         return;
     }
 
     if (connect(socket_descriptor, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
     {
-        std::cout << "Connection failed..." << '\n';
+        std::cerr << "Failed to connect to " << server.ip << " at " << server.port << ".\n";
         return;
     }
 
-    SendPacket();
+    std::cout << "Successfully created RCON connection!" << '\n';
+
+    if(Authenticate() && !command.empty())
+        ExecuteSingle(command);
 }
 
-void RCONSocket::SendPacket()
+bool RCONSocket::Authenticate()
 {
-    std::string hello = "Hello from client";
-
-    send(socket_descriptor , hello.c_str() , hello.length() , 0 );
-    std::cout << "Sent data." << '\n';
-    int count = read(socket_descriptor , rx_data->data(), BUFFER_SIZE);
-    std::cout << rx_data->data() << '\n';
-    std::cout << "Count: " << count << '\n';
+    auto payload = MakePacketData(password, SERVERDATA_AUTH, 0);
+    send(socket_descriptor, payload.data(), payload.size(), 0);
+    Utilities::hexdump(payload.data(), payload.size());
+    read(socket_descriptor, rx_data->data(), BUFFER_SIZE);
+    auto id = LittleEndianReader(rx_data, 4);
+    auto type = LittleEndianReader(rx_data, 8);
+    if (id == -1 || type != 2)
+    {
+        status = AUTH_FAIL;
+        std::cerr <<  "RCON failed to authenticate!" << '\n';
+        return false;
+    }
+    std::cout << "RCON login successful!" << '\n';
+    status = SUCCESS;
+    return true;
 }
 
+void RCONSocket::ExecuteSingle(const std::string& command)
+{
+    WipeBuffer();
+    auto payload = MakePacketData(command, SERVERDATA_EXECCOMMAND, 0);
+    send(socket_descriptor, payload.data(), payload.size(), 0);
+    int count = read(socket_descriptor, rx_data->data(), BUFFER_SIZE);
+    auto id = LittleEndianReader(rx_data, 4);
+    auto type = LittleEndianReader(rx_data, 8);
+    if(id == -1 || type != 0 || count <= 12)
+    {
+        std::cerr << "Failed to execute \"" << command << "\"!" << '\n';
+        status = AUTH_FAIL;
+        return;
+    }
+    data.clear();
+    data.reserve(count - 12);
+    auto position = 12;
+    auto current_char = (char) (*rx_data)[position++];
+    while (current_char != '\x00')
+    {
+        data += current_char;
+        current_char = (char) (*rx_data)[position++];
+    }
+    status = SUCCESS;
+}
+
+void RCONSocket::Execute(const std::string& command)
+{
+    auto packet_count = 0;
+    auto payload = MakePacketData(command, SERVERDATA_EXECCOMMAND, 0);
+    auto end_of_command = MakePacketData("", TYPE_100, 0);
+    send(socket_descriptor, payload.data(), payload.size(), 0);
+    send(socket_descriptor, end_of_command.data(), end_of_command.size(), 0);
+
+    data.clear();
+    WipeBuffer();
+    int count = read(socket_descriptor, rx_data->data(), BUFFER_SIZE);
+    int dataTrim = -1;
+    while (count > 0)
+    {
+        packet_count++;
+        std::cout << "reading packet " << packet_count << '\n';
+        Utilities::hexdump(rx_data->data(), count);
+        Utilities::file_dump(rx_data->data(), count, "packet" + std::to_string(packet_count));
+        auto position = 12;
+        if(packet_count == 1) {
+            auto id = LittleEndianReader(rx_data, 4);
+            auto type = LittleEndianReader(rx_data, 8);
+            if(id == -1 || type != 0 || count <= 12)
+            {
+                std::cerr << "Failed to execute \"" << command << "\"!" << '\n';
+                status = AUTH_FAIL;
+                return;
+            }
+            //position = 12;
+        }
+        data.reserve(data.length() + count - position);
+        auto current_char = (char) (*rx_data)[position++];
+        while(position < count)
+        {
+            if(current_char != '\x00')
+                data += current_char;
+            current_char = (char) (*rx_data)[position++];
+        }
+
+        // This is the purpose of the end_of_command, so we read for the error to stop reading (0x64 = 100)
+        dataTrim = data.find("Unknown request 64");
+        if (dataTrim >= 0)
+            break;
+
+        if(packet_count >= 20)
+        {
+            std::cerr << "Overread " << packet_count << " packets!" << '\n';
+            break;
+        }
+
+        WipeBuffer();
+        count = read(socket_descriptor, rx_data->data(), BUFFER_SIZE);
+    }
+    if(count < 0)
+        std::cerr << "Socket errored!" << '\n';
+    std::cout << "Read " << packet_count << " packets!";
+    if(dataTrim >= 0)
+        data.erase(dataTrim);
+    status = SUCCESS;
+}
+
+// Function works with positive, signed data based on C# implementation
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "hicpp-signed-bitwise"
 std::array<uint8_t, 4> RCONSocket::LittleEndianConverter(int data)
 {
     auto b = std::array<uint8_t, 4>();
-    b[0] = (uint8_t)data;
-    b[1] = (uint8_t)(((uint)data >> 8) & 0xFF);
-    b[2] = (uint8_t)(((uint)data >> 16) & 0xFF);
-    b[3] = (uint8_t)(((uint)data >> 24) & 0xFF);
+    if(!Utilities::is_big_endian())
+    {
+        b[0] = (uint8_t) data;
+        b[1] = (uint8_t) (((uint) data >> 8) & 0xFF);
+        b[2] = (uint8_t) (((uint) data >> 16) & 0xFF);
+        b[3] = (uint8_t) (((uint) data >> 24) & 0xFF);
+    }
+    else
+    {
+        b[3] = (uint8_t)data;
+        b[2] = (uint8_t)(((uint)data >> 8) & 0xFF);
+        b[1] = (uint8_t)(((uint)data >> 16) & 0xFF);
+        b[0] = (uint8_t)(((uint)data >> 24) & 0xFF);
+    }
     return b;
 }
 
-int RCONSocket::LittleEndianReader(std::array<uint8_t, BUFFER_SIZE>* data, int startIndex)
+int RCONSocket::LittleEndianReader(std::array<uint8_t, BUFFER_SIZE>* data, int start_index)
 {
-    return (data->data()[startIndex + 3] << 24)
-           | (data->data()[startIndex + 2] << 16)
-           | (data->data()[startIndex + 1] << 8)
-           | data->data()[startIndex];
+    if(!Utilities::is_big_endian())
+        return ((*data)[start_index + 3] << 24)
+               | ((*data)[start_index + 2] << 16)
+               | ((*data)[start_index + 1] << 8)
+               | (*data)[start_index];
+    return ((*data)[start_index] << 24)
+           | ((*data)[start_index + 1] << 16)
+           | ((*data)[start_index + 2] << 8)
+           | (*data)[start_index + 3];
 }
+#pragma clang diagnostic pop
 
 void RCONSocket::WipeBuffer()
 {
     memset(rx_data->data(), '\0', BUFFER_SIZE);
 }
 
-std::vector<uint8_t> RCONSocket::MakePacketData(std::string body, PacketType Type, int ID) {
-    auto Length = LittleEndianConverter(body.length() + 9);
-    auto IDData = LittleEndianConverter(ID);
-    auto PacketType = LittleEndianConverter(Type);
-    auto BodyData = body.data();
+std::vector<uint8_t> RCONSocket::MakePacketData(const std::string& body, PacketType type, int id) {
+    int length_num = body.length(); // idk why it goes to unsigned long with auto
+    auto length = LittleEndianConverter(length_num + 10);
+    auto id_data = LittleEndianConverter(id);
+    auto packet_type = LittleEndianConverter(type);
     // Plus 1 for the null byte.
-    auto Packet = std::vector<uint8_t>(Length.size() + IDData.size() + PacketType.size() + body.size());
-    auto Counter = 0;
-    for (auto Byte : Length)
-        Packet[Counter++] = Byte;
-    for (auto Byte : IDData)
-        Packet[Counter++] = Byte;
-    for (auto Byte : PacketType)
-        Packet[Counter++] = Byte;
-    for (auto Character : body)
-        Packet[Counter++] = Character;
-    return Packet;
+    auto packet = std::vector<uint8_t>(length.size() + id_data.size() + packet_type.size() + body.size() + 2);
+    auto counter = 0;
+    for (auto byte : length)
+        packet[counter++] = byte;
+    for (auto byte : id_data)
+        packet[counter++] = byte;
+    for (auto byte : packet_type)
+        packet[counter++] = byte;
+    for (auto character : body)
+        packet[counter++] = character;
+    packet[counter++] = '\x00';
+    packet[counter++] = '\x00';
+    return packet;
+}
+
+void RCONSocket::Dispose()
+{
+    close(socket_descriptor);
+    delete rx_data;
+    std::cout << "Closed socket." << '\n';
 }

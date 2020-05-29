@@ -30,14 +30,14 @@ namespace UNObot.Services
                 "Yellow" => 0xFFFF00,
                 _ => 0x00FF00,
             };
-            string response = "";
-            ushort isPrivate = await UNODatabaseService.GetGamemode(ServerID);
+            var response = "";
+            var Gamemode = await UNODatabaseService.GetGamemode(ServerID);
             string server = Program._client.GetGuild(ServerID).Name;
             foreach (ulong id in await UNODatabaseService.GetPlayers(ServerID))
             {
                 var user = Program._client.GetUser(id);
                 var cardCount = (await UNODatabaseService.GetCards(id)).Count();
-                if (isPrivate != 2)
+                if (!Gamemode.HasFlag(UNOCoreServices.Gamemodes.Private))
                 {
                     if (id == (await UNODatabaseService.GetPlayers(ServerID)).Peek())
                         response += $"**{user.Username}** - {cardCount} card";

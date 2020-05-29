@@ -169,6 +169,15 @@ namespace UNObot.Services
 
     public static class UNOCoreServices
     {
+        [Flags]
+        public enum Gamemodes
+        {
+            Normal = 0,
+            Private = 1,
+            Fast = 2,
+            Retro = 4
+        }
+        
         public static Card RandomCard()
         {
             Card card = new Card();

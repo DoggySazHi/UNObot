@@ -18,7 +18,7 @@ namespace UNObot.Services
     //Mukyu... but I implemented the Minecraft RCON (Valve RCON) protocol by hand, as well as the query.
     public static class QueryHandlerService
     {
-        public const string PSurvival = "192.168.2.42";
+        public const string PSurvival = "192.168.2.6";
 
         public static string HumanReadable(float Time)
         {
@@ -695,6 +695,7 @@ namespace UNObot.Services
         public bool Disposed { get; private set; }
         private Socket Client;
         private const ushort RX_SIZE = 4096;
+        private byte[] Buffer;
         private List<byte> PacketCollector = new List<byte>(RX_SIZE);
         private enum PacketType {/* SERVERDATA_RESPONSE_VALUE = 0, */ SERVERDATA_EXECCOMMAND = 2, SERVERDATA_AUTH = 3, TYPE_100 = 100 }
         public enum RCONStatus { CONN_FAIL, AUTH_FAIL, EXEC_FAIL, INT_FAIL, SUCCESS }
@@ -708,6 +709,7 @@ namespace UNObot.Services
         {
             this.Password = Password;
             this.Server = Server;
+            Buffer = new byte[RX_SIZE];
             CreateConnection(Reuse, Command);
         }
 
@@ -744,14 +746,20 @@ namespace UNObot.Services
 
         public bool Authenticate()
         {
-            var PreAlloc = new byte[RX_SIZE];
-            return Authenticate(ref PreAlloc);
+            Wipe(ref Buffer);
+            return Authenticate(ref Buffer);
         }
 
         public void Execute(string Command, bool Reuse = false)
         {
-            var PreAlloc = new byte[RX_SIZE];
-            Execute(Command, ref PreAlloc, Reuse);
+            Wipe(ref Buffer);
+            Execute(Command, ref Buffer, Reuse);
+        }
+        
+        public void ExecuteSingle(string Command, bool Reuse = false)
+        {
+            Wipe(ref Buffer);
+            ExecuteSingle(Command, ref Buffer, Reuse);
         }
 
         private bool Authenticate(ref byte[] RXData)
@@ -907,6 +915,41 @@ namespace UNObot.Services
                 if (Status != RCONStatus.SUCCESS || !Reuse)
                     Dispose();
             }
+        }
+        
+        public void ExecuteSingle(string Command, ref byte[] RXData, bool Reuse = false)
+        {
+            try
+            {
+                var Payload = MakePacketData(Command, PacketType.SERVERDATA_EXECCOMMAND, 0);
+                Client.Send(Payload);
+                Client.Receive(RXData);
+                var ID = LittleEndianReader(ref RXData, 4);
+                var Type = LittleEndianReader(ref RXData, 8);
+                if (ID == -1 || Type != 0)
+                {
+                    LoggerService.Log(LogSeverity.Verbose, $"Failed to execute \"{Command}\"!");
+                    Status = RCONStatus.AUTH_FAIL;
+                    return;
+                }
+
+                var StringConcat = new StringBuilder();
+                var Position = 12;
+                var CurrentChar = (char) RXData[Position++];
+                while (CurrentChar != '\x00')
+                {
+                    StringConcat.Append(CurrentChar);
+                    CurrentChar = (char) RXData[Position++];
+                }
+                Data = StringConcat.ToString();
+                Status = RCONStatus.SUCCESS;
+            }
+            catch (Exception)
+            {
+                Status = RCONStatus.INT_FAIL;
+            }
+            if(Status != RCONStatus.SUCCESS || !Reuse)
+                Dispose();
         }
 
         private static byte[] LittleEndianConverter(int data)

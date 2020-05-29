@@ -215,7 +215,7 @@ namespace UNObot.Modules
         public async Task Credits()
         {
             await ReplyAsync("UNObot: Programmed by DoggySazHi\n" +
-                "Tested by Aragami and Fm (ish)\n" +
+                "Tested by dabadcuber5, Aragami and Fm (ish)\n" +
                 "UNO card images from Wikipedia\n" +
                 "Created for the UBOWS server\n\n" +
                 "Stickerz was here.\n" +

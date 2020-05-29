@@ -17,9 +17,8 @@ extern "C" {
 
 // Start exposing APIs here
 	MODULE_API inline void Mukyu(RCONSocket* obj) { obj->Mukyu(); }
-    MODULE_API RCONSocket* CreateObjectA(std::string& ip, std::string& password, bool reuse, std::string& command);
-    MODULE_API RCONSocket* CreateObjectB(std::string& ip, std::string& password, bool reuse);
-    MODULE_API RCONSocket* CreateObjectC(std::string& ip, std::string& password);
+    MODULE_API RCONSocket* CreateObjectA(std::string& ip, std::string& password, std::string& command);
+    MODULE_API RCONSocket* CreateObjectB(std::string& ip, std::string& password);
 // Stop exposing APIs here
 	
 #ifdef __cplusplus

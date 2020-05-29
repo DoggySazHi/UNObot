@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UNObot.Services;
+using static UNObot.Services.UNOCoreServices;
 
 namespace UNObot.Modules
 {
@@ -197,10 +198,20 @@ namespace UNObot.Modules
                     {
                         if (await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id) == Context.User.Id)
                         {
-                            Card card = UNOCoreServices.RandomCard();
+                            if ((await UNODatabaseService.GetGamemode(Context.Guild.Id)).HasFlag(Gamemodes.Retro))
+                            {
+                                if (await UNODatabaseService.GetCardsDrawn(Context.Guild.Id) > 0)
+                                {
+                                    await ReplyAsync("You cannot draw again, as you have already drawn a card previously.");
+                                    return;
+                                }
+                            }
+                            Card card = RandomCard();
                             await UserExtensions.SendMessageAsync(Context.Message.Author, "You have recieved: " + card.Color + " " + card.Value + ".");
                             await UNODatabaseService.AddCard(Context.User.Id, card);
+                            await UNODatabaseService.SetCardsDrawn(Context.Guild.Id, 1);
                             AFKtimer.ResetTimer(Context.Guild.Id);
+                            
                             return;
                         }
                         await ReplyAsync("Why draw now? Draw when it's your turn!");
@@ -274,12 +285,13 @@ namespace UNObot.Modules
                     {
                         if (Context.User.Id == await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id))
                         {
-                            if (await UNODatabaseService.GetGamemode(Context.Guild.Id) == 3)
+                            var Gamemode = await UNODatabaseService.GetGamemode(Context.Guild.Id);
+                            if (Gamemode.HasFlag(Gamemodes.Fast))
                             {
-                                List<Card> playerCards = await UNODatabaseService.GetCards(Context.User.Id);
-                                Card currentCard = await UNODatabaseService.GetCurrentCard(Context.Guild.Id);
-                                bool found = false;
-                                foreach (Card c in playerCards)
+                                var playerCards = await UNODatabaseService.GetCards(Context.User.Id);
+                                var currentCard = await UNODatabaseService.GetCurrentCard(Context.Guild.Id);
+                                var found = false;
+                                foreach (var c in playerCards)
                                 {
                                     if (c.Color == currentCard.Color || c.Value == currentCard.Value)
                                     {
@@ -294,9 +306,43 @@ namespace UNObot.Modules
                                     return;
                                 }
                                 await QueueHandlerService.NextPlayer(Context.Guild.Id);
-                                await UNODatabaseService.AddCard(Context.User.Id, UNOCoreServices.RandomCard());
-                                await UNODatabaseService.AddCard(Context.User.Id, UNOCoreServices.RandomCard());
+                                await UNODatabaseService.AddCard(Context.User.Id, RandomCard());
+                                await UNODatabaseService.AddCard(Context.User.Id, RandomCard());
                                 await ReplyAsync($"You have drawn two cards. It is now <@{await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
+                                AFKtimer.ResetTimer(Context.Guild.Id);
+                            }
+                            else if (Gamemode.HasFlag(Gamemodes.Retro))
+                            {
+                                var playerCards = await UNODatabaseService.GetCards(Context.User.Id);
+                                var currentCard = await UNODatabaseService.GetCurrentCard(Context.Guild.Id);
+                                var found = false;
+                                foreach (var c in playerCards)
+                                {
+                                    if (c.Color == currentCard.Color || c.Value == currentCard.Value)
+                                    {
+                                        found = true;
+                                        break;
+                                    }
+                                }
+
+                                if (found)
+                                {
+                                    await ReplyAsync("You cannot skip because you have a card that matches the criteria!");
+                                    return;
+                                }
+
+                                var CardsDrawn = await UNODatabaseService.GetCardsDrawn(Context.Guild.Id);
+                                if (CardsDrawn == 0)
+                                {
+                                    await ReplyAsync("You cannot skip without drawing at least one card! HINT: You can try using .quickplay/.qp instead of .draw and .skip.");
+                                    return;
+                                }
+                                
+                                // Useless, it will be cleared.
+                                //await UNODatabaseService.SetCardsDrawn(Context.Guild.Id, CardsDrawn + 1);
+
+                                await QueueHandlerService.NextPlayer(Context.Guild.Id);
+                                await ReplyAsync($"You have skipped, and it is now <@{await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
                                 AFKtimer.ResetTimer(Context.Guild.Id);
                             }
                             else
@@ -344,6 +390,13 @@ namespace UNObot.Modules
         [Help(new[] { ".quickplay" }, "Autodraw/play the first card possible. This is very inefficient, and should only be used if you are saving a wild card, or you don't have usable cards left.", true, "UNObot 2.4")]
         public async Task QuickPlay()
         {
+            async Task Skip()
+            {
+                await QueueHandlerService.NextPlayer(Context.Guild.Id);
+                await ReplyAsync($"It is now <@{await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
+                AFKtimer.ResetTimer(Context.Guild.Id);
+            }
+            
             if (await UNODatabaseService.IsPlayerInGame(Context.User.Id))
             {
                 if (await UNODatabaseService.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
@@ -352,54 +405,73 @@ namespace UNObot.Modules
                     {
                         if (Context.User.Id == await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id))
                         {
-                            List<Card> playerCards = await UNODatabaseService.GetCards(Context.User.Id);
-                            Card currentCard = await UNODatabaseService.GetCurrentCard(Context.Guild.Id);
-                            bool found = false;
-                            foreach (Card c in playerCards)
+                            var Gamemode = await UNODatabaseService.GetGamemode(Context.Guild.Id);
+                            var PlayerCards = await UNODatabaseService.GetCards(Context.User.Id);
+                            var CurrentCard = await UNODatabaseService.GetCurrentCard(Context.Guild.Id);
+                            
+                            foreach (var c in PlayerCards)
                             {
-                                if (c.Color == currentCard.Color || c.Value == currentCard.Value)
+                                if (c.Color == CurrentCard.Color || c.Value == CurrentCard.Value)
                                 {
-                                    found = true;
                                     await UserExtensions.SendMessageAsync(Context.Message.Author, "Played the first card that matched the criteria!");
                                     await ReplyAsync(await playCard.Play(c.Color, c.Value, null, Context.User.Id, Context.Guild.Id));
+                                    return;
+                                }
+                            }
+                            
+                            if (Gamemode.HasFlag(Gamemodes.Retro))
+                            {
+                                var CardsDrawn = await UNODatabaseService.GetCardsDrawn(Context.Guild.Id);
+                                if (CardsDrawn > 0)
+                                {
+                                    await Skip();
+                                    return;
+                                }
+                            }
+
+                            var cardsDrawn = 0;
+                            var cardsTaken = new List<Card>();
+                            var response = "Cards drawn:\n";
+                            while (true)
+                            {
+                                var rngcard = RandomCard();
+                                await UNODatabaseService.AddCard(Context.User.Id, rngcard);
+                                cardsTaken.Add(rngcard);
+                                cardsDrawn++;
+
+                                if (rngcard.Color == CurrentCard.Color || rngcard.Value == CurrentCard.Value)
+                                {
+                                    foreach (var cardTake in cardsTaken)
+                                    {
+                                        response += cardTake + "\n";
+                                    }
+                                    await ReplyAsync($"You have drawn {cardsDrawn} card{(cardsDrawn == 1 ? "" : "s")}.");
+                                    await Context.Message.Author.SendMessageAsync(response);
+                                    await ReplyAsync(await playCard.Play(rngcard.Color, rngcard.Value, null, Context.User.Id, Context.Guild.Id));
+                                    break;
+                                }
+
+                                if (rngcard.Color == "Wild")
+                                {
+                                    foreach (var cardTake in cardsTaken)
+                                    {
+                                        response += cardTake + "\n";
+                                    }
+                                    response += ($"\n\nYou have drawn {cardsDrawn} cards, however the autodrawer has stopped at a Wild card." +
+                                                     $"{(Gamemode.HasFlag(Gamemodes.Retro) ? "If you want to skip, use .skip or .quickplay." : "\nIf you want to draw for a regular card, run the command again.")}");
+                                    await Context.Message.Author.SendMessageAsync(response);
+                                    break;
+                                }
+                                
+                                if (Gamemode.HasFlag(Gamemodes.Retro))
+                                {
+                                    await ReplyAsync($"You have drawn a card and skipped.");
+                                    await Context.Message.Author.SendMessageAsync($"You have drawn a {rngcard}.");
+                                    await Skip();
                                     break;
                                 }
                             }
-                            if (!found)
-                            {
-                                int cardsDrawn = 0;
-                                List<Card> cardsTaken = new List<Card>();
-                                String response = "Cards drawn:\n";
-                                while (true)
-                                {
-                                    Card rngcard = UNOCoreServices.RandomCard();
-                                    await UNODatabaseService.AddCard(Context.User.Id, rngcard);
-                                    cardsTaken.Add(rngcard);
-                                    cardsDrawn++;
-                                    if (rngcard.Color == currentCard.Color || rngcard.Value == currentCard.Value)
-                                    {
-                                        foreach (Card cardTake in cardsTaken)
-                                        {
-                                            response += cardTake + "\n";
-                                        }
-                                        await ReplyAsync($"You have drawn {cardsDrawn} cards.");
-                                        await UserExtensions.SendMessageAsync(Context.Message.Author, response);
-                                        await ReplyAsync(await playCard.Play(rngcard.Color, rngcard.Value, null, Context.User.Id, Context.Guild.Id));
-                                        break;
-                                    }
-                                    if (rngcard.Color == "Wild")
-                                    {
-                                        foreach (Card cardTake in cardsTaken)
-                                        {
-                                            response += cardTake + "\n";
-                                        }
-                                        response += ($"\n\nYou have drawn {cardsDrawn} cards, however the autodrawer has stopped at a Wild card.\n" +
-                                                         "If you want to draw for a regular card, run the command again.");
-                                        await UserExtensions.SendMessageAsync(Context.Message.Author, response);
-                                        break;
-                                    }
-                                }
-                            }
+                            
                             AFKtimer.ResetTimer(Context.Guild.Id);
                         }
                         else
@@ -423,7 +495,7 @@ namespace UNObot.Modules
             await Game();
         }
 
-        [Command("game", RunMode = RunMode.Async), Help(new[] { ".displayembed" }, "Display all information about the current game.", true, "UNObot 3.0")]
+        [Command("game", RunMode = RunMode.Async), Help(new[] { ".game" }, "Display all information about the current game.", true, "UNObot 3.0")]
         [DisableDMs]
         public async Task Game()
         {
@@ -445,8 +517,8 @@ namespace UNObot.Modules
             Queue<ulong> currqueue = await UNODatabaseService.GetUsersWithServer(Context.Guild.Id);
             if (await UNODatabaseService.IsServerInGame(Context.Guild.Id))
             {
-                await ReplyAsync("Since the server is already in a game, you can also use .players!");
-                await Players();
+                await ReplyAsync("Since the server is already in a game, you can also use .game!");
+                await Game();
                 return;
             }
             if (currqueue.Count <= 0)
@@ -481,8 +553,8 @@ namespace UNObot.Modules
                         else
                         {
                             await ReplyAsync("Uh oh, you still have more than one card! Two cards have been added to your hand.");
-                            await UNODatabaseService.AddCard(Context.User.Id, UNOCoreServices.RandomCard());
-                            await UNODatabaseService.AddCard(Context.User.Id, UNOCoreServices.RandomCard());
+                            await UNODatabaseService.AddCard(Context.User.Id, RandomCard());
+                            await UNODatabaseService.AddCard(Context.User.Id, RandomCard());
                         }
                     }
                     else
@@ -506,7 +578,7 @@ namespace UNObot.Modules
         [DisableDMs]
         [Help(new[] { ".start (gamemode)" }, "Start the game you have joined in the current server. Now, you can also add an option to it, which currently include \"fast\", which allows the skip command, and \"private\", preventing others to see the exact amount of cards you have.", true, "UNObot 0.2")]
 
-        public async Task Start(string mode)
+        public async Task Start(params string[] Modes)
         {
             if (await UNODatabaseService.IsPlayerInGame(Context.User.Id))
             {
@@ -516,25 +588,37 @@ namespace UNObot.Modules
                     await ReplyAsync("The game has already started!");
                 else
                 {
-                    string Response = "";
-                    switch (mode.ToLower().Trim())
+                    var Response = "";
+                    var FlagMode = Gamemodes.Normal;
+                    foreach(var Mode in Modes)
+                        switch (Mode.ToLower().Trim())
+                        {
+                            case "private":
+                                FlagMode |= Gamemodes.Private;
+                                break;
+                            case "fast":
+                                FlagMode |= Gamemodes.Fast;
+                                break;
+                            case "retro":
+                                FlagMode |= Gamemodes.Retro;
+                                break;
+                            case "normal":
+                                FlagMode |= Gamemodes.Normal;
+                                break;
+                            default:
+                                await ReplyAsync($"\"{Mode}\" is not a valid mode!");
+                                return;
+                        }
+                    
+                    // For interfering modes, cancel actions
+                    if (FlagMode.HasFlag(Gamemodes.Fast | Gamemodes.Retro))
                     {
-                        case "private":
-                            Response += "Playing in privacy!";
-                            await UNODatabaseService.AddGuild(Context.Guild.Id, 1, 2);
-                            break;
-                        case "fast":
-                            Response += "Playing in fast mode!";
-                            await UNODatabaseService.AddGuild(Context.Guild.Id, 1, 3);
-                            break;
-                        case "normal":
-                            Response += "Playing in normal mode!";
-                            await UNODatabaseService.AddGuild(Context.Guild.Id, 1, 1);
-                            break;
-                        default:
-                            await ReplyAsync("That's not a valid mode!");
-                            return;
+                        await ReplyAsync($"You cannot play both fast modes simultaneously.");
+                        return;
                     }
+                    
+                    await UNODatabaseService.AddGuild(Context.Guild.Id, 1, (ushort) FlagMode);
+                    Response += $"Playing in modes: {FlagMode}!";
                     await UNODatabaseService.GetUsersAndAdd(Context.Guild.Id);
                     foreach (ulong player in await UNODatabaseService.GetPlayers(Context.Guild.Id))
                     {
@@ -548,15 +632,15 @@ namespace UNObot.Modules
                             "You have been given 7 cards; run \".deck\" to view them.\n" +
                             "Remember; you have 1 minute and 30 seconds to place a card.\n" +
                             $"The first player is <@{await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id)}>.\n";
-                    Card currentCard = UNOCoreServices.RandomCard();
+                    Card currentCard = RandomCard();
                     while (currentCard.Color == "Wild")
-                        currentCard = UNOCoreServices.RandomCard();
+                        currentCard = RandomCard();
                     switch (currentCard.Value)
                     {
                         case "+2":
                             var curuser = await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id);
-                            await UNODatabaseService.AddCard(curuser, UNOCoreServices.RandomCard());
-                            await UNODatabaseService.AddCard(curuser, UNOCoreServices.RandomCard());
+                            await UNODatabaseService.AddCard(curuser, RandomCard());
+                            await UNODatabaseService.AddCard(curuser, RandomCard());
                             Response += $"\nToo bad <@{curuser}>, you just got two cards!";
                             break;
                         case "Reverse":

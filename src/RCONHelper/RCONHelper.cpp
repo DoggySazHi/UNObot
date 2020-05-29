@@ -1,19 +1,15 @@
 ﻿#include "RCONHelper.h"
 #include <string>
+#include <iostream>
 
-RCONSocket* CreateObjectC(IPEndpoint& server, std::string& password)
+RCONSocket* CreateObjectB(IPEndpoint& server, std::string &password)
 {
     return new RCONSocket(server, password);
 }
 
-RCONSocket* CreateObjectB(IPEndpoint& server, std::string &password, bool reuse)
+RCONSocket* CreateObjectA(IPEndpoint& server, std::string& password, std::string& command)
 {
-    return new RCONSocket(server, password, reuse);
-}
-
-RCONSocket* CreateObjectA(IPEndpoint& server, std::string& password, bool reuse, std::string& command)
-{
-    return new RCONSocket(server, password, reuse, command);
+    return new RCONSocket(server, password, command);
 }
 
 int main(int argc, char const *argv[])
@@ -22,6 +18,16 @@ int main(int argc, char const *argv[])
     server.ip = "192.168.2.6";
     server.port = PORT;
     std::string password = "mukyumukyu";
-    CreateObjectC(server, password);
+    auto rcon = CreateObjectB(server, password);
+    rcon->ExecuteSingle("list");
+    std::cout << rcon->status << '\n';
+    std::cout << rcon->data << '\n';
+    rcon->ExecuteSingle("help");
+    std::cout << rcon->status << '\n';
+    std::cout << rcon->data << '\n';
+    rcon->Execute("data get entity DoggySazHi");
+    std::cout << rcon->status << '\n';
+    std::cout << rcon->data << '\n';
+    delete rcon;
     return 0;
 }

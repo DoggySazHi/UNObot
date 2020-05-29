@@ -52,9 +52,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
+<!--
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="xcopy /y &quot;$(SolutionDir)cmake-build-debug-visual-studio-x64\*.dll&quot; &quot;$(ProjectDir)$(OutDir)&quot;" />
     <Exec Command="xcopy /y &quot;$(SolutionDir)cmake-build-debug-visual-studio-x64\*.lib&quot; &quot;$(ProjectDir)$(OutDir)&quot;" />
   </Target>
+-->
 </Project>

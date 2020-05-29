@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Discord;
 using Newtonsoft.Json.Linq;
@@ -56,6 +57,13 @@ namespace UNObot.Services
             {
                 var Name = o.Replace((char) 0, ' ').Trim();
                 if (string.IsNullOrWhiteSpace(Name)) continue;
+                
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    LoggerService.Log(LogSeverity.Warning, "Linux platform: safety to use old parser.");
+                    OldUserProcessor(ref Output, Name, Client);
+                    continue;
+                }
 
                 var Command = $"data get entity {Name}";
                 Client.Execute(Command, true);
@@ -71,7 +79,7 @@ namespace UNObot.Services
                 // For UUIDs, they start an array with I; to indicate all values are integers; ignore it.
                 JSONString = JSONString.Replace("I;", "");
                 // Regex to completely ignore the b, s, l, f, and d patterns. Probably the worst RegEx I ever wrote.
-                JSONString = Regex.Replace(JSONString, @"([:|\[|\,]\s*\-?\d*.?\d+)[s|b|l|f|d]", "${1}");
+                JSONString = Regex.Replace(JSONString, @"([:|\[|\,]\s*\-?\d*.?\d+)[s|b|l|f|d|L]", "${1}");
                 
                 try
                 {
@@ -86,15 +94,25 @@ namespace UNObot.Services
                     var XPPoints = (Exp(XPLevels + 1, 0) - Exp(XPLevels, 0)) * XPPercent;
                     var Experience = (int) Exp(XPLevels, (int) Math.Floor(XPPoints));
                     var Health = HealthNum != null ? Math.Ceiling((float) HealthNum).ToString("#") : "20";
-                    
+
                     if (Position?[0] != null && Position[1] != null && Position[2] != null && Dimension != null)
-                        Coordinates = new []
+                    {
+                        var DimensionWord = Dimension.ToString();
+                        if (DimensionWord.Contains("overworld"))
+                            Dimension = 0;
+                        else if (DimensionWord.Contains("nether"))
+                            Dimension = -1;
+                        else if (DimensionWord.Contains("end"))
+                            Dimension = 1;
+                        Coordinates = new[]
                         {
                             Position[0].ToObject<double>(),
                             Position[1].ToObject<double>(),
                             Position[2].ToObject<double>(),
                             Dimension.ToObject<double>()
                         };
+                    }
+
                     var CorrectUser = Output.Find(User => User.Username == Name);
                     if (CorrectUser != null)
                     {
@@ -119,10 +137,10 @@ namespace UNObot.Services
 
         private static void OldUserProcessor(ref List<MCUser> Users, string Name, MinecraftRCON Client)
         {
-            Client.Execute(
+            Client.ExecuteSingle(
                     $"execute as {Name} at @s run summon minecraft:armor_stand ~ ~ ~ {{Invisible:1b,PersistenceRequired:1b,Tags:[\"coordfinder\"]}}",
                     true);
-            Client.Execute("execute as @e[tag=coordfinder] at @s run tp @s ~ ~ ~", true);
+            Client.ExecuteSingle("execute as @e[tag=coordfinder] at @s run tp @s ~ ~ ~", true);
             double[] Coordinates = null;
             if (Client.Status == MinecraftRCON.RCONStatus.SUCCESS)
             {
@@ -144,16 +162,16 @@ namespace UNObot.Services
                     LoggerService.Log(LogSeverity.Warning, $"Failed to process coordinates. Response: {Client.Data}");
                 }
             }
-            Client.Execute("execute as @e[tag=coordfinder] at @s run kill @s", true);
+            Client.ExecuteSingle("execute as @e[tag=coordfinder] at @s run kill @s", true);
 
-            Client.Execute($"scoreboard players get {Name} Health", true);
+            Client.ExecuteSingle($"scoreboard players get {Name} Health", true);
             var Health = Client.Data.Contains("has") ? Client.Data.Split(' ')[2] : "??";
-            Client.Execute($"scoreboard players get {Name} Food", true);
+            Client.ExecuteSingle($"scoreboard players get {Name} Food", true);
             var Food = Client.Data.Contains("has") ? Client.Data.Split(' ')[2] : "??";
             
-            Client.Execute($"execute as {Name} at @s run experience query @s points", true);
+            Client.ExecuteSingle($"execute as {Name} at @s run experience query @s points", true);
             var PointData = Client.Data;
-            Client.Execute($"execute as {Name} at @s run experience query @s levels", true);
+            Client.ExecuteSingle($"execute as {Name} at @s run experience query @s levels", true);
             var Experience = 0;
             if (Client.Status == MinecraftRCON.RCONStatus.SUCCESS)
             {

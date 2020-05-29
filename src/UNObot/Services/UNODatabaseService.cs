@@ -354,9 +354,9 @@ namespace UNObot.Services
                 LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
-        public static async Task<ushort> GetGamemode(ulong server)
+        public static async Task<UNOCoreServices.Gamemodes> GetGamemode(ulong server)
         {
-            ushort gamemode = 1;
+            var Gamemode = UNOCoreServices.Gamemodes.Normal;
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
 
             const string CommandText = "SELECT gameMode FROM UNObot.Games WHERE server = ?";
@@ -371,14 +371,14 @@ namespace UNObot.Services
             {
                 while (dr.Read())
                 {
-                    gamemode = dr.GetUInt16(0);
+                    Gamemode = (UNOCoreServices.Gamemodes) dr.GetUInt16(0);
                 }
             }
             catch (MySqlException ex)
             {
                 LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
-            return gamemode;
+            return Gamemode;
         }
         //NOTE THAT THIS GETS DIRECTLY FROM SERVER; YOU MUST AddPlayersToServer
         public static async Task<Queue<ulong>> GetPlayers(ulong server)
@@ -1223,7 +1223,7 @@ namespace UNObot.Services
             }
             return true;
         }
-        public static async Task UpdateServerCards(ulong server, string text)
+        public static async Task SetServerCards(ulong server, string text)
         {
             const string CommandText = "UPDATE Games SET cards = ? WHERE server = ?";
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
@@ -1236,6 +1236,7 @@ namespace UNObot.Services
             {
                 Value = server
             };
+            Parameters.Add(p1);
             Parameters.Add(p2);
 
             try
@@ -1247,6 +1248,7 @@ namespace UNObot.Services
                 LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
+        
         public static async Task<string> GetServerCards(ulong server)
         {
             const string CommandText = "SELECT cards FROM UNObot.Games WHERE server = ?";
@@ -1297,6 +1299,57 @@ namespace UNObot.Services
                 LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
             return Username;
+        }
+
+        public static async Task<int> GetCardsDrawn(ulong Server)
+        {
+            int CardsDrawn = 0;
+            var Parameters = new List<MySqlParameter>();
+
+            const string CommandText = "SELECT cardsDrawn FROM UNObot.Games WHERE server = ?";
+
+            var p1 = new MySqlParameter
+            {
+                Value = Server
+            };
+            Parameters.Add(p1);
+            await using var dr = await MySqlHelper.ExecuteReaderAsync(ConnString, CommandText, Parameters.ToArray());
+            try
+            {
+                while (dr.Read())
+                    if (!dr.IsDBNull(0))
+                        CardsDrawn = dr.GetInt32(0);
+            }
+            catch (MySqlException ex)
+            {
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+            }
+            return CardsDrawn;
+        }
+        
+        public static async Task SetCardsDrawn(ulong Server, int Count)
+        {
+            const string CommandText = "UPDATE Games SET cardsDrawn = ? WHERE server = ?";
+            List<MySqlParameter> Parameters = new List<MySqlParameter>();
+            MySqlParameter p1 = new MySqlParameter
+            {
+                Value = Count
+            };
+            Parameters.Add(p1);
+            MySqlParameter p2 = new MySqlParameter
+            {
+                Value = Server
+            };
+            Parameters.Add(p2);
+
+            try
+            {
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, CommandText, Parameters.ToArray());
+            }
+            catch (MySqlException ex)
+            {
+                LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+            }
         }
         
         public static async Task AddWebhook(string Key, ulong Guild, ulong Channel, string Type = "bitbucket")

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Discord;
 
 namespace UNObot.Services
 {
@@ -8,44 +9,45 @@ namespace UNObot.Services
     {
         public async Task<string> Play(string color, string value, string wild, ulong player, ulong server)
         {
-            switch (color.ToLower())
+            switch (color.ToLower()[0])
             {
-                case "red":
+                case 'r':
                     color = "Red";
                     break;
-                case "blue":
+                case 'b':
                     color = "Blue";
                     break;
-                case "green":
+                case 'g':
                     color = "Green";
                     break;
-                case "yellow":
+                case 'y':
                     color = "Yellow";
                     break;
-                case "wild":
+                case 'w':
                     color = "Wild";
                     break;
                 default:
                     return $"<@{player}>, that's not a color.";
             }
-            if (!Int32.TryParse(value, out int output) || value == "+4" || value == "+2")
+            // Since +2 and +4 are treated as positive numbers, .TryParse turns them into 2 and 4, respectively.
+            if (!int.TryParse(value, out var output) || value == "+2" || value == "+4")
             {
                 switch (value.ToLower())
                 {
-                    case "reverse":
-                        value = "Reverse";
-                        break;
                     case "skip":
                         value = "Skip";
+                        break;
+                    case "reverse":
+                        value = "Reverse";
                         break;
                     case "color":
                         value = "Color";
                         break;
-                    case "+4":
-                        value = "+4";
-                        break;
                     case "+2":
                         value = "+2";
+                        break;
+                    case "+4":
+                        value = "+4";
                         break;
                     default:
                         return $"<@{player}>, that's not a value.";
@@ -55,22 +57,19 @@ namespace UNObot.Services
                 value = output.ToString();
             if (wild != null)
             {
-                switch (wild.ToLower())
+                switch (wild.ToLower()[0])
                 {
-                    case "red":
+                    case 'r':
                         wild = "Red";
                         break;
-                    case "blue":
+                    case 'b':
                         wild = "Blue";
                         break;
-                    case "green":
+                    case 'g':
                         wild = "Green";
                         break;
-                    case "yellow":
+                    case 'y':
                         wild = "Yellow";
-                        break;
-                    case "wild":
-                        wild = "Wild";
                         break;
                     default:
                         return $"<@{player}>, that's not a color for your wild card!";
@@ -83,8 +82,9 @@ namespace UNObot.Services
                 Value = value
             };
             bool existing = false;
-            foreach (Card card in await UNODatabaseService.GetCards(player))
+            foreach (var card in await UNODatabaseService.GetCards(player))
             {
+                LoggerService.Log(LogSeverity.Debug, $"Compared {card} to the user's {playCard}");
                 existing |= card.Equals(playCard);
             }
             if (!existing)

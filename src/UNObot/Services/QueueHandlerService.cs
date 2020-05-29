@@ -9,10 +9,11 @@ namespace UNObot.Services
     {
         public static async Task NextPlayer(ulong server)
         {
-            Queue<ulong> players = await UNODatabaseService.GetPlayers(server);
-            ulong sendToBack = players.Dequeue();
+            var players = await UNODatabaseService.GetPlayers(server);
+            var sendToBack = players.Dequeue();
             players.Enqueue(sendToBack);
             await UNODatabaseService.SetPlayers(server, players);
+            await UNODatabaseService.SetCardsDrawn(server, 0);
         }
         public static async Task ReversePlayers(ulong server)
         {
