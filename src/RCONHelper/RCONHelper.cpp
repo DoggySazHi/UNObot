@@ -12,7 +12,32 @@ RCONSocket* CreateObjectA(IPEndpoint& server, std::string& password, std::string
     return new RCONSocket(server, password, command);
 }
 
-int main(int argc, char const *argv[])
+RCONSocket* CreateObjectA(char* ip, ushort port, char* password, char* command)
+{
+    IPEndpoint server;
+    server.ip = std::string(ip);
+    server.port = port;
+#ifndef NDEBUG
+    std::cout << "Server input: " << ip << " Stringified: " << server.ip << '\n';
+#endif
+    std::string str_pwd(password);
+    std::string str_cmd(command);
+    return CreateObjectA(server, str_pwd, str_cmd);
+}
+
+RCONSocket* CreateObjectB(char* ip, ushort port, char* password)
+{
+    IPEndpoint server;
+    server.ip = std::string(ip);
+    server.port = port;
+#ifndef NDEBUG
+    std::cout << "Server input: " << ip << " Stringified: " << server.ip << '\n';
+#endif
+    std::string str_pwd(password);
+    return CreateObjectB(server, str_pwd);
+}
+
+int main()
 {
     IPEndpoint server;
     server.ip = "192.168.2.6";
@@ -22,10 +47,7 @@ int main(int argc, char const *argv[])
     rcon->ExecuteSingle("list");
     std::cout << rcon->status << '\n';
     std::cout << rcon->data << '\n';
-    rcon->ExecuteSingle("help");
-    std::cout << rcon->status << '\n';
-    std::cout << rcon->data << '\n';
-    rcon->Execute("data get entity DoggySazHi");
+    rcon->Execute("data get entity PuppySazHi");
     std::cout << rcon->status << '\n';
     std::cout << rcon->data << '\n';
     delete rcon;

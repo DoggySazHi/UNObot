@@ -7,9 +7,8 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <array>
-#include <thread>
 
-RCONSocket::RCONSocket(IPEndpoint& server, std::string& password) : RCONSocket(server, password, NULL_STR)
+RCONSocket::RCONSocket(IPEndpoint& server, std::string& password) : RCONSocket(server, password, "")
 {
 
 }
@@ -20,7 +19,7 @@ RCONSocket::RCONSocket(IPEndpoint& server, std::string& password, const std::str
     this->server = server;
     this->socket_descriptor = 0;
     WipeBuffer();
-    CreateConnection();
+    CreateConnection(command);
 }
 
 RCONSocket::~RCONSocket() {
@@ -28,14 +27,11 @@ RCONSocket::~RCONSocket() {
         Dispose();
 }
 
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "readability-convert-member-functions-to-static"
 void RCONSocket::Mukyu()
 {
     for(int i = 0; i < 5; i++)
         std::cout << "Mukyu!" << std::endl;
 }
-#pragma clang diagnostic pop
 
 void RCONSocket::CreateConnection(const std::string& command)
 {
@@ -67,7 +63,7 @@ void RCONSocket::CreateConnection(const std::string& command)
     // Convert IPv4 and IPv6 addresses from text to binary form
     if(inet_pton(AF_INET, server.ip.c_str(), &serv_addr.sin_addr) <= 0)
     {
-        std::cerr << "Address parsing failed..." << '\n';
+        std::cerr << "Address parsing failed... IP: " << server.ip << " Port: " << server.port << '\n';
         return;
     }
 
@@ -83,15 +79,38 @@ void RCONSocket::CreateConnection(const std::string& command)
         ExecuteSingle(command);
 }
 
+bool RCONSocket::IsConnected() const
+{
+    int error = 0;
+    socklen_t len = sizeof(error);
+    int success = getsockopt(socket_descriptor, SOL_SOCKET, SO_ERROR, &error, &len);
+
+    if (success != 0)
+    {
+        std::cerr << "Error getting errors for socket: " << strerror(success) << '\n';
+        return false;
+    }
+
+    if (error != 0)
+    {
+        std::cerr << "Socket error: " << strerror(error) << '\n';
+        return false;
+    }
+
+    return true;
+}
+
 bool RCONSocket::Authenticate()
 {
     auto payload = MakePacketData(password, SERVERDATA_AUTH, 0);
     send(socket_descriptor, payload.data(), payload.size(), 0);
+#ifndef NDEBUG
     Utilities::hexdump(payload.data(), payload.size());
-    read(socket_descriptor, rx_data->data(), BUFFER_SIZE);
+#endif
+    auto count = read(socket_descriptor, rx_data->data(), BUFFER_SIZE);
     auto id = LittleEndianReader(rx_data, 4);
     auto type = LittleEndianReader(rx_data, 8);
-    if (id == -1 || type != 2)
+    if (count < 12 || id == -1 || type != SERVERDATA_AUTH_RESPONSE)
     {
         status = AUTH_FAIL;
         std::cerr <<  "RCON failed to authenticate!" << '\n';
@@ -110,7 +129,7 @@ void RCONSocket::ExecuteSingle(const std::string& command)
     int count = read(socket_descriptor, rx_data->data(), BUFFER_SIZE);
     auto id = LittleEndianReader(rx_data, 4);
     auto type = LittleEndianReader(rx_data, 8);
-    if(id == -1 || type != 0 || count <= 12)
+    if(id == -1 || type != SERVERDATA_RESPONSE_VALUE || count <= 12)
     {
         std::cerr << "Failed to execute \"" << command << "\"!" << '\n';
         status = AUTH_FAIL;
@@ -140,31 +159,57 @@ void RCONSocket::Execute(const std::string& command)
     WipeBuffer();
     int count = read(socket_descriptor, rx_data->data(), BUFFER_SIZE);
     int dataTrim = -1;
+    int startOfPacket = 0;
+    int lifetime = 0;
+    int position = 0;
     while (count > 0)
     {
         packet_count++;
+
+#ifndef NDEBUG
         std::cout << "reading packet " << packet_count << '\n';
         Utilities::hexdump(rx_data->data(), count);
         Utilities::file_dump(rx_data->data(), count, "packet" + std::to_string(packet_count));
-        auto position = 12;
+#endif
+
+        // Keep track of whenever a new packet starts
+        if(lifetime == 0) {
+            // This tells us how many characters we should read (ID + Type removed, plus 2 null chars)
+            lifetime = LittleEndianReader(rx_data, startOfPacket) - 10;
+            position = startOfPacket + 12;
+            data.reserve(data.length() + lifetime);
+#ifndef NDEBUG
+            std::cerr << "Position: " << position << " Lifetime: " << lifetime << '\n';
+#endif
+        }
+
         if(packet_count == 1) {
             auto id = LittleEndianReader(rx_data, 4);
             auto type = LittleEndianReader(rx_data, 8);
-            if(id == -1 || type != 0 || count <= 12)
+            if(id == -1 || type != SERVERDATA_RESPONSE_VALUE || count <= 12)
             {
                 std::cerr << "Failed to execute \"" << command << "\"!" << '\n';
-                status = AUTH_FAIL;
+                status = EXEC_FAIL;
                 return;
             }
-            //position = 12;
         }
-        data.reserve(data.length() + count - position);
+
         auto current_char = (char) (*rx_data)[position++];
-        while(position < count)
+        while(position < count && lifetime > 0)
         {
+            lifetime--;
             if(current_char != '\x00')
                 data += current_char;
             current_char = (char) (*rx_data)[position++];
+        }
+
+        if(lifetime == 0) {
+            if(position != count - 1)
+            {
+                startOfPacket = position;
+                continue;
+            }
+            startOfPacket = 0;
         }
 
         // This is the purpose of the end_of_command, so we read for the error to stop reading (0x64 = 100)
@@ -172,7 +217,7 @@ void RCONSocket::Execute(const std::string& command)
         if (dataTrim >= 0)
             break;
 
-        if(packet_count >= 20)
+        if(packet_count >= MAX_PACKETS_READ)
         {
             std::cerr << "Overread " << packet_count << " packets!" << '\n';
             break;
@@ -180,18 +225,21 @@ void RCONSocket::Execute(const std::string& command)
 
         WipeBuffer();
         count = read(socket_descriptor, rx_data->data(), BUFFER_SIZE);
+        position = 0;
     }
     if(count < 0)
+    {
+        status = INT_FAIL;
         std::cerr << "Socket errored!" << '\n';
+    }
+    else
+        status = SUCCESS;
     std::cout << "Read " << packet_count << " packets!";
     if(dataTrim >= 0)
         data.erase(dataTrim);
-    status = SUCCESS;
 }
 
-// Function works with positive, signed data based on C# implementation
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "hicpp-signed-bitwise"
+// Function works. Stop telling me to not play with unsigned numbers.
 std::array<uint8_t, 4> RCONSocket::LittleEndianConverter(int data)
 {
     auto b = std::array<uint8_t, 4>();
@@ -224,7 +272,6 @@ int RCONSocket::LittleEndianReader(std::array<uint8_t, BUFFER_SIZE>* data, int s
            | ((*data)[start_index + 2] << 8)
            | (*data)[start_index + 3];
 }
-#pragma clang diagnostic pop
 
 void RCONSocket::WipeBuffer()
 {

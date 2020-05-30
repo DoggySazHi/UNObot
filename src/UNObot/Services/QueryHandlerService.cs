@@ -698,7 +698,7 @@ namespace UNObot.Services
         private const ushort RX_SIZE = 4096;
         private byte[] Buffer;
         private List<byte> PacketCollector = new List<byte>(RX_SIZE);
-        private enum PacketType {/* SERVERDATA_RESPONSE_VALUE = 0, */ SERVERDATA_EXECCOMMAND = 2, SERVERDATA_AUTH = 3, TYPE_100 = 100 }
+        private enum PacketType {SERVERDATA_RESPONSE_VALUE = 0, SERVERDATA_EXECCOMMAND = 2, SERVERDATA_AUTH = 3, TYPE_100 = 100 }
         public enum RCONStatus { CONN_FAIL, AUTH_FAIL, EXEC_FAIL, INT_FAIL, SUCCESS }
         public RCONStatus Status { get; private set; }
         public string Data { get; private set; }
@@ -745,7 +745,7 @@ namespace UNObot.Services
             }
         }
 
-        public bool Authenticate()
+        private bool Authenticate()
         {
             Wipe(ref Buffer);
             return Authenticate(ref Buffer);
@@ -836,7 +836,7 @@ namespace UNObot.Services
 #endif
                         var ID = LittleEndianReader(ref RXData, 4);
                         var Type = LittleEndianReader(ref RXData, 8);
-                        if ((ID == -1 || Type != 0) && PacketCount == 0)
+                        if ((ID == -1 || Type != (int) PacketType.SERVERDATA_RESPONSE_VALUE) && PacketCount == 0)
                         {
                             LoggerService.Log(LogSeverity.Verbose,
                                 $"Failed to execute \"{Command}\", type of {Type}!");

@@ -1,10 +1,12 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Discord;
 using Discord.Commands;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using UNObot.Interop;
 using UNObot.Services;
 
 namespace UNObot.Modules
@@ -64,6 +66,21 @@ namespace UNObot.Modules
         {
             await ShellService.GitFetch().ConfigureAwait(false);
             await ReplyAsync(await ShellService.GitStatus().ConfigureAwait(false)).ConfigureAwait(false);
+        }
+        
+        [Command("interop", RunMode = RunMode.Async)]
+        public async Task Interop()
+        {
+            RCONHelper.MukyuN();
+            await ReplyAsync("Successfully interop local!");
+            var Ptr = RCONHelper.Say("Mukyu to me!");
+            var Text = Marshal.PtrToStringAnsi(Ptr);
+            await ReplyAsync($"Successfully interop string! {Text}");
+            RCONHelper.SayDelete(Ptr);
+            await ReplyAsync($"Successfully deleted string!");
+            var RCONFromCPP = new RCONHelper("192.168.2.6", 27286, "mukyumukyu", "list");
+            await ReplyAsync("Response: " + RCONFromCPP.Data);
+            RCONFromCPP.Dispose();
         }
 
         [Command("getplayerdata", RunMode = RunMode.Async)]

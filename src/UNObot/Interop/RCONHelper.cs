@@ -1,48 +1,100 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Net;
 using System.Runtime.InteropServices;
+using UNObot.Services;
 
 namespace UNObot.Interop
 {
-    public class RCONHelper
+    public class RCONHelper : IDisposable
     {
         private IntPtr RCONInstance;
         
-        [DllImport(@"RCONHelper.dll")]
-        private static extern IntPtr CreateObjectA(ref string ip, ref string password, bool reuse, ref string command);
+        [DllImport(@"libRCONHelper.so")]
+        private static extern IntPtr CreateObjectA(string ip, ushort port, string password, string command);
+
+        [DllImport(@"libRCONHelper.so")]
+        private static extern IntPtr CreateObjectB(string ip, ushort port, string password);
         
-        [DllImport(@"RCONHelper.dll")]
-        private static extern IntPtr CreateObjectB(ref string ip, ref string password, bool reuse);
-        
-        [DllImport(@"RCONHelper.dll")]
-        private static extern IntPtr CreateObjectC(ref string ip, ref string password);
-        
-        [DllImport(@"RCONHelper.dll")]
+        [DllImport(@"libRCONHelper.so")]
         private static extern void DestroyObject(IntPtr RCON);
         
-        [DllImport(@"RCONHelper.dll")]
+        [DllImport(@"libRCONHelper.so")]
         private static extern void Mukyu(IntPtr RCON);
         
-        ~RCONHelper()
-        {
-            DestroyObject(RCONInstance);
-        }
+        [DllImport(@"libRCONHelper.so")]
+        public static extern void MukyuN();
+        
+        [DllImport(@"libRCONHelper.so")]
+        public static extern IntPtr Say(string Thing);
+        
+        [DllImport(@"libRCONHelper.so")]
+        public static extern void SayDelete(IntPtr Thing);
 
-        public RCONHelper([NotNull] string ip, [NotNull] string password, bool reuse = false, string command = null)
+        [DllImport(@"libRCONHelper.so")]
+        private static extern MinecraftRCON.RCONStatus Status(IntPtr obj);
+        
+        [DllImport(@"libRCONHelper.so")]
+        private static extern bool Disposed(IntPtr obj);
+        
+        [DllImport(@"libRCONHelper.so")]
+        private static extern IntPtr GetData(IntPtr obj);
+
+        [DllImport(@"libRCONHelper.so")]
+        private static extern IntPtr GetServerIP(IntPtr obj);
+        
+        [DllImport(@"libRCONHelper.so")]
+        private static extern ushort GetServerPort(IntPtr obj);
+        
+        [DllImport(@"libRCONHelper.so")]
+        private static extern bool Connected(IntPtr obj);
+        
+        [DllImport(@"libRCONHelper.so")]
+        private static extern void ExecuteSingle(IntPtr obj, string command);
+        
+        [DllImport(@"libRCONHelper.so")]
+        private static extern void Execute(IntPtr obj, string command);
+        
+        [DllImport(@"libRCONHelper.so")]
+        private static extern void Dispose(IntPtr obj);
+
+        public string Data => Marshal.PtrToStringAnsi(GetData(RCONInstance));
+        public IPEndPoint Server => new IPEndPoint(IPAddress.Parse(Marshal.PtrToStringAnsi(GetServerIP(RCONInstance)) ?? throw new InvalidOperationException("OH CRAP")), GetServerPort(RCONInstance));
+
+        public RCONHelper([NotNull] string ip, ushort port, [NotNull] string password, string command = null)
         {
-            // Note: It is split into three parts as C++ does not allow null strings.
+            // Note: It is split into two parts as C++ does not allow null strings.
             RCONInstance = command switch
             {
-                null when reuse == false => CreateObjectC(ref ip, ref password),
-                null => CreateObjectB(ref ip, ref password, true),
-                _ => CreateObjectA(ref ip, ref password, reuse, ref command)
+                null => CreateObjectB(ip, port, password),
+                _ => CreateObjectA(ip, port, password, command)
             };
         }
 
         public void Mukyu()
         {
-            // to mukyu, mukyu
+            // to mukyu, mukyu (test to check interop)
             Mukyu(RCONInstance);
+        }
+
+        public void Execute(string Command)
+        {
+            Execute(RCONInstance, Command);
+        }
+        
+        public void ExecuteSingle(string Command)
+        {
+            ExecuteSingle(RCONInstance, Command);
+        }
+        
+        public bool Connected()
+        {
+            return Connected(RCONInstance);
+        }
+
+        public void Dispose()
+        {
+            Dispose(RCONInstance);
         }
     }
 }

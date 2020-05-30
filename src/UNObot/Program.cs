@@ -26,7 +26,7 @@ namespace UNObot
         static async Task Main()
         {
             LoggerService.GetSingleton();
-            LoggerService.Log(LogSeverity.Info, "UNObot Launcher 2.0");
+            LoggerService.Log(LogSeverity.Info, "UNObot Launcher 2.1");
             await new Program().MainAsync();
         }
 
@@ -62,6 +62,7 @@ namespace UNObot
             WebhookListener.GetSingleton();
             await UNODatabaseService.CleanAll();
             await _client.SetGameAsync($"UNObot {version}");
+            Console.Title = $"UNObot {version}";
             await LoadHelp();
             SafeExitHandler();
             ExitEvent.WaitOne();

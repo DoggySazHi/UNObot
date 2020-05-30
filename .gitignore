@@ -324,3 +324,4 @@ Publish.bat
 cmake-build-debug*/
 *.cbp
 lib/
+packet*
