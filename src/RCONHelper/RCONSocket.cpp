@@ -230,7 +230,7 @@ void RCONSocket::Execute(const std::string& command)
     if(count < 0)
     {
         status = INT_FAIL;
-        std::cerr << "Socket errored!" << '\n';
+        std::cerr << "Socket errored! (" << count << "): " << strerror(errno) << '\n';
     }
     else
         status = SUCCESS;
