@@ -89,16 +89,17 @@ namespace UNObot.Services
                 if (Client2.Data.Equals("No entity was found", StringComparison.CurrentCultureIgnoreCase))
                     continue;
 
-                // Ignore the (PLAYERNAME) has the following data:
-                LoggerService.Log(LogSeverity.Debug, Command + " | " + Client.Data);
-                var JSONString = Client2.Data.Substring(Client.Data.IndexOf('{'));
-                // For UUIDs, they start an array with I; to indicate all values are integers; ignore it.
-                JSONString = JSONString.Replace("I;", "");
-                // Regex to completely ignore the b, s, l, f, and d patterns. Probably the worst RegEx I ever wrote.
-                JSONString = Regex.Replace(JSONString, @"([:|\[|\,]\s*\-?\d*.?\d+)[s|b|l|f|d|L]", "${1}");
-                
+                var JSONString = "No string was found.";
                 try
                 {
+                    // Ignore the (PLAYERNAME) has the following data:
+                    LoggerService.Log(LogSeverity.Debug, Command + " | " + Client2.Data);
+                    JSONString = Client2.Data.Substring(Client2.Data.IndexOf('{'));
+                    // For UUIDs, they start an array with I; to indicate all values are integers; ignore it.
+                    JSONString = JSONString.Replace("I;", "");
+                    // Regex to completely ignore the b, s, l, f, and d patterns. Probably the worst RegEx I ever wrote.
+                    JSONString = Regex.Replace(JSONString, @"([:|\[|\,]\s*\-?\d*.?\d+)[s|b|l|f|d|L]", "${1}");
+                    
                     double[] Coordinates = null;
 
                     /*
