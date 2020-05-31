@@ -60,14 +60,6 @@ namespace UNObot.Services
                 }
             }
 
-            var RandomKey2 = (ulong) random.Next(0, 10000);
-            var Success2 = QueryHandlerService.CreateRCON(IP, Port, Password, RandomKey2, out var Client2);
-            if (!Success2)
-            {
-                LoggerService.Log(LogSeverity.Error, "Failed to create a second RCON connection to get player data!");
-                return Output;
-            }
-            
             foreach (var o in PlayerListOnline)
             {
                 var Name = o.Replace((char) 0, ' ').Trim();
@@ -83,16 +75,23 @@ namespace UNObot.Services
                 */
 
                 var Command = $"data get entity {Name}";
+                var RandomKey2 = (ulong) random.Next(0, 10000);
+                var Success2 = QueryHandlerService.CreateRCON(IP, Port, Password, RandomKey2, out var Client2);
+                if (!Success2)
+                {
+                    LoggerService.Log(LogSeverity.Error, "Failed to create a second RCON connection to get player data!");
+                    return Output;
+                }
                 Client2.Execute(Command, true);
                 
-                if (Client.Status != RCONStatus.SUCCESS)
+                if (Client2.Status != RCONStatus.SUCCESS)
                     continue;
-                if (Client.Data.Equals("No entity was found", StringComparison.CurrentCultureIgnoreCase))
+                if (Client2.Data.Equals("No entity was found", StringComparison.CurrentCultureIgnoreCase))
                     continue;
 
                 // Ignore the (PLAYERNAME) has the following data:
                 LoggerService.Log(LogSeverity.Debug, Command + " | " + Client.Data);
-                var JSONString = Client.Data.Substring(Client.Data.IndexOf('{'));
+                var JSONString = Client2.Data.Substring(Client.Data.IndexOf('{'));
                 // For UUIDs, they start an array with I; to indicate all values are integers; ignore it.
                 JSONString = JSONString.Replace("I;", "");
                 // Regex to completely ignore the b, s, l, f, and d patterns. Probably the worst RegEx I ever wrote.
@@ -187,6 +186,7 @@ namespace UNObot.Services
                     LoggerService.Log(LogSeverity.Error, $"Failed to process JSON! Falling back...\n{JSONString}", ex);
                     OldUserProcessor(ref Output, Name, Client);
                 }
+                Client2.Dispose();
             }
 
             if(Dispose)
