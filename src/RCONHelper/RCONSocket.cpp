@@ -162,6 +162,9 @@ void RCONSocket::Execute(const std::string& command)
     Utilities::hexdump(rx_data->data(), count);
     Utilities::file_dump(rx_data->data(), count, "packet" + std::to_string(packet_count));
 #endif
+    std::cout << "Planning to execute \"" << command << "\"!" << '\n';
+    std::cout << "Connection status: " << IsConnected() << '\n';
+
     int dataTrim = -1;
     int startOfPacket = 0;
     int lifetime = 0;
