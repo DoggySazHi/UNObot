@@ -92,7 +92,6 @@ namespace UNObot.Services
                                 catch (Exception e)
                                 {
                                     LoggerService.Log(LogSeverity.Critical, "Webhook Parser failed!", e);
-                                    throw;
                                 }
                             }
                             else
@@ -169,7 +168,7 @@ namespace UNObot.Services
                         LoggerService.Log(LogSeverity.Error, $"Error occurred with token: {badToken}");
                     }
                     
-                    LoggerService.Log(LogSeverity.Debug, Thing.ToString(Formatting.Indented));
+                    //LoggerService.Log(LogSeverity.Debug, Thing.ToString(Formatting.Indented));
                     if (Thing["push"] != null)
                     {
                         var Commit = Thing["push"]?["changes"]?.First?["new"]?["target"];
@@ -177,7 +176,7 @@ namespace UNObot.Services
                         var CommitInfo = new CommitInfo
                         {
                             RepoName = Thing["repository"]?["name"]?.ToString() ?? "Unknown Repo Name",
-                            RepoAvatar = Thing["repository"]?["links"]?["avatar"]?.ToString() ?? "",
+                            RepoAvatar = Thing["repository"]?["links"]?["avatar"]?["href"]?.ToString() ?? "",
                             
                             CommitHash = Commit?["hash"]?.ToString() ?? "Hash not found!",
                             CommitMessage = Commit?["message"]?.ToString() ?? "No message was attached.",
