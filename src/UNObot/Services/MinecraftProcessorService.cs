@@ -29,7 +29,8 @@ namespace UNObot.Services
             var Output = new List<MCUser>();
 
             // Smaller than ulong keys, big enough for RNG.
-            var RandomKey = (ulong) new Random().Next(0, 10000);
+            var random = new Random();
+            var RandomKey = (ulong) random.Next(0, 10000);
             var Success = QueryHandlerService.CreateRCON(IP, Port, Password, RandomKey, out Client);
             if (!Success) return Output;
 
@@ -55,6 +56,10 @@ namespace UNObot.Services
                 }
             }
 
+            var RandomKey2 = (ulong) random.Next(0, 10000);
+            var Success2 = QueryHandlerService.CreateRCON(IP, Port, Password, RandomKey, out var Client2);
+            if (!Success2) return Output;
+            
             foreach (var o in PlayerListOnline)
             {
                 var Name = o.Replace((char) 0, ' ').Trim();
@@ -70,7 +75,7 @@ namespace UNObot.Services
                 */
 
                 var Command = $"data get entity {Name}";
-                Client.Execute(Command, true);
+                Client2.Execute(Command, true);
                 
                 if (Client.Status != RCONStatus.SUCCESS)
                     continue;
