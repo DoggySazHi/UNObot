@@ -182,10 +182,11 @@ namespace UNObot.Services
                             CommitMessage = Commit?["message"]?.ToString() ?? "No message was attached.",
                             CommitDate = Commit?["date"]?.ToObject<DateTime>() ?? DateTime.Now,
                             
-                            UserName = Commit?["author"]?["nickname"]?.ToString() ??
-                                       Thing["actor"]?["display_name"]?.ToString() ?? "Unknown User Name",
-                            UserAvatar = Commit?["author"]?["links"]?["avatar"]?.ToString() ?? ""
+                            UserName = Commit?["author"]?["user"]?["nickname"]?.ToString() ??
+                                       Commit?["author"]?["user"]?["display_name"]?.ToString() ?? "Unknown User Name",
+                            UserAvatar = Commit?["author"]?["user"]?["links"]?["avatar"]?["href"]?.ToString() ?? ""
                         };
+                        /*
                         LoggerService.Log(LogSeverity.Debug,
                             $"RepoName: {CommitInfo.RepoName}\n" +
                             $"RepoAvatar: {CommitInfo.RepoAvatar}\n" +
@@ -194,6 +195,7 @@ namespace UNObot.Services
                             $"CommitDate: {CommitInfo.CommitDate}\n" +
                             $"UserName: {CommitInfo.UserName}\n" +
                             $"UserAvatar: {CommitInfo.UserAvatar}");
+                        */
                         EmbedDisplayService.WebhookEmbed(CommitInfo, out var Embed);
                         Program._client.GetGuild(Guild).GetTextChannel(Channel).SendMessageAsync(null, false, Embed);
                     }
