@@ -130,7 +130,7 @@ namespace UNObot.Services
                     Console.Write(Time);
                     Console.WriteLine(Message);
 
-                    var OutputMessage = $"[{Severity.ToString()}{Time}{Message}";
+                    var OutputMessage = $"[{Severity.ToString().ToUpper()}{Time}{Message}";
                     fileLog?.WriteLineAsync(OutputMessage);
 
                     if (Exception == null) return;
@@ -146,6 +146,7 @@ namespace UNObot.Services
             if (fileLog == null) return;
             lock (lockObj)
             {
+                fileLog.Flush();
                 fileLog.Dispose();
             }
         }
