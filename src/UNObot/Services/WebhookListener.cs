@@ -85,7 +85,15 @@ namespace UNObot.Services
                                 using var Reader = new StreamReader(Data);
                                 var Text = Reader.ReadToEnd();
                                 //LoggerService.Log(LogSeverity.Verbose, $"Data received: {text}");
-                                ProcessMessage(Text, Guild, Channel, (WebhookType) Type);
+                                try
+                                {
+                                    ProcessMessage(Text, Guild, Channel, (WebhookType) Type);
+                                }
+                                catch (Exception e)
+                                {
+                                    LoggerService.Log(LogSeverity.Critical, "Webhook Parser failed!", e);
+                                    throw;
+                                }
                             }
                             else
                             {
@@ -179,6 +187,14 @@ namespace UNObot.Services
                                        Thing["actor"]?["display_name"]?.ToString() ?? "Unknown User Name",
                             UserAvatar = Commit?["author"]?["links"]?["avatar"]?.ToString() ?? ""
                         };
+                        LoggerService.Log(LogSeverity.Debug,
+                            $"RepoName: {CommitInfo.RepoName}\n" +
+                            $"RepoAvatar: {CommitInfo.RepoAvatar}\n" +
+                            $"CommitHash: {CommitInfo.CommitHash}\n" +
+                            $"CommitMessage: {CommitInfo.CommitMessage}\n" +
+                            $"CommitDate: {CommitInfo.CommitDate}\n" +
+                            $"UserName: {CommitInfo.UserName}\n" +
+                            $"UserAvatar: {CommitInfo.UserAvatar}");
                         EmbedDisplayService.WebhookEmbed(CommitInfo, out var Embed);
                         Program._client.GetGuild(Guild).GetTextChannel(Channel).SendMessageAsync(null, false, Embed);
                     }
