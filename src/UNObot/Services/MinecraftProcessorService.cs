@@ -32,7 +32,11 @@ namespace UNObot.Services
             var random = new Random();
             var RandomKey = (ulong) random.Next(0, 10000);
             var Success = QueryHandlerService.CreateRCON(IP, Port, Password, RandomKey, out Client);
-            if (!Success) return Output;
+            if (!Success)
+            {
+                LoggerService.Log(LogSeverity.Error, "Failed to create an RCON connection to get players!");
+                return Output;
+            }
 
             Client.ExecuteSingle("list", true);
             if (Client.Status != RCONStatus.SUCCESS) return Output;
@@ -57,8 +61,12 @@ namespace UNObot.Services
             }
 
             var RandomKey2 = (ulong) random.Next(0, 10000);
-            var Success2 = QueryHandlerService.CreateRCON(IP, Port, Password, RandomKey, out var Client2);
-            if (!Success2) return Output;
+            var Success2 = QueryHandlerService.CreateRCON(IP, Port, Password, RandomKey2, out var Client2);
+            if (!Success2)
+            {
+                LoggerService.Log(LogSeverity.Error, "Failed to create a second RCON connection to get player data!");
+                return Output;
+            }
             
             foreach (var o in PlayerListOnline)
             {

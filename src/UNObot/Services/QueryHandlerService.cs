@@ -723,6 +723,7 @@ namespace UNObot.Services
         public IRCON CreateRCON(IPEndPoint Server, string Password, bool Reuse = false, string Command = null)
         {
             IRCON RCONInstance;
+            
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 RCONInstance = new RCONHelper(Server, Password, Command);
             else

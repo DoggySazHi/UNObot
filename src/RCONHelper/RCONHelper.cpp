@@ -50,6 +50,15 @@ int main()
     rcon->Execute("data get entity DoggySazHi");
     std::cout << rcon->status << '\n';
     std::cout << rcon->data << '\n';
+    rcon->Execute("data get entity PuppySazHi");
+    std::cout << rcon->status << '\n';
+    std::cout << rcon->data << '\n';
+    rcon->Execute("data get entity MyonSazHi");
+    std::cout << rcon->status << '\n';
+    std::cout << rcon->data << '\n';
+    rcon->Execute("data get entity d3kuu");
+    std::cout << rcon->status << '\n';
+    std::cout << rcon->data << '\n';
     delete rcon;
     return 0;
 }
