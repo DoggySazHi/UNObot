@@ -38,7 +38,7 @@ namespace UNObot.Services
                 LoggerService.Log(LogSeverity.Verbose, "No updates found.");
         }
 
-        public static UnturnedReleaseNotes GetInstance()
+        public static UnturnedReleaseNotes GetSingleton()
         {
             if (instance == null)
                 instance = new UnturnedReleaseNotes();

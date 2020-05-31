@@ -104,6 +104,8 @@ namespace UNObot.Services
 
                     using var output = response.OutputStream;
                     output.Write(DefaultResponse, 0, DefaultResponse.Length);
+
+                    LoggerService.Log(LogSeverity.Debug, "Sent back OK.");
                 }
             }
             catch (Exception e)
@@ -115,14 +117,21 @@ namespace UNObot.Services
 
         private void ProcessMessage(string Message, WebhookType WType)
         {
-            if (WType == WebhookType.Bitbucket)
+            try
             {
-                var Thing = new JObject(Message);
-                LoggerService.Log(LogSeverity.Debug, Thing.ToString(Formatting.Indented));
+                if (WType == WebhookType.Bitbucket)
+                {
+                    var Thing = new JObject(Message);
+                    LoggerService.Log(LogSeverity.Debug, Thing.ToString(Formatting.Indented));
+                }
+                else if (WType == WebhookType.OctoPrint)
+                {
+
+                }
             }
-            else if (WType == WebhookType.OctoPrint)
+            catch (JsonReaderException)
             {
-                
+                LoggerService.Log(LogSeverity.Error, $"Could not read JSON from server! Log:\n{Message}");
             }
         }
 

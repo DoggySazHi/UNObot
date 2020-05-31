@@ -8,6 +8,8 @@ using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
 using Discord;
+using UNObot.Interop;
+using static UNObot.Services.IRCON;
 
 namespace UNObot.Services
 {
@@ -36,136 +38,123 @@ namespace UNObot.Services
 
         public static bool GetInfo(string ip, ushort port, out A2S_INFO output)
         {
-            var parseCheck = IPAddress.TryParse(ip, out var server);
-            var addresses = ResolveDNS(ip);
-            if (!parseCheck)
+            var Success = TryParseServer(ip, port, out var iPEndPoint);
+            if (!Success)
             {
-                if (addresses == null || addresses.Length == 0)
-                {
-                    output = null;
-                    return false;
-                }
-                server = addresses[0];
+                output = null;
+                return false;
             }
-            var iPEndPoint = new IPEndPoint(server, port);
+            
             output = new A2S_INFO(iPEndPoint);
             return output.ServerUp;
         }
 
         public static bool GetPlayers(string ip, ushort port, out A2S_PLAYER output)
         {
-            var parseCheck = IPAddress.TryParse(ip, out var server);
-            var addresses = ResolveDNS(ip);
-            if (!parseCheck)
+            var Success = TryParseServer(ip, port, out var iPEndPoint);
+            if (!Success)
             {
-                if (addresses == null || addresses.Length == 0)
-                {
-                    output = null;
-                    return false;
-                }
-                server = addresses[0];
+                output = null;
+                return false;
             }
-            var iPEndPoint = new IPEndPoint(server, port);
+            
             output = new A2S_PLAYER(iPEndPoint);
             return output.ServerUp;
         }
 
         public static bool GetRules(string ip, ushort port, out A2S_RULES output)
         {
-            var parseCheck = IPAddress.TryParse(ip, out var server);
-            var addresses = ResolveDNS(ip);
-            if (!parseCheck)
+            var Success = TryParseServer(ip, port, out var iPEndPoint);
+            if (!Success)
             {
-                if (addresses == null || addresses.Length == 0)
-                {
-                    output = null;
-                    return false;
-                }
-                server = addresses[0];
+                output = null;
+                return false;
             }
-            var iPEndPoint = new IPEndPoint(server, port);
+            
             output = new A2S_RULES(iPEndPoint);
             return output.ServerUp;
         }
 
         public static bool GetInfoMCNew(string ip, ushort port, out MinecraftStatus output)
         {
-            var parseCheck = IPAddress.TryParse(ip, out var server);
-            var addresses = ResolveDNS(ip);
-            if (!parseCheck)
+            var Success = TryParseServer(ip, port, out var iPEndPoint);
+            if (!Success)
             {
-                if (addresses == null || addresses.Length == 0)
-                {
-                    output = null;
-                    return false;
-                }
-                server = addresses[0];
+                output = null;
+                return false;
             }
-            var iPEndPoint = new IPEndPoint(server, port);
+            
             output = new MinecraftStatus(iPEndPoint);
             return output.ServerUp;
         }
 
-        public static bool SendRCON(string ip, ushort port, string command, string password, out MinecraftRCON output)
+        public static bool SendRCON(string ip, ushort port, string command, string password, out IRCON output)
         {
-            var parseCheck = IPAddress.TryParse(ip, out var server);
-            var addresses = ResolveDNS(ip);
-            if (!parseCheck)
+            var Success = TryParseServer(ip, port, out var iPEndPoint);
+            if (!Success)
             {
-                if (addresses == null || addresses.Length == 0)
-                {
-                    output = null;
-                    return false;
-                }
-                server = addresses[0];
+                output = null;
+                return false;
             }
-            var iPEndPoint = new IPEndPoint(server, port);
-            output = new MinecraftRCON(iPEndPoint, password, false, command);
-            return output.Status == MinecraftRCON.RCONStatus.SUCCESS;
+            
+            output = RCONManager.GetSingleton().CreateRCON(iPEndPoint, password, false, command);
+            return output.Status == RCONStatus.SUCCESS;
         }
 
-        public static bool CreateRCON(string ip, ushort port, string password, ulong User, out MinecraftRCON output)
+        public static bool CreateRCON(string ip, ushort port, string password, ulong User, out IRCON output)
         {
-            var PossibleRCON = MinecraftRCON.GetRCON(User);
+            var PossibleRCON = RCONManager.GetSingleton().GetRCON(User);
             if (PossibleRCON != null)
             {
                 output = PossibleRCON;
                 return false;
             }
 
+            var Success = TryParseServer(ip, port, out var iPEndPoint);
+            if (!Success)
+            {
+                output = null;
+                return false;
+            }
+            output = RCONManager.GetSingleton().CreateRCON(iPEndPoint, password, true);
+            output.Owner = User;
+            return output.Status == RCONStatus.SUCCESS;
+        }
+
+        public static bool ExecuteRCON(ulong User, string Command, out IRCON output)
+        {
+            var PossibleRCON = RCONManager.GetSingleton().GetRCON(User);
+            output = PossibleRCON;
+            if (PossibleRCON == null)
+                return false;
+
+            PossibleRCON.Execute(Command, true);
+            return output.Status == RCONStatus.SUCCESS;
+        }
+        public static bool CloseRCON(ulong User)
+        {
+            var PossibleRCON = RCONManager.GetSingleton().GetRCON(User);
+            if (PossibleRCON == null)
+                return false;
+
+            PossibleRCON.Dispose();
+            return true;
+        }
+
+        private static bool TryParseServer(string ip, ushort port, out IPEndPoint iPEndPoint)
+        {
             var parseCheck = IPAddress.TryParse(ip, out var server);
             var addresses = ResolveDNS(ip);
             if (!parseCheck)
             {
                 if (addresses == null || addresses.Length == 0)
                 {
-                    output = null;
+                    iPEndPoint = null;
                     return false;
                 }
                 server = addresses[0];
             }
-            var iPEndPoint = new IPEndPoint(server, port);
-            output = new MinecraftRCON(iPEndPoint, password, true);
-            return output.Status == MinecraftRCON.RCONStatus.SUCCESS;
-        }
-
-        public static bool ExecuteRCON(ulong User, string Command, out MinecraftRCON output)
-        {
-            var PossibleRCON = MinecraftRCON.GetRCON(User);
-            output = PossibleRCON;
-            if (PossibleRCON == null)
-                return false;
-
-            PossibleRCON.Execute(Command, true);
-            return output.Status == MinecraftRCON.RCONStatus.SUCCESS;
-        }
-        public static bool CloseRCON(ulong User)
-        {
-            var PossibleRCON = MinecraftRCON.GetRCON(User);
-            if (PossibleRCON == null)
-                return false;
-
-            PossibleRCON.Dispose();
+            iPEndPoint = new IPEndPoint(server, port);
             return true;
         }
 
@@ -686,9 +675,66 @@ namespace UNObot.Services
         }
     }
 
-    public class MinecraftRCON : IDisposable
+    public interface IRCON : IDisposable
     {
-        private static List<MinecraftRCON> ReusableRCONSockets = new List<MinecraftRCON>();
+        public ulong Owner { get; set; }
+        public enum RCONStatus { CONN_FAIL, AUTH_FAIL, EXEC_FAIL, INT_FAIL, SUCCESS }
+        public IPEndPoint Server { get; }
+        public RCONStatus Status { get; }
+        public string Data { get; }
+        public void Execute(string Command, bool Reuse = false);
+        public void ExecuteSingle(string Command, bool Reuse = false);
+        public bool Connected();
+        public bool Disposed { get; }
+    }
+
+    public class RCONManager : IDisposable
+    {
+        private static RCONManager Instance;
+        private List<IRCON> ReusableRCONSockets;
+
+        public static RCONManager GetSingleton()
+        {
+            return Instance ??= new RCONManager();
+        }
+
+        private RCONManager()
+        {
+            ReusableRCONSockets = new List<IRCON>();
+        }
+
+        public IRCON GetRCON(ulong User)
+        {
+            var Saved = ReusableRCONSockets.Where(o => o.Owner == User).ToList();
+            if (Saved.Count == 0) return null;
+            if (!Saved[0].Disposed && Saved[0].Connected())
+                return Saved[0];
+            Saved[0].Dispose();
+            return null;
+        }
+
+        public void Dispose()
+        {
+            ReusableRCONSockets.ForEach(o=> o.Dispose());
+            ReusableRCONSockets.Clear();
+            ReusableRCONSockets = null;
+        }
+        
+        public IRCON CreateRCON(IPEndPoint Server, string Password, bool Reuse = false, string Command = null)
+        {
+            IRCON RCONInstance;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                RCONInstance = new RCONHelper(Server, Password, Command);
+            else
+                RCONInstance = new MinecraftRCON(Server, Password, Reuse, Command);
+            if (Reuse)
+                ReusableRCONSockets.Add(RCONInstance);
+            return RCONInstance;
+        }
+    }
+
+    class MinecraftRCON : IRCON
+    {
         private static readonly byte[] EndOfCommandPacket = MakePacketData("", PacketType.TYPE_100, 0);
         private readonly object Lock = new object();
 
@@ -699,7 +745,6 @@ namespace UNObot.Services
         private byte[] Buffer;
         private List<byte> PacketCollector = new List<byte>(RX_SIZE);
         private enum PacketType {SERVERDATA_RESPONSE_VALUE = 0, SERVERDATA_EXECCOMMAND = 2, SERVERDATA_AUTH = 3, TYPE_100 = 100 }
-        public enum RCONStatus { CONN_FAIL, AUTH_FAIL, EXEC_FAIL, INT_FAIL, SUCCESS }
         public RCONStatus Status { get; private set; }
         public string Data { get; private set; }
         private string Password { get; }
@@ -738,11 +783,7 @@ namespace UNObot.Services
 
             LoggerService.Log(LogSeverity.Verbose, "Successfully created RCON connection!");
             if (Authenticate() && Command != null)
-                Execute(Command);
-            if (Status == RCONStatus.SUCCESS && Reuse)
-            {
-                ReusableRCONSockets.Add(this);
-            }
+                Execute(Command, Reuse);
         }
 
         private bool Authenticate()
@@ -1058,24 +1099,6 @@ namespace UNObot.Services
         {
             Disposed = true;
             Client?.Dispose();
-            ReusableRCONSockets.Remove(this);
-        }
-
-        public static MinecraftRCON GetRCON(ulong User)
-        {
-            var Saved = ReusableRCONSockets.Where(o => o.Owner == User).ToList();
-            if (Saved.Count != 0)
-                if (Saved[0].Connected())
-                    return Saved[0];
-                else
-                    Saved[0].Dispose();
-            return null;
-        }
-
-        public static void DisposeAll()
-        {
-            while (ReusableRCONSockets.Count != 0)
-                ReusableRCONSockets[0].Dispose();
         }
     }
 }

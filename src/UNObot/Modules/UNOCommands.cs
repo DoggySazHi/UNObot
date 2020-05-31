@@ -460,6 +460,7 @@ namespace UNObot.Modules
                                     response += ($"\n\nYou have drawn {cardsDrawn} cards, however the autodrawer has stopped at a Wild card." +
                                                      $"{(Gamemode.HasFlag(Gamemodes.Retro) ? "If you want to skip, use .skip or .quickplay." : "\nIf you want to draw for a regular card, run the command again.")}");
                                     await Context.Message.Author.SendMessageAsync(response);
+                                    await UNODatabaseService.SetCardsDrawn(Context.Guild.Id, cardsDrawn);
                                     break;
                                 }
                                 

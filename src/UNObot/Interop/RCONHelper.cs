@@ -3,12 +3,14 @@ using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Runtime.InteropServices;
 using UNObot.Services;
+using static UNObot.Services.IRCON;
 
 namespace UNObot.Interop
 {
-    public class RCONHelper : IDisposable
+    public class RCONHelper : IRCON
     {
         private IntPtr RCONInstance;
+        public bool Disposed { get; private set; }
         
         [DllImport(@"libRCONHelper.so")]
         private static extern IntPtr CreateObjectA(string ip, ushort port, string password, string command);
@@ -32,11 +34,8 @@ namespace UNObot.Interop
         public static extern void SayDelete(IntPtr Thing);
 
         [DllImport(@"libRCONHelper.so")]
-        private static extern MinecraftRCON.RCONStatus Status(IntPtr obj);
-        
-        [DllImport(@"libRCONHelper.so")]
-        private static extern bool Disposed(IntPtr obj);
-        
+        private static extern RCONStatus GetStatus(IntPtr obj);
+
         [DllImport(@"libRCONHelper.so")]
         private static extern IntPtr GetData(IntPtr obj);
 
@@ -55,12 +54,29 @@ namespace UNObot.Interop
         [DllImport(@"libRCONHelper.so")]
         private static extern void Execute(IntPtr obj, string command);
         
+        /*
         [DllImport(@"libRCONHelper.so")]
         private static extern void Dispose(IntPtr obj);
+        
+        [DllImport(@"libRCONHelper.so")]
+        private static extern bool Disposed(IntPtr obj);
+        */
 
+        public ulong Owner { get; set; }
         public string Data => Marshal.PtrToStringAnsi(GetData(RCONInstance));
+        public RCONStatus Status => GetStatus(RCONInstance);
         public IPEndPoint Server => new IPEndPoint(IPAddress.Parse(Marshal.PtrToStringAnsi(GetServerIP(RCONInstance)) ?? throw new InvalidOperationException("OH CRAP")), GetServerPort(RCONInstance));
 
+        public RCONHelper(IPEndPoint Server, [NotNull] string password, string command = null)
+        {
+            // Note: It is split into two parts as C++ does not allow null strings.
+            RCONInstance = command switch
+            {
+                null => CreateObjectB(Server.Address.ToString(), (ushort) Server.Port, password),
+                _ => CreateObjectA(Server.Address.ToString(), (ushort) Server.Port, password, command)
+            };
+        }
+        
         public RCONHelper([NotNull] string ip, ushort port, [NotNull] string password, string command = null)
         {
             // Note: It is split into two parts as C++ does not allow null strings.
@@ -77,14 +93,18 @@ namespace UNObot.Interop
             Mukyu(RCONInstance);
         }
 
-        public void Execute(string Command)
+        public void Execute(string Command, bool Reuse = false)
         {
             Execute(RCONInstance, Command);
+            if(!Reuse)
+                Dispose();
         }
         
-        public void ExecuteSingle(string Command)
+        public void ExecuteSingle(string Command, bool Reuse = false)
         {
             ExecuteSingle(RCONInstance, Command);
+            if(!Reuse)
+                Dispose();
         }
         
         public bool Connected()
@@ -94,7 +114,9 @@ namespace UNObot.Interop
 
         public void Dispose()
         {
-            Dispose(RCONInstance);
+            if (Disposed) return;
+            DestroyObject(RCONInstance);
+            Disposed = true;
         }
     }
 }

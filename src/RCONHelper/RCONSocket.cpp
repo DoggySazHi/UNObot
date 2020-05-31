@@ -158,6 +158,10 @@ void RCONSocket::Execute(const std::string& command)
     data.clear();
     WipeBuffer();
     int count = read(socket_descriptor, rx_data->data(), BUFFER_SIZE);
+#ifndef NDEBUG
+    Utilities::hexdump(rx_data->data(), count);
+    Utilities::file_dump(rx_data->data(), count, "packet" + std::to_string(packet_count));
+#endif
     int dataTrim = -1;
     int startOfPacket = 0;
     int lifetime = 0;
@@ -168,8 +172,6 @@ void RCONSocket::Execute(const std::string& command)
 
 #ifndef NDEBUG
         std::cout << "reading packet " << packet_count << '\n';
-        Utilities::hexdump(rx_data->data(), count);
-        Utilities::file_dump(rx_data->data(), count, "packet" + std::to_string(packet_count));
 #endif
 
         // Keep track of whenever a new packet starts
@@ -225,6 +227,10 @@ void RCONSocket::Execute(const std::string& command)
 
         WipeBuffer();
         count = read(socket_descriptor, rx_data->data(), BUFFER_SIZE);
+#ifndef NDEBUG
+        Utilities::hexdump(rx_data->data(), count);
+        Utilities::file_dump(rx_data->data(), count, "packet" + std::to_string(packet_count));
+#endif
         position = 0;
     }
     if(count < 0)

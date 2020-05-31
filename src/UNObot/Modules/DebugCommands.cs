@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Discord;
@@ -8,6 +9,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UNObot.Interop;
 using UNObot.Services;
+using static UNObot.Services.IRCON;
 
 namespace UNObot.Modules
 {
@@ -78,8 +80,9 @@ namespace UNObot.Modules
             await ReplyAsync($"Successfully interop string! {Text}");
             RCONHelper.SayDelete(Ptr);
             await ReplyAsync($"Successfully deleted string!");
-            var RCONFromCPP = new RCONHelper("192.168.2.6", 27286, "mukyumukyu", "list");
-            await ReplyAsync("Response: " + RCONFromCPP.Data);
+            var Server = new IPEndPoint(IPAddress.Parse("192.168.2.6"), 27286);
+            var RCONFromCPP = new RCONHelper(Server, "mukyumukyu", "list");
+            await ReplyAsync($"Response from {RCONFromCPP.Server} {RCONFromCPP.Status} {RCONFromCPP.Connected()}: {RCONFromCPP.Data}");
             RCONFromCPP.Dispose();
         }
 
@@ -93,7 +96,7 @@ namespace UNObot.Modules
                 return;
             }
 
-            if (Data.Status != MinecraftRCON.RCONStatus.SUCCESS)
+            if (Data.Status != RCONStatus.SUCCESS)
             {
                 await ReplyAsync(Data.Status.ToString());
                 return;

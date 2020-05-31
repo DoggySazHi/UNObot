@@ -3,6 +3,7 @@ using System;
 using System.Threading.Tasks;
 using Discord;
 using UNObot.Services;
+using static UNObot.Services.IRCON;
 
 namespace UNObot.Modules
 {
@@ -187,11 +188,11 @@ namespace UNObot.Modules
                 var Error = "Failed to execute command. ";
                 Error += Output.Status switch
                 {
-                    MinecraftRCON.RCONStatus.CONN_FAIL => "Is the server up, and the IP/port correct?",
-                    MinecraftRCON.RCONStatus.AUTH_FAIL => "Is the correct password used?",
-                    MinecraftRCON.RCONStatus.EXEC_FAIL => "Is the command valid, and authentication correct?",
-                    MinecraftRCON.RCONStatus.INT_FAIL => "Something failed internally, blame DoggySazHi.",
-                    MinecraftRCON.RCONStatus.SUCCESS => "I lied. It worked, but Doggy broke the programming.",
+                    RCONStatus.CONN_FAIL => "Is the server up, and the IP/port correct?",
+                    RCONStatus.AUTH_FAIL => "Is the correct password used?",
+                    RCONStatus.EXEC_FAIL => "Is the command valid, and authentication correct?",
+                    RCONStatus.INT_FAIL => "Something failed internally, blame DoggySazHi.",
+                    RCONStatus.SUCCESS => "I lied. It worked, but Doggy broke the programming.",
                     _ => "I don't know what happened here."
                 };
                 await Message.ModifyAsync(o => o.Content = Error).ConfigureAwait(false);
@@ -226,11 +227,11 @@ namespace UNObot.Modules
                 {
                     Error += Output.Status switch
                     {
-                        MinecraftRCON.RCONStatus.CONN_FAIL => "Is the server up, and the IP/port correct?",
-                        MinecraftRCON.RCONStatus.AUTH_FAIL => "Is the correct password used?",
-                        MinecraftRCON.RCONStatus.EXEC_FAIL => "Is the command valid, and authentication correct? This should never appear.",
-                        MinecraftRCON.RCONStatus.INT_FAIL => "Something failed internally, blame DoggySazHi.",
-                        MinecraftRCON.RCONStatus.SUCCESS => "I lied. It worked, but Doggy broke the programming.",
+                        RCONStatus.CONN_FAIL => "Is the server up, and the IP/port correct?",
+                        RCONStatus.AUTH_FAIL => "Is the correct password used?",
+                        RCONStatus.EXEC_FAIL => "Is the command valid, and authentication correct? This should never appear.",
+                        RCONStatus.INT_FAIL => "Something failed internally, blame DoggySazHi.",
+                        RCONStatus.SUCCESS => "I lied. It worked, but Doggy broke the programming.",
                         _ => "I don't know what happened here."
                     };
                 }
@@ -261,18 +262,17 @@ namespace UNObot.Modules
                 var Error = "Failed to login. ";
                 Error += Output.Status switch
                 {
-                    MinecraftRCON.RCONStatus.CONN_FAIL => "Is the server up, and the IP/port correct?",
-                    MinecraftRCON.RCONStatus.AUTH_FAIL => "Is the correct password used?",
-                    MinecraftRCON.RCONStatus.EXEC_FAIL => "Is the command valid, and authentication correct? This should never appear.",
-                    MinecraftRCON.RCONStatus.INT_FAIL => "Something failed internally, blame DoggySazHi.",
-                    MinecraftRCON.RCONStatus.SUCCESS => "An existing RCON connection exists for your user. Please close it first.",
+                    RCONStatus.CONN_FAIL => "Is the server up, and the IP/port correct?",
+                    RCONStatus.AUTH_FAIL => "Is the correct password used?",
+                    RCONStatus.EXEC_FAIL => "Is the command valid, and authentication correct? This should never appear.",
+                    RCONStatus.INT_FAIL => "Something failed internally, blame DoggySazHi.",
+                    RCONStatus.SUCCESS => "An existing RCON connection exists for your user. Please close it first.",
                     _ => "I don't know what happened here."
                 };
                 await Message.ModifyAsync(o => o.Content = Error).ConfigureAwait(false);
             }
             else
             {
-                Output.Owner = Context.User.Id;
                 var RCONMessage = Output.Data;
                 if (string.IsNullOrWhiteSpace(RCONMessage))
                     RCONMessage = "Connection created!";

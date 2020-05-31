@@ -93,7 +93,7 @@ namespace UNObot
             LoggerService.Log(LogSeverity.Info, "Music Bot service disabled.");
             WebhookListener.GetSingleton().Dispose();
             LoggerService.Log(LogSeverity.Info, "Webhook Listener service disabled.");
-            MinecraftRCON.DisposeAll();
+            RCONManager.GetSingleton().Dispose();
             LoggerService.Log(LogSeverity.Info, "RCON service disabled.");
             await _client.StopAsync().ConfigureAwait(false);
             _client.Dispose();

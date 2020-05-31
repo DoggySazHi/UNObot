@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Discord;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using static UNObot.Services.IRCON;
 
 namespace UNObot.Services
 {
@@ -22,7 +24,7 @@ namespace UNObot.Services
     public static class MinecraftProcessorService
     {
         // NOTE: It's the query port!
-        public static List<MCUser> GetMCUsers(string IP, ushort Port, string Password, out MinecraftRCON Client, bool Dispose = true)
+        public static List<MCUser> GetMCUsers(string IP, ushort Port, string Password, out IRCON Client, bool Dispose = true)
         {
             var Output = new List<MCUser>();
 
@@ -32,7 +34,7 @@ namespace UNObot.Services
             if (!Success) return Output;
 
             Client.ExecuteSingle("list", true);
-            if (Client.Status != MinecraftRCON.RCONStatus.SUCCESS) return Output;
+            if (Client.Status != RCONStatus.SUCCESS) return Output;
             var PlayerListOnline = Client.Data.Substring(Client.Data.IndexOf(':') + 1).Split(',').ToList();
 
             Client.ExecuteSingle("scoreboard players list", true);
@@ -42,7 +44,7 @@ namespace UNObot.Services
             {
                 var Name = Player.Replace((char) 0, ' ').Trim();
                 Client.ExecuteSingle($"scoreboard players get {Name} Ouchies", true);
-                if (Client.Status == MinecraftRCON.RCONStatus.SUCCESS)
+                if (Client.Status == RCONStatus.SUCCESS)
                 {
                     var Ouchies = Client.Data.Contains("has") ? Client.Data.Split(' ')[2] : "0";
                     Output.Add(new MCUser
@@ -58,17 +60,19 @@ namespace UNObot.Services
                 var Name = o.Replace((char) 0, ' ').Trim();
                 if (string.IsNullOrWhiteSpace(Name)) continue;
                 
+                /*
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
                     LoggerService.Log(LogSeverity.Warning, "Linux platform: safety to use old parser.");
                     OldUserProcessor(ref Output, Name, Client);
                     continue;
                 }
+                */
 
                 var Command = $"data get entity {Name}";
                 Client.Execute(Command, true);
                 
-                if (Client.Status != MinecraftRCON.RCONStatus.SUCCESS)
+                if (Client.Status != RCONStatus.SUCCESS)
                     continue;
                 if (Client.Data.Equals("No entity was found", StringComparison.CurrentCultureIgnoreCase))
                     continue;
@@ -84,7 +88,49 @@ namespace UNObot.Services
                 try
                 {
                     double[] Coordinates = null;
-                    var JSON = JObject.Parse(JSONString);
+
+                    /*
+                    JObject JSON;
+                    try
+                    {
+                        JSON = JObject.Parse(JSONString);
+                    }
+                    catch (JsonReaderException ex)
+                    {
+                        LoggerService.Log(LogSeverity.Error, $@"Error near string: {JSONString.Substring(
+                            Math.Max(0, ex.LinePosition - 10), Math.Min(20, JSONString.Length - ex.LinePosition - 10)
+                        )}", ex);
+                        
+                        throw;
+                    }
+                    */
+                    
+                    JToken JSON;
+                    string exceptionPath = null;
+                    using (var textReader = new StringReader(JSONString))
+                    using (var jsonReader = new JsonTextReader(textReader))
+                    using (var jsonWriter = new JTokenWriter())
+                    {
+                        try
+                        {
+                            jsonWriter.WriteToken(jsonReader);
+                        }
+                        catch (JsonReaderException ex)
+                        {
+                            exceptionPath = ex.Path;
+                            LoggerService.Log(LogSeverity.Error, $@"Error near string: {JSONString.Substring(
+                                Math.Max(0, ex.LinePosition - 10), Math.Min(20, JSONString.Length - ex.LinePosition - 10)
+                            )}", ex);
+                        }
+                        JSON = jsonWriter.Token;
+                    }
+
+                    if (exceptionPath != null)
+                    {
+                        var badToken = JSON.SelectToken(exceptionPath);
+                        LoggerService.Log(LogSeverity.Error, $"Error occurred with token: {badToken}");
+                    }
+                    
                     var Dimension = JSON["Dimension"];
                     var Position = JSON["Pos"];
                     var Food = JSON["foodLevel"]?.ToObject<string>() ?? "20";
@@ -135,14 +181,14 @@ namespace UNObot.Services
             return Output;
         }
 
-        private static void OldUserProcessor(ref List<MCUser> Users, string Name, MinecraftRCON Client)
+        private static void OldUserProcessor(ref List<MCUser> Users, string Name, IRCON Client)
         {
             Client.ExecuteSingle(
                     $"execute as {Name} at @s run summon minecraft:armor_stand ~ ~ ~ {{Invisible:1b,PersistenceRequired:1b,Tags:[\"coordfinder\"]}}",
                     true);
             Client.ExecuteSingle("execute as @e[tag=coordfinder] at @s run tp @s ~ ~ ~", true);
             double[] Coordinates = null;
-            if (Client.Status == MinecraftRCON.RCONStatus.SUCCESS)
+            if (Client.Status == RCONStatus.SUCCESS)
             {
                 try
                 {
@@ -173,7 +219,7 @@ namespace UNObot.Services
             var PointData = Client.Data;
             Client.ExecuteSingle($"execute as {Name} at @s run experience query @s levels", true);
             var Experience = 0;
-            if (Client.Status == MinecraftRCON.RCONStatus.SUCCESS)
+            if (Client.Status == RCONStatus.SUCCESS)
             {
                 try
                 {

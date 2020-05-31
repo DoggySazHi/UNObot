@@ -47,7 +47,7 @@ int main()
     rcon->ExecuteSingle("list");
     std::cout << rcon->status << '\n';
     std::cout << rcon->data << '\n';
-    rcon->Execute("data get entity PuppySazHi");
+    rcon->Execute("data get entity DoggySazHi");
     std::cout << rcon->status << '\n';
     std::cout << rcon->data << '\n';
     delete rcon;

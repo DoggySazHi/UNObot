@@ -26,7 +26,7 @@ extern "C" {
     MODULE_API const char* Say(char* thing) { std::cout << thing << '\n'; return new char[5] {'h', 'e', 'w', 'o', '\0'}; }
     MODULE_API void SayDelete(const char* thing) { delete thing; }
 
-    MODULE_API RCONStatus Status(RCONSocket* obj) { return obj->status; }
+    MODULE_API RCONStatus GetStatus(RCONSocket* obj) { return obj->status; }
     MODULE_API bool Disposed(RCONSocket* obj) { return obj->disposed; }
     MODULE_API const char* GetData(RCONSocket* obj) { return obj->data.c_str(); }
     MODULE_API bool Connected(RCONSocket* obj) { return obj->IsConnected(); }
