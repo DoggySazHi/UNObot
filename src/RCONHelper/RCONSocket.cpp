@@ -240,7 +240,8 @@ void RCONSocket::Execute(const std::string& command)
     }
     else
         status = SUCCESS;
-    std::cout << "Read " << packet_count << " packets!";
+    std::cout << "Finished reading data." << '\n';
+    std::cout << "Read " << packet_count << " packets!" << '\n';
     if(dataTrim >= 0)
         data.erase(dataTrim);
 }
