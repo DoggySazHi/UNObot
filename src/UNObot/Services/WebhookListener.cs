@@ -84,7 +84,7 @@ namespace UNObot.Services
                                 using var Reader = new StreamReader(Data);
                                 var Text = Reader.ReadToEnd();
                                 //LoggerService.Log(LogSeverity.Verbose, $"Data received: {text}");
-                                Task.Run(() => ProcessMessage(Text, (WebhookType) Type));
+                                ProcessMessage(Text, Guild, Channel, (WebhookType) Type);
                             }
                             else
                             {
@@ -115,18 +115,51 @@ namespace UNObot.Services
             }
         }
 
-        private void ProcessMessage(string Message, WebhookType WType)
+        public struct CommitInfo
+        {
+            public string RepoName { get; set; }
+            public string RepoAvatar { get; set; }
+            
+            public string CommitHash { get; set; }
+            public string CommitMessage { get; set; }
+            public DateTime CommitDate { get; set; }
+            
+            public string UserName { get; set; }
+            public string UserAvatar { get; set; }
+        }
+
+        private void ProcessMessage(string Message, ulong Guild, ulong Channel, WebhookType WType)
         {
             try
             {
                 if (WType == WebhookType.Bitbucket)
                 {
                     var Thing = new JObject(Message);
-                    LoggerService.Log(LogSeverity.Debug, Thing.ToString(Formatting.Indented));
+                    // LoggerService.Log(LogSeverity.Debug, Thing.ToString(Formatting.Indented));
+                    if (Thing.ContainsKey("push"))
+                    {
+                        var Commit = Thing["push"]?["changes"]?.First?["new"]?["target"];
+
+                        var CommitInfo = new CommitInfo
+                        {
+                            RepoName = Thing["repository"]?["name"]?.ToObject<string>() ?? "Unknown Repo Name",
+                            RepoAvatar = Thing["repository"]?["links"]?["avatar"]?.ToObject<string>() ?? "",
+                            
+                            CommitHash = Commit?["hash"]?.ToObject<string>() ?? "Hash not found!",
+                            CommitMessage = Commit?["message"]?.ToObject<string>() ?? "No message was attached.",
+                            CommitDate = Commit?["date"]?.ToObject<DateTime>() ?? DateTime.Now,
+                            
+                            UserName = Commit?["author"]?["nickname"]?.ToObject<string>() ??
+                                       Thing["actor"]?["display_name"]?.ToObject<string>() ?? "Unknown User Name",
+                            UserAvatar = Commit?["author"]?["links"]?["avatar"]?.ToObject<string>() ?? ""
+                        };
+                        EmbedDisplayService.WebhookEmbed(CommitInfo, out var Embed);
+                        Program._client.GetGuild(Guild).GetTextChannel(Channel).SendMessageAsync(null, false, Embed);
+                    }
                 }
                 else if (WType == WebhookType.OctoPrint)
                 {
-
+                    
                 }
             }
             catch (JsonReaderException)

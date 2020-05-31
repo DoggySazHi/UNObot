@@ -709,5 +709,31 @@ namespace UNObot.Services
             Result = builder.Build();
             return true;
         }
+        
+        public static bool WebhookEmbed(WebhookListener.CommitInfo Info, out Embed Result)
+        {
+            var Random = ThreadSafeRandom.ThisThreadsRandom;
+
+            var builder = new EmbedBuilder()
+                .WithColor(new Color(Random.Next(0, 256), Random.Next(0, 256), Random.Next(0, 256)))
+                .WithTimestamp(Info.CommitDate)
+                .WithFooter(footer =>
+                {
+                    footer
+                        .WithText($"UNObot {Program.version} - By DoggySazHi")
+                        .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
+                })
+                .WithAuthor(author =>
+                {
+                    author
+                        .WithName($"Push by {Info.UserName} for {Info.RepoName}")
+                        .WithIconUrl(Info.UserAvatar);
+                })
+                .WithThumbnailUrl(Info.RepoAvatar)
+                .WithDescription(Info.CommitMessage)
+                .AddField("Commit Hash", Info.CommitHash.Substring(0, Math.Min(7, Info.CommitHash.Length)), true);
+            Result = builder.Build();
+            return true;
+        }
     }
 }
