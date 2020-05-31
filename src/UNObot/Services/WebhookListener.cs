@@ -161,23 +161,23 @@ namespace UNObot.Services
                         LoggerService.Log(LogSeverity.Error, $"Error occurred with token: {badToken}");
                     }
                     
-                    // LoggerService.Log(LogSeverity.Debug, Thing.ToString(Formatting.Indented));
+                    LoggerService.Log(LogSeverity.Debug, Thing.ToString(Formatting.Indented));
                     if (Thing["push"] != null)
                     {
                         var Commit = Thing["push"]?["changes"]?.First?["new"]?["target"];
 
                         var CommitInfo = new CommitInfo
                         {
-                            RepoName = Thing["repository"]?["name"]?.ToObject<string>() ?? "Unknown Repo Name",
-                            RepoAvatar = Thing["repository"]?["links"]?["avatar"]?.ToObject<string>() ?? "",
+                            RepoName = Thing["repository"]?["name"]?.ToString() ?? "Unknown Repo Name",
+                            RepoAvatar = Thing["repository"]?["links"]?["avatar"]?.ToString() ?? "",
                             
-                            CommitHash = Commit?["hash"]?.ToObject<string>() ?? "Hash not found!",
-                            CommitMessage = Commit?["message"]?.ToObject<string>() ?? "No message was attached.",
+                            CommitHash = Commit?["hash"]?.ToString() ?? "Hash not found!",
+                            CommitMessage = Commit?["message"]?.ToString() ?? "No message was attached.",
                             CommitDate = Commit?["date"]?.ToObject<DateTime>() ?? DateTime.Now,
                             
-                            UserName = Commit?["author"]?["nickname"]?.ToObject<string>() ??
-                                       Thing["actor"]?["display_name"]?.ToObject<string>() ?? "Unknown User Name",
-                            UserAvatar = Commit?["author"]?["links"]?["avatar"]?.ToObject<string>() ?? ""
+                            UserName = Commit?["author"]?["nickname"]?.ToString() ??
+                                       Thing["actor"]?["display_name"]?.ToString() ?? "Unknown User Name",
+                            UserAvatar = Commit?["author"]?["links"]?["avatar"]?.ToString() ?? ""
                         };
                         EmbedDisplayService.WebhookEmbed(CommitInfo, out var Embed);
                         Program._client.GetGuild(Guild).GetTextChannel(Channel).SendMessageAsync(null, false, Embed);
