@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -134,9 +135,34 @@ namespace UNObot.Services
             {
                 if (WType == WebhookType.Bitbucket)
                 {
-                    var Thing = new JObject(Message);
+                    JToken Thing;
+                    string exceptionPath = null;
+                    using (var textReader = new StringReader(Message))
+                    using (var jsonReader = new JsonTextReader(textReader))
+                    using (var jsonWriter = new JTokenWriter())
+                    {
+                        try
+                        {
+                            jsonWriter.WriteToken(jsonReader);
+                        }
+                        catch (JsonReaderException ex)
+                        {
+                            exceptionPath = ex.Path;
+                            LoggerService.Log(LogSeverity.Error, $@"Error near string: {Message.Substring(
+                                Math.Max(0, ex.LinePosition - 10), Math.Min(20, Message.Length - ex.LinePosition - 10)
+                            )}", ex);
+                        }
+                        Thing = jsonWriter.Token;
+                    }
+                    Debug.Assert(Thing != null, nameof(Thing) + " != null");
+                    if (exceptionPath != null)
+                    {
+                        var badToken = Thing.SelectToken(exceptionPath);
+                        LoggerService.Log(LogSeverity.Error, $"Error occurred with token: {badToken}");
+                    }
+                    
                     // LoggerService.Log(LogSeverity.Debug, Thing.ToString(Formatting.Indented));
-                    if (Thing.ContainsKey("push"))
+                    if (Thing["push"] != null)
                     {
                         var Commit = Thing["push"]?["changes"]?.First?["new"]?["target"];
 
