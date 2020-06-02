@@ -89,7 +89,8 @@ namespace UNObot.Modules
         [Command("getplayerdata", RunMode = RunMode.Async)]
         public async Task RCONLongPacketTest(string User)
         {
-            QueryHandlerService.SendRCON(QueryHandlerService.PSurvival, 27286, $"data get entity {User}", "mukyumukyu", out var Data);
+            var Server = QueryHandlerService.SpecialServers[27285];
+            QueryHandlerService.SendRCON(Server.Server, Server.RCONPort, $"data get entity {User}", "mukyumukyu", out var Data);
             if (Data.Data.Equals("No entity was found", StringComparison.CurrentCultureIgnoreCase))
             {
                 await ReplyAsync("Mukyu... Cannot find user...");

@@ -81,7 +81,33 @@ namespace UNObot.Modules
             var Message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
             {
-                bool success = EmbedDisplayService.OuchiesEmbed(QueryHandlerService.PSurvival, 27285, out var Embed);
+                var success = EmbedDisplayService.OuchiesEmbed("williamle.com", 27285, out var Embed);
+                if (!success || Embed == null)
+                {
+                    await Message.ModifyAsync(o => o.Content = "Error: Apparently we couldn't get any information about this server.");
+                    return;
+                }
+                await Message.ModifyAsync(o =>
+                {
+                    o.Content = "";
+                    o.Embed = Embed;
+                });
+            }
+            catch (Exception ex)
+            {
+                LoggerService.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
+                await Message.ModifyAsync(o => o.Content = "We had some difficulties displaying the status. Please try again?");
+            }
+        }
+        
+        [Command("ouchies", RunMode = RunMode.Async)]
+        [Help(new[] { ".ouchies (Port)" }, "That must hurt.", true, "UNObot 4.0.12")]
+        public async Task GetOuchies(ushort Port)
+        {
+            var Message = await ReplyAsync("I am now querying the server, please wait warmly...");
+            try
+            {
+                var success = EmbedDisplayService.OuchiesEmbed("williamle.com", Port, out var Embed);
                 if (!success || Embed == null)
                 {
                     await Message.ModifyAsync(o => o.Content = "Error: Apparently we couldn't get any information about this server.");
@@ -107,7 +133,33 @@ namespace UNObot.Modules
             var Message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
             {
-                bool success = EmbedDisplayService.LocationsEmbed(QueryHandlerService.PSurvival, 27285, out var Embed);
+                var success = EmbedDisplayService.LocationsEmbed("williamle.com", 27285, out var Embed);
+                if (!success || Embed == null)
+                {
+                    await Message.ModifyAsync(o => o.Content = "Error: Apparently we couldn't get any information about this server.");
+                    return;
+                }
+                await Message.ModifyAsync(o =>
+                {
+                    o.Content = "";
+                    o.Embed = Embed;
+                });
+            }
+            catch (Exception ex)
+            {
+                LoggerService.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
+                await Message.ModifyAsync(o => o.Content = "We had some difficulties displaying the status. Please try again?");
+            }
+        }
+        
+        [Command("locate", RunMode = RunMode.Async)]
+        [Help(new[] { ".locate (port)" }, "¿Dónde están?", true, "UNObot 4.0.16")]
+        public async Task GetLocations(ushort Port)
+        {
+            var Message = await ReplyAsync("I am now querying the server, please wait warmly...");
+            try
+            {
+                bool success = EmbedDisplayService.LocationsEmbed("williamle.com", Port, out var Embed);
                 if (!success || Embed == null)
                 {
                     await Message.ModifyAsync(o => o.Content = "Error: Apparently we couldn't get any information about this server.");
@@ -133,7 +185,34 @@ namespace UNObot.Modules
             var Message = await ReplyAsync("I am now contacting the server, please wait warmly...");
             try
             {
-                var success = EmbedDisplayService.TransferEmbed(QueryHandlerService.PSurvival, 27285, Context.User.Id, Target, Amount, out var Embed);
+                var success = EmbedDisplayService.TransferEmbed("williamle.com", 27285, Context.User.Id, Target, Amount, out var Embed);
+                if (!success || Embed == null)
+                {
+                    await Message.ModifyAsync(o => o.Content = "We had some difficulties displaying the status. Please try again?");
+                    return;
+                }
+                await Message.ModifyAsync(o =>
+                {
+                    o.Content = "";
+                    o.Embed = Embed;
+                });
+            }
+            catch (Exception ex)
+            {
+                LoggerService.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
+                await Message.ModifyAsync(o => o.Content = "We had some difficulties displaying the status. Please try again?");
+            }
+        }
+        
+        [Command("expay", RunMode = RunMode.Async)]
+        [Help(new[] { ".expay (port) (target) (amount)" }, "Where's my experience?", true, "UNObot 4.0.17")]
+        public async Task GetLocations(ushort Port, string Target, string Amount)
+        {
+            var Message = await ReplyAsync("I am now contacting the server, please wait warmly...");
+            try
+            {
+                
+                var success = EmbedDisplayService.TransferEmbed("williamle.com", Port, Context.User.Id, Target, Amount, out var Embed);
                 if (!success || Embed == null)
                 {
                     await Message.ModifyAsync(o => o.Content = "We had some difficulties displaying the status. Please try again?");
@@ -156,7 +235,21 @@ namespace UNObot.Modules
         [Help(new[] { ".mctime" }, "SLEEP GUYS", true, "UNObot 4.0.16")]
         public async Task GetMCTime()
         {
-            await RunRCON(QueryHandlerService.PSurvival, 27286, "mukyumukyu", "time query daytime");
+            var Server = QueryHandlerService.SpecialServers[27285];
+            await RunRCON(Server.Server, Server.RCONPort, Server.Password, "time query daytime");
+        }
+        
+        [Command("mctime", RunMode = RunMode.Async)]
+        [Help(new[] { ".mctime (port)" }, "SLEEP GUYS", true, "UNObot 4.0.16")]
+        public async Task GetMCTime(ushort Port)
+        {
+            if (!QueryHandlerService.SpecialServers.ContainsKey(Port))
+            {
+                await ReplyAsync("This is not a valid server port!");
+                return;
+            }
+            var Server = QueryHandlerService.SpecialServers[Port];
+            await RunRCON(Server.Server, Server.RCONPort, Server.Password, "time query daytime");
         }
 
         [Command("unofficialwiki", RunMode = RunMode.Async), Alias("unwiki")]

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Discord;
 using YoutubeExplode.Playlists;
 using static UNObot.Services.MinecraftProcessorService;
+using static UNObot.Services.QueryHandlerService;
 
 namespace UNObot.Services
 {
@@ -336,11 +337,11 @@ namespace UNObot.Services
             for (int i = 0; i < Attempts; i++)
             {
                 if (!InformationGet)
-                    InformationGet = QueryHandlerService.GetInfo(IP, (ushort) (Port + 1), out Information);
+                    InformationGet = GetInfo(IP, (ushort) (Port + 1), out Information);
                 if (!PlayersGet)
-                    PlayersGet = QueryHandlerService.GetPlayers(IP, (ushort) (Port + 1), out Players);
+                    PlayersGet = GetPlayers(IP, (ushort) (Port + 1), out Players);
                 if (!RulesGet)
-                    RulesGet = QueryHandlerService.GetRules(IP, (ushort) (Port + 1), out Rules);
+                    RulesGet = GetRules(IP, (ushort) (Port + 1), out Rules);
             }
 
             if (!InformationGet || !PlayersGet || !RulesGet)
@@ -375,7 +376,7 @@ namespace UNObot.Services
             for (int i = 0; i < Players.PlayerCount; i++)
             {
                 PlayersOnline +=
-                    $"{Players.Players[i].Name} - {QueryHandlerService.HumanReadable(Players.Players[i].Duration)}";
+                    $"{Players.Players[i].Name} - {HumanReadable(Players.Players[i].Duration)}";
                 if (i != Players.PlayerCount - 1)
                     PlayersOnline += "\n";
             }
@@ -433,7 +434,7 @@ namespace UNObot.Services
         {
             //TODO with the new option to disable status, it might be that queries work but not simple statuses.
             var DefaultStatus = new MCStatus(IP, Port);
-            var ExtendedGet = QueryHandlerService.GetInfoMCNew(IP, Port, out var ExtendedStatus);
+            var ExtendedGet = GetInfoMCNew(IP, Port, out var ExtendedStatus);
 
             if (!DefaultStatus.ServerUp && !ExtendedGet)
             {
@@ -442,9 +443,10 @@ namespace UNObot.Services
             }
 
             List<MCUser> MCUserInfo = null;
-            if ((IP == "127.0.0.1" || IP == "williamle.com" || IP == "localhost" || IP == QueryHandlerService.PSurvival) && Port == 27285)
+            if (OutsideServers.Contains(IP) && SpecialServers.ContainsKey(Port))
             {
-                MCUserInfo = GetMCUsers(QueryHandlerService.PSurvival, 27286, "mukyumukyu", out _);
+                var Server = SpecialServers[Port];
+                MCUserInfo = GetMCUsers(Server.Server, Server.RCONPort, Server.Password, out _);
             }
 
             var Random = ThreadSafeRandom.ThisThreadsRandom;
@@ -500,18 +502,36 @@ namespace UNObot.Services
 
         public static bool OuchiesEmbed(string IP, ushort Port, out Embed Result)
         {
-            if (IP != "127.0.0.1" && IP != "williamle.com" && IP != "localhost" && IP != QueryHandlerService.PSurvival || Port != 27285)
-            {
-                Result = null;
-                return false;
-            }
+            var Random = ThreadSafeRandom.ThisThreadsRandom;
 
+            if (!OutsideServers.Contains(IP) || !SpecialServers.ContainsKey(Port))
+            {
+            
+                Result = new EmbedBuilder()
+                    .WithColor(new Color(Random.Next(0, 256), Random.Next(0, 256), Random.Next(0, 256)))
+                    .WithTimestamp(DateTimeOffset.Now)
+                    .WithFooter(footer =>
+                    {
+                        footer
+                            .WithText($"UNObot {Program.version} - By DoggySazHi")
+                            .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
+                    })
+                    .WithAuthor(author =>
+                    {
+                        author
+                            .WithName($"Ouchies of {IP}")
+                            .WithIconUrl("https://williamle.com/unobot/unobot.png");
+                    })
+                    .AddField("Mukyu~", "Invalid port for checking ouchies!").Build();
+                return true;
+            }
+            
             MinecraftStatus Status = null;
             var ExtendedGet = false;
             for (var i = 0; i < Attempts; i++)
             {
                 if (!ExtendedGet)
-                    ExtendedGet = QueryHandlerService.GetInfoMCNew(IP, Port, out Status);
+                    ExtendedGet = GetInfoMCNew(IP, Port, out Status);
             }
 
             if (!ExtendedGet || Status == null)
@@ -520,9 +540,9 @@ namespace UNObot.Services
                 return false;
             }
 
-            var Ouchies = GetMCUsers(QueryHandlerService.PSurvival, 27286, "mukyumukyu", out _);
+            var Server = SpecialServers[Port];
+            var Ouchies = GetMCUsers(Server.Server, Server.RCONPort, Server.Password, out _);
 
-            var Random = ThreadSafeRandom.ThisThreadsRandom;
             var PlayersOnline = "";
 
             foreach (var Item in Ouchies)
@@ -556,10 +576,28 @@ namespace UNObot.Services
 
         public static bool LocationsEmbed(string IP, ushort Port, out Embed Result)
         {
-            if (IP != "127.0.0.1" && IP != "williamle.com" && IP != "localhost" && IP != QueryHandlerService.PSurvival || Port != 27285)
+            var Random = ThreadSafeRandom.ThisThreadsRandom;
+
+            if (!OutsideServers.Contains(IP) || !SpecialServers.ContainsKey(Port))
             {
-                Result = null;
-                return false;
+            
+                Result = new EmbedBuilder()
+                    .WithColor(new Color(Random.Next(0, 256), Random.Next(0, 256), Random.Next(0, 256)))
+                    .WithTimestamp(DateTimeOffset.Now)
+                    .WithFooter(footer =>
+                    {
+                        footer
+                            .WithText($"UNObot {Program.version} - By DoggySazHi")
+                            .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
+                    })
+                    .WithAuthor(author =>
+                    {
+                        author
+                            .WithName($"Player Locations of {IP}")
+                            .WithIconUrl("https://williamle.com/unobot/unobot.png");
+                    })
+                    .AddField("Mukyu~", "Invalid port for checking ouchies!").Build();
+                return true;
             }
 
             MinecraftStatus Status = null;
@@ -567,7 +605,7 @@ namespace UNObot.Services
             for (var i = 0; i < Attempts; i++)
             {
                 if (!ExtendedGet)
-                    ExtendedGet = QueryHandlerService.GetInfoMCNew(IP, Port, out Status);
+                    ExtendedGet = GetInfoMCNew(IP, Port, out Status);
             }
 
             if (!ExtendedGet || Status == null)
@@ -576,9 +614,9 @@ namespace UNObot.Services
                 return false;
             }
 
-            var Users = GetMCUsers(QueryHandlerService.PSurvival, 27286, "mukyumukyu", out _);
+            var Server = SpecialServers[Port];
+            var Users = GetMCUsers(Server.Server, Server.RCONPort, Server.Password, out _);
 
-            var Random = ThreadSafeRandom.ThisThreadsRandom;
             var PlayersOnline = "";
             foreach(var User in Users)
                 if (User.Online)
@@ -631,14 +669,14 @@ namespace UNObot.Services
 
             try
             {
-                if (IP != "127.0.0.1" && IP != "williamle.com" && IP != "localhost" && IP != QueryHandlerService.PSurvival || Port != 27285)
+                if (!OutsideServers.Contains(IP) || !SpecialServers.ContainsKey(Port))
                 {
                     Message = "This server does not support experience transfer.";
                 }
                 else
                 {
                     // One-shot query, since it takes too long if it does fail. Plus, it's only one query instead of multi-A2S.
-                    var ExtendedGet = QueryHandlerService.GetInfoMCNew(IP, Port, out var Status);
+                    var ExtendedGet = GetInfoMCNew(IP, Port, out var Status);
 
                     if (!ExtendedGet || Status == null)
                     {
@@ -646,7 +684,8 @@ namespace UNObot.Services
                     }
                     else
                     {
-                        var Users = GetMCUsers(QueryHandlerService.PSurvival, 27286, "mukyumukyu", out var Client, false);
+                        var Server = SpecialServers[Port];
+                        var Users = GetMCUsers(Server.Server, Server.RCONPort, Server.Password, out var Client, false);
                         var SourceMCUsername = UNODatabaseService.GetMinecraftUser(Source).GetAwaiter().GetResult();
                         var SourceUser = Users.Find(o => o.Online && o.Username == SourceMCUsername);
                         var TargetUser = Users.Find(o => o.Online && o.Username == Target);
@@ -702,7 +741,7 @@ namespace UNObot.Services
                 .WithAuthor(author =>
                 {
                     author
-                        .WithName("Experience Transfer")
+                        .WithName($"Experience Transfer for {IP}")
                         .WithIconUrl("https://williamle.com/unobot/unobot.png");
                 })
                 .AddField(MessageTitle, Message);

@@ -21,7 +21,27 @@ namespace UNObot.Services
     //Mukyu... but I implemented the Minecraft RCON (Valve RCON) protocol by hand, as well as the query.
     public static class QueryHandlerService
     {
-        public const string PSurvival = "192.168.2.6";
+        public static IReadOnlyList<string> OutsideServers;
+        public static IReadOnlyDictionary<ushort, RCONServer> SpecialServers;
+
+        public struct RCONServer
+        {
+            public string Server { get; set; }
+            public ushort RCONPort { get; set; }
+            public string Password { get; set; }
+        }
+
+        static QueryHandlerService()
+        {
+            var External = new List<string>();
+            External.Add("williamle.com");
+            OutsideServers = External;
+            var Servers = new Dictionary<ushort, RCONServer>();
+            // Stored in plain-text anyways, plus is server-side. You could easily read this from a file on the same server.
+            Servers.Add(27285, new RCONServer { Server = "192.168.2.6", RCONPort = 27286, Password = "mukyumukyu"});
+            Servers.Add(29292, new RCONServer { Server = "192.168.2.42", RCONPort = 29293, Password = "mukyumukyu"});
+            SpecialServers = Servers;
+        }
 
         public static string HumanReadable(float Time)
         {
