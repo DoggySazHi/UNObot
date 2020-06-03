@@ -20,7 +20,7 @@ namespace UNObot.Services
         public string Food { get; set; }
         public int Experience { get; set; }
     }
-    
+
     public static class MinecraftProcessorService
     {
         // NOTE: It's the query port!
@@ -30,7 +30,7 @@ namespace UNObot.Services
 
             // Smaller than ulong keys, big enough for RNG.
             var random = new Random();
-            var RandomKey = (ulong) random.Next(0, 10000);
+            var RandomKey = (ulong)random.Next(0, 10000);
             var Success = QueryHandlerService.CreateRCON(IP, Port, Password, RandomKey, out Client);
             if (!Success)
             {
@@ -45,9 +45,9 @@ namespace UNObot.Services
             Client.ExecuteSingle("scoreboard players list", true);
             var PlayerListTotal = Client.Data.Substring(Client.Data.IndexOf(':') + 1).Split(',').ToList();
 
-            foreach(var Player in PlayerListTotal)
+            foreach (var Player in PlayerListTotal)
             {
-                var Name = Player.Replace((char) 0, ' ').Trim();
+                var Name = Player.Replace((char)0, ' ').Trim();
                 Client.ExecuteSingle($"scoreboard players get {Name} Ouchies", true);
                 if (Client.Status == RCONStatus.SUCCESS)
                 {
@@ -62,9 +62,9 @@ namespace UNObot.Services
 
             foreach (var o in PlayerListOnline)
             {
-                var Name = o.Replace((char) 0, ' ').Trim();
+                var Name = o.Replace((char)0, ' ').Trim();
                 if (string.IsNullOrWhiteSpace(Name)) continue;
-                
+
                 /*
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
@@ -75,7 +75,7 @@ namespace UNObot.Services
                 */
 
                 var Command = $"data get entity {Name}";
-                var RandomKey2 = (ulong) random.Next(0, 10000);
+                var RandomKey2 = (ulong)random.Next(0, 10000);
                 var Success2 = QueryHandlerService.CreateRCON(IP, Port, Password, RandomKey2, out var Client2);
                 if (!Success2)
                 {
@@ -83,7 +83,7 @@ namespace UNObot.Services
                     return Output;
                 }
                 Client2.Execute(Command, true);
-                
+
                 if (Client2.Status != RCONStatus.SUCCESS)
                     continue;
                 if (Client2.Data.Equals("No entity was found", StringComparison.CurrentCultureIgnoreCase))
@@ -99,7 +99,7 @@ namespace UNObot.Services
                     JSONString = JSONString.Replace("I;", "");
                     // Regex to completely ignore the b, s, l, f, and d patterns. Probably the worst RegEx I ever wrote.
                     JSONString = Regex.Replace(JSONString, @"([:|\[|\,]\s*\-?\d*.?\d+)[s|b|l|f|d|L]", "${1}");
-                    
+
                     double[] Coordinates = null;
 
                     /*
@@ -117,7 +117,7 @@ namespace UNObot.Services
                         throw;
                     }
                     */
-                    
+
                     JToken JSON;
                     string exceptionPath = null;
                     using (var textReader = new StringReader(JSONString))
@@ -143,7 +143,7 @@ namespace UNObot.Services
                         var badToken = JSON.SelectToken(exceptionPath);
                         LoggerService.Log(LogSeverity.Error, $"Error occurred with token: {badToken}");
                     }
-                    
+
                     var Dimension = JSON["Dimension"];
                     var Position = JSON["Pos"];
                     var Food = JSON["foodLevel"]?.ToObject<string>() ?? "20";
@@ -151,8 +151,8 @@ namespace UNObot.Services
                     var XPLevels = JSON["XpLevel"].ToObject<int>();
                     var XPPercent = JSON["XpP"].ToObject<float>();
                     var XPPoints = (Exp(XPLevels + 1, 0) - Exp(XPLevels, 0)) * XPPercent;
-                    var Experience = (int) Exp(XPLevels, (int) Math.Floor(XPPoints));
-                    var Health = HealthNum != null ? Math.Ceiling((float) HealthNum).ToString("#") : "20";
+                    var Experience = (int)Exp(XPLevels, (int)Math.Floor(XPPoints));
+                    var Health = HealthNum != null ? Math.Ceiling((float)HealthNum).ToString("#") : "20";
 
                     if (Position?[0] != null && Position[1] != null && Position[2] != null && Dimension != null)
                     {
@@ -190,7 +190,7 @@ namespace UNObot.Services
                 Client2.Dispose();
             }
 
-            if(Dispose)
+            if (Dispose)
                 Client.Dispose();
             return Output;
         }
@@ -212,23 +212,36 @@ namespace UNObot.Services
                         {
                             double.Parse(CoordinateMessage[0]),
                             double.Parse(CoordinateMessage[1]),
-                            double.Parse(CoordinateMessage[2])
+                            double.Parse(CoordinateMessage[2]),
+                            -1
                         };
                     else
-                        Coordinates = new[] {0.0, 0.0, 0.0};
+                        Coordinates = new[] { 0.0, 0.0, 0.0, -1 };
                 }
                 catch (FormatException)
                 {
                     LoggerService.Log(LogSeverity.Warning, $"Failed to process coordinates. Response: {Client.Data}");
                 }
             }
+
+            Client.ExecuteSingle($"execute as @e[tag=coordfinder] at @s in the_nether run execute as @a[name={Name}, distance=..1] run tag @e[tag=coordfinder] add found", true);
+            Client.ExecuteSingle($"tag @e[tag=cooordfinder] list");
+            if (!Client.Data.Contains("found"))
+            {
+                Coordinates[3] = 1;
+                Client.ExecuteSingle($"execute as @e[tag=coordfinder] at @s in the_end run execute as @a[name={Name}, distance=..1] run tag @e[tag=coordfinder] add found", true);
+                Client.ExecuteSingle($"tag @e[tag=cooordfinder] list");
+                if (!Client.Data.Contains("found"))
+                    Coordinates[3] = 0;
+            }
+
             Client.ExecuteSingle("execute as @e[tag=coordfinder] at @s run kill @s", true);
 
             Client.ExecuteSingle($"scoreboard players get {Name} Health", true);
             var Health = Client.Data.Contains("has") ? Client.Data.Split(' ')[2] : "??";
             Client.ExecuteSingle($"scoreboard players get {Name} Food", true);
             var Food = Client.Data.Contains("has") ? Client.Data.Split(' ')[2] : "??";
-            
+
             Client.ExecuteSingle($"execute as {Name} at @s run experience query @s points", true);
             var PointData = Client.Data;
             Client.ExecuteSingle($"execute as {Name} at @s run experience query @s levels", true);
@@ -239,7 +252,7 @@ namespace UNObot.Services
                 {
                     var Points = int.Parse(PointData.Split(' ')[2]);
                     var Levels = int.Parse(Client.Data.Split(' ')[2]);
-                    Experience = (int) Exp(Levels, Points);
+                    Experience = (int)Exp(Levels, Points);
                 }
                 catch (FormatException)
                 {
@@ -255,10 +268,10 @@ namespace UNObot.Services
                 CorrectUser.Experience = Experience;
             }
         }
-        
+
         private static double Exp(int levels, int points)
         {
-            if(levels <= 16)
+            if (levels <= 16)
                 return Math.Pow(levels, 2) + 6 * levels + points;
             if (levels <= 31)
                 return 2.5 * Math.Pow(levels, 2) - 40.5 * levels + 360 + points;

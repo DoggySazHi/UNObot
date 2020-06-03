@@ -128,7 +128,7 @@ namespace UNObot.Modules
 
         [Command("setnote", RunMode = RunMode.Async)]
         [Help(new[] { ".setnote" }, "Set a note about yourself. Write nothing to delete your message", true, "UNObot 2.1")]
-        public async Task SetNote([Remainder]string text)
+        public async Task SetNote([Remainder] string text)
         {
             text = text.Trim().Normalize();
             if (text == "")
@@ -158,7 +158,7 @@ namespace UNObot.Modules
 
         [Command("setusernote", RunMode = RunMode.Async), RequireOwner]
         [Help(new[] { ".setusernote" }, "Set a note about others. This command can only be ran by DoggySazHi.", false, "UNObot 2.1")]
-        public async Task SetNote(string user, [Remainder]string text)
+        public async Task SetNote(string user, [Remainder] string text)
         {
             user = user.Trim(new Char[] { ' ', '<', '>', '!', '@' });
             if (!UInt64.TryParse(user, out ulong userid))
@@ -211,7 +211,7 @@ namespace UNObot.Modules
                             await UNODatabaseService.AddCard(Context.User.Id, card);
                             await UNODatabaseService.SetCardsDrawn(Context.Guild.Id, 1);
                             AFKtimer.ResetTimer(Context.Guild.Id);
-                            
+
                             return;
                         }
                         await ReplyAsync("Why draw now? Draw when it's your turn!");
@@ -337,7 +337,7 @@ namespace UNObot.Modules
                                     await ReplyAsync("You cannot skip without drawing at least one card! HINT: You can try using .quickplay/.qp instead of .draw and .skip.");
                                     return;
                                 }
-                                
+
                                 // Useless, it will be cleared.
                                 //await UNODatabaseService.SetCardsDrawn(Context.Guild.Id, CardsDrawn + 1);
 
@@ -396,7 +396,7 @@ namespace UNObot.Modules
                 await ReplyAsync($"It is now <@{await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
                 AFKtimer.ResetTimer(Context.Guild.Id);
             }
-            
+
             if (await UNODatabaseService.IsPlayerInGame(Context.User.Id))
             {
                 if (await UNODatabaseService.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
@@ -408,7 +408,7 @@ namespace UNObot.Modules
                             var Gamemode = await UNODatabaseService.GetGamemode(Context.Guild.Id);
                             var PlayerCards = await UNODatabaseService.GetCards(Context.User.Id);
                             var CurrentCard = await UNODatabaseService.GetCurrentCard(Context.Guild.Id);
-                            
+
                             foreach (var c in PlayerCards)
                             {
                                 if (c.Color == CurrentCard.Color || c.Value == CurrentCard.Value)
@@ -418,7 +418,7 @@ namespace UNObot.Modules
                                     return;
                                 }
                             }
-                            
+
                             if (Gamemode.HasFlag(Gamemodes.Retro))
                             {
                                 var CardsDrawn = await UNODatabaseService.GetCardsDrawn(Context.Guild.Id);
@@ -463,7 +463,7 @@ namespace UNObot.Modules
                                     await UNODatabaseService.SetCardsDrawn(Context.Guild.Id, cardsDrawn);
                                     break;
                                 }
-                                
+
                                 if (Gamemode.HasFlag(Gamemodes.Retro))
                                 {
                                     await ReplyAsync($"You have drawn a card and skipped.");
@@ -472,7 +472,7 @@ namespace UNObot.Modules
                                     break;
                                 }
                             }
-                            
+
                             AFKtimer.ResetTimer(Context.Guild.Id);
                         }
                         else
@@ -553,6 +553,12 @@ namespace UNObot.Modules
                         }
                         else
                         {
+                            var Description = await UNODatabaseService.GetDescription(Context.Guild.Id);
+                            if (Description.Contains("forgot") && Description.Contains(Context.User.Id.ToString()))
+                            {
+                                await ReplyAsync("You have already been penalized; no extra cards will be drawn.");
+                                return;
+                            }
                             await ReplyAsync("Uh oh, you still have more than one card! Two cards have been added to your hand.");
                             await UNODatabaseService.AddCard(Context.User.Id, RandomCard());
                             await UNODatabaseService.AddCard(Context.User.Id, RandomCard());
@@ -591,7 +597,7 @@ namespace UNObot.Modules
                 {
                     var Response = "";
                     var FlagMode = Gamemodes.Normal;
-                    foreach(var Mode in Modes)
+                    foreach (var Mode in Modes)
                         switch (Mode.ToLower().Trim())
                         {
                             case "private":
@@ -610,15 +616,15 @@ namespace UNObot.Modules
                                 await ReplyAsync($"\"{Mode}\" is not a valid mode!");
                                 return;
                         }
-                    
+
                     // For interfering modes, cancel actions
                     if (FlagMode.HasFlag(Gamemodes.Fast | Gamemodes.Retro))
                     {
                         await ReplyAsync($"You cannot play both fast modes simultaneously.");
                         return;
                     }
-                    
-                    await UNODatabaseService.AddGuild(Context.Guild.Id, 1, (ushort) FlagMode);
+
+                    await UNODatabaseService.AddGuild(Context.Guild.Id, 1, (ushort)FlagMode);
                     Response += $"Playing in modes: {FlagMode}!";
                     await UNODatabaseService.GetUsersAndAdd(Context.Guild.Id);
                     foreach (ulong player in await UNODatabaseService.GetPlayers(Context.Guild.Id))
