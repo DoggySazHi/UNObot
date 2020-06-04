@@ -39,6 +39,8 @@ RCONSocket* CreateObjectB(char* ip, ushort port, char* password)
 
 int main()
 {
+    signal(SIGPIPE, SIG_IGN);
+
     IPEndpoint server;
     server.ip = "192.168.2.42";
     server.port = 29293;

@@ -8,6 +8,11 @@
 #include <unistd.h>
 #include <array>
 
+// Because it exists on LINUX, but not on MacOS or BSD. Luckily, Windows does not care.
+#ifndef MSG_NOSIGNAL
+    #define MSG_NOSIGNAL 0
+#endif
+
 RCONSocket::RCONSocket(IPEndpoint& server, std::string& password) : RCONSocket(server, password, "")
 {
 
@@ -45,6 +50,11 @@ void RCONSocket::CreateConnection(const std::string& command)
     // Allow for the reusing of addresses (ESPECIALLY IF IT FORGETS TO CLOSE)
     int yes = 1; // ok, why do you want a pointer to a true
     auto success = setsockopt(socket_descriptor , SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == 0;
+
+    // :reimuthink: stupid SIGPIPE keep crashing UNObot (MacOS/BSD)
+#ifdef SO_NOSIGPIPE
+    success |= setsockopt (socket_descriptor, SOL_SOCKET, SO_NOSIGPIPE, &yes, sizeof(int)) == 0;
+#endif
 
     // Set the timeouts
     struct timeval timeout {};
@@ -103,7 +113,7 @@ bool RCONSocket::IsConnected() const
 bool RCONSocket::Authenticate()
 {
     auto payload = MakePacketData(password, SERVERDATA_AUTH, 0);
-    send(socket_descriptor, payload.data(), payload.size(), 0);
+    send(socket_descriptor, payload.data(), payload.size(), MSG_NOSIGNAL);
 #ifndef NDEBUG
     Utilities::hexdump(payload.data(), payload.size());
 #endif
@@ -133,7 +143,7 @@ void RCONSocket::ExecuteSingle(const std::string& command)
 
     WipeBuffer();
     auto payload = MakePacketData(command, SERVERDATA_EXECCOMMAND, 0);
-    send(socket_descriptor, payload.data(), payload.size(), 0);
+    send(socket_descriptor, payload.data(), payload.size(), MSG_NOSIGNAL);
     int count = read(socket_descriptor, rx_data->data(), BUFFER_SIZE);
     auto id = LittleEndianReader(rx_data, 4);
     auto type = LittleEndianReader(rx_data, 8);
@@ -168,9 +178,9 @@ void RCONSocket::Execute(const std::string& command)
     auto packet_count = 0;
     auto payload = MakePacketData(command, SERVERDATA_EXECCOMMAND, 0);
     auto end_of_command = MakePacketData("", TYPE_100, 0);
-    send(socket_descriptor, payload.data(), payload.size(), 0);
+    send(socket_descriptor, payload.data(), payload.size(), MSG_NOSIGNAL);
     //TODO fix SIGPIPE
-    send(socket_descriptor, end_of_command.data(), end_of_command.size(), 0);
+    send(socket_descriptor, end_of_command.data(), end_of_command.size(), MSG_NOSIGNAL);
 
     data.clear();
     WipeBuffer();
