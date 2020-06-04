@@ -8,11 +8,13 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Discord;
 using Newtonsoft.Json.Linq;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace UNObot.Services
 {
     public enum WebhookType : byte { Bitbucket = 0, OctoPrint = 1 }
-    
+
     public class WebhookListener : IDisposable
     {
         private static WebhookListener Instance;
@@ -44,7 +46,7 @@ namespace UNObot.Services
             {
                 LoggerService.Log(LogSeverity.Critical, "Webhook Listener failed!", ex);
             }
-            
+
             Task.Run(Listener);
         }
 
@@ -69,7 +71,7 @@ namespace UNObot.Services
                     LoggerService.Log(LogSeverity.Debug, Headers);
 
                     var Sections = URL.Split("/");
-                    
+
                     if (Sections.Length >= 3)
                     {
                         var ChannelParse = ulong.TryParse(Sections[1], out var Channel);
@@ -79,15 +81,15 @@ namespace UNObot.Services
                             var (Guild, Type) = UNODatabaseService.GetWebhook(Channel, Key).GetAwaiter().GetResult();
                             if (Guild != 0)
                             {
-                                LoggerService.Log(LogSeverity.Debug, 
-                                    $"Found server, points to {Guild}, {Channel} of type {(WebhookType) Type}.");
+                                LoggerService.Log(LogSeverity.Debug,
+                                    $"Found server, points to {Guild}, {Channel} of type {(WebhookType)Type}.");
                                 using var Data = Request.InputStream;
                                 using var Reader = new StreamReader(Data);
                                 var Text = Reader.ReadToEnd();
                                 //LoggerService.Log(LogSeverity.Verbose, $"Data received: {text}");
                                 try
                                 {
-                                    ProcessMessage(Text, Guild, Channel, (WebhookType) Type);
+                                    ProcessMessage(Text, Guild, Channel, (WebhookType)Type);
                                 }
                                 catch (Exception e)
                                 {
@@ -98,7 +100,7 @@ namespace UNObot.Services
                             {
                                 LoggerService.Log(LogSeverity.Debug, "Does not seem to point to a server.");
                             }
-                            
+
                         }
                         else
                         {
@@ -118,7 +120,7 @@ namespace UNObot.Services
             }
             catch (Exception e)
             {
-                if(!e.Message.Contains("close", StringComparison.CurrentCultureIgnoreCase))
+                if (!e.Message.Contains("close", StringComparison.CurrentCultureIgnoreCase))
                     LoggerService.Log(LogSeverity.Critical, "Webhook Listener commit the die.", e);
             }
         }
@@ -127,11 +129,11 @@ namespace UNObot.Services
         {
             public string RepoName { get; set; }
             public string RepoAvatar { get; set; }
-            
+
             public string CommitHash { get; set; }
             public string CommitMessage { get; set; }
             public DateTime CommitDate { get; set; }
-            
+
             public string UserName { get; set; }
             public string UserAvatar { get; set; }
         }
@@ -167,42 +169,50 @@ namespace UNObot.Services
                         var badToken = Thing.SelectToken(exceptionPath);
                         LoggerService.Log(LogSeverity.Error, $"Error occurred with token: {badToken}");
                     }
-                    
+
                     //LoggerService.Log(LogSeverity.Debug, Thing.ToString(Formatting.Indented));
                     if (Thing["push"] != null)
                     {
-                        var Commit = Thing["push"]?["changes"]?.First?["new"]?["target"];
+                        var Commits = Thing["push"]?["changes"].Children();
 
-                        var CommitInfo = new CommitInfo
+                        var Embeds = new List<Embed>();
+                        foreach (var Item in Commits)
                         {
-                            RepoName = Thing["repository"]?["name"]?.ToString() ?? "Unknown Repo Name",
-                            RepoAvatar = Thing["repository"]?["links"]?["avatar"]?["href"]?.ToString() ?? "",
-                            
-                            CommitHash = Commit?["hash"]?.ToString() ?? "Hash not found!",
-                            CommitMessage = Commit?["message"]?.ToString() ?? "No message was attached.",
-                            CommitDate = Commit?["date"]?.ToObject<DateTime>() ?? DateTime.Now,
-                            
-                            UserName = Commit?["author"]?["user"]?["nickname"]?.ToString() ??
-                                       Commit?["author"]?["user"]?["display_name"]?.ToString() ?? "Unknown User Name",
-                            UserAvatar = Commit?["author"]?["user"]?["links"]?["avatar"]?["href"]?.ToString() ?? ""
-                        };
-                        /*
-                        LoggerService.Log(LogSeverity.Debug,
-                            $"RepoName: {CommitInfo.RepoName}\n" +
-                            $"RepoAvatar: {CommitInfo.RepoAvatar}\n" +
-                            $"CommitHash: {CommitInfo.CommitHash}\n" +
-                            $"CommitMessage: {CommitInfo.CommitMessage}\n" +
-                            $"CommitDate: {CommitInfo.CommitDate}\n" +
-                            $"UserName: {CommitInfo.UserName}\n" +
-                            $"UserAvatar: {CommitInfo.UserAvatar}");
-                        */
-                        EmbedDisplayService.WebhookEmbed(CommitInfo, out var Embed);
-                        Program._client.GetGuild(Guild).GetTextChannel(Channel).SendMessageAsync(null, false, Embed);
+                            var Commit = Item["new"]?["target"];
+
+                            var CommitInfo = new CommitInfo
+                            {
+                                RepoName = Thing["repository"]?["name"]?.ToString() ?? "Unknown Repo Name",
+                                RepoAvatar = Thing["repository"]?["links"]?["avatar"]?["href"]?.ToString() ?? "",
+
+                                CommitHash = Commit?["hash"]?.ToString() ?? "Hash not found!",
+                                CommitMessage = Commit?["message"]?.ToString() ?? "No message was attached.",
+                                CommitDate = Commit?["date"]?.ToObject<DateTime>() ?? DateTime.Now,
+
+                                UserName = Commit?["author"]?["user"]?["nickname"]?.ToString() ??
+                                           Commit?["author"]?["user"]?["display_name"]?.ToString() ?? "Unknown User Name",
+                                UserAvatar = Commit?["author"]?["user"]?["links"]?["avatar"]?["href"]?.ToString() ?? ""
+                            };
+                            /*
+                            LoggerService.Log(LogSeverity.Debug,
+                                $"RepoName: {CommitInfo.RepoName}\n" +
+                                $"RepoAvatar: {CommitInfo.RepoAvatar}\n" +
+                                $"CommitHash: {CommitInfo.CommitHash}\n" +
+                                $"CommitMessage: {CommitInfo.CommitMessage}\n" +
+                                $"CommitDate: {CommitInfo.CommitDate}\n" +
+                                $"UserName: {CommitInfo.UserName}\n" +
+                                $"UserAvatar: {CommitInfo.UserAvatar}");
+                            */
+                            EmbedDisplayService.WebhookEmbed(CommitInfo, out var Embed);
+                            Embeds.Add(Embed);
+                        }
+                        Embeds.Sort((a, b) => (int)(a.Timestamp - b.Timestamp).Value.TotalMilliseconds);
+                        Embeds.ForEach(o => Program._client.GetGuild(Guild).GetTextChannel(Channel).SendMessageAsync(null, false, o));
                     }
                 }
                 else if (WType == WebhookType.OctoPrint)
                 {
-                    
+
                 }
             }
             catch (JsonReaderException)
@@ -220,7 +230,7 @@ namespace UNObot.Services
                 Server.Stop();
                 Server.Close();
                 Exited.Close();
-                ((IDisposable) Server)?.Dispose();
+                ((IDisposable)Server)?.Dispose();
                 Exited.Dispose();
             }
             catch (Exception e)
