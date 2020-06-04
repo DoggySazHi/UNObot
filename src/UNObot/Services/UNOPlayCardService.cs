@@ -100,9 +100,10 @@ namespace UNObot.Services
             Response += $"{UsernamePlayer} has placed an {playCard}.\n";
             if (await UNODatabaseService.GetUNOPlayer(server) != 0)
             {
-                Response += $"<@{await UNODatabaseService.GetUNOPlayer(server)}> has forgot to say UNO! They have been given 2 cards.\n";
-                await UNODatabaseService.AddCard(await UNODatabaseService.GetUNOPlayer(server), UNOCoreServices.RandomCard());
-                await UNODatabaseService.AddCard(await UNODatabaseService.GetUNOPlayer(server), UNOCoreServices.RandomCard());
+                Response += $"<@{await UNODatabaseService.GetUNOPlayer(server)}> forgot to say UNO! They have been given 2 cards.\n";
+                var UNOPlayer = await UNODatabaseService.GetUNOPlayer(server);
+                await UNODatabaseService.AddCard(UNOPlayer, UNOCoreServices.RandomCard());
+                await UNODatabaseService.AddCard(UNOPlayer, UNOCoreServices.RandomCard());
                 await UNODatabaseService.SetUNOPlayer(server, 0);
             }
             await UNODatabaseService.RemoveCard(player, playCard);

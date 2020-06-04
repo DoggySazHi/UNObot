@@ -546,9 +546,18 @@ namespace UNObot.Modules
                 {
                     if (await UNODatabaseService.IsServerInGame(Context.Guild.Id))
                     {
-                        if (await UNODatabaseService.GetUNOPlayer(Context.Guild.Id) == Context.User.Id)
+                        var UNOPlayer = await UNODatabaseService.GetUNOPlayer(Context.Guild.Id);
+                        var Gamemode = await UNODatabaseService.GetGamemode(Context.Guild.Id);
+                        if (UNOPlayer == Context.User.Id)
                         {
                             await ReplyAsync("Great, you have one card left! Everyone still has a chance however, so keep going!");
+                            await UNODatabaseService.SetUNOPlayer(Context.Guild.Id, 0);
+                        }
+                        else if (UNOPlayer != 0 && Gamemode.HasFlag(Gamemodes.UNOCallout))
+                        {
+                            await ReplyAsync($"<@{UNOPlayer}> was too slow to call out their UNO by {Context.User.Username}! They have been given two cards.");
+                            await UNODatabaseService.AddCard(UNOPlayer, RandomCard());
+                            await UNODatabaseService.AddCard(UNOPlayer, RandomCard());
                             await UNODatabaseService.SetUNOPlayer(Context.Guild.Id, 0);
                         }
                         else
@@ -576,14 +585,14 @@ namespace UNObot.Modules
 
         [Command("start", RunMode = RunMode.Async)]
         [DisableDMs]
-        [Help(new[] { ".start" }, "Start the game you have joined in the current server. Now, you can also add an option to it, which currently include \"fast\", which allows the skip command, and \"private\", preventing others to see the exact amount of cards you have.", true, "UNObot 0.2")]
+        [Help(new[] { ".start" }, "Start the game you have joined in the current server. Now, you can also add an option to it, which currently include \"fast\", which allows the skip command, \"retro\", which like fast, allows skipping but limits draws, \"unocallout\", allowing .uno to be used to penalize a person who forgot to call out UNO, and \"private\", preventing others to see the exact amount of cards you have.", true, "UNObot 0.2")]
         public async Task Start()
         {
             await Start("normal");
         }
         [Command("start", RunMode = RunMode.Async)]
         [DisableDMs]
-        [Help(new[] { ".start (gamemode)" }, "Start the game you have joined in the current server. Now, you can also add an option to it, which currently include \"fast\", which allows the skip command, and \"private\", preventing others to see the exact amount of cards you have.", true, "UNObot 0.2")]
+        [Help(new[] { ".start (gamemode)" }, "Start the game you have joined in the current server. Now, you can also add an option to it, which currently include \"fast\", which allows the skip command, \"retro\", which like fast, allows skipping but limits draws, \"unocallout\", allowing .uno to be used to penalize a person who forgot to call out UNO, and \"private\", preventing others to see the exact amount of cards you have.", true, "UNObot 0.2")]
 
         public async Task Start(params string[] Modes)
         {
@@ -608,6 +617,9 @@ namespace UNObot.Modules
                                 break;
                             case "retro":
                                 FlagMode |= Gamemodes.Retro;
+                                break;
+                            case "unocallout":
+                                FlagMode |= Gamemodes.UNOCallout;
                                 break;
                             case "normal":
                                 FlagMode |= Gamemodes.Normal;
