@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Discord;
 using Newtonsoft.Json.Linq;
-using System.Linq;
 using System.Collections.Generic;
 
 namespace UNObot.Services
@@ -22,6 +21,7 @@ namespace UNObot.Services
         private readonly byte[] DefaultResponse;
         private readonly ManualResetEvent Exited;
         private bool Stop;
+        private bool Disposed;
 
         private WebhookListener()
         {
@@ -214,6 +214,9 @@ namespace UNObot.Services
         public void Dispose()
         {
             Stop = true;
+            if (Disposed)
+                return;
+            Disposed = true;
 
             try
             {
