@@ -153,7 +153,7 @@ void RCONSocket::ExecuteSingle(const std::string& command)
     if(id == -1 || type != SERVERDATA_RESPONSE_VALUE || count <= 12)
     {
         std::cerr << "Failed to execute \"" << command << "\"!" << '\n';
-        status = AUTH_FAIL;
+        status = INT_FAIL;
         return;
     }
     data.clear();
@@ -268,12 +268,13 @@ void RCONSocket::Execute(const std::string& command)
     }
     if(count < 0)
     {
-        if(count == EAGAIN)
-        {
-
-        }
         status = INT_FAIL;
         std::cerr << "Socket errored! (" << count << "): " << strerror(errno) << '\n';
+        if(packet_count >= 2)
+        {
+            std::cerr << "There is data read, therefore will be marked as a success." << '\n';
+            status = SUCCESS;
+        }
     }
     else
         status = SUCCESS;

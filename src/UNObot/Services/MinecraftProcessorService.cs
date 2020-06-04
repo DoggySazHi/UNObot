@@ -225,12 +225,12 @@ namespace UNObot.Services
             }
 
             Client.ExecuteSingle($"execute as @e[tag=coordfinder] at @s in the_nether run execute as @a[name={Name}, distance=..1] run tag @e[tag=coordfinder] add found", true);
-            Client.ExecuteSingle($"tag @e[tag=cooordfinder] list");
+            Client.ExecuteSingle($"tag @e[tag=cooordfinder] list", true);
             if (!Client.Data.Contains("found"))
             {
                 Coordinates[3] = 1;
                 Client.ExecuteSingle($"execute as @e[tag=coordfinder] at @s in the_end run execute as @a[name={Name}, distance=..1] run tag @e[tag=coordfinder] add found", true);
-                Client.ExecuteSingle($"tag @e[tag=cooordfinder] list");
+                Client.ExecuteSingle($"tag @e[tag=cooordfinder] list", true);
                 if (!Client.Data.Contains("found"))
                     Coordinates[3] = 0;
             }
