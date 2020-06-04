@@ -193,16 +193,6 @@ namespace UNObot.Services
                                            Commit?["author"]?["user"]?["display_name"]?.ToString() ?? "Unknown User Name",
                                 UserAvatar = Commit?["author"]?["user"]?["links"]?["avatar"]?["href"]?.ToString() ?? ""
                             };
-                            /*
-                            LoggerService.Log(LogSeverity.Debug,
-                                $"RepoName: {CommitInfo.RepoName}\n" +
-                                $"RepoAvatar: {CommitInfo.RepoAvatar}\n" +
-                                $"CommitHash: {CommitInfo.CommitHash}\n" +
-                                $"CommitMessage: {CommitInfo.CommitMessage}\n" +
-                                $"CommitDate: {CommitInfo.CommitDate}\n" +
-                                $"UserName: {CommitInfo.UserName}\n" +
-                                $"UserAvatar: {CommitInfo.UserAvatar}");
-                            */
                             EmbedDisplayService.WebhookEmbed(CommitInfo, out var Embed);
                             Embeds.Add(Embed);
                         }
