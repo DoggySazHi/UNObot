@@ -3,7 +3,7 @@
 #include <vector>
 
 #define PORT 27286
-#define BUFFER_SIZE 4096
+#define BUFFER_SIZE 4110
 #define MAX_PACKETS_READ 40
 
 enum RCONStatus {CONN_FAIL, AUTH_FAIL, EXEC_FAIL, INT_FAIL, SUCCESS};
@@ -33,7 +33,7 @@ class RCONSocket {
 private:
     std::string& password;
         int socket_descriptor;
-        std::array<uint8_t, 4096>* rx_data = new std::array<uint8_t, BUFFER_SIZE>();
+        std::array<uint8_t, BUFFER_SIZE>* rx_data = new std::array<uint8_t, BUFFER_SIZE>();
         static std::array<uint8_t, 4> LittleEndianConverter(int data);
         void CreateConnection(const std::string& command = "");
         static int LittleEndianReader(std::array<uint8_t, BUFFER_SIZE>* data, int start_index);

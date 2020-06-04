@@ -169,6 +169,7 @@ void RCONSocket::Execute(const std::string& command)
     auto payload = MakePacketData(command, SERVERDATA_EXECCOMMAND, 0);
     auto end_of_command = MakePacketData("", TYPE_100, 0);
     send(socket_descriptor, payload.data(), payload.size(), 0);
+    //TODO fix SIGPIPE
     send(socket_descriptor, end_of_command.data(), end_of_command.size(), 0);
 
     data.clear();
@@ -254,6 +255,10 @@ void RCONSocket::Execute(const std::string& command)
     }
     if(count < 0)
     {
+        if(count == EAGAIN)
+        {
+
+        }
         status = INT_FAIL;
         std::cerr << "Socket errored! (" << count << "): " << strerror(errno) << '\n';
     }
