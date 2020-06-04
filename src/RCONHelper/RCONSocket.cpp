@@ -7,6 +7,9 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <array>
+#ifndef SIGPIPE
+    #include <sys/signal.h>
+#endif
 
 // Because it exists on LINUX, but not on MacOS or BSD. Luckily, Windows does not care.
 #ifndef MSG_NOSIGNAL

@@ -1,6 +1,9 @@
 ﻿#include "RCONHelper.h"
 #include <string>
 #include <iostream>
+#ifndef SIGPIPE
+    #include <sys/signal.h>
+#endif
 
 RCONSocket* CreateObjectB(IPEndpoint& server, std::string &password)
 {
