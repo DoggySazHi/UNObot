@@ -123,6 +123,14 @@ bool RCONSocket::Authenticate()
 
 void RCONSocket::ExecuteSingle(const std::string& command)
 {
+    if(status == AUTH_FAIL)
+        Authenticate();
+    if(status == AUTH_FAIL)
+    {
+        std::cerr << "Failed to re-authenticate!" << '\n';
+        return;
+    }
+
     WipeBuffer();
     auto payload = MakePacketData(command, SERVERDATA_EXECCOMMAND, 0);
     send(socket_descriptor, payload.data(), payload.size(), 0);
@@ -149,6 +157,14 @@ void RCONSocket::ExecuteSingle(const std::string& command)
 
 void RCONSocket::Execute(const std::string& command)
 {
+    if(status == AUTH_FAIL)
+        Authenticate();
+    if(status == AUTH_FAIL)
+    {
+        std::cerr << "Failed to re-authenticate!" << '\n';
+        return;
+    }
+
     auto packet_count = 0;
     auto payload = MakePacketData(command, SERVERDATA_EXECCOMMAND, 0);
     auto end_of_command = MakePacketData("", TYPE_100, 0);
