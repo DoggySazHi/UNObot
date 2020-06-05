@@ -9,6 +9,8 @@ using Newtonsoft.Json;
 using Discord;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Linq;
 
 namespace UNObot.Services
 {
@@ -89,7 +91,7 @@ namespace UNObot.Services
                                 LoggerService.Log(LogSeverity.Verbose, $"Data received: {Text}");
                                 try
                                 {
-                                    ProcessMessage(Text, Guild, Channel, (WebhookType)Type);
+                                    ProcessMessage(Text, Request.Headers, Guild, Channel, (WebhookType)Type);
                                 }
                                 catch (Exception e)
                                 {
@@ -138,7 +140,7 @@ namespace UNObot.Services
             public string UserAvatar { get; set; }
         }
 
-        private void ProcessMessage(string Message, ulong Guild, ulong Channel, WebhookType WType)
+        private void ProcessMessage(string Message, NameValueCollection Headers, ulong Guild, ulong Channel, WebhookType WType)
         {
             try
             {
@@ -202,7 +204,67 @@ namespace UNObot.Services
                 }
                 else if (WType == WebhookType.OctoPrint)
                 {
-
+                    var ContentType = Headers.GetValues("Content-Type");
+                    var Boundaries = ContentType.Where(o => o.Contains("boundary="));
+                    if (Boundaries.Count() == 0)
+                        return;
+                    var Boundary = Boundaries.First();
+                    var Key = Boundary.Remove(0, 9);
+                    LoggerService.Log(LogSeverity.Debug, $"Key: {Key}");
+                    var Parts = Message.Split(
+                        new[] { "\r\n", "\r", "\n" },
+                        StringSplitOptions.None
+                    );
+                    var Data = new Dictionary<string, string>();
+                    byte State = 0; // 0: Invalid (not ready) 1: Waiting for name 2: Empty 3: Data
+                    string Name = "";
+                    foreach (var Line in Parts)
+                    {
+                        if (Line.Contains(Key))
+                        {
+                            if (State == 0)
+                                LoggerService.Log(LogSeverity.Warning, "Huh? Got two boundaries in a row!");
+                            State = 1;
+                            continue;
+                        }
+                        if (State == 1)
+                        {
+                            if (string.IsNullOrWhiteSpace(Line))
+                                break;
+                            if (Line.Contains("Content-Disposition: form-data; name=\""))
+                            {
+                                var FirstIndex = Line.IndexOf("\"");
+                                var LastIndex = Line.LastIndexOf("\"");
+                                if (FirstIndex != -1 && FirstIndex != LastIndex)
+                                {
+                                    Name = Line.Substring(FirstIndex + 1, LastIndex - FirstIndex - 1);
+                                    LoggerService.Log(LogSeverity.Error, $"Found a name of {Name}");
+                                    State = 2;
+                                    continue;
+                                }
+                            }
+                            State = 0;
+                            LoggerService.Log(LogSeverity.Warning, "Did not see a valid name!");
+                        }
+                        if (State == 2)
+                        {
+                            State = 3;
+                            continue;
+                        }
+                        if (State == 3)
+                        {
+                            if (string.IsNullOrWhiteSpace(Name))
+                            {
+                                LoggerService.Log(LogSeverity.Error, "Will not read an empty name!");
+                            }
+                            else
+                            {
+                                Data.Add(Name, Line);
+                                LoggerService.Log(LogSeverity.Debug, $"Read info! Key: {Name}, Data: {Line}");
+                            }
+                            State = 0;
+                        }
+                    }
                 }
             }
             catch (JsonReaderException)
