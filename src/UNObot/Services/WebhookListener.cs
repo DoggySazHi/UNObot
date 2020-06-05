@@ -86,7 +86,7 @@ namespace UNObot.Services
                                 using var Data = Request.InputStream;
                                 using var Reader = new StreamReader(Data);
                                 var Text = Reader.ReadToEnd();
-                                LoggerService.Log(LogSeverity.Verbose, $"Data received: {text}");
+                                LoggerService.Log(LogSeverity.Verbose, $"Data received: {Text}");
                                 try
                                 {
                                     ProcessMessage(Text, Guild, Channel, (WebhookType)Type);
