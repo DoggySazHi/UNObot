@@ -209,7 +209,7 @@ namespace UNObot.Services
                     if (Boundaries.Count() == 0)
                         return;
                     var Boundary = Boundaries.First();
-                    var Key = Boundary.Remove(0, Boundary.IndexOf('='));
+                    var Key = Boundary.Remove(0, Boundary.IndexOf('=') + 1);
                     LoggerService.Log(LogSeverity.Debug, $"Key: {Key}");
                     var Parts = Message.Split(
                         new[] { "\r\n", "\r", "\n" },
@@ -222,7 +222,7 @@ namespace UNObot.Services
                     {
                         if (Line.Contains(Key))
                         {
-                            if (State == 0)
+                            if (State == 1)
                                 LoggerService.Log(LogSeverity.Warning, "Huh? Got two boundaries in a row!");
                             State = 1;
                             continue;
@@ -238,7 +238,7 @@ namespace UNObot.Services
                                 if (FirstIndex != -1 && FirstIndex != LastIndex)
                                 {
                                     Name = Line.Substring(FirstIndex + 1, LastIndex - FirstIndex - 1);
-                                    LoggerService.Log(LogSeverity.Error, $"Found a name of {Name}");
+                                    LoggerService.Log(LogSeverity.Debug, $"Found a name of {Name}");
                                     State = 2;
                                     continue;
                                 }
