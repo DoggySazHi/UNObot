@@ -241,7 +241,6 @@ namespace UNObot.Services
                         break;
                 }
             }
-            LoggerService.Log(LogSeverity.Debug, card.Color + " " + card.Value + " " + myColor + " " + myCard);
             return card;
         }
     }

@@ -83,7 +83,6 @@ namespace UNObot.Services
             bool existing = false;
             foreach (var card in await UNODatabaseService.GetCards(player))
             {
-                LoggerService.Log(LogSeverity.Debug, $"Compared {card} to the user's {playCard}");
                 existing |= card.Equals(playCard);
             }
             if (!existing)
