@@ -209,7 +209,7 @@ namespace UNObot.Services
                     if (Boundaries.Count() == 0)
                         return;
                     var Boundary = Boundaries.First();
-                    var Key = Boundary.Remove(0, 9);
+                    var Key = Boundary.Remove(0, Boundary.IndexOf('='));
                     LoggerService.Log(LogSeverity.Debug, $"Key: {Key}");
                     var Parts = Message.Split(
                         new[] { "\r\n", "\r", "\n" },
