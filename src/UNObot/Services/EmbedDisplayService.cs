@@ -774,5 +774,35 @@ namespace UNObot.Services
             Result = builder.Build();
             return true;
         }
+
+        public static bool OctoprintEmbed(WebhookListener.OctoprintInfo Info, out Embed Result)
+        {
+            var Random = ThreadSafeRandom.ThisThreadsRandom;
+
+            var builder = new EmbedBuilder()
+                .WithColor(new Color(Random.Next(0, 256), Random.Next(0, 256), Random.Next(0, 256)))
+                .WithTimestamp(Info.Timestamp)
+                .WithFooter(footer =>
+                {
+                    footer
+                        .WithText($"UNObot {Program.version} - By DoggySazHi")
+                        .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
+                })
+                .WithAuthor(author =>
+                {
+                    author
+                        .WithName($"{Info.Topic} - {Info.Job?["file"]?["name"] ?? "Unknown File"}")
+                        .WithIconUrl("https://williamle.com/unobot/unobot.png");
+                })
+                .WithDescription(Info.Message)
+                .AddField("Status", Info.State["text"], true)
+                .AddField("Progress", Info.Progress["completion"]?.ToObject<double>().ToString("N2") + "%", true)
+                .AddField("Time", HumanReadable(Info.Progress["printTime"]?.ToObject<float>() ?? 0), true);
+            var Estimate = Info.Progress["printTimeLeft"]?.ToObject<float>();
+            if (Estimate != null)
+                builder.AddField("Estimated Time Left", HumanReadable(Estimate.Value), true);
+            Result = builder.Build();
+            return true;
+        }
     }
 }

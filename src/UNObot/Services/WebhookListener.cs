@@ -66,11 +66,13 @@ namespace UNObot.Services
                     var Context = Server.GetContext();
                     var Request = Context.Request;
                     var URL = Context.Request.RawUrl;
+#if DEBUG
                     LoggerService.Log(LogSeverity.Debug, $"Received request from {URL}.");
                     var Headers = "Headers: ";
                     foreach (var Key in Request.Headers.AllKeys)
                         Headers += $"{Key}, {Request.Headers[Key]}\n";
                     LoggerService.Log(LogSeverity.Debug, Headers);
+#endif
 
                     var Sections = URL.Split("/");
 
@@ -83,12 +85,16 @@ namespace UNObot.Services
                             var (Guild, Type) = UNODatabaseService.GetWebhook(Channel, Key).GetAwaiter().GetResult();
                             if (Guild != 0)
                             {
+#if DEBUG
                                 LoggerService.Log(LogSeverity.Debug,
                                     $"Found server, points to {Guild}, {Channel} of type {(WebhookType)Type}.");
+#endif
                                 using var Data = Request.InputStream;
                                 using var Reader = new StreamReader(Data);
                                 var Text = Reader.ReadToEnd();
+#if DEBUG
                                 LoggerService.Log(LogSeverity.Verbose, $"Data received: {Text}");
+#endif
                                 try
                                 {
                                     ProcessMessage(Text, Request.Headers, Guild, Channel, (WebhookType)Type);
@@ -96,18 +102,20 @@ namespace UNObot.Services
                                 catch (Exception e)
                                 {
                                     LoggerService.Log(LogSeverity.Critical, "Webhook Parser failed!", e);
+                                    LoggerService.Log(LogSeverity.Critical, $"URL: {URL}");
+                                    LoggerService.Log(LogSeverity.Critical, Text);
+
                                 }
                             }
                             else
                             {
-                                LoggerService.Log(LogSeverity.Debug, "Does not seem to point to a server.");
+                                LoggerService.Log(LogSeverity.Warning, $"Does not seem to point to a server. URL: {URL}");
                             }
 
                         }
                         else
                         {
-                            LoggerService.Log(LogSeverity.Debug,
-                                $"Given an invalid channel!");
+                            LoggerService.Log(LogSeverity.Debug, $"Given an invalid channel! URL: {URL}");
                         }
                     }
 
@@ -116,8 +124,9 @@ namespace UNObot.Services
 
                     using var output = response.OutputStream;
                     output.Write(DefaultResponse, 0, DefaultResponse.Length);
-
+#if DEBUG
                     LoggerService.Log(LogSeverity.Debug, "Sent back OK.");
+#endif
                 }
             }
             catch (Exception e)
@@ -138,6 +147,17 @@ namespace UNObot.Services
 
             public string UserName { get; set; }
             public string UserAvatar { get; set; }
+        }
+
+        public struct OctoprintInfo
+        {
+            public string Topic { get; set; }
+            public JObject Extra { get; set; }
+            public string Message { get; set; }
+            public JObject Progress { get; set; }
+            public JObject State { get; set; }
+            public JObject Job { get; set; }
+            public DateTimeOffset Timestamp { get; set; }
         }
 
         private void ProcessMessage(string Message, NameValueCollection Headers, ulong Guild, ulong Channel, WebhookType WType)
@@ -175,8 +195,8 @@ namespace UNObot.Services
                     //LoggerService.Log(LogSeverity.Debug, Thing.ToString(Formatting.Indented));
                     if (Thing["push"] != null)
                     {
-                        var Commits = Thing["push"]?["changes"].Children();
-
+                        var Commits = Thing["push"]?["changes"]?.Children();
+                        if (Commits == null) return;
                         var Embeds = new List<Embed>();
                         foreach (var Item in Commits)
                         {
@@ -198,19 +218,23 @@ namespace UNObot.Services
                             EmbedDisplayService.WebhookEmbed(CommitInfo, out var Embed);
                             Embeds.Add(Embed);
                         }
-                        Embeds.Sort((a, b) => (int)(a.Timestamp - b.Timestamp).Value.TotalMilliseconds);
+                        Embeds.Sort((a, b) => (int)((a.Timestamp ?? DateTimeOffset.Now) - (b.Timestamp ?? DateTimeOffset.Now)).TotalMilliseconds);
                         Embeds.ForEach(o => Program._client.GetGuild(Guild).GetTextChannel(Channel).SendMessageAsync(null, false, o));
                     }
                 }
                 else if (WType == WebhookType.OctoPrint)
                 {
                     var ContentType = Headers.GetValues("Content-Type");
-                    var Boundaries = ContentType.Where(o => o.Contains("boundary="));
-                    if (Boundaries.Count() == 0)
+                    if (ContentType == null)
+                    {
+                        LoggerService.Log(LogSeverity.Error, "Could not find Content-Type!");
+                        return;
+                    }
+                    var Boundaries = ContentType.Where(o => o.Contains("boundary=")).ToList();
+                    if (!Boundaries.Any())
                         return;
                     var Boundary = Boundaries.First();
                     var Key = Boundary.Remove(0, Boundary.IndexOf('=') + 1);
-                    LoggerService.Log(LogSeverity.Debug, $"Key: {Key}");
                     var Parts = Message.Split(
                         new[] { "\r\n", "\r", "\n" },
                         StringSplitOptions.None
@@ -233,12 +257,11 @@ namespace UNObot.Services
                                 break;
                             if (Line.Contains("Content-Disposition: form-data; name=\""))
                             {
-                                var FirstIndex = Line.IndexOf("\"");
-                                var LastIndex = Line.LastIndexOf("\"");
+                                var FirstIndex = Line.IndexOf("\"", StringComparison.Ordinal);
+                                var LastIndex = Line.LastIndexOf("\"", StringComparison.Ordinal);
                                 if (FirstIndex != -1 && FirstIndex != LastIndex)
                                 {
                                     Name = Line.Substring(FirstIndex + 1, LastIndex - FirstIndex - 1);
-                                    LoggerService.Log(LogSeverity.Debug, $"Found a name of {Name}");
                                     State = 2;
                                     continue;
                                 }
@@ -260,11 +283,28 @@ namespace UNObot.Services
                             else
                             {
                                 Data.Add(Name, Line);
-                                LoggerService.Log(LogSeverity.Debug, $"Read info! Key: {Name}, Data: {Line}");
                             }
                             State = 0;
                         }
                     }
+
+                    foreach (var Thing in Data)
+                    {
+                        LoggerService.Log(LogSeverity.Debug, $"{Thing.Key} - {Thing.Value}");
+                    }
+
+                    var Info = new OctoprintInfo
+                    {
+                        Extra = JObject.Parse(Data["extra"]),
+                        Topic = Data["topic"],
+                        Timestamp = DateTimeOffset.FromUnixTimeSeconds(long.Parse(Data["currentTime"])),
+                        State = JObject.Parse(Data["state"]),
+                        Job = JObject.Parse(Data["job"]),
+                        Message = Data["message"],
+                        Progress = JObject.Parse(Data["progress"])
+                    };
+                    EmbedDisplayService.OctoprintEmbed(Info, out var Embed);
+                    Program._client.GetGuild(Guild).GetTextChannel(Channel).SendMessageAsync(null, false, Embed);
                 }
             }
             catch (JsonReaderException)

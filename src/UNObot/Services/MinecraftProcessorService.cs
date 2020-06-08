@@ -201,7 +201,7 @@ namespace UNObot.Services
                     $"execute as {Name} at @s run summon minecraft:armor_stand ~ ~ ~ {{Invisible:1b,PersistenceRequired:1b,Tags:[\"coordfinder\"]}}",
                     true);
             Client.ExecuteSingle("execute as @e[tag=coordfinder] at @s run tp @s ~ ~ ~", true);
-            double[] Coordinates = null;
+            double[] Coordinates = new double[4];
             if (Client.Status == RCONStatus.SUCCESS)
             {
                 try
@@ -225,12 +225,16 @@ namespace UNObot.Services
             }
 
             Client.ExecuteSingle($"execute as @e[tag=coordfinder] at @s in the_nether run execute as @a[name={Name}, distance=..1] run tag @e[tag=coordfinder] add found", true);
+            LoggerService.Log(LogSeverity.Debug, $"Armor-stand for dimension check: {Client.Data}");
             Client.ExecuteSingle($"tag @e[tag=cooordfinder] list", true);
+            LoggerService.Log(LogSeverity.Debug, $"Armor-stand for dimension check: {Client.Data}");
             if (!Client.Data.Contains("found"))
             {
                 Coordinates[3] = 1;
                 Client.ExecuteSingle($"execute as @e[tag=coordfinder] at @s in the_end run execute as @a[name={Name}, distance=..1] run tag @e[tag=coordfinder] add found", true);
+                LoggerService.Log(LogSeverity.Debug, $"Armor-stand for dimension check: {Client.Data}");
                 Client.ExecuteSingle($"tag @e[tag=cooordfinder] list", true);
+                LoggerService.Log(LogSeverity.Debug, $"Armor-stand for dimension check: {Client.Data}");
                 if (!Client.Data.Contains("found"))
                     Coordinates[3] = 0;
             }
