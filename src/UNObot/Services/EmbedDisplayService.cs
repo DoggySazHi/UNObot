@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
+using Newtonsoft.Json.Linq;
 using YoutubeExplode.Playlists;
 using static UNObot.Services.MinecraftProcessorService;
 using static UNObot.Services.QueryHandlerService;
@@ -795,12 +796,22 @@ namespace UNObot.Services
                         .WithIconUrl("https://williamle.com/unobot/unobot.png");
                 })
                 .WithDescription(Info.Message)
-                .AddField("Status", Info.State["text"], true)
-                .AddField("Progress", Info.Progress["completion"]?.ToObject<double>().ToString("N2") + "%", true)
-                .AddField("Time", HumanReadable(Info.Progress["printTime"]?.ToObject<float>() ?? 0), true);
-            var Estimate = Info.Progress["printTimeLeft"]?.ToObject<float>();
-            if (Estimate != null)
-                builder.AddField("Estimated Time Left", HumanReadable(Estimate.Value), true);
+                .AddField("Status", Info.State["text"], true);
+            var Completion = Info.Progress["completion"];
+            var PrintTime = Info.Progress["printTime"];
+            var PrintTimeLeft = Info.Progress["printTimeLeft"];
+            var BytesFile = Info.Job["file"]?["size"];
+            var BytesPrinted = Info.Progress["filepos"];
+            if(Completion != null && Completion.Type != JTokenType.Null)
+                builder.AddField("Progress", Completion.ToObject<double>().ToString("N2") + "%", true);
+            if(PrintTime != null && PrintTime.Type != JTokenType.Null)
+                builder.AddField("Time", HumanReadable(PrintTime.ToObject<float>()), true);
+            if (PrintTimeLeft != null && PrintTimeLeft.Type != JTokenType.Null)
+                builder.AddField("Estimated Time Left", HumanReadable(PrintTimeLeft.ToObject<float>()), true);
+            if (BytesFile != null && BytesFile.Type != JTokenType.Null)
+                builder.AddField("File Size", (BytesFile.ToObject<float>()/1000000.0).ToString("N2") + " MB", true);
+            if (BytesPrinted != null && BytesPrinted.Type != JTokenType.Null)
+                builder.AddField("Bytes Printed", (BytesPrinted.ToObject<float>()/1000000.0).ToString("N2") + " MB", true);
             Result = builder.Build();
             return true;
         }
