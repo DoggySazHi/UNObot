@@ -39,7 +39,7 @@ namespace UNObot.Services
             var Servers = new Dictionary<ushort, RCONServer>();
             // Stored in plain-text anyways, plus is server-side. You could easily read this from a file on the same server.
             Servers.Add(27285, new RCONServer { Server = "192.168.2.6", RCONPort = 27286, Password = "mukyumukyu"});
-            Servers.Add(29292, new RCONServer { Server = "192.168.2.42", RCONPort = 29293, Password = "mukyumukyu"});
+            Servers.Add(29292, new RCONServer { Server = "192.168.2.11", RCONPort = 29293, Password = "mukyumukyu"});
             SpecialServers = Servers;
         }
 

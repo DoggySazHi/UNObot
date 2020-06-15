@@ -94,6 +94,53 @@ namespace UNObot.Services
                 LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
+
+        public struct Server
+        {
+            public ulong ID { get; }
+            public bool InGame { get; }
+            public Card CurrentCard { get; }
+            public ulong UNOUser { get; }
+            public int CardsDrawn { get; }
+            public Queue<ulong> Queue { get; }
+            public string Description { get; }
+            public ulong PlayChannel { get; }
+            public bool HasDefaultChannel { get; }
+            public bool EnforceChannels { get; }
+            public List<ulong> AllowedChannels { get; }
+            public char CommandPrefix { get; }
+            public List<Card> Cards { get; }
+
+            /*
+            public Server(ulong ID)
+            {
+                this.ID = ID;
+                const string CommandText = "SELECT * FROM UNObot.Games WHERE server = ?";
+                var Parameters = new List<MySqlParameter>();
+                var p1 = new MySqlParameter
+                {
+                    Value = ID
+                };
+                Parameters.Add(p1);
+                
+                using MySqlDataReader dr = MySqlHelper.ExecuteReader(ConnString, CommandText, Parameters.ToArray());
+                try
+                {
+                    while (dr.Read())
+                    {
+                        if (!await dr.IsDBNullAsync(0))
+                            description = dr.GetString(0);
+                    }
+                }
+                catch (MySqlException ex)
+                {
+                    LoggerService.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                }
+                return description;
+            }
+            */
+        }
+        
         public static async Task UpdateDescription(ulong server, string text)
         {
             const string CommandText = "UPDATE Games SET description = ? WHERE server = ?";
@@ -905,7 +952,7 @@ namespace UNObot.Services
             for (int i = 0; i < ThreadSafeRandom.ThisThreadsRandom.Next(0, players.Count - 1); i++)
                 players.Enqueue(players.Dequeue());
             if (players.Count == 0)
-                LoggerService.Log(LogSeverity.Warning, "[WARN] Why is the list empty when I'm getting players?");
+                LoggerService.Log(LogSeverity.Warning, "Why is the list empty when I'm getting players?");
             string json = JsonConvert.SerializeObject(players);
             List<MySqlParameter> Parameters = new List<MySqlParameter>();
             const string CommandText = "UPDATE UNObot.Games SET queue = ? WHERE server = ? AND inGame = 1";
