@@ -1,42 +1,42 @@
-﻿using Discord;
-using Discord.Commands;
-using Discord.WebSocket;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Discord;
+using Discord.Commands;
+using Discord.WebSocket;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UNObot.Services;
 
 namespace UNObot
 {
-    class Program
+    internal class Program
     {
-        public static string version = "Unknown Version";
+        public static string Version = "Unknown Version";
         public static string Commit = "Unknown Commit";
         public static string Build = "???";
-        public static List<Command> commands = new List<Command>();
+        public static List<Command> Commands = new List<Command>();
 
-        static async Task Main()
+        public static DiscordSocketClient Client;
+        private static readonly ManualResetEvent ExitEvent = new ManualResetEvent(false);
+        private IConfiguration _config;
+
+        private static async Task Main()
         {
             LoggerService.GetSingleton();
             LoggerService.Log(LogSeverity.Info, "UNObot Launcher 2.1");
             await new Program().MainAsync();
         }
 
-        public static DiscordSocketClient _client;
-        IConfiguration _config;
-        private static readonly ManualResetEvent ExitEvent = new ManualResetEvent(false);
-
-        public async Task MainAsync()
+        private async Task MainAsync()
         {
-            _client = new DiscordSocketClient(
+            Client = new DiscordSocketClient(
                 new DiscordSocketConfig
                 {
                     AlwaysDownloadUsers = true,
@@ -47,13 +47,13 @@ namespace UNObot
             );
             _config = BuildConfig();
 
-            _client.Log += LoggerService.GetSingleton().LogDiscord;
+            Client.Log += LoggerService.GetSingleton().LogDiscord;
 
             var services = ConfigureServices();
             await services.GetRequiredService<CommandHandlingService>().InitializeAsync(services);
 
-            await _client.LoginAsync(TokenType.Bot, _config["token"]);
-            await _client.StartAsync();
+            await Client.LoginAsync(TokenType.Bot, _config["token"]);
+            await Client.StartAsync();
             //_client.ReactionAdded += Modules.InputHandler.ReactionAdded;
 #if DEBUG
             DebugService.GetSingleton();
@@ -61,8 +61,8 @@ namespace UNObot
             UBOWServerLoggerService.GetSingleton();
             WebhookListener.GetSingleton();
             await UNODatabaseService.CleanAll();
-            await _client.SetGameAsync($"UNObot {version}");
-            Console.Title = $"UNObot {version}";
+            await Client.SetGameAsync($"UNObot {Version}");
+            Console.Title = $"UNObot {Version}";
             await LoadHelp();
             SafeExitHandler();
             ExitEvent.WaitOne();
@@ -70,20 +70,44 @@ namespace UNObot
             await OnExit();
         }
 
-        private void SafeExitHandler()
+        private static void SafeExitHandler()
         {
-            AppDomain.CurrentDomain.ProcessExit += (o, a) => { try { ExitEvent.Set(); } catch (Exception) { /* ignored */ } };
+            AppDomain.CurrentDomain.ProcessExit += (o, a) =>
+            {
+                try
+                {
+                    ExitEvent.Set();
+                }
+                catch (Exception)
+                {
+                    /* ignored */
+                }
+            };
 
             Console.CancelKeyPress += (sender, eventArgs) =>
             {
                 eventArgs.Cancel = true;
-                try { ExitEvent.Set(); } catch (Exception) { /* ignored */ }
+                try
+                {
+                    ExitEvent.Set();
+                }
+                catch (Exception)
+                {
+                    /* ignored */
+                }
             };
         }
 
         public static void Exit()
         {
-            try { ExitEvent.Set(); } catch (Exception) { /* ignored */ }
+            try
+            {
+                ExitEvent.Set();
+            }
+            catch (Exception)
+            {
+                /* ignored */
+            }
         }
 
         private static async Task OnExit()
@@ -95,18 +119,18 @@ namespace UNObot
             LoggerService.Log(LogSeverity.Info, "Webhook Listener service disabled.");
             RCONManager.GetSingleton().Dispose();
             LoggerService.Log(LogSeverity.Info, "RCON service disabled.");
-            await _client.StopAsync().ConfigureAwait(false);
-            _client.Dispose();
+            await Client.StopAsync().ConfigureAwait(false);
+            Client.Dispose();
             LoggerService.Log(LogSeverity.Info, "Quit successfully.");
             LoggerService.GetSingleton().Dispose();
             Environment.Exit(0);
         }
 
-        IServiceProvider ConfigureServices()
+        private IServiceProvider ConfigureServices()
         {
             return new ServiceCollection()
                 // Base
-                .AddSingleton(_client)
+                .AddSingleton(Client)
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
                 // Extra
@@ -115,153 +139,176 @@ namespace UNObot
                 .BuildServiceProvider();
         }
 
-        IConfiguration BuildConfig()
+        private static IConfiguration BuildConfig()
         {
             LoggerService.Log(LogSeverity.Info, $"Reading files in {Directory.GetCurrentDirectory()}");
             if (!File.Exists("config.json"))
             {
-                LoggerService.Log(LogSeverity.Info, "Config doesn't exist! The file has been created, please edit all fields to be correct. Exiting.");
-                JObject obj = new JObject(new JProperty("token", "Replace With Private Key"),
-                                          new JProperty("connStr", "server=127.0.0.1;user=UNObot;database=UNObot;port=3306;password=DBPassword"),
-                                          new JProperty("version", "Unknown Version")
-                                         );
+                LoggerService.Log(LogSeverity.Info,
+                    "Config doesn't exist! The file has been created, please edit all fields to be correct. Exiting.");
+                var obj = new JObject(new JProperty("token", "yourPrivateKey"),
+                    new JProperty("connStr",
+                        "server=127.0.0.1;user=UNObot;database=UNObot;port=3306;password=DBPassword"),
+                    new JProperty("version", "Unknown Version")
+                );
                 File.CreateText("config.json").Dispose();
-                using (StreamWriter sr = new StreamWriter("config.json", false))
+                using (var sr = new StreamWriter("config.json", false))
+                {
                     sr.Write(obj);
+                }
+
                 Environment.Exit(1);
                 return null;
             }
+
             var json = JObject.Parse(File.ReadAllText("config.json"));
-            int errors = 0;
+            var errors = 0;
             if (!json.ContainsKey("token") || json["token"]?.ToString() == "Replace With Private Key")
             {
-                LoggerService.Log(LogSeverity.Error, "Error: Config is missing Bot Token (token)! Please add the property, or update the property to have a token."); errors++;
+                LoggerService.Log(LogSeverity.Error,
+                    "Error: Config is missing Bot Token (token)! Please add the property, or update the property to have a token.");
+                errors++;
             }
+
             if (!json.ContainsKey("connStr"))
             {
-                LoggerService.Log(LogSeverity.Error, "Error: Config is missing Database Connection String (connStr)!"); errors++;
+                LoggerService.Log(LogSeverity.Error, "Error: Config is missing Database Connection String (connStr)!");
+                errors++;
             }
+
             if (!json.ContainsKey("version"))
             {
-                LoggerService.Log(LogSeverity.Error, "Error: Config is missing version (version)!"); errors++;
+                LoggerService.Log(LogSeverity.Error, "Error: Config is missing version (version)!");
+                errors++;
             }
+
             if (errors != 0)
             {
                 LoggerService.Log(LogSeverity.Error, "Please fix all of these errors. Exiting.");
                 Environment.Exit(1);
                 return null;
             }
+
             if (!File.Exists("commit"))
             {
-                LoggerService.Log(LogSeverity.Warning, "The build information seems to be missing. Either this is a debug copy, or has been deleted.");
+                LoggerService.Log(LogSeverity.Warning,
+                    "The build information seems to be missing. Either this is a debug copy, or has been deleted.");
             }
             else
             {
-                var Result = ReadCommitBuild();
-                Commit = Result.Commit;
-                Build = Result.Build;
+                var (commit, build) = ReadCommitBuild();
+                Commit = commit;
+                Build = build;
             }
+
             return new ConfigurationBuilder()
-                        .SetBasePath(Directory.GetCurrentDirectory())
-                        .AddJsonFile("config.json")
-                        .Build();
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("config.json")
+                .Build();
         }
-        static async Task LoadHelp()
+
+        private static async Task LoadHelp()
         {
             var types = from c in Assembly.GetExecutingAssembly().GetTypes()
-                        where c.IsClass
-                        select c;
+                where c.IsClass
+                select c;
             foreach (var type in types)
+            foreach (var module in type.GetMethods())
             {
-                foreach (var module in type.GetMethods())
-                {
-                    var helpatt = module.GetCustomAttribute(typeof(Help)) as Help;
-                    var aliasatt = module.GetCustomAttribute(typeof(AliasAttribute)) as AliasAttribute;
-                    var disabledms = module.GetCustomAttribute(typeof(DisableDMs)) as DisableDMs;
+                var helpAtt = module.GetCustomAttribute(typeof(HelpAttribute)) as HelpAttribute;
+                var aliasAtt = module.GetCustomAttribute(typeof(AliasAttribute)) as AliasAttribute;
+                var disableDmsAtt = module.GetCustomAttribute(typeof(DisableDMsAttribute)) as DisableDMsAttribute;
 
-                    /*
+                /*
 
-                    var owneronlyatt = module.GetCustomAttribute(typeof(RequireOwnerAttribute)) as RequireOwnerAttribute;
-                    var userpermsatt = module.GetCustomAttribute(typeof(RequireUserPermissionAttribute)) as RequireUserPermissionAttribute;
+                    var ownerOnlyAtt = module.GetCustomAttribute(typeof(RequireOwnerAttribute)) as RequireOwnerAttribute;
+                    var userPermsAtt = module.GetCustomAttribute(typeof(RequireUserPermissionAttribute)) as RequireUserPermissionAttribute;
                     var remainder = module.GetCustomAttribute(typeof(RemainderAttribute)) as RemainderAttribute;
 
-                    foreach (var pinfo in module.GetParameters())
+                    foreach (var pInfo in module.GetParameters())
                     {
-                        var name = pinfo.Name;
+                        var name = pInfo.Name;
                     }
 
                     */
 
-                    var aliases = new List<string>();
-                    //check if it is a command
-                    if (!(module.GetCustomAttribute(typeof(CommandAttribute)) is CommandAttribute nameatt)) continue;
+                var aliases = new List<string>();
+                //check if it is a command
+                if (!(module.GetCustomAttribute(typeof(CommandAttribute)) is CommandAttribute nameAtt)) continue;
 
-                    var foundHelp = helpatt == null ? "Missing help." : "Found help.";
-                    var disabledForDMs = disabledms != null;
-                    LoggerService.Log(LogSeverity.Verbose, $"Loaded \"{nameatt.Text}\". {foundHelp}");
-                    var positioncmd = commands.FindIndex(o => o.CommandName == nameatt.Text);
-                    if (aliasatt?.Aliases != null)
-                        aliases = aliasatt.Aliases.ToList();
-                    if (positioncmd < 0)
+                var foundHelp = helpAtt == null ? "Missing help." : "Found help.";
+                var disabledForDMs = disableDmsAtt != null;
+                LoggerService.Log(LogSeverity.Verbose, $"Loaded \"{nameAtt.Text}\". {foundHelp}");
+                var positionCmd = Commands.FindIndex(o => o.CommandName == nameAtt.Text);
+                if (aliasAtt?.Aliases != null)
+                    aliases = aliasAtt.Aliases.ToList();
+                if (positionCmd < 0)
+                {
+                    Commands.Add(helpAtt != null
+                        ? new Command(nameAtt.Text, aliases, helpAtt.Usages.ToList(), helpAtt.HelpMsg,
+                            helpAtt.Active, helpAtt.Version)
+                        : new Command(nameAtt.Text, aliases, new List<string> {$".{nameAtt.Text}"},
+                            "No help is given for this command.", true, "Unknown Version", disabledForDMs));
+                }
+                else
+                {
+                    Commands[positionCmd].DisableDMs = disabledForDMs;
+                    if (helpAtt != null)
                     {
-                        commands.Add(helpatt != null
-                            ? new Command(nameatt.Text, aliases, helpatt.Usages.ToList(), helpatt.HelpMsg,
-                                helpatt.Active, helpatt.Version)
-                            : new Command(nameatt.Text, aliases, new List<string> {$".{nameatt.Text}"},
-                                "No help is given for this command.", true, "Unknown Version", disabledForDMs));
+                        if (Commands[positionCmd].Help == "No help is given for this command.")
+                            Commands[positionCmd].Help = helpAtt.HelpMsg;
+                        Commands[positionCmd].Usages =
+                            Commands[positionCmd].Usages.Union(helpAtt.Usages.ToList()).ToList();
+                        Commands[positionCmd].Active |= helpAtt.Active;
+                        if (Commands[positionCmd].Version == "Unknown Version")
+                            Commands[positionCmd].Version = helpAtt.Version;
                     }
-                    else
-                    {
-                        commands[positioncmd].DisableDMs = disabledForDMs;
-                        if (helpatt != null)
-                        {
-                            if (commands[positioncmd].Help == "No help is given for this command.")
-                                commands[positioncmd].Help = helpatt.HelpMsg;
-                            commands[positioncmd].Usages = commands[positioncmd].Usages.Union(helpatt.Usages.ToList()).ToList();
-                            commands[positioncmd].Active |= helpatt.Active;
-                            if (commands[positioncmd].Version == "Unknown Version")
-                                commands[positioncmd].Version = helpatt.Version;
-                        }
-                        if (aliasatt != null)
-                            commands[positioncmd].Aliases = commands[positioncmd].Aliases.Union((aliasatt.Aliases ?? throw new InvalidOperationException()).ToList()).ToList();
-                    }
+
+                    if (aliasAtt != null)
+                        Commands[positionCmd].Aliases = Commands[positionCmd].Aliases
+                            .Union((aliasAtt.Aliases ?? throw new InvalidOperationException()).ToList()).ToList();
                 }
             }
-            commands = commands.OrderBy(o => o.CommandName).ToList();
-            LoggerService.Log(LogSeverity.Info, $"Loaded {commands.Count} commands!");
+
+            Commands = Commands.OrderBy(o => o.CommandName).ToList();
+            LoggerService.Log(LogSeverity.Info, $"Loaded {Commands.Count} commands!");
 
             //Fallback to help.json, ex; Updates, Custom help messages, or temporary troll "fixes"
             if (File.Exists("help.json"))
             {
                 LoggerService.Log(LogSeverity.Info, "Loading help.json into memory...");
 
-                using (StreamReader r = new StreamReader("help.json"))
+                using (var r = new StreamReader("help.json"))
                 {
-                    string json = await r.ReadToEndAsync();
-                    foreach (Command c in JsonConvert.DeserializeObject<List<Command>>(json))
+                    var json = await r.ReadToEndAsync();
+                    foreach (var c in JsonConvert.DeserializeObject<List<Command>>(json))
                     {
-                        var index = commands.FindIndex(o => o.CommandName == c.CommandName);
-                        if (index >= 0 && commands[index].Help == "No help is given for this command.")
-                            commands[index] = c;
+                        var index = Commands.FindIndex(o => o.CommandName == c.CommandName);
+                        if (index >= 0 && Commands[index].Help == "No help is given for this command.")
+                        {
+                            Commands[index] = c;
+                        }
                         else if (index < 0)
                         {
-                            LoggerService.Log(LogSeverity.Warning, "A command was added that isn't in UNObot's code. It will be added to the help list, but will not be active.");
-                            var newcommand = c;
-                            newcommand.Active = false;
-                            commands.Add(newcommand);
+                            LoggerService.Log(LogSeverity.Warning,
+                                "A command was added that isn't in UNObot's code. It will be added to the help list, but will not be active.");
+                            var newCommand = c;
+                            newCommand.Active = false;
+                            Commands.Add(newCommand);
                         }
                     }
                 }
-                LoggerService.Log(LogSeverity.Info, $"Loaded {commands.Count} commands including from help.json!");
+
+                LoggerService.Log(LogSeverity.Info, $"Loaded {Commands.Count} commands including from help.json!");
             }
         }
 
         public static (string Commit, string Build) ReadCommitBuild()
         {
-            if(File.Exists("commit"))
+            if (File.Exists("commit"))
                 try
                 {
-                    using StreamReader sr = new StreamReader("commit");
+                    using var sr = new StreamReader("commit");
                     if (sr.EndOfStream)
                         throw new Exception("");
                     var input = sr.ReadLine();
@@ -276,12 +323,13 @@ namespace UNObot
                 {
                     LoggerService.Log(LogSeverity.Error, "Build information file has not been created properly.");
                 }
+
             return ("Unknown Commit", "???");
         }
 
         public static async Task SendMessage(string text, ulong server)
         {
-            ulong channel = _client.GetGuild(server).DefaultChannel.Id;
+            var channel = Client.GetGuild(server).DefaultChannel.Id;
             LoggerService.Log(LogSeverity.Info, $"Channel: {channel}");
             if (await UNODatabaseService.HasDefaultChannel(server))
                 channel = await UNODatabaseService.GetDefaultChannel(server);
@@ -289,21 +337,26 @@ namespace UNObot
 
             try
             {
-                await _client.GetGuild(server).GetTextChannel(channel).SendMessageAsync(text);
+                await Client.GetGuild(server).GetTextChannel(channel).SendMessageAsync(text);
             }
             catch (Exception)
             {
                 try
                 {
-                   await _client.GetGuild(server).GetTextChannel(_client.GetGuild(server).DefaultChannel.Id).SendMessageAsync(text);
+                    await Client.GetGuild(server).GetTextChannel(Client.GetGuild(server).DefaultChannel.Id)
+                        .SendMessageAsync(text);
                 }
                 catch (Exception)
                 {
-                    LoggerService.Log(LogSeverity.Error, "Ok what the heck is this? Can't post in the default OR secondary channel?");
+                    LoggerService.Log(LogSeverity.Error,
+                        "Ok what the heck is this? Can't post in the default OR secondary channel?");
                 }
             }
         }
+
         public static async Task SendPM(string text, ulong user)
-            => await _client.GetUser(user).SendMessageAsync(text);
+        {
+            await Client.GetUser(user).SendMessageAsync(text);
+        }
     }
 }

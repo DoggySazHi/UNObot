@@ -15,20 +15,22 @@ namespace UNObot.Services
     public class YoutubeService
     {
         // Seconds.
-        private const double DL_TIMEOUT = 5.0;
-        private const int DL_ATTEMPTS = 3;
+        private const double DlTimeout = 5.0;
+
+        private const int DlAttempts = 3;
+
         // Milliseconds.
-        private const int DL_DELAY = 5000;
+        private const int DlDelay = 5000;
         private static readonly string DownloadPath = Path.Combine(Directory.GetCurrentDirectory(), "Music");
 
-        private static YoutubeService Instance;
-        private readonly YoutubeClient Client;
-        private readonly YoutubeConverter Converter;
+        private static YoutubeService _instance;
+        private readonly YoutubeClient _client;
+        private readonly YoutubeConverter _converter;
 
         private YoutubeService()
         {
-            Client = new YoutubeClient();
-            Converter = new YoutubeConverter(Client, "/usr/local/bin/ffmpeg");
+            _client = new YoutubeClient();
+            _converter = new YoutubeConverter(_client, "/usr/local/bin/ffmpeg");
             if (Directory.Exists(DownloadPath))
                 Directory.Delete(DownloadPath, true);
             Directory.CreateDirectory(DownloadPath);
@@ -36,77 +38,78 @@ namespace UNObot.Services
 
         public static YoutubeService GetSingleton()
         {
-            if (Instance == null)
-                Instance = new YoutubeService();
-            return Instance;
+            if (_instance == null)
+                _instance = new YoutubeService();
+            return _instance;
         }
 
-        public async Task<Tuple<string, string, string>> GetInfo(string URL)
+        public async Task<Tuple<string, string, string>> GetInfo(string url)
         {
-            URL = URL.Replace("<", "").Replace(">", "");
-            LoggerService.Log(LogSeverity.Debug, URL);
-            var VideoData = await Client.Videos.GetAsync(URL);
-            var Duration = TimeString(VideoData.Duration);
-            return new Tuple<string, string, string>(VideoData.Title, Duration, VideoData.Thumbnails.MediumResUrl);
+            url = url.Replace("<", "").Replace(">", "");
+            LoggerService.Log(LogSeverity.Debug, url);
+            var videoData = await _client.Videos.GetAsync(url);
+            var duration = TimeString(videoData.Duration);
+            return new Tuple<string, string, string>(videoData.Title, duration, videoData.Thumbnails.MediumResUrl);
         }
 
-        public async Task<Tuple<Tuple<string, string, string>, string>> SearchVideo(string Query)
+        public async Task<Tuple<Tuple<string, string, string>, string>> SearchVideo(string query)
         {
             LoggerService.Log(LogSeverity.Verbose, "Searching videos...");
-            var Data = await Client.Search.GetVideosAsync(Query).ToListAsync();
-            if (Data.Count == 0)
+            var data = await _client.Search.GetVideosAsync(query).ToListAsync();
+            if (data.Count == 0)
                 throw new Exception("No results found!");
-            var VideoData = Data[0];
-            var Duration = TimeString(VideoData.Duration);
+            var videoData = data[0];
+            var duration = TimeString(videoData.Duration);
             LoggerService.Log(LogSeverity.Verbose, "Found video.");
-            return new Tuple<Tuple<string, string, string>, string>(new Tuple<string, string, string>(VideoData.Title, Duration, VideoData.Thumbnails.MediumResUrl), VideoData.Url);
+            return new Tuple<Tuple<string, string, string>, string>(
+                new Tuple<string, string, string>(videoData.Title, duration, videoData.Thumbnails.MediumResUrl),
+                videoData.Url);
         }
 
-        public async Task<Playlist> GetPlaylist(string URL)
+        public async Task<Playlist> GetPlaylist(string url)
         {
-            URL = URL.Replace("<", "").Replace(">", "");
-            LoggerService.Log(LogSeverity.Debug, URL);
-            var VideoData = await Client.Playlists.GetAsync(URL);
-            return VideoData;
+            url = url.Replace("<", "").Replace(">", "");
+            LoggerService.Log(LogSeverity.Debug, url);
+            var videoData = await _client.Playlists.GetAsync(url);
+            return videoData;
         }
 
-        public async Task<List<Video>> GetPlaylistVideos(PlaylistId Id)
+        public async Task<List<Video>> GetPlaylistVideos(PlaylistId id)
         {
-            var Videos = await Client.Playlists.GetVideosAsync(Id).ToListAsync();
-            return Videos;
+            var videos = await _client.Playlists.GetVideosAsync(id).ToListAsync();
+            return videos;
         }
 
-        public async Task<string> GetPlaylistThumbnail(PlaylistId Id)
+        public async Task<string> GetPlaylistThumbnail(PlaylistId id)
         {
-            var Video = await Client.Playlists.GetVideosAsync(Id).FirstAsync();
-            return Video.Thumbnails.MediumResUrl;
+            var video = await _client.Playlists.GetVideosAsync(id).FirstAsync();
+            return video.Thumbnails.MediumResUrl;
         }
 
-        private string PathToGuildFolder(ulong Guild)
+        private string PathToGuildFolder(ulong guild)
         {
-            string DirectoryPath = Path.Combine(DownloadPath, Guild.ToString());
-            if (!Directory.Exists(DirectoryPath))
-                Directory.CreateDirectory(DirectoryPath);
-            return DirectoryPath;
+            var directoryPath = Path.Combine(DownloadPath, guild.ToString());
+            if (!Directory.Exists(directoryPath))
+                Directory.CreateDirectory(directoryPath);
+            return directoryPath;
         }
 
-        public void DeleteGuildFolder(ulong Guild, params string[] Skip)
+        public void DeleteGuildFolder(ulong guild, params string[] skip)
         {
-            var MusicPath = PathToGuildFolder(Guild);
-            var Files = Directory.GetFiles(MusicPath);
-            foreach (var Filename in Files)
-            {
+            var musicPath = PathToGuildFolder(guild);
+            var files = Directory.GetFiles(musicPath);
+            foreach (var filename in files)
                 try
                 {
-                    var FileSkip = false;
-                    foreach (var FileToSkip in Skip)
-                        if (FileToSkip.Contains(Filename) || Filename.Contains(FileToSkip))
-                            FileSkip = true;
-                    if (FileSkip)
+                    var fileSkip = false;
+                    foreach (var fileToSkip in skip)
+                        if (fileToSkip.Contains(filename) || filename.Contains(fileToSkip))
+                            fileSkip = true;
+                    if (fileSkip)
                         continue;
-                    var FilePath = Path.Combine(MusicPath, Filename);
-                    if (File.Exists(FilePath))
-                        File.Delete(FilePath);
+                    var filePath = Path.Combine(musicPath, filename);
+                    if (File.Exists(filePath))
+                        File.Delete(filePath);
                     else
                         LoggerService.Log(LogSeverity.Warning, "Song didn't exist?");
                 }
@@ -114,89 +117,95 @@ namespace UNObot.Services
                 {
                     // ignored
                 }
-            }
         }
 
-        public async Task<string> Download(string URL, ulong Guild)
+        public async Task<string> Download(string url, ulong guild)
         {
-            URL = URL.TrimStart('<', '>').TrimEnd('<', '>');
+            url = url.TrimStart('<', '>').TrimEnd('<', '>');
 
-            LoggerService.Log(LogSeverity.Debug, "New URL: " + URL);
-            var Video = await Client.Videos.GetAsync(URL);
-            var MediaStreams = await Client.Videos.Streams.GetManifestAsync(Video.Id);
-            if (!MediaStreams.GetAudio().Any())
+            LoggerService.Log(LogSeverity.Debug, "New URL: " + url);
+            var video = await _client.Videos.GetAsync(url);
+            var mediaStreams = await _client.Videos.Streams.GetManifestAsync(video.Id);
+            if (!mediaStreams.GetAudio().Any())
             {
-                string Path = GetNextFile(Guild, Video.Id, "mp3");
-                if (File.Exists(Path))
-                    return Path;
+                var path = GetNextFile(guild, video.Id, "mp3");
+                if (File.Exists(path))
+                    return path;
                 try
                 {
-                    await Converter.DownloadVideoAsync(URL, Path).ConfigureAwait(false);
+                    await _converter.DownloadVideoAsync(url, path).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
                     LoggerService.Log(LogSeverity.Debug, "Error downloading song!", ex);
                     throw;
                 }
+
                 LoggerService.Log(LogSeverity.Debug, "Downloaded");
-                return Path;
+                return path;
             }
-            return await Download(Guild, Video.Id.Value, MediaStreams.Streams.WithHighestBitrate());
+
+            return await Download(guild, video.Id.Value, mediaStreams.Streams.WithHighestBitrate());
         }
 
-        private async Task<string> Download(ulong Guild, string Id, IStreamInfo AudioStream)
+        private async Task<string> Download(ulong guild, string id, IStreamInfo audioStream)
         {
-            var Extension = "webm";
+            var extension = "webm";
             try
             {
-                Extension = AudioStream.Container.Name;
+                extension = audioStream.Container.Name;
             }
             catch (Exception ex)
             {
                 LoggerService.Log(LogSeverity.Debug, "Error downloading song!", ex);
             }
+
             LoggerService.Log(LogSeverity.Debug, "Got Extension");
 
-            string FileName = GetNextFile(Guild, Id, Extension);
+            var fileName = GetNextFile(guild, id, extension);
 
-            if (File.Exists(FileName))
-                return FileName;
+            if (File.Exists(fileName))
+                return fileName;
 
-            for (var i = 0; i < DL_ATTEMPTS; i++)
-            {
+            for (var i = 0; i < DlAttempts; i++)
                 try
                 {
-                    await Client.Videos.Streams.DownloadAsync(AudioStream, FileName);
-                    LoggerService.Log(LogSeverity.Debug, $"Downloaded at {FileName}.");
+                    await _client.Videos.Streams.DownloadAsync(audioStream, fileName);
+                    LoggerService.Log(LogSeverity.Debug, $"Downloaded at {fileName}.");
                     break;
                 }
                 catch (Exception e)
                 {
-                    var Message = e.ToString();
+                    var message = e.ToString();
                     // I really hate this. But there's no enum for web status. And the Web stuff is embedded in the library.
-                    if(Message.Contains("429") || Message.Contains("too many requests", StringComparison.CurrentCultureIgnoreCase))
+                    if (message.Contains("429") ||
+                        message.Contains("too many requests", StringComparison.CurrentCultureIgnoreCase))
                         LoggerService.Log(LogSeverity.Warning, "We're getting rate-limited by YouTube!!!");
-                    LoggerService.Log(LogSeverity.Error, $"Failed to download! This is attempt {i}/{DL_ATTEMPTS}. Waiting for {DL_DELAY/1000.0} seconds.", e);
-                    await Task.Delay(DL_DELAY);
+                    LoggerService.Log(LogSeverity.Error,
+                        $"Failed to download! This is attempt {i}/{DlAttempts}. Waiting for {DlDelay / 1000.0} seconds.",
+                        e);
+                    await Task.Delay(DlDelay);
                 }
-            }
-            var StartTime = DateTime.Now;
 
-            while ((DateTime.Now - StartTime).TotalSeconds < DL_TIMEOUT)
-                if (File.Exists(FileName))
-                    return FileName;
+            var startTime = DateTime.Now;
+
+            while ((DateTime.Now - startTime).TotalSeconds < DlTimeout)
+                if (File.Exists(fileName))
+                    return fileName;
 
             throw new Exception("Failed to download file; couldn't find!");
         }
 
-        private string GetNextFile(ulong Guild, string Id, string Extension)
+        private string GetNextFile(ulong guild, string id, string extension)
         {
-            string FileName = Path.Combine(PathToGuildFolder(Guild), $"{Id}.{Extension}");
-            LoggerService.Log(LogSeverity.Debug, "Saving to " + FileName);
-            return FileName;
+            var fileName = Path.Combine(PathToGuildFolder(guild), $"{id}.{extension}");
+            LoggerService.Log(LogSeverity.Debug, "Saving to " + fileName);
+            return fileName;
         }
 
-        public static string TimeString(TimeSpan Ts)
-            => $"{(Ts.Hours > 0 ? $"{Ts.Hours}:" : "")}{Ts.Minutes:00}:{Ts.Seconds:00}";
+        public static string TimeString(TimeSpan ts)
+        {
+            return $"{(ts.Hours > 0 ? $"{ts.Hours}:" : "")}{ts.Minutes:00}:{ts.Seconds:00}";
+        }
     }
 }

@@ -7,13 +7,15 @@ namespace UNObot.Services
 {
     public class GoogleTranslateService
     {
-        private static GoogleTranslateService Instance;
+        private static GoogleTranslateService _instance;
+
         public static GoogleTranslateService GetSingleton()
         {
-            if (Instance == null)
-                Instance = new GoogleTranslateService();
-            return Instance;
+            if (_instance == null)
+                _instance = new GoogleTranslateService();
+            return _instance;
         }
+
         public string Translate(string text, string fromCulture, string toCulture)
         {
             fromCulture = fromCulture.ToLower();
@@ -21,7 +23,7 @@ namespace UNObot.Services
 
             // normalize the culture in case something like en-us was passed 
             // retrieve only en since Google doesn't support sub-locales
-            string[] tokens = fromCulture.Split('-');
+            var tokens = fromCulture.Split('-');
             if (tokens.Length > 1)
                 fromCulture = tokens[0];
 
@@ -30,13 +32,14 @@ namespace UNObot.Services
             if (tokens.Length > 1)
                 toCulture = tokens[0];
 
-            string url = $@"http://translate.google.com/translate_a/t?client=j&text={HttpUtility.UrlEncode(text)}&hl=en&sl={fromCulture}&tl={toCulture}";
+            var url =
+                $@"http://translate.google.com/translate_a/t?client=j&text={HttpUtility.UrlEncode(text)}&hl=en&sl={fromCulture}&tl={toCulture}";
 
             // Retrieve Translation with HTTP GET call
             string html;
             try
             {
-                using WebClient web = new WebClient();
+                using var web = new WebClient();
 
                 // MUST add a known browser user agent or else response encoding doen't return UTF-8 (WTF Google?)
                 web.Headers.Add(HttpRequestHeader.UserAgent, "Mozilla/5.0");
@@ -54,10 +57,7 @@ namespace UNObot.Services
             // Extract out trans":"...[Extracted]...","from the JSON string
             //string result = Regex.Match(html, "trans\":(\".*?\"),\"", RegexOptions.IgnoreCase).Groups[1].Value;
 
-            if (string.IsNullOrEmpty(html))
-            {
-                return $"Error: No response was returned.";
-            }
+            if (string.IsNullOrEmpty(html)) return "Error: No response was returned.";
 
             return html;
         }

@@ -8,9 +8,9 @@ namespace UNObot.Services
 {
     public static class ShellService
     {
-        public static async Task<string> RunYTDL(string cmd)
+        public static async Task<string> RunYtdl(string cmd)
         {
-            TaskCompletionSource<string> result = new TaskCompletionSource<string>();
+            var result = new TaskCompletionSource<string>();
 
             new Thread(() =>
             {
@@ -33,7 +33,7 @@ namespace UNObot.Services
                 process.WaitForExit();
             }).Start();
 
-            string awaited = await result.Task;
+            var awaited = await result.Task;
             LoggerService.Log(LogSeverity.Debug, $"Shell result: {awaited}");
             if (awaited == null)
                 throw new Exception("Shell failed!");
@@ -41,21 +41,21 @@ namespace UNObot.Services
         }
 
         // Should be a file path.
-        public static Process GetAudioStream(string Path)
+        public static Process GetAudioStream(string path)
         {
-            ProcessStartInfo ffmpeg = new ProcessStartInfo
+            var ffmpeg = new ProcessStartInfo
             {
                 FileName = "/usr/local/bin/ffmpeg",
-                Arguments = $"-hide_banner -loglevel panic -i \"{Path}\" -ac 2 -f s16le -ar 48000 pipe:1",
+                Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1",
                 UseShellExecute = false,
                 RedirectStandardOutput = true
             };
             return Process.Start(ffmpeg);
         }
 
-        public async static Task<string> ConvertToMP3(string Path)
+        public static async Task<string> ConvertToMp3(string path)
         {
-            TaskCompletionSource<string> result = new TaskCompletionSource<string>();
+            var result = new TaskCompletionSource<string>();
 
             new Thread(() =>
             {
@@ -64,7 +64,7 @@ namespace UNObot.Services
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = "/usr/local/bin/ffmpeg",
-                        Arguments = $"-hide_banner -loglevel panic -i ${Path} -vn -ab 128k -ar 44100 -y ${Path}.mp3",
+                        Arguments = $"-hide_banner -loglevel panic -i ${path} -vn -ab 128k -ar 44100 -y ${path}.mp3",
                         UseShellExecute = false,
                         RedirectStandardOutput = true
                     }
@@ -74,16 +74,16 @@ namespace UNObot.Services
                 process.WaitForExit();
             }).Start();
 
-            string awaited = await result.Task;
+            var awaited = await result.Task;
             LoggerService.Log(LogSeverity.Debug, $"Shell result: {awaited}");
             if (awaited == null)
                 throw new Exception("Shell failed!");
             return awaited;
         }
 
-        public async static Task<string> GitFetch()
+        public static async Task<string> GitFetch()
         {
-            TaskCompletionSource<string> result = new TaskCompletionSource<string>();
+            var result = new TaskCompletionSource<string>();
 
             new Thread(() =>
             {
@@ -92,7 +92,7 @@ namespace UNObot.Services
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = "/usr/bin/git",
-                        Arguments = $"fetch",
+                        Arguments = "fetch",
                         UseShellExecute = false,
                         RedirectStandardOutput = true
                     }
@@ -102,16 +102,16 @@ namespace UNObot.Services
                 process.WaitForExit();
             }).Start();
 
-            string awaited = await result.Task;
+            var awaited = await result.Task;
             LoggerService.Log(LogSeverity.Debug, $"Shell result: {awaited}");
             if (awaited == null)
                 throw new Exception("Shell failed!");
             return awaited;
         }
 
-        public async static Task<string> GitStatus()
+        public static async Task<string> GitStatus()
         {
-            TaskCompletionSource<string> result = new TaskCompletionSource<string>();
+            var result = new TaskCompletionSource<string>();
 
             new Thread(() =>
             {
@@ -120,7 +120,7 @@ namespace UNObot.Services
                     StartInfo = new ProcessStartInfo
                     {
                         FileName = "/usr/bin/git",
-                        Arguments = $"status",
+                        Arguments = "status",
                         UseShellExecute = false,
                         RedirectStandardOutput = true
                     }
@@ -130,7 +130,7 @@ namespace UNObot.Services
                 process.WaitForExit();
             }).Start();
 
-            string awaited = await result.Task;
+            var awaited = await result.Task;
             LoggerService.Log(LogSeverity.Debug, $"Shell result: {awaited}");
             if (awaited == null)
                 throw new Exception("Shell failed!");

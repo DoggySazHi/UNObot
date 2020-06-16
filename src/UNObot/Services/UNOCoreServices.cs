@@ -1,58 +1,79 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Timers;
 using Discord;
 using Newtonsoft.Json;
+using Timer = System.Timers.Timer;
 
 namespace UNObot.Services
 {
     [AttributeUsage(AttributeTargets.Method)]
-    public class Help : Attribute
+    public class HelpAttribute : Attribute
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="T:UNObot.Services.HelpAttribute" /> class.
+        /// </summary>
+        /// <param name="usages">Usages of the command.</param>
+        /// <param name="helpMsg">HelpAttribute message.</param>
+        /// <param name="active">Check if command should be displayed in the help list.</param>
+        /// <param name="version">Version when the command was first introduced.</param>
+        [JsonConstructor]
+        public HelpAttribute(string[] usages, string helpMsg, bool active, string version)
+        {
+            this.Usages = usages;
+            this.HelpMsg = helpMsg;
+            this.Active = active;
+            this.Version = version;
+        }
+
         public string[] Usages { get; }
         public string HelpMsg { get; }
         public bool Active { get; }
         public string Version { get; }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="T:UNObot.Services.Help"/> class.
-        /// </summary>
-        /// <param name="Usages">Usages of the command.</param>
-        /// <param name="HelpMsg">Help message.</param>
-        /// <param name="Active">Check if command should be displayed in the help list.</param>
-        /// <param name="Version">Version when the command was first introduced.</param>
-        [JsonConstructor]
-        public Help(string[] Usages, string HelpMsg, bool Active, string Version)
-        {
-            this.Usages = Usages;
-            this.HelpMsg = HelpMsg;
-            this.Active = Active;
-            this.Version = Version;
-        }
     }
 
     [AttributeUsage(AttributeTargets.Method)]
-    public class DisableDMs : Attribute
+    public class DisableDMsAttribute : Attribute
     {
-        public bool Disabled { get; }
-
-        public bool Enabled => !Disabled;
-
         [JsonConstructor]
-        public DisableDMs()
+        public DisableDMsAttribute()
         {
             Disabled = true;
         }
 
         [JsonConstructor]
-        public DisableDMs(bool Disabled)
+        public DisableDMsAttribute(bool disabled)
         {
-            this.Disabled = Disabled;
+            this.Disabled = disabled;
         }
+
+        public bool Disabled { get; }
+
+        public bool Enabled => !Disabled;
     }
 
     public class Command
     {
+        [JsonConstructor]
+        public Command(string commandName, List<string> aliases, List<string> usages, string help, bool active,
+            string version)
+        {
+            this.CommandName = commandName;
+            this.Aliases = aliases;
+            this.Usages = usages;
+            this.Help = help;
+            this.Active = active;
+            this.Version = version;
+        }
+
+        [JsonConstructor]
+        public Command(string commandName, List<string> aliases, List<string> usages, string help, bool active,
+            string version, bool disableDMs) : this(commandName, aliases, usages, help, active, version)
+        {
+            this.DisableDMs = disableDMs;
+        }
+
         public string CommandName { get; set; }
         public List<string> Usages { get; set; }
         public List<string> Aliases { get; set; }
@@ -60,23 +81,6 @@ namespace UNObot.Services
         public bool Active { get; set; }
         public string Version { get; set; }
         public bool DisableDMs { get; set; }
-
-        [JsonConstructor]
-        public Command(string CommandName, List<string> Aliases, List<string> Usages, string Help, bool Active, string Version)
-        {
-            this.CommandName = CommandName;
-            this.Aliases = Aliases;
-            this.Usages = Usages;
-            this.Help = Help;
-            this.Active = Active;
-            this.Version = Version;
-        }
-
-        [JsonConstructor]
-        public Command(string CommandName, List<string> Aliases, List<string> Usages, string Help, bool Active, string Version, bool DisableDMs) : this(CommandName, Aliases, Usages, Help, Active, Version)
-        {
-            this.DisableDMs = DisableDMs;
-        }
     }
 
     public class Card
@@ -84,46 +88,61 @@ namespace UNObot.Services
         public string Color;
         public string Value;
 
-        public override string ToString() => $"{Color} {Value}";
+        public override string ToString()
+        {
+            return $"{Color} {Value}";
+        }
 
-        public bool Equals(Card other) => Value == other.Value && Color == other.Color;
+        public bool Equals(Card other)
+        {
+            return Value == other.Value && Color == other.Color;
+        }
     }
 
     public class ServerCard
     {
         public Card Card;
-        public int CardsAvailable = 1;
         public int CardsAllocated = 1;
+        public int CardsAvailable = 1;
 
-        public ServerCard(Card Card)
-            => this.Card = Card;
-        public bool Equals(ServerCard other) => Card.Equals(other.Card);
+        public ServerCard(Card card)
+        {
+            this.Card = card;
+        }
+
+        public bool Equals(ServerCard other)
+        {
+            return Card.Equals(other.Card);
+        }
     }
 
     public class ServerDeck
     {
+        public static readonly List<string> Colors = new List<string> {"Red", "Green", "Blue", "Yellow"};
+
+        public static readonly List<string> Values = new List<string>
+            {"1", "2", "3", "4", "5", "6", "7", "8", "9", "Skip", "Reverse", "+2"};
+
         public List<ServerCard> Cards;
-        public static readonly List<string> Colors = new List<string> { "Red", "Green", "Blue", "Yellow" };
-        public static readonly List<string> Values = new List<string> { "1", "2", "3", "4", "5", "6", "7", "8", "9", "Skip", "Reverse", "+2" };
 
         public ServerDeck()
         {
             //smells like spaghetti code
-            for (int i = 0; i < 2; i++)
-                foreach (string Color in Colors)
-                    foreach (string Value in Values)
-                        Cards.Add(new ServerCard(new Card
-                        {
-                            Color = Color,
-                            Value = Value
-                        }));
-            foreach (string Color in Colors)
+            for (var i = 0; i < 2; i++)
+                foreach (var color in Colors)
+                foreach (var value in Values)
+                    Cards.Add(new ServerCard(new Card
+                    {
+                        Color = color,
+                        Value = value
+                    }));
+            foreach (var color in Colors)
                 Cards.Add(new ServerCard(new Card
                 {
-                    Color = Color,
+                    Color = color,
                     Value = "0"
                 }));
-            for (int i = 0; i < 4; i++)
+            for (var i = 0; i < 4; i++)
             {
                 Cards.Add(new ServerCard(new Card
                 {
@@ -146,21 +165,19 @@ namespace UNObot.Services
 
     public static class ThreadSafeRandom
     {
-        [ThreadStatic] private static Random Local;
+        [ThreadStatic] private static Random _local;
 
-        public static Random ThisThreadsRandom
-        {
-            get { return Local ?? (Local = new Random(unchecked(Environment.TickCount * 31 + System.Threading.Thread.CurrentThread.ManagedThreadId))); }
-        }
+        public static Random ThisThreadsRandom =>
+            _local ?? (_local = new Random(unchecked(Environment.TickCount * 31 + Thread.CurrentThread.ManagedThreadId)));
 
         public static void Shuffle<T>(this IList<T> list)
         {
-            int n = list.Count;
+            var n = list.Count;
             while (n > 1)
             {
                 n--;
-                int k = ThisThreadsRandom.Next(n + 1);
-                T value = list[k];
+                var k = ThisThreadsRandom.Next(n + 1);
+                var value = list[k];
                 list[k] = list[n];
                 list[n] = value;
             }
@@ -170,31 +187,35 @@ namespace UNObot.Services
     public static class UNOCoreServices
     {
         [Flags]
-        public enum Gamemodes
+        public enum GameMode
         {
             Normal = 0,
+
             /// <summary>
-            /// .game does not show the amount of cards each player has.
+            ///     .game does not show the amount of cards each player has.
             /// </summary>
             Private = 1,
+
             /// <summary>
-            /// .skip allows for the user to draw two cards.
+            ///     .skip allows for the user to draw two cards.
             /// </summary>
             Fast = 2,
+
             /// <summary>
-            /// .draw is limited to only one usage, with .skip moving on. .quickplay is affected.
+            ///     .draw is limited to only one usage, with .skip moving on. .quickplay is affected.
             /// </summary>
             Retro = 4,
+
             /// <summary>
-            /// .uno can be used by a person without UNO to call out if someone else does have an UNO.
+            ///     .uno can be used by a person without UNO to call out if someone else does have an UNO.
             /// </summary>
             UNOCallout = 8
         }
 
         public static Card RandomCard()
         {
-            Card card = new Card();
-            object lockObject = new object();
+            var card = new Card();
+            var lockObject = new object();
             int myColor;
             int myCard;
             lock (lockObject)
@@ -210,7 +231,7 @@ namespace UNObot.Services
                 1 => "Red",
                 2 => "Yellow",
                 3 => "Green",
-                _ => "Blue",
+                _ => "Blue"
             };
             if (myCard < 10)
             {
@@ -219,7 +240,7 @@ namespace UNObot.Services
             else
             {
                 //4 is wild, 1-3 is action
-                int action = ThreadSafeRandom.ThisThreadsRandom.Next(1, 5);
+                var action = ThreadSafeRandom.ThisThreadsRandom.Next(1, 5);
                 switch (action)
                 {
                     case 1:
@@ -232,7 +253,7 @@ namespace UNObot.Services
                         card.Value = "+2";
                         break;
                     case 4:
-                        int wild = ThreadSafeRandom.ThisThreadsRandom.Next(1, 3);
+                        var wild = ThreadSafeRandom.ThisThreadsRandom.Next(1, 3);
                         card.Color = "Wild";
                         if (wild == 1)
                             card.Value = "Color";
@@ -241,82 +262,94 @@ namespace UNObot.Services
                         break;
                 }
             }
+
             return card;
         }
     }
 
-    public static class AFKtimer
+    public static class AfKtimer
     {
-        public static Dictionary<ulong, Timer> playTimers = new Dictionary<ulong, Timer>();
+        public static Dictionary<ulong, Timer> PlayTimers = new Dictionary<ulong, Timer>();
 
         public static void ResetTimer(ulong server)
         {
-            if (!playTimers.ContainsKey(server))
+            if (!PlayTimers.ContainsKey(server))
+            {
                 LoggerService.Log(LogSeverity.Error, "Attempted to reset timer that doesn't exist!");
+            }
             else
             {
-                playTimers[server].Stop();
-                playTimers[server].Start();
+                PlayTimers[server].Stop();
+                PlayTimers[server].Start();
             }
         }
+
         public static void StartTimer(ulong server)
         {
             LoggerService.Log(LogSeverity.Debug, "Starting timer!");
-            if (playTimers.ContainsKey(server))
+            if (PlayTimers.ContainsKey(server))
+            {
                 LoggerService.Log(LogSeverity.Warning, "Attempted to start timer that already existed!");
+            }
             else
             {
-                playTimers[server] = new Timer
+                PlayTimers[server] = new Timer
                 {
                     Interval = 90000,
                     AutoReset = false
                 };
-                playTimers[server].Elapsed += TimerOver;
-                playTimers[server].Start();
+                PlayTimers[server].Elapsed += TimerOver;
+                PlayTimers[server].Start();
             }
         }
-        async static void TimerOver(object source, ElapsedEventArgs e)
+
+        private static async void TimerOver(object source, ElapsedEventArgs e)
         {
             LoggerService.Log(LogSeverity.Debug, "Timer over!");
-            ulong serverID = 0;
-            foreach (ulong server in playTimers.Keys)
+            ulong serverId = 0;
+            foreach (var server in PlayTimers.Keys)
             {
-                Timer timer = (Timer)source;
-                if (timer.Equals(playTimers[server]))
-                    serverID = server;
+                var timer = (Timer) source;
+                if (timer.Equals(PlayTimers[server]))
+                    serverId = server;
             }
-            if (serverID == 0)
+
+            if (serverId == 0)
             {
                 LoggerService.Log(LogSeverity.Error, "Couldn't figure out what server timer belonged to!");
                 return;
             }
-            ulong currentPlayer = await QueueHandlerService.GetCurrentPlayer(serverID);
+
+            var currentPlayer = await QueueHandlerService.GetCurrentPlayer(serverId);
             await UNODatabaseService.RemoveUser(currentPlayer);
-            await QueueHandlerService.DropFrontPlayer(serverID);
+            await QueueHandlerService.DropFrontPlayer(serverId);
             LoggerService.Log(LogSeverity.Debug, "SayPlayer");
-            await Program.SendMessage($"<@{currentPlayer}>, you have been AFK removed.\n", serverID);
+            await Program.SendMessage($"<@{currentPlayer}>, you have been AFK removed.\n", serverId);
             await Program.SendPM("You have been AFK removed.", currentPlayer);
-            if (await QueueHandlerService.PlayerCount(serverID) == 0)
+            if (await QueueHandlerService.PlayerCount(serverId) == 0)
             {
-                await UNODatabaseService.ResetGame(serverID);
-                await Program.SendMessage("Game has been reset, due to nobody in-game.", serverID);
-                DeleteTimer(serverID);
+                await UNODatabaseService.ResetGame(serverId);
+                await Program.SendMessage("Game has been reset, due to nobody in-game.", serverId);
+                DeleteTimer(serverId);
                 return;
             }
-            ResetTimer(serverID);
-            await Program.SendMessage($"It is now <@{await QueueHandlerService.GetCurrentPlayer(serverID)}> turn.\n", serverID);
+
+            ResetTimer(serverId);
+            await Program.SendMessage($"It is now <@{await QueueHandlerService.GetCurrentPlayer(serverId)}> turn.\n",
+                serverId);
         }
 
         public static void DeleteTimer(ulong server)
         {
-            if (playTimers.ContainsKey(server))
+            if (PlayTimers.ContainsKey(server))
             {
-                if (playTimers[server] == null)
+                if (PlayTimers[server] == null)
                     LoggerService.Log(LogSeverity.Warning, "Attempted to dispose a timer that was already disposed!");
                 else
-                    playTimers[server].Dispose();
+                    PlayTimers[server].Dispose();
             }
-            playTimers.Remove(server);
+
+            PlayTimers.Remove(server);
         }
     }
 }

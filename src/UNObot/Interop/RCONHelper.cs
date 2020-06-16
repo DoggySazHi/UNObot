@@ -9,8 +9,75 @@ namespace UNObot.Interop
 {
     public class RCONHelper : IRCON
     {
-        private IntPtr RCONInstance;
+        private readonly IntPtr _rconInstance;
+
+        public RCONHelper(IPEndPoint server, [NotNull] string password, string command = null)
+        {
+            // Note: It is split into two parts as C++ does not allow null strings.
+            _rconInstance = command switch
+            {
+                null => CreateObjectB(server.Address.ToString(), (ushort) server.Port, password),
+                _ => CreateObjectA(server.Address.ToString(), (ushort) server.Port, password, command)
+            };
+        }
+
+        public RCONHelper([NotNull] string ip, ushort port, [NotNull] string password, string command = null)
+        {
+            // Note: It is split into two parts as C++ does not allow null strings.
+            _rconInstance = command switch
+            {
+                null => CreateObjectB(ip, port, password),
+                _ => CreateObjectA(ip, port, password, command)
+            };
+        }
+
         public bool Disposed { get; private set; }
+
+        /*
+        [DllImport(@"libRCONHelper.so")]
+        private static extern void Dispose(IntPtr obj);
+        
+        [DllImport(@"libRCONHelper.so")]
+        private static extern bool Disposed(IntPtr obj);
+        */
+
+        public ulong Owner { get; set; }
+        public string Data => Marshal.PtrToStringAnsi(GetData(_rconInstance));
+        public RCONStatus Status => GetStatus(_rconInstance);
+
+        public IPEndPoint Server =>
+            new IPEndPoint(
+                IPAddress.Parse(Marshal.PtrToStringAnsi(GetServerIP(_rconInstance)) ??
+                                throw new InvalidOperationException("OH CRAP")), GetServerPort(_rconInstance));
+
+        public void Execute(string command, bool reuse = false)
+        {
+            CheckDispose();
+            Execute(_rconInstance, command);
+            if (!reuse)
+                Dispose();
+        }
+
+        public void ExecuteSingle(string command, bool reuse = false)
+        {
+            CheckDispose();
+            ExecuteSingle(_rconInstance, command);
+            if (!reuse)
+                Dispose();
+        }
+
+        public bool Connected()
+        {
+            CheckDispose();
+            return Connected(_rconInstance);
+        }
+
+        public void Dispose()
+        {
+            if (Disposed) return;
+            DestroyObject(_rconInstance);
+            Disposed = true;
+        }
 
         [DllImport(@"libRCONHelper.so")]
         private static extern IntPtr CreateObjectA(string ip, ushort port, string password, string command);
@@ -19,19 +86,19 @@ namespace UNObot.Interop
         private static extern IntPtr CreateObjectB(string ip, ushort port, string password);
 
         [DllImport(@"libRCONHelper.so")]
-        private static extern void DestroyObject(IntPtr RCON);
+        private static extern void DestroyObject(IntPtr rcon);
 
         [DllImport(@"libRCONHelper.so")]
-        private static extern void Mukyu(IntPtr RCON);
+        private static extern void Mukyu(IntPtr rcon);
 
         [DllImport(@"libRCONHelper.so")]
         public static extern void MukyuN();
 
         [DllImport(@"libRCONHelper.so")]
-        public static extern IntPtr Say(string Thing);
+        public static extern IntPtr Say(string thing);
 
         [DllImport(@"libRCONHelper.so")]
-        public static extern void SayDelete(IntPtr Thing);
+        public static extern void SayDelete(IntPtr thing);
 
         [DllImport(@"libRCONHelper.so")]
         private static extern RCONStatus GetStatus(IntPtr obj);
@@ -54,80 +121,19 @@ namespace UNObot.Interop
         [DllImport(@"libRCONHelper.so")]
         private static extern void Execute(IntPtr obj, string command);
 
-        /*
-        [DllImport(@"libRCONHelper.so")]
-        private static extern void Dispose(IntPtr obj);
-        
-        [DllImport(@"libRCONHelper.so")]
-        private static extern bool Disposed(IntPtr obj);
-        */
-
-        public ulong Owner { get; set; }
-        public string Data => Marshal.PtrToStringAnsi(GetData(RCONInstance));
-        public RCONStatus Status => GetStatus(RCONInstance);
-        public IPEndPoint Server => new IPEndPoint(IPAddress.Parse(Marshal.PtrToStringAnsi(GetServerIP(RCONInstance)) ?? throw new InvalidOperationException("OH CRAP")), GetServerPort(RCONInstance));
-
-        public RCONHelper(IPEndPoint Server, [NotNull] string password, string command = null)
-        {
-            // Note: It is split into two parts as C++ does not allow null strings.
-            RCONInstance = command switch
-            {
-                null => CreateObjectB(Server.Address.ToString(), (ushort)Server.Port, password),
-                _ => CreateObjectA(Server.Address.ToString(), (ushort)Server.Port, password, command)
-            };
-        }
-
-        public RCONHelper([NotNull] string ip, ushort port, [NotNull] string password, string command = null)
-        {
-            // Note: It is split into two parts as C++ does not allow null strings.
-            RCONInstance = command switch
-            {
-                null => CreateObjectB(ip, port, password),
-                _ => CreateObjectA(ip, port, password, command)
-            };
-        }
-
         public void Mukyu()
         {
             CheckDispose();
             // to mukyu, mukyu (test to check interop)
-            Mukyu(RCONInstance);
-        }
-
-        public void Execute(string Command, bool Reuse = false)
-        {
-            CheckDispose();
-            Execute(RCONInstance, Command);
-            if (!Reuse)
-                Dispose();
-        }
-
-        public void ExecuteSingle(string Command, bool Reuse = false)
-        {
-            CheckDispose();
-            ExecuteSingle(RCONInstance, Command);
-            if (!Reuse)
-                Dispose();
-        }
-
-        public bool Connected()
-        {
-            CheckDispose();
-            return Connected(RCONInstance);
+            Mukyu(_rconInstance);
         }
 
         private void CheckDispose()
         {
             if (Disposed)
-                throw new ObjectDisposedException("libRCONHelper", "Attempted to dispose of an object that was already disposed! " +
+                throw new ObjectDisposedException("libRCONHelper",
+                    "Attempted to dispose of an object that was already disposed! " +
                     "This is a native object; attempting to re-dispose of it will cause a segfault!");
-        }
-
-        public void Dispose()
-        {
-            if (Disposed) return;
-            DestroyObject(RCONInstance);
-            Disposed = true;
         }
     }
 }

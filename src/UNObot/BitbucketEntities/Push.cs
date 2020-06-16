@@ -531,5 +531,4 @@ namespace UNObot.BitbucketEntities
     {
         public string href { get; set; }
     }
-
 }

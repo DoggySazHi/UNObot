@@ -5,6 +5,7 @@ namespace UNObot.BitbucketEntities
     public class Project
     {
         public string type { get; set; }
+
         // Apparently project and name are the same thing? API listing isn't helpful.
         public string project { get; set; }
         public string name { get; set; }

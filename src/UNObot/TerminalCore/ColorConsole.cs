@@ -1,31 +1,34 @@
 ﻿using System;
+
 namespace UNObot.TerminalCore
 {
     public static class ColorConsole
     {
         [Obsolete("Use a ConsoleColor instead, it's more reliable.")]
-        public static void Write(string Text, string Color, string BGColor)
+        private static void Write(string text, string colorText, string bgColor)
         {
-            Color = Color.Trim().ToLower();
-            BGColor = BGColor.Trim().ToLower();
+            colorText = colorText.Trim().ToLower();
+            bgColor = bgColor.Trim().ToLower();
 
-            ConsoleColor[] colors = (ConsoleColor[])Enum.GetValues(typeof(ConsoleColor));
-            bool colorFound = false;
-            bool bgColorFound = false;
+            var colors = (ConsoleColor[]) Enum.GetValues(typeof(ConsoleColor));
+            var colorFound = false;
+            var bgColorFound = false;
             foreach (var color in colors)
             {
-                if (color.ToString().ToLower() == Color)
+                if (color.ToString().ToLower() == colorText)
                 {
                     Console.ForegroundColor = color;
                     colorFound = true;
                 }
-                if (color.ToString().ToLower() == BGColor)
+
+                if (color.ToString().ToLower() == bgColor)
                 {
                     Console.BackgroundColor = color;
                     bgColorFound = true;
                 }
             }
-            Console.Write(Text);
+
+            Console.Write(text);
             Console.ResetColor();
 
 #if DEBUG
@@ -35,48 +38,48 @@ namespace UNObot.TerminalCore
 #endif
         }
 
-        public static void Write(string Text, ConsoleColor Color, ConsoleColor BGColor)
+        private static void Write(string text, ConsoleColor color, ConsoleColor bgColor)
         {
-            Console.BackgroundColor = BGColor;
-            Console.ForegroundColor = Color;
-            Console.Write(Text);
+            Console.BackgroundColor = bgColor;
+            Console.ForegroundColor = color;
+            Console.Write(text);
             Console.ResetColor();
         }
 
         [Obsolete("Use a ConsoleColor instead, it's more reliable.")]
-        public static void Write(string Text, string Color)
+        private static void Write(string text, string color)
         {
-            Write(Text, Color, Console.BackgroundColor.ToString());
+            Write(text, color, Console.BackgroundColor.ToString());
         }
 
-        public static void Write(string Text, ConsoleColor Color)
+        public static void Write(string text, ConsoleColor color)
         {
-            Write(Text, Color, Console.BackgroundColor);
-        }
-
-        [Obsolete("Use a ConsoleColor instead, it's more reliable.")]
-        public static void WriteLine(string Text, string Color)
-        {
-            Write(Text, Color);
-            Console.WriteLine();
-        }
-
-        public static void WriteLine(string Text, ConsoleColor Color)
-        {
-            Write(Text, Color);
-            Console.WriteLine();
+            Write(text, color, Console.BackgroundColor);
         }
 
         [Obsolete("Use a ConsoleColor instead, it's more reliable.")]
-        public static void WriteLine(string Text, string Color, string BGColor)
+        public static void WriteLine(string text, string color)
         {
-            Write(Text, Color, BGColor);
+            Write(text, color);
             Console.WriteLine();
         }
 
-        public static void WriteLine(string Text, ConsoleColor Color, ConsoleColor BGColor)
+        public static void WriteLine(string text, ConsoleColor color)
         {
-            Write(Text, Color, BGColor);
+            Write(text, color);
+            Console.WriteLine();
+        }
+
+        [Obsolete("Use a ConsoleColor instead, it's more reliable.")]
+        public static void WriteLine(string text, string color, string bgColor)
+        {
+            Write(text, color, bgColor);
+            Console.WriteLine();
+        }
+
+        public static void WriteLine(string text, ConsoleColor color, ConsoleColor bgColor)
+        {
+            Write(text, color, bgColor);
             Console.WriteLine();
         }
     }

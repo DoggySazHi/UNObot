@@ -24,46 +24,47 @@ namespace UNObot.Services
     public static class MinecraftProcessorService
     {
         // NOTE: It's the query port!
-        public static List<MCUser> GetMCUsers(string IP, ushort Port, string Password, out IRCON Client, bool Dispose = true)
+        public static List<MCUser> GetMCUsers(string ip, ushort port, string password, out IRCON client,
+            bool dispose = true)
         {
-            var Output = new List<MCUser>();
+            var output = new List<MCUser>();
 
             // Smaller than ulong keys, big enough for RNG.
             var random = new Random();
-            var RandomKey = (ulong)random.Next(0, 10000);
-            var Success = QueryHandlerService.CreateRCON(IP, Port, Password, RandomKey, out Client);
-            if (!Success)
+            var randomKey = (ulong) random.Next(0, 10000);
+            var success = QueryHandlerService.CreateRCON(ip, port, password, randomKey, out client);
+            if (!success)
             {
                 LoggerService.Log(LogSeverity.Error, "Failed to create an RCON connection to get players!");
-                return Output;
+                return output;
             }
 
-            Client.ExecuteSingle("list", true);
-            if (Client.Status != RCONStatus.SUCCESS) return Output;
-            var PlayerListOnline = Client.Data.Substring(Client.Data.IndexOf(':') + 1).Split(',').ToList();
+            client.ExecuteSingle("list", true);
+            if (client.Status != RCONStatus.Success) return output;
+            var playerListOnline = client.Data.Substring(client.Data.IndexOf(':') + 1).Split(',').ToList();
 
-            Client.ExecuteSingle("scoreboard players list", true);
-            var PlayerListTotal = Client.Data.Substring(Client.Data.IndexOf(':') + 1).Split(',').ToList();
+            client.ExecuteSingle("scoreboard players list", true);
+            var playerListTotal = client.Data.Substring(client.Data.IndexOf(':') + 1).Split(',').ToList();
 
-            foreach (var Player in PlayerListTotal)
+            foreach (var player in playerListTotal)
             {
-                var Name = Player.Replace((char)0, ' ').Trim();
-                Client.ExecuteSingle($"scoreboard players get {Name} Ouchies", true);
-                if (Client.Status == RCONStatus.SUCCESS)
+                var name = player.Replace((char) 0, ' ').Trim();
+                client.ExecuteSingle($"scoreboard players get {name} Ouchies", true);
+                if (client.Status == RCONStatus.Success)
                 {
-                    var Ouchies = Client.Data.Contains("has") ? Client.Data.Split(' ')[2] : "0";
-                    Output.Add(new MCUser
+                    var ouchies = client.Data.Contains("has") ? client.Data.Split(' ')[2] : "0";
+                    output.Add(new MCUser
                     {
-                        Username = Name,
-                        Ouchies = Ouchies
+                        Username = name,
+                        Ouchies = ouchies
                     });
                 }
             }
 
-            foreach (var o in PlayerListOnline)
+            foreach (var o in playerListOnline)
             {
-                var Name = o.Replace((char)0, ' ').Trim();
-                if (string.IsNullOrWhiteSpace(Name)) continue;
+                var name = o.Replace((char) 0, ' ').Trim();
+                if (string.IsNullOrWhiteSpace(name)) continue;
 
                 /*
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
@@ -74,33 +75,35 @@ namespace UNObot.Services
                 }
                 */
 
-                var Command = $"data get entity {Name}";
-                var RandomKey2 = (ulong)random.Next(0, 10000);
-                var Success2 = QueryHandlerService.CreateRCON(IP, Port, Password, RandomKey2, out var Client2);
-                if (!Success2)
+                var command = $"data get entity {name}";
+                var randomKey2 = (ulong) random.Next(0, 10000);
+                var success2 = QueryHandlerService.CreateRCON(ip, port, password, randomKey2, out var client2);
+                if (!success2)
                 {
-                    LoggerService.Log(LogSeverity.Error, "Failed to create a second RCON connection to get player data!");
-                    return Output;
+                    LoggerService.Log(LogSeverity.Error,
+                        "Failed to create a second RCON connection to get player data!");
+                    return output;
                 }
-                Client2.Execute(Command, true);
 
-                if (Client2.Status != RCONStatus.SUCCESS)
+                client2.Execute(command, true);
+
+                if (client2.Status != RCONStatus.Success)
                     continue;
-                if (Client2.Data.Equals("No entity was found", StringComparison.CurrentCultureIgnoreCase))
+                if (client2.Data.Equals("No entity was found", StringComparison.CurrentCultureIgnoreCase))
                     continue;
 
-                var JSONString = "No string was found.";
+                var jsonString = "No string was found.";
                 try
                 {
                     // Ignore the (PLAYERNAME) has the following data:
-                    LoggerService.Log(LogSeverity.Debug, Command + " | " + Client2.Data);
-                    JSONString = Client2.Data.Substring(Client2.Data.IndexOf('{'));
+                    LoggerService.Log(LogSeverity.Debug, command + " | " + client2.Data);
+                    jsonString = client2.Data.Substring(client2.Data.IndexOf('{'));
                     // For UUIDs, they start an array with I; to indicate all values are integers; ignore it.
-                    JSONString = JSONString.Replace("I;", "");
+                    jsonString = jsonString.Replace("I;", "");
                     // Regex to completely ignore the b, s, l, f, and d patterns. Probably the worst RegEx I ever wrote.
-                    JSONString = Regex.Replace(JSONString, @"([:|\[|\,]\s*\-?\d*.?\d+)[s|b|l|f|d|L]", "${1}");
+                    jsonString = Regex.Replace(jsonString, @"([:|\[|\,]\s*\-?\d*.?\d+)[s|b|l|f|d|L]", "${1}");
 
-                    double[] Coordinates = null;
+                    double[] coordinates = null;
 
                     /*
                     JObject JSON;
@@ -118,9 +121,9 @@ namespace UNObot.Services
                     }
                     */
 
-                    JToken JSON;
+                    JToken json;
                     string exceptionPath = null;
-                    using (var textReader = new StringReader(JSONString))
+                    using (var textReader = new StringReader(jsonString))
                     using (var jsonReader = new JsonTextReader(textReader))
                     using (var jsonWriter = new JTokenWriter())
                     {
@@ -131,145 +134,148 @@ namespace UNObot.Services
                         catch (JsonReaderException ex)
                         {
                             exceptionPath = ex.Path;
-                            LoggerService.Log(LogSeverity.Error, $@"Error near string: {JSONString.Substring(
-                                Math.Max(0, ex.LinePosition - 10), Math.Min(20, JSONString.Length - ex.LinePosition - 10)
+                            LoggerService.Log(LogSeverity.Error, $@"Error near string: {jsonString.Substring(
+                                Math.Max(0, ex.LinePosition - 10), Math.Min(20, jsonString.Length - ex.LinePosition - 10)
                             )}", ex);
                         }
-                        JSON = jsonWriter.Token;
+
+                        json = jsonWriter.Token;
                     }
 
                     if (exceptionPath != null)
                     {
-                        var badToken = JSON.SelectToken(exceptionPath);
+                        var badToken = json.SelectToken(exceptionPath);
                         LoggerService.Log(LogSeverity.Error, $"Error occurred with token: {badToken}");
                     }
 
-                    var Dimension = JSON["Dimension"];
-                    var Position = JSON["Pos"];
-                    var Food = JSON["foodLevel"]?.ToObject<string>() ?? "20";
-                    var HealthNum = JSON["Health"]?.ToObject<float>();
-                    var XPLevels = JSON["XpLevel"].ToObject<int>();
-                    var XPPercent = JSON["XpP"].ToObject<float>();
-                    var XPPoints = (Exp(XPLevels + 1, 0) - Exp(XPLevels, 0)) * XPPercent;
-                    var Experience = (int)Exp(XPLevels, (int)Math.Floor(XPPoints));
-                    var Health = HealthNum != null ? Math.Ceiling((float)HealthNum).ToString("#") : "20";
+                    var dimension = json["Dimension"];
+                    var position = json["Pos"];
+                    var food = json["foodLevel"]?.ToObject<string>() ?? "20";
+                    var healthNum = json["Health"]?.ToObject<float>();
+                    var xpLevels = json["XpLevel"].ToObject<int>();
+                    var xpPercent = json["XpP"].ToObject<float>();
+                    var xpPoints = (Exp(xpLevels + 1, 0) - Exp(xpLevels, 0)) * xpPercent;
+                    var experience = (int) Exp(xpLevels, (int) Math.Floor(xpPoints));
+                    var health = healthNum != null ? Math.Ceiling((float) healthNum).ToString("#") : "20";
 
-                    if (Position?[0] != null && Position[1] != null && Position[2] != null && Dimension != null)
+                    if (position?[0] != null && position[1] != null && position[2] != null && dimension != null)
                     {
-                        var DimensionWord = Dimension.ToString();
-                        if (DimensionWord.Contains("overworld"))
-                            Dimension = 0;
-                        else if (DimensionWord.Contains("nether"))
-                            Dimension = -1;
-                        else if (DimensionWord.Contains("end"))
-                            Dimension = 1;
-                        Coordinates = new[]
+                        var dimensionWord = dimension.ToString();
+                        if (dimensionWord.Contains("overworld"))
+                            dimension = 0;
+                        else if (dimensionWord.Contains("nether"))
+                            dimension = -1;
+                        else if (dimensionWord.Contains("end"))
+                            dimension = 1;
+                        coordinates = new[]
                         {
-                            Position[0].ToObject<double>(),
-                            Position[1].ToObject<double>(),
-                            Position[2].ToObject<double>(),
-                            Dimension.ToObject<double>()
+                            position[0].ToObject<double>(),
+                            position[1].ToObject<double>(),
+                            position[2].ToObject<double>(),
+                            dimension.ToObject<double>()
                         };
                     }
 
-                    var CorrectUser = Output.Find(User => User.Username == Name);
-                    if (CorrectUser != null)
+                    var correctUser = output.Find(user => user.Username == name);
+                    if (correctUser != null)
                     {
-                        CorrectUser.Coordinates = Coordinates;
-                        CorrectUser.Health = Health;
-                        CorrectUser.Food = Food;
-                        CorrectUser.Online = true;
-                        CorrectUser.Experience = Experience;
+                        correctUser.Coordinates = coordinates;
+                        correctUser.Health = health;
+                        correctUser.Food = food;
+                        correctUser.Online = true;
+                        correctUser.Experience = experience;
                     }
                 }
                 catch (Exception ex)
                 {
-                    LoggerService.Log(LogSeverity.Error, $"Failed to process JSON! Falling back...\n{JSONString}", ex);
-                    OldUserProcessor(ref Output, Name, Client);
+                    LoggerService.Log(LogSeverity.Error, $"Failed to process JSON! Falling back...\n{jsonString}", ex);
+                    OldUserProcessor(ref output, name, client);
                 }
-                Client2.Dispose();
+
+                client2.Dispose();
             }
 
-            if (Dispose)
-                Client.Dispose();
-            return Output;
+            if (dispose)
+                client.Dispose();
+            return output;
         }
 
-        private static void OldUserProcessor(ref List<MCUser> Users, string Name, IRCON Client)
+        private static void OldUserProcessor(ref List<MCUser> users, string name, IRCON client)
         {
-            Client.ExecuteSingle(
-                    $"execute as {Name} at @s run summon minecraft:armor_stand ~ ~ ~ {{Invisible:1b,PersistenceRequired:1b,Tags:[\"coordfinder\"]}}",
-                    true);
-            Client.ExecuteSingle("execute as @e[tag=coordfinder] at @s run tp @s ~ ~ ~", true);
-            double[] Coordinates = new double[4];
-            if (Client.Status == RCONStatus.SUCCESS)
-            {
+            client.ExecuteSingle(
+                $"execute as {name} at @s run summon minecraft:armor_stand ~ ~ ~ {{Invisible:1b,PersistenceRequired:1b,Tags:[\"coordfinder\"]}}",
+                true);
+            client.ExecuteSingle("execute as @e[tag=coordfinder] at @s run tp @s ~ ~ ~", true);
+            var coordinates = new double[4];
+            if (client.Status == RCONStatus.Success)
                 try
                 {
-                    var CoordinateMessage = Regex.Replace(Client.Data, @"[^0-9\+\-\. ]", "").Trim().Split(' ');
-                    if (CoordinateMessage.Length == 3)
-                        Coordinates = new[]
+                    var coordinateMessage = Regex.Replace(client.Data, @"[^0-9\+\-\. ]", "").Trim().Split(' ');
+                    if (coordinateMessage.Length == 3)
+                        coordinates = new[]
                         {
-                            double.Parse(CoordinateMessage[0]),
-                            double.Parse(CoordinateMessage[1]),
-                            double.Parse(CoordinateMessage[2]),
+                            double.Parse(coordinateMessage[0]),
+                            double.Parse(coordinateMessage[1]),
+                            double.Parse(coordinateMessage[2]),
                             -1
                         };
                     else
-                        Coordinates = new[] { 0.0, 0.0, 0.0, -1 };
+                        coordinates = new[] {0.0, 0.0, 0.0, -1};
                 }
                 catch (FormatException)
                 {
-                    LoggerService.Log(LogSeverity.Warning, $"Failed to process coordinates. Response: {Client.Data}");
+                    LoggerService.Log(LogSeverity.Warning, $"Failed to process coordinates. Response: {client.Data}");
                 }
+
+            client.ExecuteSingle(
+                $"execute as @e[tag=coordfinder] at @s in the_nether run execute as @a[name={name}, distance=..1] run tag @e[tag=coordfinder] add found",
+                true);
+            LoggerService.Log(LogSeverity.Debug, $"Armor-stand for dimension check: {client.Data}");
+            client.ExecuteSingle("tag @e[tag=cooordfinder] list", true);
+            LoggerService.Log(LogSeverity.Debug, $"Armor-stand for dimension check: {client.Data}");
+            if (!client.Data.Contains("found"))
+            {
+                coordinates[3] = 1;
+                client.ExecuteSingle(
+                    $"execute as @e[tag=coordfinder] at @s in the_end run execute as @a[name={name}, distance=..1] run tag @e[tag=coordfinder] add found",
+                    true);
+                LoggerService.Log(LogSeverity.Debug, $"Armor-stand for dimension check: {client.Data}");
+                client.ExecuteSingle("tag @e[tag=cooordfinder] list", true);
+                LoggerService.Log(LogSeverity.Debug, $"Armor-stand for dimension check: {client.Data}");
+                if (!client.Data.Contains("found"))
+                    coordinates[3] = 0;
             }
 
-            Client.ExecuteSingle($"execute as @e[tag=coordfinder] at @s in the_nether run execute as @a[name={Name}, distance=..1] run tag @e[tag=coordfinder] add found", true);
-            LoggerService.Log(LogSeverity.Debug, $"Armor-stand for dimension check: {Client.Data}");
-            Client.ExecuteSingle($"tag @e[tag=cooordfinder] list", true);
-            LoggerService.Log(LogSeverity.Debug, $"Armor-stand for dimension check: {Client.Data}");
-            if (!Client.Data.Contains("found"))
-            {
-                Coordinates[3] = 1;
-                Client.ExecuteSingle($"execute as @e[tag=coordfinder] at @s in the_end run execute as @a[name={Name}, distance=..1] run tag @e[tag=coordfinder] add found", true);
-                LoggerService.Log(LogSeverity.Debug, $"Armor-stand for dimension check: {Client.Data}");
-                Client.ExecuteSingle($"tag @e[tag=cooordfinder] list", true);
-                LoggerService.Log(LogSeverity.Debug, $"Armor-stand for dimension check: {Client.Data}");
-                if (!Client.Data.Contains("found"))
-                    Coordinates[3] = 0;
-            }
+            client.ExecuteSingle("execute as @e[tag=coordfinder] at @s run kill @s", true);
 
-            Client.ExecuteSingle("execute as @e[tag=coordfinder] at @s run kill @s", true);
+            client.ExecuteSingle($"scoreboard players get {name} Health", true);
+            var health = client.Data.Contains("has") ? client.Data.Split(' ')[2] : "??";
+            client.ExecuteSingle($"scoreboard players get {name} Food", true);
+            var food = client.Data.Contains("has") ? client.Data.Split(' ')[2] : "??";
 
-            Client.ExecuteSingle($"scoreboard players get {Name} Health", true);
-            var Health = Client.Data.Contains("has") ? Client.Data.Split(' ')[2] : "??";
-            Client.ExecuteSingle($"scoreboard players get {Name} Food", true);
-            var Food = Client.Data.Contains("has") ? Client.Data.Split(' ')[2] : "??";
-
-            Client.ExecuteSingle($"execute as {Name} at @s run experience query @s points", true);
-            var PointData = Client.Data;
-            Client.ExecuteSingle($"execute as {Name} at @s run experience query @s levels", true);
-            var Experience = 0;
-            if (Client.Status == RCONStatus.SUCCESS)
-            {
+            client.ExecuteSingle($"execute as {name} at @s run experience query @s points", true);
+            var pointData = client.Data;
+            client.ExecuteSingle($"execute as {name} at @s run experience query @s levels", true);
+            var experience = 0;
+            if (client.Status == RCONStatus.Success)
                 try
                 {
-                    var Points = int.Parse(PointData.Split(' ')[2]);
-                    var Levels = int.Parse(Client.Data.Split(' ')[2]);
-                    Experience = (int)Exp(Levels, Points);
+                    var points = int.Parse(pointData.Split(' ')[2]);
+                    var levels = int.Parse(client.Data.Split(' ')[2]);
+                    experience = (int) Exp(levels, points);
                 }
                 catch (FormatException)
                 {
-                    LoggerService.Log(LogSeverity.Warning, $"Failed to process experience. Response: {Client.Data}");
+                    LoggerService.Log(LogSeverity.Warning, $"Failed to process experience. Response: {client.Data}");
                 }
-            }
-            foreach (var CorrectUser in Users.Where(User => User.Username == Name))
+
+            foreach (var correctUser in users.Where(user => user.Username == name))
             {
-                CorrectUser.Coordinates = Coordinates;
-                CorrectUser.Health = Health;
-                CorrectUser.Food = Food;
-                CorrectUser.Online = true;
-                CorrectUser.Experience = Experience;
+                correctUser.Coordinates = coordinates;
+                correctUser.Health = health;
+                correctUser.Food = food;
+                correctUser.Online = true;
+                correctUser.Experience = experience;
             }
         }
 

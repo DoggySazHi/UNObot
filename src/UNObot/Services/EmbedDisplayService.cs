@@ -21,27 +21,29 @@ namespace UNObot.Services
 
     public static class EmbedDisplayService
     {
-        public static async Task<Embed> DisplayGame(ulong ServerID)
+        private const int Attempts = 3;
+
+        public static async Task<Embed> DisplayGame(ulong serverId)
         {
-            var card = await UNODatabaseService.GetCurrentCard(ServerID);
+            var card = await UNODatabaseService.GetCurrentCard(serverId);
 
             uint cardColor = card.Color switch
             {
                 "Red" => (uint) 0xFF0000,
                 "Blue" => 0x0000FF,
                 "Yellow" => 0xFFFF00,
-                _ => 0x00FF00,
+                _ => 0x00FF00
             };
             var response = "";
-            var Gamemode = await UNODatabaseService.GetGamemode(ServerID);
-            string server = Program._client.GetGuild(ServerID).Name;
-            foreach (ulong id in await UNODatabaseService.GetPlayers(ServerID))
+            var gamemode = await UNODatabaseService.GetGameMode(serverId);
+            var server = Program.Client.GetGuild(serverId).Name;
+            foreach (var id in await UNODatabaseService.GetPlayers(serverId))
             {
-                var user = Program._client.GetUser(id);
+                var user = Program.Client.GetUser(id);
                 var cardCount = (await UNODatabaseService.GetCards(id)).Count();
-                if (!Gamemode.HasFlag(UNOCoreServices.Gamemodes.Private))
+                if (!gamemode.HasFlag(UNOCoreServices.GameMode.Private))
                 {
-                    if (id == (await UNODatabaseService.GetPlayers(ServerID)).Peek())
+                    if (id == (await UNODatabaseService.GetPlayers(serverId)).Peek())
                         response += $"**{user.Username}** - {cardCount} card";
                     else
                         response += $"{user.Username} - {cardCount} card";
@@ -52,7 +54,7 @@ namespace UNObot.Services
                 }
                 else
                 {
-                    if (id == (await UNODatabaseService.GetPlayers(ServerID)).Peek())
+                    if (id == (await UNODatabaseService.GetPlayers(serverId)).Peek())
                         response += $"**{user.Username}** - ??? cards\n";
                     else
                         response += $"{user.Username} - ??? cards\n";
@@ -61,13 +63,13 @@ namespace UNObot.Services
 
             var builder = new EmbedBuilder()
                 .WithTitle("Current Game")
-                .WithDescription(await UNODatabaseService.GetDescription(ServerID))
+                .WithDescription(await UNODatabaseService.GetDescription(serverId))
                 .WithColor(new Color(cardColor))
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.version} - By DoggySazHi")
+                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithThumbnailUrl(ImageHandler.GetImage(card))
@@ -84,60 +86,58 @@ namespace UNObot.Services
             //Remember to ReplyAsync("It is now <@832983482589>'s turn.", Embed);
         }
 
-        public static async Task<Embed> DisplayCards(ulong userid, ulong ServerID)
+        public static async Task<Embed> DisplayCards(ulong userid, ulong serverId)
         {
-            string server = Program._client.GetGuild(ServerID).Name;
-            var currentCard = await UNODatabaseService.GetCurrentCard(ServerID);
+            var server = Program.Client.GetGuild(serverId).Name;
+            var currentCard = await UNODatabaseService.GetCurrentCard(serverId);
             var cards = await UNODatabaseService.GetCards(userid);
             cards = cards.OrderBy(o => o.Color).ThenBy(o => o.Value).ToList();
 
-            string RedCards = "";
-            string GreenCards = "";
-            string BlueCards = "";
-            string YellowCards = "";
-            string WildCards = "";
+            var redCards = "";
+            var greenCards = "";
+            var blueCards = "";
+            var yellowCards = "";
+            var wildCards = "";
 
-            foreach (Card c in cards)
-            {
+            foreach (var c in cards)
                 switch (c.Color)
                 {
                     case "Red":
                         if (c.Color == currentCard.Color || c.Value == currentCard.Value)
-                            RedCards += $"**{c}**\n";
+                            redCards += $"**{c}**\n";
                         else
-                            RedCards += $"{c}\n";
+                            redCards += $"{c}\n";
                         break;
                     case "Green":
                         if (c.Color == currentCard.Color || c.Value == currentCard.Value)
-                            GreenCards += $"**{c}**\n";
+                            greenCards += $"**{c}**\n";
                         else
-                            GreenCards += $"{c}\n";
+                            greenCards += $"{c}\n";
                         break;
                     case "Blue":
                         if (c.Color == currentCard.Color || c.Value == currentCard.Value)
-                            BlueCards += $"**{c}**\n";
+                            blueCards += $"**{c}**\n";
                         else
-                            BlueCards += $"{c}\n";
+                            blueCards += $"{c}\n";
                         break;
                     case "Yellow":
                         if (c.Color == currentCard.Color || c.Value == currentCard.Value)
-                            YellowCards += $"**{c}**\n";
+                            yellowCards += $"**{c}**\n";
                         else
-                            YellowCards += $"{c}\n";
+                            yellowCards += $"{c}\n";
                         break;
                     default:
-                        WildCards += $"{c}\n";
+                        wildCards += $"{c}\n";
                         break;
                 }
-            }
 
-            RedCards += RedCards == "" ? "There are no cards available." : "";
-            GreenCards += GreenCards == "" ? "There are no cards available." : "";
-            BlueCards += BlueCards == "" ? "There are no cards available." : "";
-            YellowCards += YellowCards == "" ? "There are no cards available." : "";
-            WildCards += WildCards == "" ? "There are no cards available." : "";
+            redCards += redCards == "" ? "There are no cards available." : "";
+            greenCards += greenCards == "" ? "There are no cards available." : "";
+            blueCards += blueCards == "" ? "There are no cards available." : "";
+            yellowCards += yellowCards == "" ? "There are no cards available." : "";
+            wildCards += wildCards == "" ? "There are no cards available." : "";
 
-            Random r = ThreadSafeRandom.ThisThreadsRandom;
+            var r = ThreadSafeRandom.ThisThreadsRandom;
 
             var builder = new EmbedBuilder()
                 .WithTitle("Cards in Hand")
@@ -147,7 +147,7 @@ namespace UNObot.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.version} - By DoggySazHi")
+                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithThumbnailUrl(ImageHandler.GetImage(currentCard))
@@ -157,662 +157,668 @@ namespace UNObot.Services
                         .WithName($"Playing in {server}")
                         .WithIconUrl("https://williamle.com/unobot/unobot.png");
                 })
-                .AddField("Red Cards", RedCards, true)
-                .AddField("Green Cards", GreenCards, true)
-                .AddField("Blue Cards", BlueCards, true)
-                .AddField("Yellow Cards", YellowCards, true)
-                .AddField("Wild Cards", WildCards, true);
+                .AddField("Red Cards", redCards, true)
+                .AddField("Green Cards", greenCards, true)
+                .AddField("Blue Cards", blueCards, true)
+                .AddField("Yellow Cards", yellowCards, true)
+                .AddField("Wild Cards", wildCards, true);
             var embed = builder.Build();
             return embed;
         }
 
-        public static Tuple<Embed, Tuple<string, string, string>> DisplayAddSong(ulong UserID, ulong ServerID,
-            string SongURL, Tuple<string, string, string> Information)
+        public static Tuple<Embed, Tuple<string, string, string>> DisplayAddSong(ulong userId, ulong serverId,
+            string songUrl, Tuple<string, string, string> information)
         {
-            string Server = Program._client.GetGuild(ServerID).Name;
-            string Username = Program._client.GetUser(UserID).Username;
-            Random r = ThreadSafeRandom.ThisThreadsRandom;
+            var server = Program.Client.GetGuild(serverId).Name;
+            var username = Program.Client.GetUser(userId).Username;
+            var r = ThreadSafeRandom.ThisThreadsRandom;
 
             var builder = new EmbedBuilder()
-                .WithTitle(Information.Item1)
-                .WithUrl(SongURL)
+                .WithTitle(information.Item1)
+                .WithUrl(songUrl)
                 .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.version} - By DoggySazHi")
+                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
-                .WithThumbnailUrl(Information.Item3)
+                .WithThumbnailUrl(information.Item3)
                 .WithAuthor(author =>
                 {
                     author
-                        .WithName($"Added in {Server}")
+                        .WithName($"Added in {server}")
                         .WithIconUrl("https://williamle.com/unobot/unobot.png");
                 })
-                .AddField("Duration", Information.Item2)
-                .AddField("Requested By", Username);
+                .AddField("Duration", information.Item2)
+                .AddField("Requested By", username);
             var embed = builder.Build();
-            return new Tuple<Embed, Tuple<string, string, string>>(embed, Information);
+            return new Tuple<Embed, Tuple<string, string, string>>(embed, information);
         }
 
-        public static Embed DisplayNowPlaying(Song Song, string CurrentDuration)
+        public static Embed DisplayNowPlaying(Song song, string currentDuration)
         {
-            string Username = Program._client.GetUser(Song.RequestedBy).Username;
-            string Servername = Program._client.GetGuild(Song.RequestedGuild).Name;
-            Random r = ThreadSafeRandom.ThisThreadsRandom;
+            var username = Program.Client.GetUser(song.RequestedBy).Username;
+            var servername = Program.Client.GetGuild(song.RequestedGuild).Name;
+            var r = ThreadSafeRandom.ThisThreadsRandom;
 
             var builder = new EmbedBuilder()
-                .WithTitle(Song.Name)
-                .WithUrl(Song.URL)
+                .WithTitle(song.Name)
+                .WithUrl(song.Url)
                 .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.version} - By DoggySazHi")
+                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
-                .WithThumbnailUrl(Song.ThumbnailURL)
+                .WithThumbnailUrl(song.ThumbnailUrl)
                 .WithAuthor(author =>
                 {
                     author
-                        .WithName($"Playing in {Servername}")
+                        .WithName($"Playing in {servername}")
                         .WithIconUrl("https://williamle.com/unobot/unobot.png");
                 })
                 .AddField("Duration",
-                    $"{(string.IsNullOrEmpty(CurrentDuration) ? "" : $"{CurrentDuration}/")}{Song.Duration}")
-                .AddField("Requested By", Username);
+                    $"{(string.IsNullOrEmpty(currentDuration) ? "" : $"{currentDuration}/")}{song.Duration}")
+                .AddField("Requested By", username);
             return builder.Build();
         }
 
-        public static async Task<Tuple<Embed, Playlist>> DisplayPlaylist(ulong UserID, ulong ServerID, string SongURL)
+        public static async Task<Tuple<Embed, Playlist>> DisplayPlaylist(ulong userId, ulong serverId, string songUrl)
         {
-            string Username = Program._client.GetUser(UserID).Username;
-            string Servername = Program._client.GetGuild(ServerID).Name;
-            Random r = ThreadSafeRandom.ThisThreadsRandom;
-            var Playlist = await YoutubeService.GetSingleton().GetPlaylist(SongURL);
-            var Thumbnail = await YoutubeService.GetSingleton().GetPlaylistThumbnail(Playlist.Id);
+            var username = Program.Client.GetUser(userId).Username;
+            var servername = Program.Client.GetGuild(serverId).Name;
+            var r = ThreadSafeRandom.ThisThreadsRandom;
+            var playlist = await YoutubeService.GetSingleton().GetPlaylist(songUrl);
+            var thumbnail = await YoutubeService.GetSingleton().GetPlaylistThumbnail(playlist.Id);
 
             var builder = new EmbedBuilder()
-                .WithTitle(Playlist.Title)
-                .WithUrl(Playlist.Url)
+                .WithTitle(playlist.Title)
+                .WithUrl(playlist.Url)
                 .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.version} - By DoggySazHi")
+                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
-                .WithThumbnailUrl(Thumbnail)
+                .WithThumbnailUrl(thumbnail)
                 .WithAuthor(author =>
                 {
                     author
-                        .WithName($"Playing in {Servername}")
+                        .WithName($"Playing in {servername}")
                         .WithIconUrl("https://williamle.com/unobot/unobot.png");
                 })
-                .AddField("Description", $"{Playlist.Description}")
-                .AddField("Author", $"{Playlist.Author}")
-                .AddField("Requested By", Username);
-            return new Tuple<Embed, Playlist>(builder.Build(), Playlist);
+                .AddField("Description", $"{playlist.Description}")
+                .AddField("Author", $"{playlist.Author}")
+                .AddField("Requested By", username);
+            return new Tuple<Embed, Playlist>(builder.Build(), playlist);
         }
 
-        public static Tuple<Embed, int> DisplaySongList(Song NowPlaying, List<Song> Songs, int Page)
+        public static Tuple<Embed, int> DisplaySongList(Song nowPlaying, List<Song> songs, int page)
         {
-            List<StringBuilder> Containers = new List<StringBuilder>();
-            Random r = ThreadSafeRandom.ThisThreadsRandom;
-            string Server = Program._client.GetGuild(NowPlaying.RequestedGuild).Name;
+            var containers = new List<StringBuilder>();
+            var r = ThreadSafeRandom.ThisThreadsRandom;
+            var server = Program.Client.GetGuild(nowPlaying.RequestedGuild).Name;
 
-            int Index = 0;
+            var index = 0;
 
-            if (Songs.Count == 0)
-                Containers.Add(new StringBuilder("There are no songs queued."));
+            if (songs.Count == 0)
+                containers.Add(new StringBuilder("There are no songs queued."));
 
-            while (Index < Songs.Count)
+            while (index < songs.Count)
             {
-                StringBuilder List = new StringBuilder();
+                var list = new StringBuilder();
 
-                for (int i = 0; i < 9; i++)
+                for (var i = 0; i < 9; i++)
                 {
-                    if (Index >= Songs.Count)
+                    if (index >= songs.Count)
                         break;
-                    Song s = Songs[Index++];
-                    string Username = Program._client.GetUser(s.RequestedBy).Username;
-                    string NextLine = $"``{Index}.``[{s.Name}]({s.URL}) |``{s.Duration} Requested by: {Username}``\n\n";
-                    if (List.Length + NextLine.Length > 1024)
+                    var s = songs[index++];
+                    var username = Program.Client.GetUser(s.RequestedBy).Username;
+                    var nextLine = $"``{index}.``[{s.Name}]({s.Url}) |``{s.Duration} Requested by: {username}``\n\n";
+                    if (list.Length + nextLine.Length > 1024)
                     {
-                        Index--;
+                        index--;
                         break;
                     }
 
-                    List.Append(NextLine);
+                    list.Append(nextLine);
                 }
 
-                Containers.Add(List);
+                containers.Add(list);
             }
 
-            if (Page <= 0 || Page > Containers.Count)
-                return new Tuple<Embed, int>(null, Containers.Count);
+            if (page <= 0 || page > containers.Count)
+                return new Tuple<Embed, int>(null, containers.Count);
             return new Tuple<Embed, int>(
-                DisplaySongList(Server, r, Page, Containers.Count, Containers[Page - 1], NowPlaying), Containers.Count);
+                DisplaySongList(server, r, page, containers.Count, containers[page - 1], nowPlaying), containers.Count);
         }
 
-        private static Embed DisplaySongList(string Server, Random r, int Page, int MaxPages, StringBuilder List,
-            Song NowPlaying)
+        private static Embed DisplaySongList(string server, Random r, int page, int maxPages, StringBuilder list,
+            Song nowPlaying)
         {
             var builder = new EmbedBuilder()
                 .WithTitle("Now Playing")
                 .WithDescription(
-                    $"[{NowPlaying.Name}]({NowPlaying.URL}) |``{NowPlaying.Duration} Requested by: {Program._client.GetUser(NowPlaying.RequestedBy).Username}``")
+                    $"[{nowPlaying.Name}]({nowPlaying.Url}) |``{nowPlaying.Duration} Requested by: {Program.Client.GetUser(nowPlaying.RequestedBy).Username}``")
                 .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.version} - By DoggySazHi")
+                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
                 {
                     author
-                        .WithName($"Page {Page}/{MaxPages} | Playing in {Server}")
+                        .WithName($"Page {page}/{maxPages} | Playing in {server}")
                         .WithIconUrl("https://williamle.com/unobot/unobot.png");
                 })
-                .AddField("Queued", List.ToString());
+                .AddField("Queued", list.ToString());
 
             return builder.Build();
         }
 
-        private const int Attempts = 3;
-
-        public static bool UnturnedQueryEmbed(string IP, ushort Port, out Embed Result, ServerAverages Averages = null)
+        public static bool UnturnedQueryEmbed(string ip, ushort port, out Embed result, ServerAverages averages = null)
         {
-            A2S_INFO Information = null;
-            bool InformationGet = false;
-            A2S_PLAYER Players = null;
-            bool PlayersGet = false;
-            A2S_RULES Rules = null;
-            bool RulesGet = false;
-            for (int i = 0; i < Attempts; i++)
+            A2SInfo information = null;
+            var informationGet = false;
+            A2SPlayer players = null;
+            var playersGet = false;
+            A2SRules rules = null;
+            var rulesGet = false;
+            for (var i = 0; i < Attempts; i++)
             {
-                if (!InformationGet)
-                    InformationGet = GetInfo(IP, (ushort) (Port + 1), out Information);
-                if (!PlayersGet)
-                    PlayersGet = GetPlayers(IP, (ushort) (Port + 1), out Players);
-                if (!RulesGet)
-                    RulesGet = GetRules(IP, (ushort) (Port + 1), out Rules);
+                if (!informationGet)
+                    informationGet = GetInfo(ip, (ushort) (port + 1), out information);
+                if (!playersGet)
+                    playersGet = GetPlayers(ip, (ushort) (port + 1), out players);
+                if (!rulesGet)
+                    rulesGet = GetRules(ip, (ushort) (port + 1), out rules);
             }
 
-            if (!InformationGet || !PlayersGet || !RulesGet)
+            if (!informationGet || !playersGet || !rulesGet)
             {
-                Result = null;
+                result = null;
                 return false;
             }
 
-            var Random = ThreadSafeRandom.ThisThreadsRandom;
-            string ServerName = Information.Name;
-            string ServerImageURL = Rules.Rules
+            var random = ThreadSafeRandom.ThisThreadsRandom;
+            var serverName = information.Name;
+            var serverImageUrl = rules.Rules
                 .FirstOrDefault(o => o.Name.Contains("Browser_Icon", StringComparison.OrdinalIgnoreCase)).Value;
-            string ServerDescription = "";
-            string Map = Information.Map;
-            string PlayersOnline = "";
-            bool VACEnabled = Information.VAC == A2S_INFO.VACFlags.Secured;
-            string UnturnedVersion = Rules.Rules
+            var serverDescription = "";
+            var map = information.Map;
+            var playersOnline = "";
+            var vacEnabled = information.Vac == A2SInfo.VacFlags.Secured;
+            var unturnedVersion = rules.Rules
                 .FirstOrDefault(o => o.Name.Contains("unturned", StringComparison.OrdinalIgnoreCase)).Value;
-            string RocketModVersion = "";
-            string RocketModPlugins = "";
+            var rocketModVersion = "";
+            var rocketModPlugins = "";
 
-            ServerImageURL ??= "";
+            serverImageUrl ??= "";
 
-            UnturnedVersion ??= $"Unknown Version ({Information.Version}?)";
+            unturnedVersion ??= $"Unknown Version ({information.Version}?)";
 
-            int DescriptionLines = Convert.ToInt32(Rules.Rules
+            var descriptionLines = Convert.ToInt32(rules.Rules
                 .Find(o => o.Name.Contains("Browser_Desc_Full_Count", StringComparison.OrdinalIgnoreCase)).Value
                 .Trim());
-            for (int i = 0; i < DescriptionLines; i++)
-                ServerDescription += Rules.Rules.FirstOrDefault(o =>
+            for (var i = 0; i < descriptionLines; i++)
+                serverDescription += rules.Rules.FirstOrDefault(o =>
                     o.Name.Contains($"Browser_Desc_Full_Line_{i}", StringComparison.OrdinalIgnoreCase)).Value;
-            for (int i = 0; i < Players.PlayerCount; i++)
+            for (var i = 0; i < players.PlayerCount; i++)
             {
-                PlayersOnline +=
-                    $"{Players.Players[i].Name} - {HumanReadable(Players.Players[i].Duration)}";
-                if (i != Players.PlayerCount - 1)
-                    PlayersOnline += "\n";
+                playersOnline +=
+                    $"{players.Players[i].Name} - {HumanReadable(players.Players[i].Duration)}";
+                if (i != players.PlayerCount - 1)
+                    playersOnline += "\n";
             }
 
-            int RocketExists =
-                Rules.Rules.FindIndex(o => o.Name.Contains("rocket", StringComparison.OrdinalIgnoreCase));
-            int RocketPluginsExists =
-                Rules.Rules.FindIndex(o => o.Name.Contains("rocketplugins", StringComparison.OrdinalIgnoreCase));
-            if (RocketExists != -1)
-                RocketModVersion = Rules.Rules[RocketExists].Value;
-            if (RocketPluginsExists != -1)
-                RocketModPlugins = Rules.Rules[RocketPluginsExists].Value;
+            var rocketExists =
+                rules.Rules.FindIndex(o => o.Name.Contains("rocket", StringComparison.OrdinalIgnoreCase));
+            var rocketPluginsExists =
+                rules.Rules.FindIndex(o => o.Name.Contains("rocketplugins", StringComparison.OrdinalIgnoreCase));
+            if (rocketExists != -1)
+                rocketModVersion = rules.Rules[rocketExists].Value;
+            if (rocketPluginsExists != -1)
+                rocketModPlugins = rules.Rules[rocketPluginsExists].Value;
 
             var builder = new EmbedBuilder()
                 .WithTitle("Description")
-                .WithDescription(ServerDescription)
-                .WithColor(new Color(Random.Next(0, 256), Random.Next(0, 256), Random.Next(0, 256)))
+                .WithDescription(serverDescription)
+                .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.version} - By DoggySazHi")
+                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
-                .WithThumbnailUrl(ServerImageURL)
+                .WithThumbnailUrl(serverImageUrl)
                 .WithAuthor(author =>
                 {
                     author
-                        .WithName($"Server Query of {ServerName}")
+                        .WithName($"Server Query of {serverName}")
                         .WithIconUrl("https://williamle.com/unobot/unobot.png");
                 })
-                .AddField("IP", IP, true)
-                .AddField("Port", Port, true)
-                .AddField("Map", Map, true)
-                .AddField("VAC Security", VACEnabled ? "Enabled" : "Disabled", true)
-                .AddField($"Versions",
-                    $"Unturned: {UnturnedVersion}{(RocketModVersion == "" ? "" : $"\nRocketMod: {RocketModVersion}")}",
+                .AddField("IP", ip, true)
+                .AddField("Port", port, true)
+                .AddField("Map", map, true)
+                .AddField("VAC Security", vacEnabled ? "Enabled" : "Disabled", true)
+                .AddField("Versions",
+                    $"Unturned: {unturnedVersion}{(rocketModVersion == "" ? "" : $"\nRocketMod: {rocketModVersion}")}",
                     true);
-            if (!string.IsNullOrWhiteSpace(RocketModPlugins))
-                builder.AddField($"RocketMod Plugins", RocketModPlugins, true);
-            builder.AddField($"Players: {Information.Players}/{Information.MaxPlayers}",
-                string.IsNullOrWhiteSpace(PlayersOnline) ? "Nobody's online!" : PlayersOnline, true);
-            if (Averages != null)
+            if (!string.IsNullOrWhiteSpace(rocketModPlugins))
+                builder.AddField("RocketMod Plugins", rocketModPlugins, true);
+            builder.AddField($"Players: {information.Players}/{information.MaxPlayers}",
+                string.IsNullOrWhiteSpace(playersOnline) ? "Nobody's online!" : playersOnline, true);
+            if (averages != null)
                 builder.AddField("Server Averages",
-                    $"Last hour: {Averages.AverageLastHour:N2} players\n" +
-                    $"Last 24 hours: {Averages.AverageLast24H:N2} players\n" +
-                    $"Last week: {Averages.AverageLastWeek:N2} players\n" +
-                    $"Last month: {Averages.AverageLastMonth:N2} players\n" +
-                    $"Last year: {Averages.AverageLastYear:N2} players\n", true);
-            Result = builder.Build();
+                    $"Last hour: {averages.AverageLastHour:N2} players\n" +
+                    $"Last 24 hours: {averages.AverageLast24H:N2} players\n" +
+                    $"Last week: {averages.AverageLastWeek:N2} players\n" +
+                    $"Last month: {averages.AverageLastMonth:N2} players\n" +
+                    $"Last year: {averages.AverageLastYear:N2} players\n", true);
+            result = builder.Build();
             return true;
         }
-        
-        public static bool MinecraftQueryEmbed(string IP, ushort Port, out Embed Result)
+
+        public static bool MinecraftQueryEmbed(string ip, ushort port, out Embed result)
         {
             //TODO with the new option to disable status, it might be that queries work but not simple statuses.
-            var DefaultStatus = new MCStatus(IP, Port);
-            var ExtendedGet = GetInfoMCNew(IP, Port, out var ExtendedStatus);
+            var defaultStatus = new MCStatus(ip, port);
+            var extendedGet = GetInfoMCNew(ip, port, out var extendedStatus);
 
-            if (!DefaultStatus.ServerUp && !ExtendedGet)
+            if (!defaultStatus.ServerUp && !extendedGet)
             {
-                Result = null;
+                result = null;
                 return false;
             }
 
-            List<MCUser> MCUserInfo = null;
-            if (OutsideServers.Contains(IP) && SpecialServers.ContainsKey(Port))
+            List<MCUser> mcUserInfo = null;
+            if (OutsideServers.Contains(ip) && SpecialServers.ContainsKey(port))
             {
-                var Server = SpecialServers[Port];
-                MCUserInfo = GetMCUsers(Server.Server, Server.RCONPort, Server.Password, out _);
+                var server = SpecialServers[port];
+                mcUserInfo = GetMCUsers(server.Server, server.RCONPort, server.Password, out _);
             }
 
-            var Random = ThreadSafeRandom.ThisThreadsRandom;
-            var ServerDescription = DefaultStatus.Motd;
-            var PlayersOnline = DefaultStatus.CurrentPlayers == "0" ? "" : "Unknown (server doesn't have query on!)";
+            var random = ThreadSafeRandom.ThisThreadsRandom;
+            var serverDescription = defaultStatus.Motd;
+            var playersOnline = defaultStatus.CurrentPlayers == "0" ? "" : "Unknown (server doesn't have query on!)";
 
-            if (ExtendedStatus != null && ExtendedGet)
+            if (extendedStatus != null && extendedGet)
             {
-                PlayersOnline = "";
-                for (int i = 0; i < ExtendedStatus.Players.Length; i++)
+                playersOnline = "";
+                for (var i = 0; i < extendedStatus.Players.Length; i++)
                 {
-                    PlayersOnline += $"{ExtendedStatus.Players[i]}";
-                    if (MCUserInfo != null)
+                    playersOnline += $"{extendedStatus.Players[i]}";
+                    if (mcUserInfo != null)
                     {
-                        var UserInfo = MCUserInfo.Find(o => o.Username == ExtendedStatus.Players[i]);
-                        if (UserInfo != null)
-                            PlayersOnline += $"\n- **Ouchies:** {UserInfo.Ouchies} | **Health:** {UserInfo.Health} | **Food:** {UserInfo.Food}\n- **Experience:** {UserInfo.Experience}";
+                        var userInfo = mcUserInfo.Find(o => o.Username == extendedStatus.Players[i]);
+                        if (userInfo != null)
+                            playersOnline +=
+                                $"\n- **Ouchies:** {userInfo.Ouchies} | **Health:** {userInfo.Health} | **Food:** {userInfo.Food}\n- **Experience:** {userInfo.Experience}";
                         else
-                            PlayersOnline += "\n Unknown stats.";
+                            playersOnline += "\n Unknown stats.";
                     }
 
-                    if (i != ExtendedStatus.Players.Length - 1)
-                        PlayersOnline += "\n";
+                    if (i != extendedStatus.Players.Length - 1)
+                        playersOnline += "\n";
                 }
             }
 
             var builder = new EmbedBuilder()
                 .WithTitle("MOTD")
-                .WithDescription(ServerDescription)
-                .WithColor(new Color(Random.Next(0, 256), Random.Next(0, 256), Random.Next(0, 256)))
+                .WithDescription(serverDescription)
+                .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.version} - By DoggySazHi")
+                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
                 {
                     author
-                        .WithName($"Minecraft Server Query of {IP}")
+                        .WithName($"Minecraft Server Query of {ip}")
                         .WithIconUrl("https://williamle.com/unobot/unobot.png");
                 })
-                .AddField("IP", IP, true)
-                .AddField("Port", Port, true)
-                .AddField("Version", $"{DefaultStatus.Version}", true)
-                .AddField("Ping", $"{DefaultStatus.Delay} ms", true)
-                .AddField($"Players: {DefaultStatus.CurrentPlayers}/{DefaultStatus.MaximumPlayers}",
-                    string.IsNullOrWhiteSpace(PlayersOnline) ? "Nobody's online!" : PlayersOnline, true);
-            Result = builder.Build();
+                .AddField("IP", ip, true)
+                .AddField("Port", port, true)
+                .AddField("Version", $"{defaultStatus.Version}", true)
+                .AddField("Ping", $"{defaultStatus.Delay} ms", true)
+                .AddField($"Players: {defaultStatus.CurrentPlayers}/{defaultStatus.MaximumPlayers}",
+                    string.IsNullOrWhiteSpace(playersOnline) ? "Nobody's online!" : playersOnline, true);
+            result = builder.Build();
             return true;
         }
 
-        public static bool OuchiesEmbed(string IP, ushort Port, out Embed Result)
+        public static bool OuchiesEmbed(string ip, ushort port, out Embed result)
         {
-            var Random = ThreadSafeRandom.ThisThreadsRandom;
+            var random = ThreadSafeRandom.ThisThreadsRandom;
 
-            if (!OutsideServers.Contains(IP) || !SpecialServers.ContainsKey(Port))
+            if (!OutsideServers.Contains(ip) || !SpecialServers.ContainsKey(port))
             {
-            
-                Result = new EmbedBuilder()
-                    .WithColor(new Color(Random.Next(0, 256), Random.Next(0, 256), Random.Next(0, 256)))
+                result = new EmbedBuilder()
+                    .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
                     .WithTimestamp(DateTimeOffset.Now)
                     .WithFooter(footer =>
                     {
                         footer
-                            .WithText($"UNObot {Program.version} - By DoggySazHi")
+                            .WithText($"UNObot {Program.Version} - By DoggySazHi")
                             .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                     })
                     .WithAuthor(author =>
                     {
                         author
-                            .WithName($"Ouchies of {IP}")
+                            .WithName($"Ouchies of {ip}")
                             .WithIconUrl("https://williamle.com/unobot/unobot.png");
                     })
                     .AddField("Mukyu~", "Invalid port for checking ouchies!").Build();
                 return true;
             }
-            
-            MinecraftStatus Status = null;
-            var ExtendedGet = false;
-            for (var i = 0; i < Attempts; i++)
-            {
-                if (!ExtendedGet)
-                    ExtendedGet = GetInfoMCNew(IP, Port, out Status);
-            }
 
-            if (!ExtendedGet || Status == null)
+            MinecraftStatus status = null;
+            var extendedGet = false;
+            for (var i = 0; i < Attempts; i++)
+                if (!extendedGet)
+                    extendedGet = GetInfoMCNew(ip, port, out status);
+
+            if (!extendedGet || status == null)
             {
-                Result = null;
+                result = null;
                 return false;
             }
 
-            var Server = SpecialServers[Port];
-            var Ouchies = GetMCUsers(Server.Server, Server.RCONPort, Server.Password, out _);
+            var server = SpecialServers[port];
+            var ouchies = GetMCUsers(server.Server, server.RCONPort, server.Password, out _);
 
-            var PlayersOnline = "";
+            var playersOnline = "";
 
-            foreach (var Item in Ouchies)
-                PlayersOnline += $"{Item.Username} - {Item.Ouchies} Ouchies\n";
+            foreach (var item in ouchies)
+                playersOnline += $"{item.Username} - {item.Ouchies} Ouchies\n";
             // Doesn't seem to affect embeds. PlayersOnline = PlayersOnline.Substring(0, PlayersOnline.Length - 1);
 
             var builder = new EmbedBuilder()
                 .WithTitle("MOTD")
-                .WithDescription(Status.MOTD)
-                .WithColor(new Color(Random.Next(0, 256), Random.Next(0, 256), Random.Next(0, 256)))
+                .WithDescription(status.Motd)
+                .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.version} - By DoggySazHi")
+                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
                 {
                     author
-                        .WithName($"Ouchies of {IP}")
+                        .WithName($"Ouchies of {ip}")
                         .WithIconUrl("https://williamle.com/unobot/unobot.png");
                 })
-                .AddField("IP", IP, true)
-                .AddField("Port", Port, true)
-                .AddField("Version", $"{Status.Version}", true)
-                .AddField("Ouchies Listing", PlayersOnline, true);
-            Result = builder.Build();
+                .AddField("IP", ip, true)
+                .AddField("Port", port, true)
+                .AddField("Version", $"{status.Version}", true)
+                .AddField("Ouchies Listing", playersOnline, true);
+            result = builder.Build();
             return true;
         }
 
-        public static bool LocationsEmbed(string IP, ushort Port, out Embed Result)
+        public static bool LocationsEmbed(string ip, ushort port, out Embed result)
         {
-            var Random = ThreadSafeRandom.ThisThreadsRandom;
+            var random = ThreadSafeRandom.ThisThreadsRandom;
 
-            if (!OutsideServers.Contains(IP) || !SpecialServers.ContainsKey(Port))
+            if (!OutsideServers.Contains(ip) || !SpecialServers.ContainsKey(port))
             {
-            
-                Result = new EmbedBuilder()
-                    .WithColor(new Color(Random.Next(0, 256), Random.Next(0, 256), Random.Next(0, 256)))
+                result = new EmbedBuilder()
+                    .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
                     .WithTimestamp(DateTimeOffset.Now)
                     .WithFooter(footer =>
                     {
                         footer
-                            .WithText($"UNObot {Program.version} - By DoggySazHi")
+                            .WithText($"UNObot {Program.Version} - By DoggySazHi")
                             .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                     })
                     .WithAuthor(author =>
                     {
                         author
-                            .WithName($"Player Locations of {IP}")
+                            .WithName($"Player Locations of {ip}")
                             .WithIconUrl("https://williamle.com/unobot/unobot.png");
                     })
                     .AddField("Mukyu~", "Invalid port for checking ouchies!").Build();
                 return true;
             }
 
-            MinecraftStatus Status = null;
-            var ExtendedGet = false;
+            MinecraftStatus status = null;
+            var extendedGet = false;
             for (var i = 0; i < Attempts; i++)
-            {
-                if (!ExtendedGet)
-                    ExtendedGet = GetInfoMCNew(IP, Port, out Status);
-            }
+                if (!extendedGet)
+                    extendedGet = GetInfoMCNew(ip, port, out status);
 
-            if (!ExtendedGet || Status == null)
+            if (!extendedGet || status == null)
             {
-                Result = null;
+                result = null;
                 return false;
             }
 
-            var Server = SpecialServers[Port];
-            var Users = GetMCUsers(Server.Server, Server.RCONPort, Server.Password, out _);
+            var server = SpecialServers[port];
+            var users = GetMCUsers(server.Server, server.RCONPort, server.Password, out _);
 
-            var PlayersOnline = "";
-            foreach(var User in Users)
-                if (User.Online)
+            var playersOnline = "";
+            foreach (var user in users)
+                if (user.Online)
                 {
-                    PlayersOnline +=
-                        $"{User.Username} - **X:** {User.Coordinates[0]:N2} **Y:** {User.Coordinates[1]:N2} **Z:** {User.Coordinates[2]:N2} ";
-                    if(User.Coordinates.Length == 4)
-                        PlayersOnline += User.Coordinates[3] switch
+                    playersOnline +=
+                        $"{user.Username} - **X:** {user.Coordinates[0]:N2} **Y:** {user.Coordinates[1]:N2} **Z:** {user.Coordinates[2]:N2} ";
+                    if (user.Coordinates.Length == 4)
+                        playersOnline += user.Coordinates[3] switch
                         {
                             1 => "**End**",
                             -1 => "**Nether**",
                             _ => "**Overworld**"
                         };
-                    PlayersOnline += "\n";
+                    playersOnline += "\n";
                 }
 
-            if (PlayersOnline == "")
-                PlayersOnline = "Nobody's online!";
+            if (playersOnline == "")
+                playersOnline = "Nobody's online!";
             // Doesn't seem to affect embeds. PlayersOnline = PlayersOnline.Substring(0, PlayersOnline.Length - 1);
 
             var builder = new EmbedBuilder()
                 .WithTitle("MOTD")
-                .WithDescription(Status.MOTD)
-                .WithColor(new Color(Random.Next(0, 256), Random.Next(0, 256), Random.Next(0, 256)))
+                .WithDescription(status.Motd)
+                .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.version} - By DoggySazHi")
+                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
                 {
                     author
-                        .WithName($"Player Locations of {IP}")
+                        .WithName($"Player Locations of {ip}")
                         .WithIconUrl("https://williamle.com/unobot/unobot.png");
                 })
-                .AddField("IP", IP, true)
-                .AddField("Port", Port, true)
-                .AddField("Version", $"{Status.Version}", true)
-                .AddField("Players", PlayersOnline, true);
-            Result = builder.Build();
+                .AddField("IP", ip, true)
+                .AddField("Port", port, true)
+                .AddField("Version", $"{status.Version}", true)
+                .AddField("Players", playersOnline, true);
+            result = builder.Build();
             return true;
         }
 
-        public static bool TransferEmbed(string IP, ushort Port, ulong Source, string Target, string AmountIn, out Embed Result)
+        public static bool TransferEmbed(string ip, ushort port, ulong source, string target, string amountIn,
+            out Embed result)
         {
-            var MessageTitle = "Mukyu~";
-            var Message = "General error; IDK what happened, see UNObot logs.";
+            var messageTitle = "Mukyu~";
+            var message = "General error; IDK what happened, see UNObot logs.";
 
             try
             {
-                if (!OutsideServers.Contains(IP) || !SpecialServers.ContainsKey(Port))
+                if (!OutsideServers.Contains(ip) || !SpecialServers.ContainsKey(port))
                 {
-                    Message = "This server does not support experience transfer.";
+                    message = "This server does not support experience transfer.";
                 }
                 else
                 {
                     // One-shot query, since it takes too long if it does fail. Plus, it's only one query instead of multi-A2S.
-                    var ExtendedGet = GetInfoMCNew(IP, Port, out var Status);
+                    var extendedGet = GetInfoMCNew(ip, port, out var status);
 
-                    if (!ExtendedGet || Status == null)
+                    if (!extendedGet || status == null)
                     {
-                        Message = "Could not connect to the server!";
+                        message = "Could not connect to the server!";
                     }
                     else
                     {
-                        var Server = SpecialServers[Port];
-                        var Users = GetMCUsers(Server.Server, Server.RCONPort, Server.Password, out var Client, false);
-                        var SourceMCUsername = UNODatabaseService.GetMinecraftUser(Source).GetAwaiter().GetResult();
-                        var SourceUser = Users.Find(o => o.Online && o.Username == SourceMCUsername);
-                        var TargetUser = Users.Find(o => o.Online && o.Username == Target);
+                        var server = SpecialServers[port];
+                        var users = GetMCUsers(server.Server, server.RCONPort, server.Password, out var client, false);
+                        var sourceMCUsername = UNODatabaseService.GetMinecraftUser(source).GetAwaiter().GetResult();
+                        var sourceUser = users.Find(o => o.Online && o.Username == sourceMCUsername);
+                        var targetUser = users.Find(o => o.Online && o.Username == target);
 
-                        var TextAmount = AmountIn.ToLower().Trim();
-                        var NumAmount = int.TryParse(AmountIn, out var Amount);
-                        if (TextAmount == "all" || TextAmount == "max")
+                        var textAmount = amountIn.ToLower().Trim();
+                        var numAmount = int.TryParse(amountIn, out var amount);
+                        if (textAmount == "all" || textAmount == "max")
                         {
-                            Amount = 1;
-                            NumAmount = true;
+                            amount = 1;
+                            numAmount = true;
                         }
-                        if (SourceMCUsername == null)
-                            Message = "Failed to find a username associated to this Discord account.";
-                        else if (SourceUser == null)
-                            Message = "You must be online to make this request.";
-                        else if (TargetUser == null)
-                            Message = "The target user must be online to make this request.";
-                        else if (!NumAmount || Amount <= 0)
-                            Message = "Invalid amount! It must be a positive number.";
-                        else if (SourceUser.Experience < Amount)
-                            Message = $"You have {SourceUser.Experience}, but you're trying to give {Amount}.";
+
+                        if (sourceMCUsername == null)
+                        {
+                            message = "Failed to find a username associated to this Discord account.";
+                        }
+                        else if (sourceUser == null)
+                        {
+                            message = "You must be online to make this request.";
+                        }
+                        else if (targetUser == null)
+                        {
+                            message = "The target user must be online to make this request.";
+                        }
+                        else if (!numAmount || amount <= 0)
+                        {
+                            message = "Invalid amount! It must be a positive number.";
+                        }
+                        else if (sourceUser.Experience < amount)
+                        {
+                            message = $"You have {sourceUser.Experience}, but you're trying to give {amount}.";
+                        }
                         else
                         {
-                            if (TextAmount == "all" || TextAmount == "max")
-                                Amount = SourceUser.Experience;
-                            Client.Execute($"xp add {SourceUser.Username} -{Amount} points", true);
-                            Client.Execute($"xp add {TargetUser.Username} {Amount} points");
-                            MessageTitle = "Nice.";
-                            
-                            Message = $"Transfer successful.{(SourceUser == TargetUser ? " But why?" : "")}\n" +
-                                      $"{SourceUser.Username}: {SourceUser.Experience} → {SourceUser.Experience -= Amount}\n" +
-                                      $"{TargetUser.Username}: {TargetUser.Experience} → {TargetUser.Experience += Amount}\n";
+                            if (textAmount == "all" || textAmount == "max")
+                                amount = sourceUser.Experience;
+                            client.Execute($"xp add {sourceUser.Username} -{amount} points", true);
+                            client.Execute($"xp add {targetUser.Username} {amount} points");
+                            messageTitle = "Nice.";
+
+                            message = $"Transfer successful.{(sourceUser == targetUser ? " But why?" : "")}\n" +
+                                      $"{sourceUser.Username}: {sourceUser.Experience} → {sourceUser.Experience -= amount}\n" +
+                                      $"{targetUser.Username}: {targetUser.Experience} → {targetUser.Experience += amount}\n";
                         }
                     }
                 }
             }
             catch (Exception e)
             {
-                LoggerService.Log(LogSeverity.Error, Message, e);
+                LoggerService.Log(LogSeverity.Error, message, e);
             }
 
-            var Random = ThreadSafeRandom.ThisThreadsRandom;
-            
+            var random = ThreadSafeRandom.ThisThreadsRandom;
+
             var builder = new EmbedBuilder()
-                .WithColor(new Color(Random.Next(0, 256), Random.Next(0, 256), Random.Next(0, 256)))
+                .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.version} - By DoggySazHi")
+                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
                 {
                     author
-                        .WithName($"Experience Transfer for {IP}")
+                        .WithName($"Experience Transfer for {ip}")
                         .WithIconUrl("https://williamle.com/unobot/unobot.png");
                 })
-                .AddField(MessageTitle, Message);
-            Result = builder.Build();
-            return true;
-        }
-        
-        public static bool WebhookEmbed(WebhookListener.CommitInfo Info, out Embed Result)
-        {
-            var Random = ThreadSafeRandom.ThisThreadsRandom;
-
-            var builder = new EmbedBuilder()
-                .WithColor(new Color(Random.Next(0, 256), Random.Next(0, 256), Random.Next(0, 256)))
-                .WithTimestamp(Info.CommitDate)
-                .WithFooter(footer =>
-                {
-                    footer
-                        .WithText($"UNObot {Program.version} - By DoggySazHi")
-                        .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
-                })
-                .WithAuthor(author =>
-                {
-                    author
-                        .WithName($"Push by {Info.UserName} for {Info.RepoName}")
-                        .WithIconUrl(Info.UserAvatar);
-                })
-                .WithThumbnailUrl(Info.RepoAvatar)
-                .WithDescription(Info.CommitMessage)
-                .AddField("Commit Hash", Info.CommitHash.Substring(0, Math.Min(7, Info.CommitHash.Length)), true);
-            Result = builder.Build();
+                .AddField(messageTitle, message);
+            result = builder.Build();
             return true;
         }
 
-        public static bool OctoprintEmbed(WebhookListener.OctoprintInfo Info, out Embed Result)
+        public static bool WebhookEmbed(WebhookListener.CommitInfo info, out Embed result)
         {
-            var Random = ThreadSafeRandom.ThisThreadsRandom;
+            var random = ThreadSafeRandom.ThisThreadsRandom;
 
             var builder = new EmbedBuilder()
-                .WithColor(new Color(Random.Next(0, 256), Random.Next(0, 256), Random.Next(0, 256)))
-                .WithTimestamp(Info.Timestamp)
+                .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
+                .WithTimestamp(info.CommitDate)
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.version} - By DoggySazHi")
+                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
                 {
                     author
-                        .WithName($"{Info.Topic} - {Info.Job?["file"]?["name"] ?? "Unknown File"}")
+                        .WithName($"Push by {info.UserName} for {info.RepoName}")
+                        .WithIconUrl(info.UserAvatar);
+                })
+                .WithThumbnailUrl(info.RepoAvatar)
+                .WithDescription(info.CommitMessage)
+                .AddField("Commit Hash", info.CommitHash.Substring(0, Math.Min(7, info.CommitHash.Length)), true);
+            result = builder.Build();
+            return true;
+        }
+
+        public static bool OctoprintEmbed(WebhookListener.OctoprintInfo info, out Embed result)
+        {
+            var random = ThreadSafeRandom.ThisThreadsRandom;
+
+            var builder = new EmbedBuilder()
+                .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
+                .WithTimestamp(info.Timestamp)
+                .WithFooter(footer =>
+                {
+                    footer
+                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
+                        .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
+                })
+                .WithAuthor(author =>
+                {
+                    author
+                        .WithName($"{info.Topic} - {info.Job?["file"]?["name"] ?? "Unknown File"}")
                         .WithIconUrl("https://williamle.com/unobot/unobot.png");
                 })
-                .WithDescription(Info.Message)
-                .AddField("Status", Info.State["text"], true);
-            var Completion = Info.Progress["completion"];
-            var PrintTime = Info.Progress["printTime"];
-            var PrintTimeLeft = Info.Progress["printTimeLeft"];
-            var BytesFile = Info.Job["file"]?["size"];
-            var BytesPrinted = Info.Progress["filepos"];
-            if(Completion != null && Completion.Type != JTokenType.Null)
-                builder.AddField("Progress", Completion.ToObject<double>().ToString("N2") + "%", true);
-            if(PrintTime != null && PrintTime.Type != JTokenType.Null)
-                builder.AddField("Time", HumanReadable(PrintTime.ToObject<float>()), true);
-            if (PrintTimeLeft != null && PrintTimeLeft.Type != JTokenType.Null)
-                builder.AddField("Estimated Time Left", HumanReadable(PrintTimeLeft.ToObject<float>()), true);
-            if (BytesFile != null && BytesFile.Type != JTokenType.Null)
-                builder.AddField("File Size", (BytesFile.ToObject<float>()/1000000.0).ToString("N2") + " MB", true);
-            if (BytesPrinted != null && BytesPrinted.Type != JTokenType.Null)
-                builder.AddField("Bytes Printed", (BytesPrinted.ToObject<float>()/1000000.0).ToString("N2") + " MB", true);
-            Result = builder.Build();
+                .WithDescription(info.Message)
+                .AddField("Status", info.State["text"], true);
+            var completion = info.Progress["completion"];
+            var printTime = info.Progress["printTime"];
+            var printTimeLeft = info.Progress["printTimeLeft"];
+            var bytesFile = info.Job["file"]?["size"];
+            var bytesPrinted = info.Progress["filepos"];
+            if (completion != null && completion.Type != JTokenType.Null)
+                builder.AddField("Progress", completion.ToObject<double>().ToString("N2") + "%", true);
+            if (printTime != null && printTime.Type != JTokenType.Null)
+                builder.AddField("Time", HumanReadable(printTime.ToObject<float>()), true);
+            if (printTimeLeft != null && printTimeLeft.Type != JTokenType.Null)
+                builder.AddField("Estimated Time Left", HumanReadable(printTimeLeft.ToObject<float>()), true);
+            if (bytesFile != null && bytesFile.Type != JTokenType.Null)
+                builder.AddField("File Size", (bytesFile.ToObject<float>() / 1000000.0).ToString("N2") + " MB", true);
+            if (bytesPrinted != null && bytesPrinted.Type != JTokenType.Null)
+                builder.AddField("Bytes Printed", (bytesPrinted.ToObject<float>() / 1000000.0).ToString("N2") + " MB",
+                    true);
+            result = builder.Build();
             return true;
         }
     }

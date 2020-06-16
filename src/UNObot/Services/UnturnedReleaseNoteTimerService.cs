@@ -8,66 +8,71 @@ namespace UNObot.Services
 {
     public class UnturnedReleaseNotes : IDisposable
     {
-        private static UnturnedReleaseNotes instance;
-        private string lastLink;
-        private readonly Timer checkInterval;
+        private static UnturnedReleaseNotes _instance;
+        private readonly Timer _checkInterval;
+        private string _lastLink;
 
         private UnturnedReleaseNotes()
         {
-            lastLink = GetLatestLink();
-            checkInterval = new Timer
+            _lastLink = GetLatestLink();
+            _checkInterval = new Timer
             {
                 AutoReset = true,
                 Interval = 1000 * 60 * 5,
                 Enabled = true
             };
-            checkInterval.Elapsed += CheckForUpdates;
-        }
-
-        private async void CheckForUpdates(object sender, ElapsedEventArgs e)
-        {
-            string Link = GetLatestLink();
-            if (lastLink != Link)
-            {
-                lastLink = Link;
-                await Program._client.GetGuild(185593135458418701).GetTextChannel(477647595175411718).SendMessageAsync(Link);
-                //_ = Program.SendPM(Link, 191397590946807809);
-                LoggerService.Log(LogSeverity.Verbose, "Found update.");
-            }
-            else
-                LoggerService.Log(LogSeverity.Verbose, "No updates found.");
-        }
-
-        public static UnturnedReleaseNotes GetSingleton()
-        {
-            if (instance == null)
-                instance = new UnturnedReleaseNotes();
-            return instance;
-        }
-
-        public static string GetLatestLink()
-        {
-            string url = "https://steamcommunity.com/games/304930/rss/";
-            SyndicationFeed feed;
-            using (XmlReader reader = XmlReader.Create(url))
-                feed = SyndicationFeed.Load(reader);
-            string Link = "";
-            foreach (SyndicationItem item in feed.Items)
-            {
-                //string subject = item.Title.Text;
-                //string summary = item.Summary.Text;
-                if (item.Links.Count > 0)
-                {
-                    Link = item.Links[0].GetAbsoluteUri().ToString();
-                    break;
-                }
-            }
-            return Link;
+            _checkInterval.Elapsed += CheckForUpdates;
         }
 
         public void Dispose()
         {
-            checkInterval?.Dispose();
+            _checkInterval?.Dispose();
+        }
+
+        private async void CheckForUpdates(object sender, ElapsedEventArgs e)
+        {
+            var link = GetLatestLink();
+            if (_lastLink != link)
+            {
+                _lastLink = link;
+                await Program.Client.GetGuild(185593135458418701).GetTextChannel(477647595175411718)
+                    .SendMessageAsync(link);
+                //_ = Program.SendPM(Link, 191397590946807809);
+                LoggerService.Log(LogSeverity.Verbose, "Found update.");
+            }
+            else
+            {
+                LoggerService.Log(LogSeverity.Verbose, "No updates found.");
+            }
+        }
+
+        public static UnturnedReleaseNotes GetSingleton()
+        {
+            if (_instance == null)
+                _instance = new UnturnedReleaseNotes();
+            return _instance;
+        }
+
+        public static string GetLatestLink()
+        {
+            var url = "https://steamcommunity.com/games/304930/rss/";
+            SyndicationFeed feed;
+            using (var reader = XmlReader.Create(url))
+            {
+                feed = SyndicationFeed.Load(reader);
+            }
+
+            var link = "";
+            foreach (var item in feed.Items)
+                //string subject = item.Title.Text;
+                //string summary = item.Summary.Text;
+                if (item.Links.Count > 0)
+                {
+                    link = item.Links[0].GetAbsoluteUri().ToString();
+                    break;
+                }
+
+            return link;
         }
     }
 }

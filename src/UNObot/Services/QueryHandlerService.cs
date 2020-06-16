@@ -24,147 +24,142 @@ namespace UNObot.Services
         public static IReadOnlyList<string> OutsideServers;
         public static IReadOnlyDictionary<ushort, RCONServer> SpecialServers;
 
-        public struct RCONServer
-        {
-            public string Server { get; set; }
-            public ushort RCONPort { get; set; }
-            public string Password { get; set; }
-        }
-
         static QueryHandlerService()
         {
-            var External = new List<string>();
-            External.Add("williamle.com");
-            OutsideServers = External;
-            var Servers = new Dictionary<ushort, RCONServer>();
+            var external = new List<string>();
+            external.Add("williamle.com");
+            OutsideServers = external;
+            var servers = new Dictionary<ushort, RCONServer>();
             // Stored in plain-text anyways, plus is server-side. You could easily read this from a file on the same server.
-            Servers.Add(27285, new RCONServer { Server = "192.168.2.6", RCONPort = 27286, Password = "mukyumukyu"});
-            Servers.Add(29292, new RCONServer { Server = "192.168.2.11", RCONPort = 29293, Password = "mukyumukyu"});
-            SpecialServers = Servers;
+            servers.Add(27285, new RCONServer {Server = "192.168.2.6", RCONPort = 27286, Password = "mukyumukyu"});
+            servers.Add(29292, new RCONServer {Server = "192.168.2.11", RCONPort = 29293, Password = "mukyumukyu"});
+            SpecialServers = servers;
         }
 
-        public static string HumanReadable(float Time)
+        public static string HumanReadable(float time)
         {
-            var Formatted = TimeSpan.FromSeconds(Time);
-            string Output;
-            if (Formatted.Hours != 0)
-                Output = $"{(int)Formatted.TotalHours}:{Formatted.Minutes:00}:{Formatted.Seconds:00}";
-            else if (Formatted.Minutes != 0)
-                Output = $"{Formatted.Minutes}:{Formatted.Seconds:00}";
+            var formatted = TimeSpan.FromSeconds(time);
+            string output;
+            if (formatted.Hours != 0)
+                output = $"{(int) formatted.TotalHours}:{formatted.Minutes:00}:{formatted.Seconds:00}";
+            else if (formatted.Minutes != 0)
+                output = $"{formatted.Minutes}:{formatted.Seconds:00}";
             else
-                Output = $"{Formatted.Seconds} second{(Formatted.Seconds == 1 ? "" : "s")}";
-            return Output;
+                output = $"{formatted.Seconds} second{(formatted.Seconds == 1 ? "" : "s")}";
+            return output;
         }
 
-        public static bool GetInfo(string ip, ushort port, out A2S_INFO output)
+        public static bool GetInfo(string ip, ushort port, out A2SInfo output)
         {
-            var Success = TryParseServer(ip, port, out var iPEndPoint);
-            if (!Success)
+            var success = TryParseServer(ip, port, out var iPEndPoint);
+            if (!success)
             {
                 output = null;
                 return false;
             }
-            
-            output = new A2S_INFO(iPEndPoint);
+
+            output = new A2SInfo(iPEndPoint);
             return output.ServerUp;
         }
 
-        public static bool GetPlayers(string ip, ushort port, out A2S_PLAYER output)
+        public static bool GetPlayers(string ip, ushort port, out A2SPlayer output)
         {
-            var Success = TryParseServer(ip, port, out var iPEndPoint);
-            if (!Success)
+            var success = TryParseServer(ip, port, out var iPEndPoint);
+            if (!success)
             {
                 output = null;
                 return false;
             }
-            
-            output = new A2S_PLAYER(iPEndPoint);
+
+            output = new A2SPlayer(iPEndPoint);
             return output.ServerUp;
         }
 
-        public static bool GetRules(string ip, ushort port, out A2S_RULES output)
+        public static bool GetRules(string ip, ushort port, out A2SRules output)
         {
-            var Success = TryParseServer(ip, port, out var iPEndPoint);
-            if (!Success)
+            var success = TryParseServer(ip, port, out var iPEndPoint);
+            if (!success)
             {
                 output = null;
                 return false;
             }
-            
-            output = new A2S_RULES(iPEndPoint);
+
+            output = new A2SRules(iPEndPoint);
             return output.ServerUp;
         }
 
         public static bool GetInfoMCNew(string ip, ushort port, out MinecraftStatus output)
         {
-            var Success = TryParseServer(ip, port, out var iPEndPoint);
-            if (!Success)
+            var success = TryParseServer(ip, port, out var iPEndPoint);
+            if (!success)
             {
                 output = null;
                 return false;
             }
-            
+
             output = new MinecraftStatus(iPEndPoint);
             return output.ServerUp;
         }
 
         public static bool SendRCON(string ip, ushort port, string command, string password, out IRCON output)
         {
-            var Success = TryParseServer(ip, port, out var iPEndPoint);
-            if (!Success)
+            var success = TryParseServer(ip, port, out var iPEndPoint);
+            if (!success)
             {
                 output = null;
                 return false;
             }
-            
+
             output = RCONManager.GetSingleton().CreateRCON(iPEndPoint, password, false, command);
-            return output.Status == RCONStatus.SUCCESS;
+            return output.Status == RCONStatus.Success;
         }
 
-        public static bool CreateRCON(string ip, ushort port, string password, ulong User, out IRCON output)
+        public static bool CreateRCON(string ip, ushort port, string password, ulong user, out IRCON output)
         {
-            var PossibleRCON = RCONManager.GetSingleton().GetRCON(User);
-            if (PossibleRCON != null)
+            var possibleRCON = RCONManager.GetSingleton().GetRCON(user);
+            if (possibleRCON != null)
             {
-                output = PossibleRCON;
+                output = possibleRCON;
                 return false;
             }
 
-            var Success = TryParseServer(ip, port, out var iPEndPoint);
-            if (!Success)
+            var success = TryParseServer(ip, port, out var iPEndPoint);
+            if (!success)
             {
                 output = null;
                 return false;
             }
+
             output = RCONManager.GetSingleton().CreateRCON(iPEndPoint, password, true);
-            output.Owner = User;
-            return output.Status == RCONStatus.SUCCESS;
+            output.Owner = user;
+            return output.Status == RCONStatus.Success;
         }
 
-        public static bool ExecuteRCON(ulong User, string Command, out IRCON output)
+        public static bool ExecuteRCON(ulong user, string command, out IRCON output)
         {
-            var PossibleRCON = RCONManager.GetSingleton().GetRCON(User);
-            output = PossibleRCON;
-            if (PossibleRCON == null)
+            var possibleRCON = RCONManager.GetSingleton().GetRCON(user);
+            output = possibleRCON;
+            if (possibleRCON == null)
                 return false;
 
-            PossibleRCON.Execute(Command, true);
-            return output.Status == RCONStatus.SUCCESS;
+            possibleRCON.Execute(command, true);
+            return output.Status == RCONStatus.Success;
         }
-        public static bool CloseRCON(ulong User)
+
+        public static bool CloseRCON(ulong user)
         {
-            var PossibleRCON = RCONManager.GetSingleton().GetRCON(User);
-            if (PossibleRCON == null)
+            var possibleRCON = RCONManager.GetSingleton().GetRCON(user);
+            if (possibleRCON == null)
                 return false;
 
-            PossibleRCON.Dispose();
+            possibleRCON.Dispose();
             return true;
         }
 
         private static bool TryParseServer(string ip, ushort port, out IPEndPoint iPEndPoint)
         {
             var parseCheck = IPAddress.TryParse(ip, out var server);
-            var addresses = ResolveDNS(ip);
+            var addresses = ResolveDns(ip);
             if (!parseCheck)
             {
                 if (addresses == null || addresses.Length == 0)
@@ -172,13 +167,15 @@ namespace UNObot.Services
                     iPEndPoint = null;
                     return false;
                 }
+
                 server = addresses[0];
             }
+
             iPEndPoint = new IPEndPoint(server, port);
             return true;
         }
 
-        private static IPAddress[] ResolveDNS(string ip)
+        private static IPAddress[] ResolveDns(string ip)
         {
             IPAddress[] addresses = null;
             try
@@ -187,126 +184,83 @@ namespace UNObot.Services
             }
             catch (SocketException)
             {
-
             }
             catch (ArgumentException)
             {
-
             }
+
             return addresses;
         }
 
         public static MCStatus GetInfoMC(string ip, ushort port = 25565)
-            => new MCStatus(ip, port);
+        {
+            return new MCStatus(ip, port);
+        }
+
+        public struct RCONServer
+        {
+            public string Server { get; set; }
+            public ushort RCONPort { get; set; }
+            public string Password { get; set; }
+        }
     }
 
-    public class A2S_INFO
+    public class A2SInfo
     {
         // \xFF\xFF\xFF\xFFTSource Engine Query\x00 because UTF-8 doesn't like to encode 0xFF
-        public static readonly byte[] REQUEST = { 0xFF, 0xFF, 0xFF, 0xFF, 0x54, 0x53, 0x6F, 0x75, 0x72, 0x63, 0x65, 0x20, 0x45, 0x6E, 0x67, 0x69, 0x6E, 0x65, 0x20, 0x51, 0x75, 0x65, 0x72, 0x79, 0x00 };
-        #region Strong Typing Enumerators
-        [Flags]
-        public enum ExtraDataFlags : byte
+        public static readonly byte[] Request =
         {
-            GameID = 0x01,
-            SteamID = 0x10,
-            Keywords = 0x20,
-            Spectator = 0x40,
-            Port = 0x80
-        }
-        public enum VACFlags : byte
-        {
-            Unsecured = 0,
-            Secured = 1
-        }
-        public enum VisibilityFlags : byte
-        {
-            Public = 0,
-            Private = 1
-        }
-        public enum EnvironmentFlags : byte
-        {
-            Linux = 0x6C,   //l
-            Windows = 0x77, //w
-            Mac = 0x6D,     //m
-            MacOsX = 0x6F   //o
-        }
-        public enum ServerTypeFlags : byte
-        {
-            Dedicated = 0x64,     //d
-            Nondedicated = 0x6C,   //l
-            SourceTV = 0x70   //p
-        }
-        #endregion
-        public byte Header { get; }        // I
-        public byte Protocol { get; }
-        public string Name { get; }
-        public string Map { get; }
-        public string Folder { get; }
-        public string Game { get; }
-        public short ID { get; }
-        public byte Players { get; }
-        public byte MaxPlayers { get; }
-        public byte Bots { get; }
-        public ServerTypeFlags ServerType { get; }
-        public EnvironmentFlags Environment { get; }
-        public VisibilityFlags Visibility { get; }
-        public VACFlags VAC { get; }
-        public string Version { get; }
-        public ExtraDataFlags ExtraDataFlag { get; }
-        #region Extra Data Flag Members
-        public ulong GameID { get; }           //0x01
-        public ulong SteamID { get; }          //0x10
-        public string Keywords { get; }        //0x20
-        public string Spectator { get; }       //0x40
-        public short SpectatorPort { get; }   //0x40
-        public short Port { get; }             //0x80
-        public bool ServerUp { get; }
+            0xFF, 0xFF, 0xFF, 0xFF, 0x54, 0x53, 0x6F, 0x75, 0x72, 0x63, 0x65, 0x20, 0x45, 0x6E, 0x67, 0x69, 0x6E, 0x65,
+            0x20, 0x51, 0x75, 0x65, 0x72, 0x79, 0x00
+        };
 
-        #endregion
-
-        public A2S_INFO(IPEndPoint ep)
+        public A2SInfo(IPEndPoint ep)
         {
             try
             {
-                UdpClient udp = new UdpClient();
+                var udp = new UdpClient();
                 udp.Client.SendTimeout = 5000;
                 udp.Client.ReceiveTimeout = 5000;
-                udp.Send(REQUEST, REQUEST.Length, ep);
-                MemoryStream ms = new MemoryStream(udp.Receive(ref ep));    // Saves the received data in a memory buffer
-                BinaryReader br = new BinaryReader(ms, Encoding.UTF8);      // A binary reader that treats charaters as Unicode 8-bit
-                ms.Seek(4, SeekOrigin.Begin);   // skip the 4 0xFFs
+                udp.Send(Request, Request.Length, ep);
+                var ms = new MemoryStream(udp.Receive(ref ep)); // Saves the received data in a memory buffer
+                var br = new BinaryReader(ms, Encoding.UTF8); // A binary reader that treats charaters as Unicode 8-bit
+                ms.Seek(4, SeekOrigin.Begin); // skip the 4 0xFFs
                 Header = br.ReadByte();
                 Protocol = br.ReadByte();
-                Name = A2S_SHARED.ReadNullTerminatedString(ref br);
-                Map = A2S_SHARED.ReadNullTerminatedString(ref br);
-                Folder = A2S_SHARED.ReadNullTerminatedString(ref br);
-                Game = A2S_SHARED.ReadNullTerminatedString(ref br);
-                ID = br.ReadInt16();
+                Name = A2SShared.ReadNullTerminatedString(ref br);
+                Map = A2SShared.ReadNullTerminatedString(ref br);
+                Folder = A2SShared.ReadNullTerminatedString(ref br);
+                Game = A2SShared.ReadNullTerminatedString(ref br);
+                Id = br.ReadInt16();
                 Players = br.ReadByte();
                 MaxPlayers = br.ReadByte();
                 Bots = br.ReadByte();
-                ServerType = (ServerTypeFlags)br.ReadByte();
-                Environment = (EnvironmentFlags)br.ReadByte();
-                Visibility = (VisibilityFlags)br.ReadByte();
-                VAC = (VACFlags)br.ReadByte();
-                Version = A2S_SHARED.ReadNullTerminatedString(ref br);
-                ExtraDataFlag = (ExtraDataFlags)br.ReadByte();
+                ServerType = (ServerTypeFlags) br.ReadByte();
+                Environment = (EnvironmentFlags) br.ReadByte();
+                Visibility = (VisibilityFlags) br.ReadByte();
+                Vac = (VacFlags) br.ReadByte();
+                Version = A2SShared.ReadNullTerminatedString(ref br);
+                ExtraDataFlag = (ExtraDataFlags) br.ReadByte();
+
                 #region These EDF readers have to be in this order because that's the way they are reported
+
                 if (ExtraDataFlag.HasFlag(ExtraDataFlags.Port))
                     Port = br.ReadInt16();
-                if (ExtraDataFlag.HasFlag(ExtraDataFlags.SteamID))
-                    SteamID = br.ReadUInt64();
+                if (ExtraDataFlag.HasFlag(ExtraDataFlags.SteamId))
+                    SteamId = br.ReadUInt64();
                 if (ExtraDataFlag.HasFlag(ExtraDataFlags.Spectator))
                 {
                     SpectatorPort = br.ReadInt16();
-                    Spectator = A2S_SHARED.ReadNullTerminatedString(ref br);
+                    Spectator = A2SShared.ReadNullTerminatedString(ref br);
                 }
+
                 if (ExtraDataFlag.HasFlag(ExtraDataFlags.Keywords))
-                    Keywords = A2S_SHARED.ReadNullTerminatedString(ref br);
-                if (ExtraDataFlag.HasFlag(ExtraDataFlags.GameID))
-                    GameID = br.ReadUInt64();
+                    Keywords = A2SShared.ReadNullTerminatedString(ref br);
+                if (ExtraDataFlag.HasFlag(ExtraDataFlags.GameId))
+                    GameId = br.ReadUInt64();
+
                 #endregion
+
                 br.Close();
                 ms.Close();
                 udp.Close();
@@ -320,69 +274,126 @@ namespace UNObot.Services
             {
                 ServerUp = false;
             }
-            catch (Exception Ex)
+            catch (Exception ex)
             {
-                LoggerService.Log(LogSeverity.Error, "Failed to query via A2S.", Ex);
+                LoggerService.Log(LogSeverity.Error, "Failed to query via A2S.", ex);
                 ServerUp = false;
             }
         }
-    }
 
-    public class A2S_PLAYER
-    {
-        private static readonly byte[] Handshake = { 0xFF, 0xFF, 0xFF, 0xFF, 0x55, 0xFF, 0xFF, 0xFF, 0xFF };
+        public byte Header { get; } // I
+        public byte Protocol { get; }
+        public string Name { get; }
+        public string Map { get; }
+        public string Folder { get; }
+        public string Game { get; }
+        public short Id { get; }
+        public byte Players { get; }
+        public byte MaxPlayers { get; }
+        public byte Bots { get; }
+        public ServerTypeFlags ServerType { get; }
+        public EnvironmentFlags Environment { get; }
+        public VisibilityFlags Visibility { get; }
+        public VacFlags Vac { get; }
+        public string Version { get; }
+        public ExtraDataFlags ExtraDataFlag { get; }
 
-        public struct Player
+        #region Strong Typing Enumerators
+
+        [Flags]
+        public enum ExtraDataFlags : byte
         {
-            public byte Index { get; set; }
-            public string Name { get; set; }
-            public long Score { get; set; }
-            public float Duration { get; set; }
+            GameId = 0x01,
+            SteamId = 0x10,
+            Keywords = 0x20,
+            Spectator = 0x40,
+            Port = 0x80
         }
 
-        public byte Header { get; }
-        public byte PlayerCount { get; }
+        public enum VacFlags : byte
+        {
+            Unsecured = 0,
+            Secured = 1
+        }
 
+        public enum VisibilityFlags : byte
+        {
+            Public = 0,
+            Private = 1
+        }
+
+        public enum EnvironmentFlags : byte
+        {
+            Linux = 0x6C, //l
+            Windows = 0x77, //w
+            Mac = 0x6D, //m
+            MacOsX = 0x6F //o
+        }
+
+        public enum ServerTypeFlags : byte
+        {
+            Dedicated = 0x64, //d
+            Nondedicated = 0x6C, //l
+            SourceTv = 0x70 //p
+        }
+
+        #endregion
+
+        #region Extra Data Flag Members
+
+        public ulong GameId { get; } //0x01
+        public ulong SteamId { get; } //0x10
+        public string Keywords { get; } //0x20
+        public string Spectator { get; } //0x40
+        public short SpectatorPort { get; } //0x40
+        public short Port { get; } //0x80
         public bool ServerUp { get; }
-        public List<Player> Players { get; }
 
-        public A2S_PLAYER(IPEndPoint ep)
+        #endregion
+    }
+
+    public class A2SPlayer
+    {
+        private static readonly byte[] Handshake = {0xFF, 0xFF, 0xFF, 0xFF, 0x55, 0xFF, 0xFF, 0xFF, 0xFF};
+
+        public A2SPlayer(IPEndPoint ep)
         {
             try
             {
                 Players = new List<Player>();
-                UdpClient udp = new UdpClient();
+                var udp = new UdpClient();
                 udp.Client.SendTimeout = 5000;
                 udp.Client.ReceiveTimeout = 5000;
                 udp.Send(Handshake, Handshake.Length, ep);
-                MemoryStream ms = new MemoryStream(udp.Receive(ref ep));
-                BinaryReader br = new BinaryReader(ms, Encoding.UTF8);
+                var ms = new MemoryStream(udp.Receive(ref ep));
+                var br = new BinaryReader(ms, Encoding.UTF8);
                 ms.Seek(5, SeekOrigin.Begin);
 
                 //Get challenge number, and plan to resend it.
-                byte[] Response = { 0xFF, 0xFF, 0xFF, 0xFF, 0x55, br.ReadByte(), br.ReadByte(), br.ReadByte(), br.ReadByte() };
+                byte[] response =
+                    {0xFF, 0xFF, 0xFF, 0xFF, 0x55, br.ReadByte(), br.ReadByte(), br.ReadByte(), br.ReadByte()};
 
                 br.Close();
                 ms.Close();
-                udp.Send(Response, Response.Length, ep);
+                udp.Send(response, response.Length, ep);
                 ms = new MemoryStream(udp.Receive(ref ep));
                 br = new BinaryReader(ms, Encoding.UTF8);
 
                 ms.Seek(4, SeekOrigin.Begin);
                 Header = br.ReadByte();
                 PlayerCount = br.ReadByte();
-                for (int i = 0; i < Convert.ToInt32(PlayerCount); i++)
+                for (var i = 0; i < Convert.ToInt32(PlayerCount); i++)
                 {
-                    var Index = br.ReadByte();
-                    var Name = A2S_SHARED.ReadNullTerminatedString(ref br);
-                    var Score = br.ReadInt32();
-                    var Duration = br.ReadSingle();
-                    Player p = new Player
+                    var index = br.ReadByte();
+                    var name = A2SShared.ReadNullTerminatedString(ref br);
+                    var score = br.ReadInt32();
+                    var duration = br.ReadSingle();
+                    var p = new Player
                     {
-                        Index = Index,
-                        Name = Name,
-                        Score = Score,
-                        Duration = Duration
+                        Index = index,
+                        Name = name,
+                        Score = score,
+                        Duration = duration
                     };
                     Players.Add(p);
                 }
@@ -400,51 +411,55 @@ namespace UNObot.Services
             {
                 ServerUp = false;
             }
-            catch (Exception Ex)
+            catch (Exception ex)
             {
-                LoggerService.Log(LogSeverity.Error, "Failed to query via A2S.", Ex);
+                LoggerService.Log(LogSeverity.Error, "Failed to query via A2S.", ex);
                 ServerUp = false;
             }
         }
-    }
-
-    public class A2S_RULES
-    {
-        private static readonly byte[] Handshake = { 0xFF, 0xFF, 0xFF, 0xFF, 0x56, 0xFF, 0xFF, 0xFF, 0xFF };
-
-        public struct Rule
-        {
-            public string Name { get; set; }
-            public string Value { get; set; }
-        }
 
         public byte Header { get; }
-        public short RuleCount { get; }
-        public List<Rule> Rules { get; }
-        public bool ServerUp { get; }
+        public byte PlayerCount { get; }
 
-        public A2S_RULES(IPEndPoint ep)
+        public bool ServerUp { get; }
+        public List<Player> Players { get; }
+
+        public struct Player
+        {
+            public byte Index { get; set; }
+            public string Name { get; set; }
+            public long Score { get; set; }
+            public float Duration { get; set; }
+        }
+    }
+
+    public class A2SRules
+    {
+        private static readonly byte[] Handshake = {0xFF, 0xFF, 0xFF, 0xFF, 0x56, 0xFF, 0xFF, 0xFF, 0xFF};
+
+        public A2SRules(IPEndPoint ep)
         {
             try
             {
                 Rules = new List<Rule>();
-                UdpClient udp = new UdpClient();
+                var udp = new UdpClient();
                 udp.Client.SendTimeout = 5000;
                 udp.Client.ReceiveTimeout = 5000;
                 udp.Send(Handshake, Handshake.Length, ep);
-                MemoryStream ms = new MemoryStream(udp.Receive(ref ep));
-                BinaryReader br = new BinaryReader(ms, Encoding.UTF8);
+                var ms = new MemoryStream(udp.Receive(ref ep));
+                var br = new BinaryReader(ms, Encoding.UTF8);
                 ms.Seek(4, SeekOrigin.Begin);
 
                 Header = br.ReadByte();
                 if (Header != 0x56)
                 {
                     //Get challenge number, and plan to resend it.
-                    byte[] Response = { 0xFF, 0xFF, 0xFF, 0xFF, 0x56, br.ReadByte(), br.ReadByte(), br.ReadByte(), br.ReadByte() };
+                    byte[] response =
+                        {0xFF, 0xFF, 0xFF, 0xFF, 0x56, br.ReadByte(), br.ReadByte(), br.ReadByte(), br.ReadByte()};
 
                     br.Close();
                     ms.Close();
-                    udp.Send(Response, Response.Length, ep);
+                    udp.Send(response, response.Length, ep);
                     ms = new MemoryStream(udp.Receive(ref ep));
                     br = new BinaryReader(ms, Encoding.UTF8);
                     ms.Seek(4, SeekOrigin.Begin);
@@ -452,14 +467,14 @@ namespace UNObot.Services
                 }
 
                 RuleCount = br.ReadInt16();
-                for (int i = 0; i < RuleCount; i++)
+                for (var i = 0; i < RuleCount; i++)
                 {
-                    var Name = A2S_SHARED.ReadNullTerminatedString(ref br);
-                    var Value = A2S_SHARED.ReadNullTerminatedString(ref br);
-                    Rule r = new Rule
+                    var name = A2SShared.ReadNullTerminatedString(ref br);
+                    var value = A2SShared.ReadNullTerminatedString(ref br);
+                    var r = new Rule
                     {
-                        Name = Name,
-                        Value = Value
+                        Name = name,
+                        Value = value
                     };
                     Rules.Add(r);
                 }
@@ -477,46 +492,49 @@ namespace UNObot.Services
             {
                 ServerUp = false;
             }
-            catch (Exception Ex)
+            catch (Exception ex)
             {
-                LoggerService.Log(LogSeverity.Error, "Failed to query via A2S.", Ex);
+                LoggerService.Log(LogSeverity.Error, "Failed to query via A2S.", ex);
                 ServerUp = false;
             }
         }
+
+        public byte Header { get; }
+        public short RuleCount { get; }
+        public List<Rule> Rules { get; }
+        public bool ServerUp { get; }
+
+        public struct Rule
+        {
+            public string Name { get; set; }
+            public string Value { get; set; }
+        }
     }
 
-    public static class A2S_SHARED
+    public static class A2SShared
     {
         internal static string ReadNullTerminatedString(ref BinaryReader input)
         {
-            StringBuilder sb = new StringBuilder();
-            char read = input.ReadChar();
+            var sb = new StringBuilder();
+            var read = input.ReadChar();
             while (read != '\x00')
             {
                 sb.Append(read);
                 read = input.ReadChar();
             }
+
             return sb.ToString();
         }
     }
 
     public class MCStatus
     {
-        const ushort dataSize = 512; // this will hopefully suffice since the MotD should be <=59 characters
-        const ushort numFields = 6;  // number of values expected from server
-
-        public string Address { get; set; }
-        public ushort Port { get; set; }
-        public string Motd { get; set; }
-        public string Version { get; set; }
-        public string CurrentPlayers { get; set; }
-        public string MaximumPlayers { get; set; }
-        public bool ServerUp { get; set; }
-        public long Delay { get; set; }
+        private const ushort DataSize = 512; // this will hopefully suffice since the MotD should be <=59 characters
+        private const ushort NumFields = 6; // number of values expected from server
 
         public MCStatus(string address, ushort port)
         {
-            var rawServerData = new byte[dataSize];
+            var rawServerData = new byte[DataSize];
 
             Address = address;
             Port = port;
@@ -533,9 +551,9 @@ namespace UNObot.Services
                 tcpclient.Connect(address, port);
                 stopWatch.Stop();
                 var stream = tcpclient.GetStream();
-                var payload = new byte[] { 0xFE, 0x01 };
+                var payload = new byte[] {0xFE, 0x01};
                 stream.Write(payload, 0, payload.Length);
-                stream.Read(rawServerData, 0, dataSize);
+                stream.Read(rawServerData, 0, DataSize);
                 tcpclient.Close();
                 tcpclient.Dispose();
                 Delay = stopWatch.ElapsedMilliseconds;
@@ -553,7 +571,7 @@ namespace UNObot.Services
             else
             {
                 var serverData = Encoding.Unicode.GetString(rawServerData).Split("\u0000\u0000\u0000".ToCharArray());
-                if (serverData.Length >= numFields)
+                if (serverData.Length >= NumFields)
                 {
                     ServerUp = true;
                     Version = serverData[2];
@@ -567,34 +585,32 @@ namespace UNObot.Services
                 }
             }
         }
+
+        public string Address { get; set; }
+        public ushort Port { get; set; }
+        public string Motd { get; set; }
+        public string Version { get; set; }
+        public string CurrentPlayers { get; set; }
+        public string MaximumPlayers { get; set; }
+        public bool ServerUp { get; set; }
+        public long Delay { get; set; }
     }
 
     /// <summary>
-    /// William's proud of himself for writing this class.
+    ///     William's proud of himself for writing this class.
     /// </summary>
     public class MinecraftStatus
     {
-        private readonly byte[] SESSION_HANDSHAKE = { 0xFE, 0xFD, 0x09, 0x00, 0x00, 0x00, 0x01 };
-        public bool ServerUp { get; }
-        public int MaxPlayers { get; }
-        public string IP { get; }
-        public ushort Port { get; }
-        public string GameID { get; }
-        public string GameType { get; }
-        public string Plugins { get; }
-        public string Version { get; }
-        public string Map { get; }
-        public string MOTD { get; }
-        public string[] Players { get; }
+        private readonly byte[] _sessionHandshake = {0xFE, 0xFD, 0x09, 0x00, 0x00, 0x00, 0x01};
 
-        public MinecraftStatus(IPEndPoint Server)
+        public MinecraftStatus(IPEndPoint server)
         {
-            UdpClient Udp = null;
-            MemoryStream MemoryStream = null;
-            BinaryReader BinaryReader = null;
+            UdpClient udp = null;
+            MemoryStream memoryStream = null;
+            BinaryReader binaryReader = null;
             try
             {
-                Udp = new UdpClient
+                udp = new UdpClient
                 {
                     Client =
                     {
@@ -603,74 +619,74 @@ namespace UNObot.Services
                     }
                 };
 
-                Udp.Send(SESSION_HANDSHAKE, SESSION_HANDSHAKE.Length, Server);
-                MemoryStream = new MemoryStream(Udp.Receive(ref Server));
-                BinaryReader = new BinaryReader(MemoryStream, Encoding.UTF8);
-                MemoryStream.Seek(5, SeekOrigin.Begin);
-                var challengeString = A2S_SHARED.ReadNullTerminatedString(ref BinaryReader);
+                udp.Send(_sessionHandshake, _sessionHandshake.Length, server);
+                memoryStream = new MemoryStream(udp.Receive(ref server));
+                binaryReader = new BinaryReader(memoryStream, Encoding.UTF8);
+                memoryStream.Seek(5, SeekOrigin.Begin);
+                var challengeString = A2SShared.ReadNullTerminatedString(ref binaryReader);
                 var challengeNumber = int.Parse(challengeString);
                 var bytes = BitConverter.GetBytes(challengeNumber);
 
                 // Save challenge token.
-                byte[] Response =
+                byte[] response =
                 {
                     0xFE, 0xFD, 0x00, 0x00, 0x00, 0x00, 0x01, bytes[3], bytes[2], bytes[1], bytes[0], 0x00, 0x00, 0x00,
                     0x00
                 };
 
-                BinaryReader.Close();
-                MemoryStream.Close();
-                Udp.Send(Response, Response.Length, Server);
-                MemoryStream = new MemoryStream(Udp.Receive(ref Server));
-                BinaryReader = new BinaryReader(MemoryStream, Encoding.UTF8);
-                MemoryStream.Seek(1 + 4 + 11, SeekOrigin.Begin);
+                binaryReader.Close();
+                memoryStream.Close();
+                udp.Send(response, response.Length, server);
+                memoryStream = new MemoryStream(udp.Receive(ref server));
+                binaryReader = new BinaryReader(memoryStream, Encoding.UTF8);
+                memoryStream.Seek(1 + 4 + 11, SeekOrigin.Begin);
 
-                string Input;
+                string input;
                 do
                 {
-                    Input = A2S_SHARED.ReadNullTerminatedString(ref BinaryReader);
-                    var Value = A2S_SHARED.ReadNullTerminatedString(ref BinaryReader).Trim();
-                    switch (Input.Trim().ToLower())
+                    input = A2SShared.ReadNullTerminatedString(ref binaryReader);
+                    var value = A2SShared.ReadNullTerminatedString(ref binaryReader).Trim();
+                    switch (input.Trim().ToLower())
                     {
                         case "numplayers":
-                            Players = new string[int.Parse(Value)];
+                            Players = new string[int.Parse(value)];
                             break;
                         case "maxplayers":
-                            MaxPlayers = int.Parse(Value);
+                            MaxPlayers = int.Parse(value);
                             break;
                         case "game_id":
-                            GameID = Value;
+                            GameId = value;
                             break;
                         case "gametype":
-                            GameType = Value;
+                            GameType = value;
                             break;
                         case "hostip":
-                            IP = Value;
+                            Ip = value;
                             break;
                         case "hostport":
-                            Port = ushort.Parse(Value);
+                            Port = ushort.Parse(value);
                             break;
                         case "hostname":
-                            MOTD = Value;
+                            Motd = value;
                             break;
                         case "plugins":
-                            Plugins = Value;
+                            Plugins = value;
                             break;
                         case "map":
-                            Map = Value;
+                            Map = value;
                             break;
                         case "version":
-                            Version = Value;
+                            Version = value;
                             break;
                     }
-                } while (Input.Length != 0);
+                } while (input.Length != 0);
 
-                var CurrentIndex = 0;
+                var currentIndex = 0;
                 do
                 {
-                    Input = A2S_SHARED.ReadNullTerminatedString(ref BinaryReader);
-                    if (Input.Length >= 2 && Players != null && CurrentIndex < Players.Length)
-                        Players[CurrentIndex++] = Input;
+                    input = A2SShared.ReadNullTerminatedString(ref binaryReader);
+                    if (input.Length >= 2 && Players != null && currentIndex < Players.Length)
+                        Players[currentIndex++] = input;
                 } while (true);
             }
             catch (EndOfStreamException)
@@ -681,349 +697,393 @@ namespace UNObot.Services
             {
                 ServerUp = false;
             }
-            catch (Exception Ex)
+            catch (Exception ex)
             {
-                LoggerService.Log(LogSeverity.Error, "Failed to query via MCStatusFull.", Ex);
+                LoggerService.Log(LogSeverity.Error, "Failed to query via MCStatusFull.", ex);
                 ServerUp = false;
             }
             finally
             {
-                BinaryReader?.Close();
-                MemoryStream?.Close();
-                Udp?.Close();
+                binaryReader?.Close();
+                memoryStream?.Close();
+                udp?.Close();
             }
         }
+
+        public bool ServerUp { get; }
+        public int MaxPlayers { get; }
+        public string Ip { get; }
+        public ushort Port { get; }
+        public string GameId { get; }
+        public string GameType { get; }
+        public string Plugins { get; }
+        public string Version { get; }
+        public string Map { get; }
+        public string Motd { get; }
+        public string[] Players { get; }
     }
 
     public interface IRCON : IDisposable
     {
+        public enum RCONStatus
+        {
+            ConnFail,
+            AuthFail,
+            ExecFail,
+            IntFail,
+            Success
+        }
+
         public ulong Owner { get; set; }
-        public enum RCONStatus { CONN_FAIL, AUTH_FAIL, EXEC_FAIL, INT_FAIL, SUCCESS }
         public IPEndPoint Server { get; }
         public RCONStatus Status { get; }
         public string Data { get; }
-        public void Execute(string Command, bool Reuse = false);
-        public void ExecuteSingle(string Command, bool Reuse = false);
-        public bool Connected();
         public bool Disposed { get; }
+        public void Execute(string command, bool reuse = false);
+        public void ExecuteSingle(string command, bool reuse = false);
+        public bool Connected();
     }
 
     public class RCONManager : IDisposable
     {
-        private static RCONManager Instance;
-        private List<IRCON> ReusableRCONSockets;
-
-        public static RCONManager GetSingleton()
-        {
-            return Instance ??= new RCONManager();
-        }
+        private static RCONManager _instance;
+        private List<IRCON> _reusableRCONSockets;
 
         private RCONManager()
         {
-            ReusableRCONSockets = new List<IRCON>();
-        }
-
-        public IRCON GetRCON(ulong User)
-        {
-            var Saved = ReusableRCONSockets.Where(o => o.Owner == User).ToList();
-            if (Saved.Count == 0) return null;
-            if (!Saved[0].Disposed && Saved[0].Connected())
-                return Saved[0];
-            Saved[0].Dispose();
-            return null;
+            _reusableRCONSockets = new List<IRCON>();
         }
 
         public void Dispose()
         {
-            ReusableRCONSockets.ForEach(o=> o.Dispose());
-            ReusableRCONSockets.Clear();
-            ReusableRCONSockets = null;
+            _reusableRCONSockets.ForEach(o => o.Dispose());
+            _reusableRCONSockets.Clear();
+            _reusableRCONSockets = null;
         }
-        
-        public IRCON CreateRCON(IPEndPoint Server, string Password, bool Reuse = false, string Command = null)
+
+        public static RCONManager GetSingleton()
         {
-            IRCON RCONInstance;
-            
+            return _instance ??= new RCONManager();
+        }
+
+        public IRCON GetRCON(ulong user)
+        {
+            var saved = _reusableRCONSockets.Where(o => o.Owner == user).ToList();
+            if (saved.Count == 0) return null;
+            if (!saved[0].Disposed && saved[0].Connected())
+                return saved[0];
+            saved[0].Dispose();
+            return null;
+        }
+
+        public IRCON CreateRCON(IPEndPoint server, string password, bool reuse = false, string command = null)
+        {
+            IRCON rconInstance;
+
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                RCONInstance = new RCONHelper(Server, Password, Command);
+                rconInstance = new RCONHelper(server, password, command);
             else
-                RCONInstance = new MinecraftRCON(Server, Password, Reuse, Command);
-            if (Reuse)
-                ReusableRCONSockets.Add(RCONInstance);
-            return RCONInstance;
+                rconInstance = new MinecraftRCON(server, password, reuse, command);
+            if (reuse)
+                _reusableRCONSockets.Add(rconInstance);
+            return rconInstance;
         }
     }
 
-    class MinecraftRCON : IRCON
+    internal class MinecraftRCON : IRCON
     {
-        private static readonly byte[] EndOfCommandPacket = MakePacketData("", PacketType.TYPE_100, 0);
-        private readonly object Lock = new object();
+        private const ushort RxSize = 4096;
+        private static readonly byte[] EndOfCommandPacket = MakePacketData("", PacketType.Type100, 0);
+        private readonly object _lock = new object();
+        private byte[] _buffer;
+        private Socket _client;
+        private List<byte> _packetCollector = new List<byte>(RxSize);
+
+
+        public MinecraftRCON(IPEndPoint server, string password, bool reuse = false, string command = null)
+        {
+            this.Password = password;
+            this.Server = server;
+            _buffer = new byte[RxSize];
+            CreateConnection(reuse, command);
+        }
+
+        private string Password { get; }
 
         public ulong Owner { get; set; }
         public bool Disposed { get; private set; }
-        private Socket Client;
-        private const ushort RX_SIZE = 4096;
-        private byte[] Buffer;
-        private List<byte> PacketCollector = new List<byte>(RX_SIZE);
-        private enum PacketType {SERVERDATA_RESPONSE_VALUE = 0, SERVERDATA_EXECCOMMAND = 2, SERVERDATA_AUTH = 3, TYPE_100 = 100 }
         public RCONStatus Status { get; private set; }
         public string Data { get; private set; }
-        private string Password { get; }
         public IPEndPoint Server { get; }
 
-
-        public MinecraftRCON(IPEndPoint Server, string Password, bool Reuse = false, string Command = null)
+        public void Execute(string command, bool reuse = false)
         {
-            this.Password = Password;
-            this.Server = Server;
-            Buffer = new byte[RX_SIZE];
-            CreateConnection(Reuse, Command);
+            Wipe(ref _buffer);
+            Execute(command, ref _buffer, reuse);
         }
 
-        private void CreateConnection(bool Reuse = false, string Command = null)
+        public void ExecuteSingle(string command, bool reuse = false)
         {
-            Client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
+            Wipe(ref _buffer);
+            ExecuteSingle(command, ref _buffer, reuse);
+        }
+
+        public bool Connected()
+        {
+            if (Status != RCONStatus.Success) return false;
+            try
+            {
+                return !(_client.Poll(1, SelectMode.SelectRead) && _client.Available == 0);
+            }
+            catch (SocketException)
+            {
+                return false;
+            }
+        }
+
+        public void Dispose()
+        {
+            Disposed = true;
+            _client?.Dispose();
+        }
+
+        private void CreateConnection(bool reuse = false, string command = null)
+        {
+            _client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
             {
                 ReceiveTimeout = 5000,
                 SendTimeout = 5000
             };
             try
             {
-                if (!Client.ConnectAsync(Server).Wait(5000))
+                if (!_client.ConnectAsync(Server).Wait(5000))
                 {
                     LoggerService.Log(LogSeverity.Verbose, $"Failed to connect to {Server.Address} at {Server.Port}.");
-                    Status = RCONStatus.CONN_FAIL;
+                    Status = RCONStatus.ConnFail;
                     return;
                 }
             }
             catch (Exception)
             {
-                Status = RCONStatus.CONN_FAIL;
+                Status = RCONStatus.ConnFail;
                 return;
             }
 
             LoggerService.Log(LogSeverity.Verbose, "Successfully created RCON connection!");
-            if (Authenticate() && Command != null)
-                Execute(Command, Reuse);
+            if (Authenticate() && command != null)
+                Execute(command, reuse);
         }
 
         private bool Authenticate()
         {
-            Wipe(ref Buffer);
-            return Authenticate(ref Buffer);
+            Wipe(ref _buffer);
+            return Authenticate(ref _buffer);
         }
 
-        public void Execute(string Command, bool Reuse = false)
-        {
-            Wipe(ref Buffer);
-            Execute(Command, ref Buffer, Reuse);
-        }
-        
-        public void ExecuteSingle(string Command, bool Reuse = false)
-        {
-            Wipe(ref Buffer);
-            ExecuteSingle(Command, ref Buffer, Reuse);
-        }
-
-        private bool Authenticate(ref byte[] RXData)
+        private bool Authenticate(ref byte[] rxData)
         {
             try
             {
-                var Payload = MakePacketData(Password, PacketType.SERVERDATA_AUTH, 0);
-                Client.Send(Payload);
-                Client.Receive(RXData);
-                var ID = LittleEndianReader(ref RXData, 4);
-                var Type = LittleEndianReader(ref RXData, 8);
-                if (ID == -1 || Type != 2)
+                var payload = MakePacketData(Password, PacketType.ServerdataAuth, 0);
+                _client.Send(payload);
+                _client.Receive(rxData);
+                var id = LittleEndianReader(ref rxData, 4);
+                var type = LittleEndianReader(ref rxData, 8);
+                if (id == -1 || type != 2)
                 {
-                    Status = RCONStatus.AUTH_FAIL;
+                    Status = RCONStatus.AuthFail;
                     LoggerService.Log(LogSeverity.Verbose, "RCON failed to authenticate!");
                     return false;
                 }
 
                 LoggerService.Log(LogSeverity.Verbose, "RCON login successful!");
-                Status = RCONStatus.SUCCESS;
+                Status = RCONStatus.Success;
                 return true;
             }
             catch (Exception)
             {
-                Status = RCONStatus.INT_FAIL;
+                Status = RCONStatus.IntFail;
                 return false;
             }
         }
 
-        public void Execute(string Command, ref byte[] RXData, bool Reuse = false)
+        public void Execute(string command, ref byte[] rxData, bool reuse = false)
         {
-            if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 throw new InvalidOperationException("Don't do this, it's going to die either way.");
-            lock (Lock)
+            lock (_lock)
             {
-                var PacketCount = 0;
+                var packetCount = 0;
                 try
                 {
-                    var Payload = MakePacketData(Command, PacketType.SERVERDATA_EXECCOMMAND, 0);
+                    var payload = MakePacketData(command, PacketType.ServerdataExeccommand, 0);
                     try
                     {
                         LoggerService.Log(LogSeverity.Verbose, "Sending payload...");
-                        Client.Send(Payload);
+                        _client.Send(payload);
                     }
                     catch (ObjectDisposedException)
                     {
                         LoggerService.Log(LogSeverity.Warning, "Socket was disposed, attempting to re-auth...");
-                        CreateConnection(Reuse);
-                        Client.Send(Payload);
+                        CreateConnection(reuse);
+                        _client.Send(payload);
                     }
+
                     LoggerService.Log(LogSeverity.Verbose, "Sending bad type...");
-                    Client.Send(EndOfCommandPacket);
+                    _client.Send(EndOfCommandPacket);
                     LoggerService.Log(LogSeverity.Verbose, $"Now reading... Connection status: {Connected()}");
-                    var End = false;
+                    var end = false;
                     do
                     {
-                        Wipe(ref RXData);
-                        var Size = Client.Receive(RXData);
-                        if (Size == 0)
+                        Wipe(ref rxData);
+                        var size = _client.Receive(rxData);
+                        if (size == 0)
                         {
                             // Connection failed.
                             LoggerService.Log(LogSeverity.Warning, "Failed to execute. Attempting to retry...");
-                            PacketCount = 0;
-                            PacketCollector.Clear();
-                            CreateConnection(Reuse);
-                            Client.Send(Payload);
-                            Client.Send(EndOfCommandPacket);
+                            packetCount = 0;
+                            _packetCollector.Clear();
+                            CreateConnection(reuse);
+                            _client.Send(payload);
+                            _client.Send(EndOfCommandPacket);
                         }
 #if DEBUG
-                        using (var fs = new FileStream($"packet{PacketCount}", FileMode.Create, FileAccess.Write))
-                            fs.Write(RXData, 0, RXData.Length);
+                        using (var fs = new FileStream($"packet{packetCount}", FileMode.Create, FileAccess.Write))
+                        {
+                            fs.Write(rxData, 0, rxData.Length);
+                        }
                         // StringConcat.Append($"\nPacket {PacketCount}\n\n");
 #endif
-                        var ID = LittleEndianReader(ref RXData, 4);
-                        var Type = LittleEndianReader(ref RXData, 8);
-                        if ((ID == -1 || Type != (int) PacketType.SERVERDATA_RESPONSE_VALUE) && PacketCount == 0)
+                        var id = LittleEndianReader(ref rxData, 4);
+                        var type = LittleEndianReader(ref rxData, 8);
+                        if ((id == -1 || type != (int) PacketType.ServerdataResponseValue) && packetCount == 0)
                         {
                             LoggerService.Log(LogSeverity.Verbose,
-                                $"Failed to execute \"{Command}\", type of {Type}!");
-                            Status = RCONStatus.AUTH_FAIL;
+                                $"Failed to execute \"{command}\", type of {type}!");
+                            Status = RCONStatus.AuthFail;
                             return;
                         }
 
-                        var Position = PacketCount == 0 ? 12 : 0;
-                        var CurrentByte = RXData[Position++];
-                        while (Position < Size)
+                        var position = packetCount == 0 ? 12 : 0;
+                        var currentByte = rxData[position++];
+                        while (position < size)
                         {
                             /*
                             if (CurrentChar != '\x00' && CurrentChar != 0 && CurrentChar != 0x1b)
                                 StringConcat.Append(CurrentChar);
                             WackDataProcessor(ref RXData, ref Position);
                             */
-                            PacketCollector.Add(CurrentByte);
-                            CurrentByte = RXData[Position++];
+                            _packetCollector.Add(currentByte);
+                            currentByte = rxData[position++];
                         }
 
-                        if (CurrentByte != '\x00' && CurrentByte != 0)
-                            PacketCollector.Add(CurrentByte);
+                        if (currentByte != '\x00' && currentByte != 0)
+                            _packetCollector.Add(currentByte);
 
                         /*
                         if (RXData[Size - 1] == '\x00')
                             End = true;
                             */
-                        if (Contains(PacketCollector, "Unknown", out var Remove))
+                        if (Contains(_packetCollector, "Unknown", out var remove))
                         {
-                            PacketCollector.RemoveRange(Remove, PacketCollector.Count - Remove);
-                            End = true;
+                            _packetCollector.RemoveRange(remove, _packetCollector.Count - remove);
+                            end = true;
                         }
 
-                        PacketCount++;
-                        LoggerService.Log(LogSeverity.Debug, $"Packet {PacketCount}, Size {Size}");
+                        packetCount++;
+                        LoggerService.Log(LogSeverity.Debug, $"Packet {packetCount}, Size {size}");
 
                         // Excess packets.
-                        if (PacketCount == 100)
+                        if (packetCount == 100)
                         {
-                            LoggerService.Log(LogSeverity.Warning, $"Over-read {PacketCount} packets!");
-                            End = true;
+                            LoggerService.Log(LogSeverity.Warning, $"Over-read {packetCount} packets!");
+                            end = true;
                         }
-                    } while (!End);
+                    } while (!end);
 
-                    Data = Stringifier(ref PacketCollector);
-                    PacketCollector.Clear();
-                    LoggerService.Log(LogSeverity.Verbose, Command + "\n\n" + Data);
-                    Status = RCONStatus.SUCCESS;
+                    Data = Stringifier(ref _packetCollector);
+                    _packetCollector.Clear();
+                    LoggerService.Log(LogSeverity.Verbose, command + "\n\n" + Data);
+                    Status = RCONStatus.Success;
                 }
                 catch (SocketException ex)
                 {
-                    if (ex.ErrorCode == 10060 && PacketCollector.Count > 0)
+                    if (ex.ErrorCode == 10060 && _packetCollector.Count > 0)
                     {
                         LoggerService.Log(LogSeverity.Warning,
                             "Timed out, but got data... did we try to read another packet?", ex);
-                        Status = RCONStatus.SUCCESS;
-                        Data = Stringifier(ref PacketCollector);
+                        Status = RCONStatus.Success;
+                        Data = Stringifier(ref _packetCollector);
                         LoggerService.Log(LogSeverity.Verbose, Data);
                     }
-                    else if ((ex.ErrorCode == 10053 || ex.ErrorCode == 32) && Reuse)
+                    else if ((ex.ErrorCode == 10053 || ex.ErrorCode == 32) && reuse)
                     {
                         LoggerService.Log(LogSeverity.Warning,
                             "We were closed, however attempting to reopen connection...", ex);
-                        Status = RCONStatus.INT_FAIL;
+                        Status = RCONStatus.IntFail;
                         CreateConnection(true);
                     }
                     else
                     {
-                        Status = RCONStatus.INT_FAIL;
+                        Status = RCONStatus.IntFail;
                         LoggerService.Log(LogSeverity.Verbose, "Something went wrong while querying!", ex);
                     }
                 }
                 catch (Exception ex)
                 {
-                    Status = RCONStatus.INT_FAIL;
+                    Status = RCONStatus.IntFail;
                     LoggerService.Log(LogSeverity.Verbose, "Something went wrong while querying!", ex);
                 }
 
-                if (Status != RCONStatus.SUCCESS || !Reuse)
+                if (Status != RCONStatus.Success || !reuse)
                     Dispose();
             }
         }
-        
-        public void ExecuteSingle(string Command, ref byte[] RXData, bool Reuse = false)
+
+        public void ExecuteSingle(string command, ref byte[] rxData, bool reuse = false)
         {
             try
             {
-                var Payload = MakePacketData(Command, PacketType.SERVERDATA_EXECCOMMAND, 0);
-                Client.Send(Payload);
-                Client.Receive(RXData);
-                var ID = LittleEndianReader(ref RXData, 4);
-                var Type = LittleEndianReader(ref RXData, 8);
-                if (ID == -1 || Type != 0)
+                var payload = MakePacketData(command, PacketType.ServerdataExeccommand, 0);
+                _client.Send(payload);
+                _client.Receive(rxData);
+                var id = LittleEndianReader(ref rxData, 4);
+                var type = LittleEndianReader(ref rxData, 8);
+                if (id == -1 || type != 0)
                 {
-                    LoggerService.Log(LogSeverity.Verbose, $"Failed to execute \"{Command}\"!");
-                    Status = RCONStatus.AUTH_FAIL;
+                    LoggerService.Log(LogSeverity.Verbose, $"Failed to execute \"{command}\"!");
+                    Status = RCONStatus.AuthFail;
                     return;
                 }
 
-                var StringConcat = new StringBuilder();
-                var Position = 12;
-                var CurrentChar = (char) RXData[Position++];
-                while (CurrentChar != '\x00')
+                var stringConcat = new StringBuilder();
+                var position = 12;
+                var currentChar = (char) rxData[position++];
+                while (currentChar != '\x00')
                 {
-                    StringConcat.Append(CurrentChar);
-                    CurrentChar = (char) RXData[Position++];
+                    stringConcat.Append(currentChar);
+                    currentChar = (char) rxData[position++];
                 }
-                Data = StringConcat.ToString();
-                Status = RCONStatus.SUCCESS;
+
+                Data = stringConcat.ToString();
+                Status = RCONStatus.Success;
             }
             catch (Exception)
             {
-                Status = RCONStatus.INT_FAIL;
+                Status = RCONStatus.IntFail;
             }
-            if(Status != RCONStatus.SUCCESS || !Reuse)
+
+            if (Status != RCONStatus.Success || !reuse)
                 Dispose();
         }
 
         private static byte[] LittleEndianConverter(int data)
         {
             var b = new byte[4];
-            b[0] = (byte)data;
-            b[1] = (byte)(((uint)data >> 8) & 0xFF);
-            b[2] = (byte)(((uint)data >> 16) & 0xFF);
-            b[3] = (byte)(((uint)data >> 24) & 0xFF);
+            b[0] = (byte) data;
+            b[1] = (byte) (((uint) data >> 8) & 0xFF);
+            b[2] = (byte) (((uint) data >> 16) & 0xFF);
+            b[3] = (byte) (((uint) data >> 24) & 0xFF);
             return b;
         }
 
@@ -1056,70 +1116,63 @@ namespace UNObot.Services
         private static void Wipe(ref byte[] data)
         {
             for (var i = 0; i < data.Length; i++)
-                data[i] = (byte)'\x00';
+                data[i] = (byte) '\x00';
         }
 
-        private static string Stringifier(ref List<byte> Data)
+        private static string Stringifier(ref List<byte> data)
         {
-            var sb = new StringBuilder(Data.Count);
-            WackDataProcessor(ref Data);
-            foreach (var character in Data)
+            var sb = new StringBuilder(data.Count);
+            WackDataProcessor(ref data);
+            foreach (var character in data)
                 if (character != 0)
-                    sb.Append((char)character);
+                    sb.Append((char) character);
             return sb.ToString();
         }
 
-        private static byte[] MakePacketData(string Body, PacketType Type, int ID)
+        private static byte[] MakePacketData(string body, PacketType type, int id)
         {
-            var Length = LittleEndianConverter(Body.Length + 9);
-            var IDData = LittleEndianConverter(ID);
-            var PacketType = LittleEndianConverter((int)Type);
-            var BodyData = Encoding.UTF8.GetBytes(Body);
+            var length = LittleEndianConverter(body.Length + 9);
+            var idData = LittleEndianConverter(id);
+            var packetType = LittleEndianConverter((int) type);
+            var bodyData = Encoding.UTF8.GetBytes(body);
             // Plus 1 for the null byte.
-            var Packet = new byte[Length.Length + IDData.Length + PacketType.Length + BodyData.Length + 1];
-            var Counter = 0;
-            foreach (var Byte in Length)
-                Packet[Counter++] = Byte;
-            foreach (var Byte in IDData)
-                Packet[Counter++] = Byte;
-            foreach (var Byte in PacketType)
-                Packet[Counter++] = Byte;
-            foreach (var Byte in BodyData)
-                Packet[Counter++] = Byte;
-            return Packet;
+            var packet = new byte[length.Length + idData.Length + packetType.Length + bodyData.Length + 1];
+            var counter = 0;
+            foreach (var @byte in length)
+                packet[counter++] = @byte;
+            foreach (var @byte in idData)
+                packet[counter++] = @byte;
+            foreach (var @byte in packetType)
+                packet[counter++] = @byte;
+            foreach (var @byte in bodyData)
+                packet[counter++] = @byte;
+            return packet;
         }
 
-        private static bool Contains(IReadOnlyList<byte> Data, string Content, out int Position)
+        private static bool Contains(IReadOnlyList<byte> data, string content, out int position)
         {
-            Position = -1;
-            if (Content.Length > Data.Count) return false;
-            for (Position = Data.Count - 1 - Content.Length; Position >= 0; Position--)
+            position = -1;
+            if (content.Length > data.Count) return false;
+            for (position = data.Count - 1 - content.Length; position >= 0; position--)
             {
-                var Success = true;
-                for (var j = Position; j < Position + Content.Length; j++)
-                    if (Data[j] != Content[j - Position])
-                        Success = false;
-                if (Success)
+                var success = true;
+                for (var j = position; j < position + content.Length; j++)
+                    if (data[j] != content[j - position])
+                        success = false;
+                if (success)
                     return true;
             }
-            Position = -1;
+
+            position = -1;
             return false;
         }
 
-        public bool Connected()
+        private enum PacketType
         {
-            if (Status != RCONStatus.SUCCESS) return false;
-            try
-            {
-                return !(Client.Poll(1, SelectMode.SelectRead) && Client.Available == 0);
-            }
-            catch (SocketException) { return false; }
-        }
-
-        public void Dispose()
-        {
-            Disposed = true;
-            Client?.Dispose();
+            ServerdataResponseValue = 0,
+            ServerdataExeccommand = 2,
+            ServerdataAuth = 3,
+            Type100 = 100
         }
     }
 }

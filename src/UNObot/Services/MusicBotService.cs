@@ -1,7 +1,4 @@
-﻿using Discord;
-using Discord.Audio;
-using Discord.WebSocket;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -9,7 +6,9 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using YoutubeExplode.Videos;
+using Discord;
+using Discord.Audio;
+using Discord.WebSocket;
 using Timer = System.Timers.Timer;
 
 namespace UNObot.Services
@@ -17,27 +16,27 @@ namespace UNObot.Services
     // Can't use Struct, needs passing by reference.
     public class Song
     {
-        public string URL { get; }
+        private ManualResetEvent _endCache;
+
+        public Song(string url, Tuple<string, string, string> data, ulong user, ulong guild)
+        {
+            this.Url = url;
+            Name = data.Item1;
+            Duration = data.Item2;
+            ThumbnailUrl = data.Item3;
+            RequestedBy = user;
+            RequestedGuild = guild;
+            IsPlaying = false;
+        }
+
+        public string Url { get; }
         public string PathCached { get; set; }
         public ulong RequestedBy { get; }
         public ulong RequestedGuild { get; }
         public string Name { get; }
         public string Duration { get; }
-        public string ThumbnailURL { get; }
+        public string ThumbnailUrl { get; }
         public bool IsPlaying { get; private set; }
-
-        private ManualResetEvent EndCache;
-
-        public Song(string URL, Tuple<string, string, string> Data, ulong User, ulong Guild)
-        {
-            this.URL = URL;
-            Name = Data.Item1;
-            Duration = Data.Item2;
-            ThumbnailURL = Data.Item3;
-            RequestedBy = User;
-            RequestedGuild = Guild;
-            IsPlaying = false;
-        }
 
         public async Task Cache()
         {
@@ -45,88 +44,100 @@ namespace UNObot.Services
             {
                 LoggerService.Log(LogSeverity.Debug, $"Caching {Name}");
                 PathCached = "Caching...";
-                PathCached = await YoutubeService.GetSingleton().Download(URL, RequestedGuild);
-                EndCache?.Set();
+                PathCached = await YoutubeService.GetSingleton().Download(Url, RequestedGuild);
+                _endCache?.Set();
                 LoggerService.Log(LogSeverity.Debug, "Finished caching.");
             }
         }
 
-        public void SetCacheEvent(ManualResetEvent CacheFinished)
+        public void SetCacheEvent(ManualResetEvent cacheFinished)
         {
             if (!string.IsNullOrEmpty(PathCached) && PathCached != "Caching...")
             {
-                CacheFinished.Set();
+                cacheFinished.Set();
                 return;
             }
-            EndCache = CacheFinished;
+
+            _endCache = cacheFinished;
         }
-        public void SetPlaying() => IsPlaying = true;
+
+        public void SetPlaying()
+        {
+            IsPlaying = true;
+        }
     }
 
     public class Player : IAsyncDisposable
     {
-        public ulong Guild { get; private set; }
-        public List<Song> Songs { get; private set; }
+        private readonly IVoiceChannel _audioChannel;
+        private readonly ManualResetEvent _cacheEvent;
+        private readonly int _cacheLength = 5;
+        private readonly ISocketMessageChannel _messageChannel;
+        private readonly ManualResetEvent _pauseEvent;
+        private readonly Stopwatch _playPos;
+        private readonly ManualResetEvent _quitEvent;
+        private bool _disposed;
+        private IAudioClient _audioClient;
+        private Timer _autoDcTimer;
+        private bool _caching;
+        private Process _ffmpegProcess;
+
+        private bool _handlingError;
+        private bool _isPlaying;
+        private bool _quit;
+
+        private bool _skip;
+        private CancellationTokenSource _stopAsync;
+
+        public Player(ulong guild, IVoiceChannel audioChannel, IAudioClient audioClient,
+            ISocketMessageChannel messageChannel)
+        {
+            this.Guild = guild;
+            this._audioClient = audioClient;
+            this._audioChannel = audioChannel;
+            this._messageChannel = messageChannel;
+            audioClient.Disconnected += FixConnection;
+            _pauseEvent = new ManualResetEvent(false);
+            _quitEvent = new ManualResetEvent(false);
+            _cacheEvent = new ManualResetEvent(false);
+            Songs = new List<Song>();
+            _playPos = new Stopwatch();
+        }
+
+        public ulong Guild { get; }
+        public List<Song> Songs { get; }
         public Song NowPlaying { get; private set; }
         public bool LoopingQueue { get; private set; }
         public bool LoopingSong { get; private set; }
 
         public bool Paused { get; private set; }
-        private bool _Disposed;
-        public bool Disposed => _Disposed || AudioClient.ConnectionState == ConnectionState.Disconnected;
+        public bool Disposed => _disposed || _audioClient.ConnectionState == ConnectionState.Disconnected;
 
-        private bool Skip;
-        private bool Quit;
-        private bool IsPlaying;
-        private bool Caching;
-        private readonly int CacheLength = 5;
-        private readonly ManualResetEvent PauseEvent;
-        private readonly ManualResetEvent QuitEvent;
-        private readonly ManualResetEvent CacheEvent;
-        private readonly Stopwatch PlayPos;
-        private readonly IVoiceChannel AudioChannel;
-        private IAudioClient AudioClient;
-        private readonly ISocketMessageChannel MessageChannel;
-        private Timer autoDCTimer;
-        private Process ffmpegProcess;
-        private CancellationTokenSource StopAsync;
-
-        public Player(ulong Guild, IVoiceChannel AudioChannel, IAudioClient AudioClient, ISocketMessageChannel MessageChannel)
-        {
-            this.Guild = Guild;
-            this.AudioClient = AudioClient;
-            this.AudioChannel = AudioChannel;
-            this.MessageChannel = MessageChannel;
-            AudioClient.Disconnected += FixConnection;
-            PauseEvent = new ManualResetEvent(false);
-            QuitEvent = new ManualResetEvent(false);
-            CacheEvent = new ManualResetEvent(false);
-            Songs = new List<Song>();
-            PlayPos = new Stopwatch();
-        }
-
-        private bool HandlingError;
         private async Task FixConnection(Exception arg)
         {
-            if (!IsPlaying || HandlingError)
+            if (!_isPlaying || _handlingError)
                 return;
-            HandlingError = true;
-            var PrevPlaying = !Paused;
+            _handlingError = true;
+            var prevPlaying = !Paused;
 
-            if (PrevPlaying)
+            if (prevPlaying)
                 LoggerService.Log(LogSeverity.Debug, TryPause());
-            if (!Disposed && AudioClient?.ConnectionState != ConnectionState.Connected)
+            if (!Disposed && _audioClient?.ConnectionState != ConnectionState.Connected)
             {
-                AudioClient = await AudioChannel.ConnectAsync();
-                AudioClient.Disconnected += FixConnection;
-                await MessageChannel.SendMessageAsync("Detected audio disconnection, reconnected. Use .playerdc to force the bot to leave.").ConfigureAwait(false);
-                if (PrevPlaying)
+                _audioClient = await _audioChannel.ConnectAsync();
+                _audioClient.Disconnected += FixConnection;
+                await _messageChannel
+                    .SendMessageAsync(
+                        "Detected audio disconnection, reconnected. Use .playerdc to force the bot to leave.")
+                    .ConfigureAwait(false);
+                if (prevPlaying)
                 {
                     LoggerService.Log(LogSeverity.Debug, TryPlay());
                     LoggerService.Log(LogSeverity.Debug, "Playing.");
                 }
             }
-            HandlingError = false;
+
+            _handlingError = false;
         }
 
         public async Task RunPlayer()
@@ -135,54 +146,55 @@ namespace UNObot.Services
             {
                 LoggerService.Log(LogSeverity.Debug, $"Player initialized for {Guild}");
                 await FixConnection(null);
-                StopAsync = new CancellationTokenSource();
+                _stopAsync = new CancellationTokenSource();
 
                 while (Songs.Count != 0)
                 {
                     NowPlaying = Songs[0];
                     Songs.RemoveAt(0);
 
-                    CacheEvent.Reset();
-                    NowPlaying.SetCacheEvent(CacheEvent);
+                    _cacheEvent.Reset();
+                    NowPlaying.SetCacheEvent(_cacheEvent);
 
                     await NowPlaying.Cache().ConfigureAwait(false);
                     LoggerService.Log(LogSeverity.Debug, $"Songs: {Songs.Count}");
 
-                    CacheEvent.WaitOne();
+                    _cacheEvent.WaitOne();
 
-                    var StartTime = DateTime.Now;
+                    var startTime = DateTime.Now;
 
-                    while (!File.Exists(NowPlaying.PathCached) && (DateTime.Now - StartTime).TotalSeconds < 5.0)
+                    while (!File.Exists(NowPlaying.PathCached) && (DateTime.Now - startTime).TotalSeconds < 5.0)
                     {
                         //ignored
                     }
 
                     if (!File.Exists(NowPlaying.PathCached))
-                            await MessageChannel.SendMessageAsync("Sorry, but I had a problem downloading this song...")
-                                .ConfigureAwait(false);
+                        await _messageChannel.SendMessageAsync("Sorry, but I had a problem downloading this song...")
+                            .ConfigureAwait(false);
 
                     NowPlaying.SetPlaying();
 
                     do
                     {
-                        PlayPos.Restart();
-                        string Message = Skip ? "Skipped song." : "";
-                        Skip = false;
-                        await MessageChannel
-                            .SendMessageAsync(Message, false, EmbedDisplayService.DisplayNowPlaying(NowPlaying, null))
+                        _playPos.Restart();
+                        var message = _skip ? "Skipped song." : "";
+                        _skip = false;
+                        await _messageChannel
+                            .SendMessageAsync(message, false, EmbedDisplayService.DisplayNowPlaying(NowPlaying, null))
                             .ConfigureAwait(false);
                         // Runs a forever loop to quit when the quit boolean is true (if FFMPEG decides not to quit)
-                        await SendAudio(CreateStream(NowPlaying.PathCached), StopAsync.Token, AudioChannel.Bitrate);
+                        await SendAudio(CreateStream(NowPlaying.PathCached), _stopAsync.Token, _audioChannel.Bitrate);
                     } while (LoopingSong);
 
                     if (LoopingQueue)
                         Songs.Add(NowPlaying);
-                    if (Quit)
+                    if (_quit)
                     {
-                        ffmpegProcess.Kill();
-                        ffmpegProcess = null;
+                        _ffmpegProcess.Kill();
+                        _ffmpegProcess = null;
                     }
-                    if(Songs.All(o => o.PathCached != NowPlaying.PathCached))
+
+                    if (Songs.All(o => o.PathCached != NowPlaying.PathCached))
                         File.Delete(NowPlaying.PathCached);
                     NowPlaying.PathCached = null;
 
@@ -195,7 +207,8 @@ namespace UNObot.Services
             catch (Exception ex)
             {
                 LoggerService.Log(LogSeverity.Error, "MusicBot has encountered a fatal error and needs to quit.", ex);
-                await MessageChannel.SendMessageAsync("Sorry, but I have encountered an error in the player's core. Please note this is a beta, sorry.");
+                await _messageChannel.SendMessageAsync(
+                    "Sorry, but I have encountered an error in the player's core. Please note this is a beta, sorry.");
             }
             finally
             {
@@ -207,28 +220,28 @@ namespace UNObot.Services
         {
             try
             {
-                if (Caching)
+                if (_caching)
                     return;
-                Caching = true;
-                var FilesCached = new List<string>();
-                for (var i = 0; i < Math.Min(Songs.Count, CacheLength); i++)
+                _caching = true;
+                var filesCached = new List<string>();
+                for (var i = 0; i < Math.Min(Songs.Count, _cacheLength); i++)
                 {
                     var s = Songs[i];
-                    if (i < Math.Min(Songs.Count, CacheLength))
+                    if (i < Math.Min(Songs.Count, _cacheLength))
                     {
-                        
                         if (string.IsNullOrWhiteSpace(s.PathCached))
                             await s.Cache().ConfigureAwait(true);
-                        FilesCached.Add(s.PathCached);
+                        filesCached.Add(s.PathCached);
                     }
                     else
                     {
                         s.PathCached = null;
                     }
                 }
+
                 // TODO fix.
-                YoutubeService.GetSingleton().DeleteGuildFolder(Guild, FilesCached.ToArray());
-                Caching = false;
+                YoutubeService.GetSingleton().DeleteGuildFolder(Guild, filesCached.ToArray());
+                _caching = false;
             }
             catch (Exception ex)
             {
@@ -236,10 +249,11 @@ namespace UNObot.Services
             }
         }
 
-        public void Add(string URL, Tuple<string, string, string> Data, ulong User, ulong GuildFrom, bool InsertAtTop = false)
+        public void Add(string url, Tuple<string, string, string> data, ulong user, ulong guildFrom,
+            bool insertAtTop = false)
         {
-            Song s = new Song(URL, Data, User, GuildFrom);
-            if (InsertAtTop)
+            var s = new Song(url, data, user, guildFrom);
+            if (insertAtTop)
                 Songs.Insert(0, s);
             else
                 Songs.Add(s);
@@ -250,13 +264,14 @@ namespace UNObot.Services
         {
             if (Songs.Count == 0 && NowPlaying == null)
                 return "There is no song playing.";
-            if (Paused || !PauseEvent.WaitOne(0))
+            if (Paused || !_pauseEvent.WaitOne(0))
             {
                 Paused = true;
                 return "Player is already paused.";
             }
+
             Paused = true;
-            PauseEvent.Reset();
+            _pauseEvent.Reset();
             return null;
         }
 
@@ -264,13 +279,14 @@ namespace UNObot.Services
         {
             if (Songs.Count == 0 && NowPlaying == null)
                 return "There is no song playing.";
-            if (!Paused || PauseEvent.WaitOne(0))
+            if (!Paused || _pauseEvent.WaitOne(0))
             {
                 Paused = false;
                 return "Player is already playing.";
             }
+
             Paused = false;
-            PauseEvent.Set();
+            _pauseEvent.Set();
             return null;
         }
 
@@ -279,26 +295,27 @@ namespace UNObot.Services
             if (NowPlaying == null)
                 return "There is no song playing.";
             Paused = false;
-            PauseEvent.Set();
+            _pauseEvent.Set();
 
-            Quit = true;
-            Skip = true;
-            QuitEvent.WaitOne();
-            QuitEvent.Reset();
-            PauseEvent.Reset();
-            Quit = false;
+            _quit = true;
+            _skip = true;
+            _quitEvent.WaitOne();
+            _quitEvent.Reset();
+            _pauseEvent.Reset();
+            _quit = false;
             return null;
         }
 
-        public string TryRemove(int Index, out string SongName)
+        public string TryRemove(int index, out string songName)
         {
-            if (Index < 1 || Index > Songs.Count)
+            if (index < 1 || index > Songs.Count)
             {
-                SongName = null;
+                songName = null;
                 return "Song is out of bounds!";
             }
-            SongName = Songs[Index - 1].Name;
-            Songs.RemoveAt(Index - 1);
+
+            songName = Songs[index - 1].Name;
+            Songs.RemoveAt(index - 1);
             return null;
         }
 
@@ -326,81 +343,83 @@ namespace UNObot.Services
         public void Shuffle()
         {
             Songs.ForEach(o => o.PathCached = null);
-            ThreadSafeRandom.Shuffle(Songs);
+            Songs.Shuffle();
             // Let the Cacher delete, as if you try to kill the process too early, it throws an exception while caching.
             Task.Run(Cache);
         }
 
-        private async Task SendAudio(Stream AudioStream, CancellationToken ct, int Bitrate)
+        private async Task SendAudio(Stream audioStream, CancellationToken ct, int bitrate)
         {
-            LoggerService.Log(LogSeverity.Debug, $"Audio stream created at bit rate {Bitrate}");
-            IsPlaying = true;
-            var DiscordStream = AudioClient.CreatePCMStream(AudioApplication.Music, Bitrate);
-            
+            LoggerService.Log(LogSeverity.Debug, $"Audio stream created at bit rate {bitrate}");
+            _isPlaying = true;
+            var discordStream = _audioClient.CreatePCMStream(AudioApplication.Music, bitrate);
+
 
             //Adjust?
-            var BufferSize = 1024;
-            var Buffer = new byte[BufferSize];
+            var bufferSize = 1024;
+            var buffer = new byte[bufferSize];
             //int bytesSent = 0;
-            var Fail = false;
+            var fail = false;
 
             // For the warning log.
-            var FailToWrite = false;
+            var failToWrite = false;
 
             // Skip: User skipped the song.
             // Fail: Failed to read, kill the song.
             // Exit: Song ended.
             // Quit: Program exiting.
 
-            while (!Fail && !Quit)
+            while (!fail && !_quit)
             {
                 var sw = new Stopwatch();
                 try
                 {
-                    if (AudioClient.ConnectionState == ConnectionState.Disconnected)
+                    if (_audioClient.ConnectionState == ConnectionState.Disconnected)
                     {
-                        AudioClient = await AudioChannel.ConnectAsync();
-                        AudioClient.Disconnected += FixConnection;
+                        _audioClient = await _audioChannel.ConnectAsync();
+                        _audioClient.Disconnected += FixConnection;
                     }
 
                     sw.Restart();
-                    var read = await AudioStream.ReadAsync(Buffer, 0, BufferSize, ct);
+                    var read = await audioStream.ReadAsync(buffer, 0, bufferSize, ct);
                     sw.Stop();
-                    if(sw.ElapsedMilliseconds > 1000)
-                        LoggerService.Log(LogSeverity.Warning, $"Took too lsong to read from disk! Is the server lagging? Delay of {sw.ElapsedMilliseconds}ms.");
+                    if (sw.ElapsedMilliseconds > 1000)
+                        LoggerService.Log(LogSeverity.Warning,
+                            $"Took too lsong to read from disk! Is the server lagging? Delay of {sw.ElapsedMilliseconds}ms.");
                     if (read == 0)
                         break;
 
                     try
                     {
                         sw.Restart();
-                        await DiscordStream.WriteAsync(Buffer, 0, read, ct);
+                        await discordStream.WriteAsync(buffer, 0, read, ct);
                         sw.Stop();
-                        if(sw.ElapsedMilliseconds > 1000)
-                            LoggerService.Log(LogSeverity.Warning, $"Took too long to write to Discord! Is the server lagging? Delay of {sw.ElapsedMilliseconds}ms.");
-                        if (FailToWrite)
+                        if (sw.ElapsedMilliseconds > 1000)
+                            LoggerService.Log(LogSeverity.Warning,
+                                $"Took too long to write to Discord! Is the server lagging? Delay of {sw.ElapsedMilliseconds}ms.");
+                        if (failToWrite)
                         {
-                            FailToWrite = false;
+                            failToWrite = false;
                             LoggerService.Log(LogSeverity.Info, "Successfully reconnected.");
                         }
                     }
                     catch (OperationCanceledException)
                     {
-                        if (!FailToWrite && !ct.IsCancellationRequested)
+                        if (!failToWrite && !ct.IsCancellationRequested)
                         {
-                            FailToWrite = true;
+                            failToWrite = true;
                             LoggerService.Log(LogSeverity.Error,
                                 "Failed to write! Attempting to repair Discord service.");
-                            DiscordStream = AudioClient.CreatePCMStream(AudioApplication.Music, AudioChannel.Bitrate);
+                            discordStream = _audioClient.CreatePCMStream(AudioApplication.Music, _audioChannel.Bitrate);
                         }
                     }
 
                     if (Paused)
                     {
-                        PauseEvent.Reset();
-                        PlayPos.Stop();
-                        PauseEvent.WaitOne();
-                        PlayPos.Start();
+                        _pauseEvent.Reset();
+                        _playPos.Stop();
+                        _pauseEvent.WaitOne();
+                        _playPos.Start();
                     }
 
                     //bytesSent += read;
@@ -408,103 +427,107 @@ namespace UNObot.Services
                 catch (Exception ex)
                 {
                     LoggerService.Log(LogSeverity.Error, "Error while writing a song from FFMPEG!", ex);
-                    Fail = true;
+                    fail = true;
                 }
             }
-            PlayPos.Stop();
+
+            _playPos.Stop();
             // ReSharper disable twice MethodSupportsCancellation
-            await DiscordStream.FlushAsync();
+            await discordStream.FlushAsync();
             Paused = false;
-            await AudioStream.FlushAsync();
-            IsPlaying = false;
-            if (Quit)
+            await audioStream.FlushAsync();
+            _isPlaying = false;
+            if (_quit)
             {
-                QuitEvent.Set();
-                Quit = false;
+                _quitEvent.Set();
+                _quit = false;
             }
 
-            await AudioStream.DisposeAsync();
-            await DiscordStream.DisposeAsync();
+            await audioStream.DisposeAsync();
+            await discordStream.DisposeAsync();
             LoggerService.Log(LogSeverity.Debug, "Audio stream successfully destroyed.");
         }
 
         public string GetPosition()
         {
-            return YoutubeService.TimeString(PlayPos.Elapsed);
+            return YoutubeService.TimeString(_playPos.Elapsed);
         }
 
         public async Task CheckOnJoin()
         {
             LoggerService.Log(LogSeverity.Debug, "Detected someone joining a channel.");
-            var Users = (await AudioChannel.GetUsersAsync().FlattenAsync()).ToList();
-            var IsFilled = !Users.All(o => o.IsBot) && Users.Count >= 2;
-            if (IsFilled && autoDCTimer != null)
+            var users = (await _audioChannel.GetUsersAsync().FlattenAsync()).ToList();
+            var isFilled = !users.All(o => o.IsBot) && users.Count >= 2;
+            if (isFilled && _autoDcTimer != null)
             {
                 LoggerService.Log(LogSeverity.Debug, "Destroyed DC Timer.");
-                autoDCTimer?.Dispose();
-                autoDCTimer = null;
+                _autoDcTimer?.Dispose();
+                _autoDcTimer = null;
             }
         }
 
         public async Task CheckOnLeave()
         {
-            var Users = (await AudioChannel.GetUsersAsync().FlattenAsync()).ToList();
-            var IsEmpty = Users.All(o => o.IsBot) || Users.Count <= 1;
-            if (IsEmpty && autoDCTimer == null)
+            var users = (await _audioChannel.GetUsersAsync().FlattenAsync()).ToList();
+            var isEmpty = users.All(o => o.IsBot) || users.Count <= 1;
+            if (isEmpty && _autoDcTimer == null)
             {
                 LoggerService.Log(LogSeverity.Debug, "Started DC timer.");
-                autoDCTimer = new Timer
+                _autoDcTimer = new Timer
                 {
                     Interval = 60 * 1000,
                     AutoReset = false,
                     Enabled = true
                 };
-                autoDCTimer.Elapsed += async (sender, args) =>
-                {
-                    await DisposeAsync();
-                };
+                _autoDcTimer.Elapsed += async (sender, args) => { await DisposeAsync(); };
             }
         }
 
         private Stream CreateStream(string path)
         {
-            string FileName = "/usr/local/bin/ffmpeg";
+            var fileName = "/usr/local/bin/ffmpeg";
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                fileName = @"C:\Users\William Le\Documents\Programming Projects\YTDownloader\ffmpeg.exe";
+            _ffmpegProcess = Process.Start(new ProcessStartInfo
             {
-                FileName = @"C:\Users\William Le\Documents\Programming Projects\YTDownloader\ffmpeg.exe";
-            }
-            ffmpegProcess = Process.Start(new ProcessStartInfo
-            {
-                FileName = FileName,
+                FileName = fileName,
                 Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le pipe:1",
                 UseShellExecute = false,
                 RedirectStandardOutput = true
             });
-            return ffmpegProcess?.StandardOutput.BaseStream;
+            return _ffmpegProcess?.StandardOutput.BaseStream;
         }
 
         public async ValueTask DisposeAsync()
         {
             try
             {
-                if(Songs.Count != 0)
+                if (Songs.Count != 0)
                     LoggerService.Log(LogSeverity.Warning, "Attempted to dispose Music service with songs!");
                 Songs.Clear();
                 LoopingSong = false;
                 LoopingQueue = false;
-                Skip = false;
+                _skip = false;
                 Paused = false;
-                Quit = true;
+                _quit = true;
                 //StopAsync.Cancel();
-                ffmpegProcess?.Kill(true);
-                if (IsPlaying)
-                    QuitEvent.WaitOne();
-                await AudioClient.StopAsync();
-                try { await AudioChannel.DisconnectAsync(); } catch (Exception) { /* ignored */ }
-                AudioClient.Dispose();
-                PauseEvent.Dispose();
-                StopAsync.Dispose();
-                autoDCTimer?.Dispose();
+                _ffmpegProcess?.Kill(true);
+                if (_isPlaying)
+                    _quitEvent.WaitOne();
+                await _audioClient.StopAsync();
+                try
+                {
+                    await _audioChannel.DisconnectAsync();
+                }
+                catch (Exception)
+                {
+                    /* ignored */
+                }
+
+                _audioClient.Dispose();
+                _pauseEvent.Dispose();
+                _stopAsync.Dispose();
+                _autoDcTimer?.Dispose();
             }
             catch (Exception e)
             {
@@ -512,7 +535,7 @@ namespace UNObot.Services
             }
             finally
             {
-                _Disposed = true;
+                _disposed = true;
                 LoggerService.Log(LogSeverity.Debug, $"Disposed {Guild}");
             }
         }
@@ -520,432 +543,481 @@ namespace UNObot.Services
 
     public class MusicBotService
     {
-        private static MusicBotService Instance;
-        private readonly List<Player> MusicPlayers = new List<Player>();
+        private static MusicBotService _instance;
+        private readonly List<Player> _musicPlayers = new List<Player>();
 
         private MusicBotService()
         {
-            Program._client.UserVoiceStateUpdated += UserVoiceStateUpdated;
+            Program.Client.UserVoiceStateUpdated += UserVoiceStateUpdated;
         }
 
         private async Task UserVoiceStateUpdated(SocketUser user, SocketVoiceState oldState, SocketVoiceState newState)
         {
             if (oldState.VoiceChannel != null && newState.VoiceChannel == null)
-            {
-                foreach (var Player in MusicPlayers)
-                    await Player.CheckOnLeave().ConfigureAwait(false);
-            }
+                foreach (var player in _musicPlayers)
+                    await player.CheckOnLeave().ConfigureAwait(false);
             else if (oldState.VoiceChannel == null && newState.VoiceChannel != null)
-            {
-                foreach (var Player in MusicPlayers)
-                    await Player.CheckOnJoin().ConfigureAwait(false);
-            }
+                foreach (var player in _musicPlayers)
+                    await player.CheckOnJoin().ConfigureAwait(false);
         }
 
         public static MusicBotService GetSingleton()
         {
-            if (Instance == null)
-                Instance = new MusicBotService();
-            return Instance;
+            if (_instance == null)
+                _instance = new MusicBotService();
+            return _instance;
         }
 
         public async ValueTask DisposeAsync()
         {
-            foreach (Player MusicPlayer in MusicPlayers)
-                await MusicPlayer.DisposeAsync();
+            foreach (var musicPlayer in _musicPlayers)
+                await musicPlayer.DisposeAsync();
         }
 
-        private async Task<Tuple<Player, string>> ConnectAsync(ulong Guild, IVoiceChannel AudioChannel, ISocketMessageChannel MessageChannel)
+        private async Task<Tuple<Player, string>> ConnectAsync(ulong guild, IVoiceChannel audioChannel,
+            ISocketMessageChannel messageChannel)
         {
-            var Player = MusicPlayers.FindIndex(o => o.Guild == Guild);
-            if (Player < 0)
+            var player = _musicPlayers.FindIndex(o => o.Guild == guild);
+            if (player < 0)
             {
-                Player NewPlayer = new Player(Guild, AudioChannel, await AudioChannel.ConnectAsync(), MessageChannel);
-                MusicPlayers.Add(NewPlayer);
+                var newPlayer = new Player(guild, audioChannel, await audioChannel.ConnectAsync(), messageChannel);
+                _musicPlayers.Add(newPlayer);
 #pragma warning disable 4014
-                Task.Run(NewPlayer.RunPlayer);
+                Task.Run(newPlayer.RunPlayer);
 #pragma warning restore 4014
                 LoggerService.Log(LogSeverity.Debug, "Generated new player.");
-                return new Tuple<Player, string>(NewPlayer, null);
+                return new Tuple<Player, string>(newPlayer, null);
             }
-            if (MusicPlayers[Player].Disposed)
+
+            if (_musicPlayers[player].Disposed)
             {
                 LoggerService.Log(LogSeverity.Debug, "Replaced player.");
-                MusicPlayers.RemoveAt(Player);
-                var NewPlayer = new Player(Guild, AudioChannel, await AudioChannel.ConnectAsync(), MessageChannel);
-                MusicPlayers.Add(NewPlayer);
+                _musicPlayers.RemoveAt(player);
+                var newPlayer = new Player(guild, audioChannel, await audioChannel.ConnectAsync(), messageChannel);
+                _musicPlayers.Add(newPlayer);
 #pragma warning disable 4014
-                Task.Run(NewPlayer.RunPlayer);
+                Task.Run(newPlayer.RunPlayer);
 #pragma warning restore 4014
-                return new Tuple<Player, string>(NewPlayer, null);
+                return new Tuple<Player, string>(newPlayer, null);
             }
+
             LoggerService.Log(LogSeverity.Debug, "Returned existing player.");
-            return new Tuple<Player, string>(MusicPlayers[Player], null);
+            return new Tuple<Player, string>(_musicPlayers[player], null);
         }
 
-        public async Task<Tuple<Embed, string>> Add(ulong User, ulong Guild, string URL, IVoiceChannel Channel, ISocketMessageChannel MessageChannel, bool InsertAtTop = false)
+        public async Task<Tuple<Embed, string>> Add(ulong user, ulong guild, string url, IVoiceChannel channel,
+            ISocketMessageChannel messageChannel, bool insertAtTop = false)
         {
-            Embed EmbedOut;
-            string Error = null;
-            if (InsertAtTop && !await HasPermissions(User, Guild, Channel))
+            Embed embedOut;
+            string error = null;
+            if (insertAtTop && !await HasPermissions(user, guild, channel))
                 return new Tuple<Embed, string>(null, "You do not have the power to run this command!");
             try
             {
-                var Information = YoutubeService.GetSingleton().GetInfo(URL);
-                var Result = EmbedDisplayService.DisplayAddSong(User, Guild, URL, await Information);
-                EmbedOut = Result.Item1;
-                var Data = Result.Item2;
-                var Player = await ConnectAsync(Guild, Channel, MessageChannel);
-                if (Player.Item2 != null)
-                    Error = Player.Item2;
+                var information = YoutubeService.GetSingleton().GetInfo(url);
+                var result = EmbedDisplayService.DisplayAddSong(user, guild, url, await information);
+                embedOut = result.Item1;
+                var data = result.Item2;
+                var player = await ConnectAsync(guild, channel, messageChannel);
+                if (player.Item2 != null)
+                    error = player.Item2;
                 else
-                    Player.Item1.Add(URL, Data, User, Guild, InsertAtTop);
+                    player.Item1.Add(url, data, user, guild, insertAtTop);
             }
             catch (Exception ex)
             {
                 return new Tuple<Embed, string>(null, ex.Message);
             }
 
-            return new Tuple<Embed, string>(EmbedOut, Error);
+            return new Tuple<Embed, string>(embedOut, error);
         }
 
-        public async Task<Tuple<Embed, string>> AddList(ulong User, ulong Guild, string URL, IVoiceChannel Channel, ISocketMessageChannel MessageChannel, bool InsertAtTop = false)
+        public async Task<Tuple<Embed, string>> AddList(ulong user, ulong guild, string url, IVoiceChannel channel,
+            ISocketMessageChannel messageChannel, bool insertAtTop = false)
         {
-            Embed Display = null;
-            string Message;
-            if (InsertAtTop && !await HasPermissions(User, Guild, Channel))
+            Embed display = null;
+            string message;
+            if (insertAtTop && !await HasPermissions(user, guild, channel))
                 return new Tuple<Embed, string>(null, "You do not have the power to run this command!");
             try
             {
-                var Playlist = await EmbedDisplayService.DisplayPlaylist(User, Guild, URL);
-                Display = Playlist.Item1;
-                var ResultPlay = await YoutubeService.GetSingleton().GetPlaylistVideos(Playlist.Item2.Id);
-                var Player = await ConnectAsync(Guild, Channel, MessageChannel);
-                if (Player.Item2 != null)
-                    Message = Player.Item2;
+                var playlist = await EmbedDisplayService.DisplayPlaylist(user, guild, url);
+                display = playlist.Item1;
+                var resultPlay = await YoutubeService.GetSingleton().GetPlaylistVideos(playlist.Item2.Id);
+                var player = await ConnectAsync(guild, channel, messageChannel);
+                if (player.Item2 != null)
+                {
+                    message = player.Item2;
+                }
                 else
                 {
-                    if (InsertAtTop)
-                        for (int i = ResultPlay.Count - 1; i >= 0; i--)
+                    if (insertAtTop)
+                        for (var i = resultPlay.Count - 1; i >= 0; i--)
                         {
-                            Video Video = ResultPlay[i];
-                            Player.Item1.Add(Video.Url,
-                                new Tuple<string, string, string>(Video.Title, YoutubeService.TimeString(Video.Duration), Video.Thumbnails.MediumResUrl), User, Guild, true);
+                            var video = resultPlay[i];
+                            player.Item1.Add(video.Url,
+                                new Tuple<string, string, string>(video.Title,
+                                    YoutubeService.TimeString(video.Duration), video.Thumbnails.MediumResUrl), user,
+                                guild, true);
                         }
                     else
-                        foreach (var Video in ResultPlay)
-                            Player.Item1.Add($"https://www.youtube.com/watch?v={Video.Id}",
-                                new Tuple<string, string, string>(Video.Title, YoutubeService.TimeString(Video.Duration), Video.Thumbnails.MediumResUrl), User, Guild);
-                    Message = $"Added {ResultPlay.Count} song{(ResultPlay.Count == 1 ? "" : "s")}.";
+                        foreach (var video in resultPlay)
+                            player.Item1.Add($"https://www.youtube.com/watch?v={video.Id}",
+                                new Tuple<string, string, string>(video.Title,
+                                    YoutubeService.TimeString(video.Duration), video.Thumbnails.MediumResUrl), user,
+                                guild);
+
+                    message = $"Added {resultPlay.Count} song{(resultPlay.Count == 1 ? "" : "s")}.";
                 }
             }
             catch (Exception ex)
             {
-                Message = ex.Message;
+                message = ex.Message;
             }
 
-            return new Tuple<Embed, string>(Display, Message);
+            return new Tuple<Embed, string>(display, message);
         }
 
-        public async Task<Tuple<Embed, string>> Search(ulong User, ulong Guild, string Query, IVoiceChannel Channel, ISocketMessageChannel MessageChannel, bool InsertAtTop = false)
+        public async Task<Tuple<Embed, string>> Search(ulong user, ulong guild, string query, IVoiceChannel channel,
+            ISocketMessageChannel messageChannel, bool insertAtTop = false)
         {
-            Embed EmbedOut;
-            string Error = null;
-            if (InsertAtTop && !await HasPermissions(User, Guild, Channel))
+            Embed embedOut;
+            string error = null;
+            if (insertAtTop && !await HasPermissions(user, guild, channel))
                 return new Tuple<Embed, string>(null, "You do not have the power to run this command!");
             try
             {
                 LoggerService.Log(LogSeverity.Verbose, "Searching videos for embed...");
-                var Information = await YoutubeService.GetSingleton().SearchVideo(Query);
+                var information = await YoutubeService.GetSingleton().SearchVideo(query);
                 LoggerService.Log(LogSeverity.Verbose, "Attempting to embed...");
-                var Result = EmbedDisplayService.DisplayAddSong(User, Guild, Information.Item2, Information.Item1);
-                EmbedOut = Result.Item1;
-                var Data = Result.Item2;
-                var Player = await ConnectAsync(Guild, Channel, MessageChannel);
-                if (Player.Item2 != null)
-                    Error = Player.Item2;
+                var result = EmbedDisplayService.DisplayAddSong(user, guild, information.Item2, information.Item1);
+                embedOut = result.Item1;
+                var data = result.Item2;
+                var player = await ConnectAsync(guild, channel, messageChannel);
+                if (player.Item2 != null)
+                    error = player.Item2;
                 else
-                    Player.Item1.Add(Information.Item2, Data, User, Guild, InsertAtTop);
+                    player.Item1.Add(information.Item2, data, user, guild, insertAtTop);
             }
             catch (Exception ex)
             {
                 return new Tuple<Embed, string>(null, ex.Message);
             }
 
-            return new Tuple<Embed, string>(EmbedOut, Error);
+            return new Tuple<Embed, string>(embedOut, error);
         }
 
-        public async Task<string> Pause(ulong User, ulong Guild, IAudioChannel Channel)
+        public async Task<string> Pause(ulong user, ulong guild, IAudioChannel channel)
         {
-            string Message;
+            string message;
             try
             {
-                var Players = MusicPlayers.FindAll(o => o.Guild == Guild);
-                if (Players.Count == 0 || Players[0].Disposed)
-                    Message = "Error: The server is not playing any music!";
-                else if (!await HasPermissions(User, Guild, Channel))
-                    Message = "You do not have the power to run this command!";
+                var players = _musicPlayers.FindAll(o => o.Guild == guild);
+                if (players.Count == 0 || players[0].Disposed)
+                {
+                    message = "Error: The server is not playing any music!";
+                }
+                else if (!await HasPermissions(user, guild, channel))
+                {
+                    message = "You do not have the power to run this command!";
+                }
                 else
                 {
-                    string SkipMessage = Players[0].TryPause();
-                    if (!string.IsNullOrEmpty(SkipMessage))
-                        Message = SkipMessage;
+                    var skipMessage = players[0].TryPause();
+                    if (!string.IsNullOrEmpty(skipMessage))
+                        message = skipMessage;
                     else
-                        Message = "Player paused.";
+                        message = "Player paused.";
                 }
             }
             catch (Exception ex)
             {
                 return "Error: " + ex.Message;
             }
-            return Message;
+
+            return message;
         }
 
-        public async Task<string> Play(ulong User, ulong Guild, IAudioChannel Channel)
+        public async Task<string> Play(ulong user, ulong guild, IAudioChannel channel)
         {
-            string Message;
+            string message;
             try
             {
-                var Players = MusicPlayers.FindAll(o => o.Guild == Guild);
-                if (Players.Count == 0 || Players[0].Disposed)
-                    Message = "Error: The server is not playing any music!";
-                else if (!await HasPermissions(User, Guild, Channel))
-                    Message = "You do not have the power to run this command!";
+                var players = _musicPlayers.FindAll(o => o.Guild == guild);
+                if (players.Count == 0 || players[0].Disposed)
+                {
+                    message = "Error: The server is not playing any music!";
+                }
+                else if (!await HasPermissions(user, guild, channel))
+                {
+                    message = "You do not have the power to run this command!";
+                }
                 else
                 {
-                    string SkipMessage = Players[0].TryPlay();
-                    if (!string.IsNullOrEmpty(SkipMessage))
-                        Message = SkipMessage;
+                    var skipMessage = players[0].TryPlay();
+                    if (!string.IsNullOrEmpty(skipMessage))
+                        message = skipMessage;
                     else
-                        Message = "Player continued.";
+                        message = "Player continued.";
                 }
             }
             catch (Exception ex)
             {
                 return "Error: " + ex.Message;
             }
-            return Message;
+
+            return message;
         }
 
-        public async Task<string> Shuffle(ulong User, ulong Guild, IAudioChannel Channel)
+        public async Task<string> Shuffle(ulong user, ulong guild, IAudioChannel channel)
         {
-            string Message;
+            string message;
             try
             {
-                var Players = MusicPlayers.FindAll(o => o.Guild == Guild);
-                if (Players.Count == 0 || Players[0].Disposed)
-                    Message = "Error: The server is not playing any music!";
-                else if (!await HasPermissions(User, Guild, Channel))
-                    Message = "You do not have the power to run this command!";
+                var players = _musicPlayers.FindAll(o => o.Guild == guild);
+                if (players.Count == 0 || players[0].Disposed)
+                {
+                    message = "Error: The server is not playing any music!";
+                }
+                else if (!await HasPermissions(user, guild, channel))
+                {
+                    message = "You do not have the power to run this command!";
+                }
                 else
                 {
-                    Players[0].Shuffle();
-                    Message = "Shuffled.";
+                    players[0].Shuffle();
+                    message = "Shuffled.";
                 }
             }
             catch (Exception ex)
             {
                 return "Error: " + ex.Message;
             }
-            return Message;
+
+            return message;
         }
 
-        public async Task<string> ToggleLoop(ulong User, ulong Guild, IAudioChannel Channel)
+        public async Task<string> ToggleLoop(ulong user, ulong guild, IAudioChannel channel)
         {
-            string Message;
+            string message;
             try
             {
-                var Players = MusicPlayers.FindAll(o => o.Guild == Guild);
-                if (Players.Count == 0 || Players[0].Disposed)
-                    Message = "Error: The server is not playing any music!";
-                else if (!await HasPermissions(User, Guild, Channel))
-                    Message = "You do not have the power to run this command!";
+                var players = _musicPlayers.FindAll(o => o.Guild == guild);
+                if (players.Count == 0 || players[0].Disposed)
+                    message = "Error: The server is not playing any music!";
+                else if (!await HasPermissions(user, guild, channel))
+                    message = "You do not have the power to run this command!";
                 else
-                    Message = Players[0].ToggleLoopSong();
+                    message = players[0].ToggleLoopSong();
             }
             catch (Exception ex)
             {
                 return "Error: " + ex.Message;
             }
-            return Message;
+
+            return message;
         }
 
-        public async Task<string> ToggleLoopQueue(ulong User, ulong Guild, IAudioChannel Channel)
+        public async Task<string> ToggleLoopQueue(ulong user, ulong guild, IAudioChannel channel)
         {
-            string Message;
+            string message;
             try
             {
-                var Players = MusicPlayers.FindAll(o => o.Guild == Guild);
-                if (Players.Count == 0 || Players[0].Disposed)
-                    Message = "Error: The server is not playing any music!";
-                else if (!await HasPermissions(User, Guild, Channel))
-                    Message = "You do not have the power to run this command!";
+                var players = _musicPlayers.FindAll(o => o.Guild == guild);
+                if (players.Count == 0 || players[0].Disposed)
+                    message = "Error: The server is not playing any music!";
+                else if (!await HasPermissions(user, guild, channel))
+                    message = "You do not have the power to run this command!";
                 else
-                    Message = Players[0].ToggleLoopPlaylist();
+                    message = players[0].ToggleLoopPlaylist();
             }
             catch (Exception ex)
             {
                 return "Error: " + ex.Message;
             }
-            return Message;
+
+            return message;
         }
 
-        public async Task<string> Disconnect(ulong User, ulong Guild, IAudioChannel Channel)
+        public async Task<string> Disconnect(ulong user, ulong guild, IAudioChannel channel)
         {
-            string Message;
+            string message;
             try
             {
-                var Players = MusicPlayers.FindAll(o => o.Guild == Guild);
-                if (Players.Count == 0 || Players[0].Disposed)
-                    Message = "Error: The server is not playing any music!";
-                else if (!await HasPermissions(User, Guild, Channel))
-                    Message = "You do not have the power to run this command!";
+                var players = _musicPlayers.FindAll(o => o.Guild == guild);
+                if (players.Count == 0 || players[0].Disposed)
+                {
+                    message = "Error: The server is not playing any music!";
+                }
+                else if (!await HasPermissions(user, guild, channel))
+                {
+                    message = "You do not have the power to run this command!";
+                }
                 else
                 {
-                    await Players[0].DisposeAsync();
-                    Message = "Successfully disconnected.";
+                    await players[0].DisposeAsync();
+                    message = "Successfully disconnected.";
                 }
             }
             catch (Exception ex)
             {
                 return "Error: " + ex.Message;
             }
-            return Message;
+
+            return message;
         }
 
-        public async Task<string> Skip(ulong User, ulong Guild, IVoiceChannel Channel)
+        public async Task<string> Skip(ulong user, ulong guild, IVoiceChannel channel)
         {
-            string Error;
+            string error;
             try
             {
-                var Players = MusicPlayers.FindAll(o => o.Guild == Guild);
-                if (Players.Count == 0 || Players[0].Disposed)
-                    Error = "The server is not playing any music!";
-                else if (!await HasPermissions(User, Guild, Channel))
-                    Error = "You do not have the power to run this command!";
+                var players = _musicPlayers.FindAll(o => o.Guild == guild);
+                if (players.Count == 0 || players[0].Disposed)
+                {
+                    error = "The server is not playing any music!";
+                }
+                else if (!await HasPermissions(user, guild, channel))
+                {
+                    error = "You do not have the power to run this command!";
+                }
                 else
                 {
-                    string SkipMessage = Players[0].TrySkip();
-                    Error = SkipMessage;
+                    var skipMessage = players[0].TrySkip();
+                    error = skipMessage;
                 }
             }
             catch (Exception ex)
             {
-                Error = ex.Message;
+                error = ex.Message;
             }
 
-            return string.IsNullOrWhiteSpace(Error) ? "" : "Error: " + Error;
+            return string.IsNullOrWhiteSpace(error) ? "" : "Error: " + error;
         }
 
-        public async Task<string> Remove(ulong User, ulong Guild, IVoiceChannel Channel, int Index)
+        public async Task<string> Remove(ulong user, ulong guild, IVoiceChannel channel, int index)
         {
-            string Error;
-            string SongName = null;
+            string error;
+            string songName = null;
             try
             {
-                var Players = MusicPlayers.FindAll(o => o.Guild == Guild);
-                if (Players.Count == 0 || Players[0].Disposed)
-                    Error = "The server is not playing any music!";
-                else if (!await HasPermissions(User, Guild, Channel))
-                    Error = "You do not have the power to run this command!";
+                var players = _musicPlayers.FindAll(o => o.Guild == guild);
+                if (players.Count == 0 || players[0].Disposed)
+                {
+                    error = "The server is not playing any music!";
+                }
+                else if (!await HasPermissions(user, guild, channel))
+                {
+                    error = "You do not have the power to run this command!";
+                }
                 else
                 {
-                    string SkipMessage = Players[0].TryRemove(Index, out SongName);
-                    Error = SkipMessage;
+                    var skipMessage = players[0].TryRemove(index, out songName);
+                    error = skipMessage;
                 }
             }
             catch (Exception ex)
             {
-                Error = ex.Message;
+                error = ex.Message;
             }
 
-            if (SongName != null)
+            if (songName != null)
             {
-                SongName = SongName.Replace("\\", "\\\\");
-                SongName = SongName.Replace("`", "\\`");
+                songName = songName.Replace("\\", "\\\\");
+                songName = songName.Replace("`", "\\`");
             }
-            return string.IsNullOrWhiteSpace(Error) ? $"Removed ``{SongName}`` successfully." : "Error: " + Error;
+
+            return string.IsNullOrWhiteSpace(error) ? $"Removed ``{songName}`` successfully." : "Error: " + error;
         }
 
-        public Tuple<Embed, string> GetMusicQueue(ulong Guild, int Page)
+        public Tuple<Embed, string> GetMusicQueue(ulong guild, int page)
         {
-            Embed List = null;
-            string Error = null;
+            Embed list = null;
+            string error = null;
             try
             {
-                var Players = MusicPlayers.FindAll(o => o.Guild == Guild);
-                if (Players.Count == 0 || Players[0].Disposed)
-                    Error = "The server is not playing any music!";
+                var players = _musicPlayers.FindAll(o => o.Guild == guild);
+                if (players.Count == 0 || players[0].Disposed)
+                {
+                    error = "The server is not playing any music!";
+                }
                 else
                 {
-                    var Player = Players[0];
-                    var Result = EmbedDisplayService.DisplaySongList(Player.NowPlaying, Player.Songs, Page);
-                    if (Result.Item1 == null)
+                    var player = players[0];
+                    var result = EmbedDisplayService.DisplaySongList(player.NowPlaying, player.Songs, page);
+                    if (result.Item1 == null)
                     {
-                        Error = $"Invalid page number!";
-                        if (Result.Item2 > 1)
-                            Error += $" It should be between 1-{Result.Item2}, inclusively.";
+                        error = "Invalid page number!";
+                        if (result.Item2 > 1)
+                            error += $" It should be between 1-{result.Item2}, inclusively.";
                         else
-                            Error += " There is only one page.";
+                            error += " There is only one page.";
                     }
                     else
-                        List = Result.Item1;
+                    {
+                        list = result.Item1;
+                    }
                 }
             }
             catch (Exception ex)
             {
-                Error = ex.Message;
+                error = ex.Message;
             }
-            return new Tuple<Embed, string>(List, Error);
+
+            return new Tuple<Embed, string>(list, error);
         }
 
-        public Tuple<Embed, string> GetNowPlaying(ulong Guild)
+        public Tuple<Embed, string> GetNowPlaying(ulong guild)
         {
-            Embed List = null;
-            string Error = null;
+            Embed list = null;
+            string error = null;
             try
             {
-                var Players = MusicPlayers.FindAll(o => o.Guild == Guild);
-                if (Players.Count == 0 || Players[0].Disposed)
-                    Error = "The server is not playing any music!";
+                var players = _musicPlayers.FindAll(o => o.Guild == guild);
+                if (players.Count == 0 || players[0].Disposed)
+                {
+                    error = "The server is not playing any music!";
+                }
                 else
                 {
-                    var Player = Players[0];
-                    List = EmbedDisplayService.DisplayNowPlaying(Player.NowPlaying, Player.GetPosition());
+                    var player = players[0];
+                    list = EmbedDisplayService.DisplayNowPlaying(player.NowPlaying, player.GetPosition());
                 }
             }
             catch (Exception ex)
             {
-                Error = ex.Message;
+                error = ex.Message;
             }
-            return new Tuple<Embed, string>(List, Error);
+
+            return new Tuple<Embed, string>(list, error);
         }
 
-        private async Task<bool> HasPermissions(ulong Caller, ulong Guild, IAudioChannel AudioChannel)
+        private async Task<bool> HasPermissions(ulong caller, ulong guild, IAudioChannel audioChannel)
         {
-            var Users = await AudioChannel.GetUsersAsync().FlattenAsync();
+            var users = await audioChannel.GetUsersAsync().FlattenAsync();
 
-            bool UserFound = false;
-            int UserCount = 0;
+            var userFound = false;
+            var userCount = 0;
 
-            foreach (var User in Users)
+            foreach (var user in users)
             {
-                if (User.IsBot)
+                if (user.IsBot)
                     continue;
-                UserCount++;
-                UserFound |= User.Id == Caller;
+                userCount++;
+                userFound |= user.Id == caller;
             }
 
-            if (!UserFound) return false;
-            if (UserCount == 1) return true;
-            var UserGuild = Program._client.GetGuild(Guild).GetUser(Caller);
-            foreach (var Role in UserGuild.Roles)
+            if (!userFound) return false;
+            if (userCount == 1) return true;
+            var userGuild = Program.Client.GetGuild(guild).GetUser(caller);
+            foreach (var role in userGuild.Roles)
             {
-                var Name = Role.Name.ToLower().Trim();
-                if (Name == "dj" || Name == "guardian")
+                var name = role.Name.ToLower().Trim();
+                if (name == "dj" || name == "guardian")
                     return true;
             }
-            return UserGuild.GuildPermissions.ManageChannels || UserGuild.GuildPermissions.Administrator;
+
+            return userGuild.GuildPermissions.ManageChannels || userGuild.GuildPermissions.Administrator;
         }
     }
 }

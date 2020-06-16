@@ -7,7 +7,7 @@ namespace UNObot.Services
 {
     public static class InputHandlerService
     {
-        static readonly Dictionary<IEmote, string> reactions = new Dictionary<IEmote, string>
+        private static readonly Dictionary<IEmote, string> Reactions = new Dictionary<IEmote, string>
         {
             {Emote.Parse("<:red:498252114972114999>"), "Red"},
             {Emote.Parse("<:green:498252148094533633>"), "Green"},
@@ -27,14 +27,15 @@ namespace UNObot.Services
             {new Emoji("9⃣"), "9"}
         };
 
-        public static async Task ReactionAdded(Cacheable<IUserMessage, ulong> reactmessage, ISocketMessageChannel channel, SocketReaction reaction)
+        public static async Task ReactionAdded(Cacheable<IUserMessage, ulong> reactmessage,
+            ISocketMessageChannel channel, SocketReaction reaction)
         {
             //TODO add check for what type of message (kete)
             string input;
             var message = await reactmessage.GetOrDownloadAsync();
-            var reacter = Program._client.GetUser(reaction.UserId);
+            var reacter = Program.Client.GetUser(reaction.UserId);
 
-            if (reacter.IsBot || message.Author.Id != Program._client.CurrentUser.Id)
+            if (reacter.IsBot || message.Author.Id != Program.Client.CurrentUser.Id)
                 return;
 
             /*
@@ -48,21 +49,23 @@ namespace UNObot.Services
             */
 
 #if(DEBUG)
-            if (reactions.ContainsKey(reaction.Emote))
+            if (Reactions.ContainsKey(reaction.Emote))
             {
-                input = reactions[reaction.Emote];
+                input = Reactions[reaction.Emote];
                 await message.RemoveReactionAsync(reaction.Emote, reaction.User.Value);
                 await channel.SendMessageAsync($"Recieved an {input} from {reacter.Username}");
             }
             else
                 //probably a wrong icon
+            {
                 LoggerService.Log(LogSeverity.Debug, reaction.Emote.Name);
+            }
 #endif
         }
 
         public static async Task AddReactions(IUserMessage s)
         {
-            foreach (IEmote emoji in reactions.Keys)
+            foreach (var emoji in Reactions.Keys)
                 await s.AddReactionAsync(emoji);
         }
     }

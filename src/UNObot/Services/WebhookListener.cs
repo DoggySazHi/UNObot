@@ -1,29 +1,33 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using Discord;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Linq;
 
 namespace UNObot.Services
 {
-    public enum WebhookType : byte { Bitbucket = 0, OctoPrint = 1 }
+    public enum WebhookType : byte
+    {
+        Bitbucket = 0,
+        OctoPrint = 1
+    }
 
     public class WebhookListener : IDisposable
     {
-        private static WebhookListener Instance;
-        private readonly HttpListener Server;
-        private readonly byte[] DefaultResponse;
-        private readonly ManualResetEvent Exited;
-        private bool Stop;
-        private bool Disposed;
+        private static WebhookListener _instance;
+        private readonly byte[] _defaultResponse;
+        private readonly ManualResetEvent _exited;
+        private readonly HttpListener _server;
+        private bool _disposed;
+        private bool _stop;
 
         private WebhookListener()
         {
@@ -33,16 +37,16 @@ namespace UNObot.Services
                 return;
             }
 
-            DefaultResponse = Encoding.UTF8.GetBytes("Mukyu!");
-            Exited = new ManualResetEvent(false);
+            _defaultResponse = Encoding.UTF8.GetBytes("Mukyu!");
+            _exited = new ManualResetEvent(false);
 
             try
             {
-                Server = new HttpListener();
-                Server.Prefixes.Add("http://127.0.0.1:6860/");
-                Server.Prefixes.Add("http://localhost:6860/");
+                _server = new HttpListener();
+                _server.Prefixes.Add("http://127.0.0.1:6860/");
+                _server.Prefixes.Add("http://localhost:6860/");
 
-                Server.Start();
+                _server.Start();
             }
             catch (HttpListenerException ex)
             {
@@ -52,78 +56,99 @@ namespace UNObot.Services
             Task.Run(Listener);
         }
 
+        public void Dispose()
+        {
+            _stop = true;
+            if (_disposed)
+                return;
+            _disposed = true;
+
+            try
+            {
+                _server.Stop();
+                _server.Close();
+                _exited.Close();
+                ((IDisposable) _server)?.Dispose();
+                _exited.Dispose();
+            }
+            catch (Exception e)
+            {
+                LoggerService.Log(LogSeverity.Error, "Failed to dispose WebhookListener properly: ", e);
+                // ignored
+            }
+        }
+
         public static WebhookListener GetSingleton()
         {
-            return Instance ??= new WebhookListener();
+            return _instance ??= new WebhookListener();
         }
 
         private void Listener()
         {
             try
             {
-                while (!Stop)
+                while (!_stop)
                 {
-                    var Context = Server.GetContext();
-                    var Request = Context.Request;
-                    var URL = Context.Request.RawUrl;
+                    var context = _server.GetContext();
+                    var request = context.Request;
+                    var url = context.Request.RawUrl;
 #if DEBUG
-                    LoggerService.Log(LogSeverity.Debug, $"Received request from {URL}.");
-                    var Headers = "Headers: ";
-                    foreach (var Key in Request.Headers.AllKeys)
-                        Headers += $"{Key}, {Request.Headers[Key]}\n";
-                    LoggerService.Log(LogSeverity.Debug, Headers);
+                    LoggerService.Log(LogSeverity.Debug, $"Received request from {url}.");
+                    var headers = "Headers: ";
+                    foreach (var key in request.Headers.AllKeys)
+                        headers += $"{key}, {request.Headers[key]}\n";
+                    LoggerService.Log(LogSeverity.Debug, headers);
 #endif
 
-                    var Sections = URL.Split("/");
+                    var sections = url.Split("/");
 
-                    if (Sections.Length >= 3)
+                    if (sections.Length >= 3)
                     {
-                        var ChannelParse = ulong.TryParse(Sections[1], out var Channel);
-                        if (ChannelParse)
+                        var channelParse = ulong.TryParse(sections[1], out var channel);
+                        if (channelParse)
                         {
-                            var Key = Sections[2];
-                            var (Guild, Type) = UNODatabaseService.GetWebhook(Channel, Key).GetAwaiter().GetResult();
-                            if (Guild != 0)
+                            var key = sections[2];
+                            var (guild, type) = UNODatabaseService.GetWebhook(channel, key).GetAwaiter().GetResult();
+                            if (guild != 0)
                             {
 #if DEBUG
                                 LoggerService.Log(LogSeverity.Debug,
-                                    $"Found server, points to {Guild}, {Channel} of type {(WebhookType)Type}.");
+                                    $"Found server, points to {guild}, {channel} of type {(WebhookType) type}.");
 #endif
-                                using var Data = Request.InputStream;
-                                using var Reader = new StreamReader(Data);
-                                var Text = Reader.ReadToEnd();
+                                using var data = request.InputStream;
+                                using var reader = new StreamReader(data);
+                                var text = reader.ReadToEnd();
 #if DEBUG
-                                LoggerService.Log(LogSeverity.Verbose, $"Data received: {Text}");
+                                LoggerService.Log(LogSeverity.Verbose, $"Data received: {text}");
 #endif
                                 try
                                 {
-                                    ProcessMessage(Text, Request.Headers, Guild, Channel, (WebhookType)Type);
+                                    ProcessMessage(text, request.Headers, guild, channel, (WebhookType) type);
                                 }
                                 catch (Exception e)
                                 {
                                     LoggerService.Log(LogSeverity.Critical, "Webhook Parser failed!", e);
-                                    LoggerService.Log(LogSeverity.Critical, $"URL: {URL}");
-                                    LoggerService.Log(LogSeverity.Critical, Text);
-
+                                    LoggerService.Log(LogSeverity.Critical, $"URL: {url}");
+                                    LoggerService.Log(LogSeverity.Critical, text);
                                 }
                             }
                             else
                             {
-                                LoggerService.Log(LogSeverity.Warning, $"Does not seem to point to a server. URL: {URL}");
+                                LoggerService.Log(LogSeverity.Warning,
+                                    $"Does not seem to point to a server. URL: {url}");
                             }
-
                         }
                         else
                         {
-                            LoggerService.Log(LogSeverity.Debug, $"Given an invalid channel! URL: {URL}");
+                            LoggerService.Log(LogSeverity.Debug, $"Given an invalid channel! URL: {url}");
                         }
                     }
 
-                    using var response = Context.Response;
+                    using var response = context.Response;
                     response.StatusCode = 200;
 
                     using var output = response.OutputStream;
-                    output.Write(DefaultResponse, 0, DefaultResponse.Length);
+                    output.Write(_defaultResponse, 0, _defaultResponse.Length);
 #if DEBUG
                     LoggerService.Log(LogSeverity.Debug, "Sent back OK.");
 #endif
@@ -133,6 +158,165 @@ namespace UNObot.Services
             {
                 if (!e.Message.Contains("close", StringComparison.CurrentCultureIgnoreCase))
                     LoggerService.Log(LogSeverity.Critical, "Webhook Listener commit the die.", e);
+            }
+        }
+
+        private void ProcessMessage(string message, NameValueCollection headers, ulong guild, ulong channel,
+            WebhookType wType)
+        {
+            try
+            {
+                if (wType == WebhookType.Bitbucket)
+                {
+                    JToken thing;
+                    string exceptionPath = null;
+                    using (var textReader = new StringReader(message))
+                    using (var jsonReader = new JsonTextReader(textReader))
+                    using (var jsonWriter = new JTokenWriter())
+                    {
+                        try
+                        {
+                            jsonWriter.WriteToken(jsonReader);
+                        }
+                        catch (JsonReaderException ex)
+                        {
+                            exceptionPath = ex.Path;
+                            LoggerService.Log(LogSeverity.Error, $@"Error near string: {message.Substring(
+                                Math.Max(0, ex.LinePosition - 10), Math.Min(20, message.Length - ex.LinePosition - 10)
+                            )}", ex);
+                        }
+
+                        thing = jsonWriter.Token;
+                    }
+
+                    Debug.Assert(thing != null, nameof(thing) + " != null");
+                    if (exceptionPath != null)
+                    {
+                        var badToken = thing.SelectToken(exceptionPath);
+                        LoggerService.Log(LogSeverity.Error, $"Error occurred with token: {badToken}");
+                    }
+
+                    //LoggerService.Log(LogSeverity.Debug, Thing.ToString(Formatting.Indented));
+                    if (thing["push"] != null)
+                    {
+                        var commits = thing["push"]?["changes"]?.Children();
+                        if (commits == null) return;
+                        var embeds = new List<Embed>();
+                        foreach (var item in commits)
+                        {
+                            var commit = item["new"]?["target"];
+
+                            var commitInfo = new CommitInfo
+                            {
+                                RepoName = thing["repository"]?["name"]?.ToString() ?? "Unknown Repo Name",
+                                RepoAvatar = thing["repository"]?["links"]?["avatar"]?["href"]?.ToString() ?? "",
+
+                                CommitHash = commit?["hash"]?.ToString() ?? "Hash not found!",
+                                CommitMessage = commit?["message"]?.ToString() ?? "No message was attached.",
+                                CommitDate = commit?["date"]?.ToObject<DateTime>() ?? DateTime.Now,
+
+                                UserName = commit?["author"]?["user"]?["nickname"]?.ToString() ??
+                                           commit?["author"]?["user"]?["display_name"]?.ToString() ??
+                                           "Unknown User Name",
+                                UserAvatar = commit?["author"]?["user"]?["links"]?["avatar"]?["href"]?.ToString() ?? ""
+                            };
+                            EmbedDisplayService.WebhookEmbed(commitInfo, out var embed);
+                            embeds.Add(embed);
+                        }
+
+                        embeds.Sort((a, b) =>
+                            (int) ((a.Timestamp ?? DateTimeOffset.Now) - (b.Timestamp ?? DateTimeOffset.Now))
+                            .TotalMilliseconds);
+                        embeds.ForEach(o =>
+                            Program.Client.GetGuild(guild).GetTextChannel(channel).SendMessageAsync(null, false, o));
+                    }
+                }
+                else if (wType == WebhookType.OctoPrint)
+                {
+                    var contentType = headers.GetValues("Content-Type");
+                    if (contentType == null)
+                    {
+                        LoggerService.Log(LogSeverity.Error, "Could not find Content-Type!");
+                        return;
+                    }
+
+                    var boundaries = contentType.Where(o => o.Contains("boundary=")).ToList();
+                    if (!boundaries.Any())
+                        return;
+                    var boundary = boundaries.First();
+                    var key = boundary.Remove(0, boundary.IndexOf('=') + 1);
+                    var parts = message.Split(
+                        new[] {"\r\n", "\r", "\n"},
+                        StringSplitOptions.None
+                    );
+                    var data = new Dictionary<string, string>();
+                    byte state = 0; // 0: Invalid (not ready) 1: Waiting for name 2: Empty 3: Data
+                    var name = "";
+                    foreach (var line in parts)
+                    {
+                        if (line.Contains(key))
+                        {
+                            if (state == 1)
+                                LoggerService.Log(LogSeverity.Warning, "Huh? Got two boundaries in a row!");
+                            state = 1;
+                            continue;
+                        }
+
+                        if (state == 1)
+                        {
+                            if (string.IsNullOrWhiteSpace(line))
+                                break;
+                            if (line.Contains("Content-Disposition: form-data; name=\""))
+                            {
+                                var firstIndex = line.IndexOf("\"", StringComparison.Ordinal);
+                                var lastIndex = line.LastIndexOf("\"", StringComparison.Ordinal);
+                                if (firstIndex != -1 && firstIndex != lastIndex)
+                                {
+                                    name = line.Substring(firstIndex + 1, lastIndex - firstIndex - 1);
+                                    state = 2;
+                                    continue;
+                                }
+                            }
+
+                            state = 0;
+                            LoggerService.Log(LogSeverity.Warning, "Did not see a valid name!");
+                        }
+
+                        if (state == 2)
+                        {
+                            state = 3;
+                            continue;
+                        }
+
+                        if (state == 3)
+                        {
+                            if (string.IsNullOrWhiteSpace(name))
+                                LoggerService.Log(LogSeverity.Error, "Will not read an empty name!");
+                            else
+                                data.Add(name, line);
+                            state = 0;
+                        }
+                    }
+
+                    foreach (var thing in data) LoggerService.Log(LogSeverity.Debug, $"{thing.Key} - {thing.Value}");
+
+                    var info = new OctoprintInfo
+                    {
+                        Extra = JObject.Parse(data["extra"]),
+                        Topic = data["topic"],
+                        Timestamp = DateTimeOffset.FromUnixTimeSeconds(long.Parse(data["currentTime"])),
+                        State = JObject.Parse(data["state"]),
+                        Job = JObject.Parse(data["job"]),
+                        Message = data["message"],
+                        Progress = JObject.Parse(data["progress"])
+                    };
+                    EmbedDisplayService.OctoprintEmbed(info, out var embed);
+                    Program.Client.GetGuild(guild).GetTextChannel(channel).SendMessageAsync(null, false, embed);
+                }
+            }
+            catch (JsonReaderException)
+            {
+                LoggerService.Log(LogSeverity.Error, $"Could not read JSON from server! Log:\n{message}");
             }
         }
 
@@ -158,181 +342,6 @@ namespace UNObot.Services
             public JObject State { get; set; }
             public JObject Job { get; set; }
             public DateTimeOffset Timestamp { get; set; }
-        }
-
-        private void ProcessMessage(string Message, NameValueCollection Headers, ulong Guild, ulong Channel, WebhookType WType)
-        {
-            try
-            {
-                if (WType == WebhookType.Bitbucket)
-                {
-                    JToken Thing;
-                    string exceptionPath = null;
-                    using (var textReader = new StringReader(Message))
-                    using (var jsonReader = new JsonTextReader(textReader))
-                    using (var jsonWriter = new JTokenWriter())
-                    {
-                        try
-                        {
-                            jsonWriter.WriteToken(jsonReader);
-                        }
-                        catch (JsonReaderException ex)
-                        {
-                            exceptionPath = ex.Path;
-                            LoggerService.Log(LogSeverity.Error, $@"Error near string: {Message.Substring(
-                                Math.Max(0, ex.LinePosition - 10), Math.Min(20, Message.Length - ex.LinePosition - 10)
-                            )}", ex);
-                        }
-                        Thing = jsonWriter.Token;
-                    }
-                    Debug.Assert(Thing != null, nameof(Thing) + " != null");
-                    if (exceptionPath != null)
-                    {
-                        var badToken = Thing.SelectToken(exceptionPath);
-                        LoggerService.Log(LogSeverity.Error, $"Error occurred with token: {badToken}");
-                    }
-
-                    //LoggerService.Log(LogSeverity.Debug, Thing.ToString(Formatting.Indented));
-                    if (Thing["push"] != null)
-                    {
-                        var Commits = Thing["push"]?["changes"]?.Children();
-                        if (Commits == null) return;
-                        var Embeds = new List<Embed>();
-                        foreach (var Item in Commits)
-                        {
-                            var Commit = Item["new"]?["target"];
-
-                            var CommitInfo = new CommitInfo
-                            {
-                                RepoName = Thing["repository"]?["name"]?.ToString() ?? "Unknown Repo Name",
-                                RepoAvatar = Thing["repository"]?["links"]?["avatar"]?["href"]?.ToString() ?? "",
-
-                                CommitHash = Commit?["hash"]?.ToString() ?? "Hash not found!",
-                                CommitMessage = Commit?["message"]?.ToString() ?? "No message was attached.",
-                                CommitDate = Commit?["date"]?.ToObject<DateTime>() ?? DateTime.Now,
-
-                                UserName = Commit?["author"]?["user"]?["nickname"]?.ToString() ??
-                                           Commit?["author"]?["user"]?["display_name"]?.ToString() ?? "Unknown User Name",
-                                UserAvatar = Commit?["author"]?["user"]?["links"]?["avatar"]?["href"]?.ToString() ?? ""
-                            };
-                            EmbedDisplayService.WebhookEmbed(CommitInfo, out var Embed);
-                            Embeds.Add(Embed);
-                        }
-                        Embeds.Sort((a, b) => (int)((a.Timestamp ?? DateTimeOffset.Now) - (b.Timestamp ?? DateTimeOffset.Now)).TotalMilliseconds);
-                        Embeds.ForEach(o => Program._client.GetGuild(Guild).GetTextChannel(Channel).SendMessageAsync(null, false, o));
-                    }
-                }
-                else if (WType == WebhookType.OctoPrint)
-                {
-                    var ContentType = Headers.GetValues("Content-Type");
-                    if (ContentType == null)
-                    {
-                        LoggerService.Log(LogSeverity.Error, "Could not find Content-Type!");
-                        return;
-                    }
-                    var Boundaries = ContentType.Where(o => o.Contains("boundary=")).ToList();
-                    if (!Boundaries.Any())
-                        return;
-                    var Boundary = Boundaries.First();
-                    var Key = Boundary.Remove(0, Boundary.IndexOf('=') + 1);
-                    var Parts = Message.Split(
-                        new[] { "\r\n", "\r", "\n" },
-                        StringSplitOptions.None
-                    );
-                    var Data = new Dictionary<string, string>();
-                    byte State = 0; // 0: Invalid (not ready) 1: Waiting for name 2: Empty 3: Data
-                    string Name = "";
-                    foreach (var Line in Parts)
-                    {
-                        if (Line.Contains(Key))
-                        {
-                            if (State == 1)
-                                LoggerService.Log(LogSeverity.Warning, "Huh? Got two boundaries in a row!");
-                            State = 1;
-                            continue;
-                        }
-                        if (State == 1)
-                        {
-                            if (string.IsNullOrWhiteSpace(Line))
-                                break;
-                            if (Line.Contains("Content-Disposition: form-data; name=\""))
-                            {
-                                var FirstIndex = Line.IndexOf("\"", StringComparison.Ordinal);
-                                var LastIndex = Line.LastIndexOf("\"", StringComparison.Ordinal);
-                                if (FirstIndex != -1 && FirstIndex != LastIndex)
-                                {
-                                    Name = Line.Substring(FirstIndex + 1, LastIndex - FirstIndex - 1);
-                                    State = 2;
-                                    continue;
-                                }
-                            }
-                            State = 0;
-                            LoggerService.Log(LogSeverity.Warning, "Did not see a valid name!");
-                        }
-                        if (State == 2)
-                        {
-                            State = 3;
-                            continue;
-                        }
-                        if (State == 3)
-                        {
-                            if (string.IsNullOrWhiteSpace(Name))
-                            {
-                                LoggerService.Log(LogSeverity.Error, "Will not read an empty name!");
-                            }
-                            else
-                            {
-                                Data.Add(Name, Line);
-                            }
-                            State = 0;
-                        }
-                    }
-
-                    foreach (var Thing in Data)
-                    {
-                        LoggerService.Log(LogSeverity.Debug, $"{Thing.Key} - {Thing.Value}");
-                    }
-
-                    var Info = new OctoprintInfo
-                    {
-                        Extra = JObject.Parse(Data["extra"]),
-                        Topic = Data["topic"],
-                        Timestamp = DateTimeOffset.FromUnixTimeSeconds(long.Parse(Data["currentTime"])),
-                        State = JObject.Parse(Data["state"]),
-                        Job = JObject.Parse(Data["job"]),
-                        Message = Data["message"],
-                        Progress = JObject.Parse(Data["progress"])
-                    };
-                    EmbedDisplayService.OctoprintEmbed(Info, out var Embed);
-                    Program._client.GetGuild(Guild).GetTextChannel(Channel).SendMessageAsync(null, false, Embed);
-                }
-            }
-            catch (JsonReaderException)
-            {
-                LoggerService.Log(LogSeverity.Error, $"Could not read JSON from server! Log:\n{Message}");
-            }
-        }
-
-        public void Dispose()
-        {
-            Stop = true;
-            if (Disposed)
-                return;
-            Disposed = true;
-
-            try
-            {
-                Server.Stop();
-                Server.Close();
-                Exited.Close();
-                ((IDisposable)Server)?.Dispose();
-                Exited.Dispose();
-            }
-            catch (Exception e)
-            {
-                LoggerService.Log(LogSeverity.Error, "Failed to dispose WebhookListener properly: ", e);
-                // ignored
-            }
         }
     }
 }
