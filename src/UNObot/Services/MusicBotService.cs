@@ -20,7 +20,7 @@ namespace UNObot.Services
 
         public Song(string url, Tuple<string, string, string> data, ulong user, ulong guild)
         {
-            this.Url = url;
+            Url = url;
             Name = data.Item1;
             Duration = data.Item2;
             ThumbnailUrl = data.Item3;
@@ -92,10 +92,10 @@ namespace UNObot.Services
         public Player(ulong guild, IVoiceChannel audioChannel, IAudioClient audioClient,
             ISocketMessageChannel messageChannel)
         {
-            this.Guild = guild;
-            this._audioClient = audioClient;
-            this._audioChannel = audioChannel;
-            this._messageChannel = messageChannel;
+            Guild = guild;
+            _audioClient = audioClient;
+            _audioChannel = audioChannel;
+            _messageChannel = messageChannel;
             audioClient.Disconnected += FixConnection;
             _pauseEvent = new ManualResetEvent(false);
             _quitEvent = new ManualResetEvent(false);

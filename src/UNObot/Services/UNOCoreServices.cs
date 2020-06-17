@@ -21,10 +21,10 @@ namespace UNObot.Services
         [JsonConstructor]
         public HelpAttribute(string[] usages, string helpMsg, bool active, string version)
         {
-            this.Usages = usages;
-            this.HelpMsg = helpMsg;
-            this.Active = active;
-            this.Version = version;
+            Usages = usages;
+            HelpMsg = helpMsg;
+            Active = active;
+            Version = version;
         }
 
         public string[] Usages { get; }
@@ -45,7 +45,7 @@ namespace UNObot.Services
         [JsonConstructor]
         public DisableDMsAttribute(bool disabled)
         {
-            this.Disabled = disabled;
+            Disabled = disabled;
         }
 
         public bool Disabled { get; }
@@ -59,19 +59,19 @@ namespace UNObot.Services
         public Command(string commandName, List<string> aliases, List<string> usages, string help, bool active,
             string version)
         {
-            this.CommandName = commandName;
-            this.Aliases = aliases;
-            this.Usages = usages;
-            this.Help = help;
-            this.Active = active;
-            this.Version = version;
+            CommandName = commandName;
+            Aliases = aliases;
+            Usages = usages;
+            Help = help;
+            Active = active;
+            Version = version;
         }
 
         [JsonConstructor]
         public Command(string commandName, List<string> aliases, List<string> usages, string help, bool active,
             string version, bool disableDMs) : this(commandName, aliases, usages, help, active, version)
         {
-            this.DisableDMs = disableDMs;
+            DisableDMs = disableDMs;
         }
 
         public string CommandName { get; set; }
@@ -107,7 +107,7 @@ namespace UNObot.Services
 
         public ServerCard(Card card)
         {
-            this.Card = card;
+            Card = card;
         }
 
         public bool Equals(ServerCard other)
@@ -187,7 +187,7 @@ namespace UNObot.Services
     public static class UNOCoreServices
     {
         [Flags]
-        public enum GameMode
+        public enum GameMode : byte
         {
             Normal = 0,
 
@@ -264,6 +264,14 @@ namespace UNObot.Services
             }
 
             return card;
+        }
+        
+        public static Card[] RandomCard(int count)
+        {
+            var cards = new Card[count];
+            for (var i = 0; i < count; i++)
+                cards[i] = RandomCard();
+            return cards;
         }
     }
 

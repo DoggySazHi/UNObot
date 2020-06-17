@@ -802,8 +802,8 @@ namespace UNObot.Services
 
         public MinecraftRCON(IPEndPoint server, string password, bool reuse = false, string command = null)
         {
-            this.Password = password;
-            this.Server = server;
+            Password = password;
+            Server = server;
             _buffer = new byte[RxSize];
             CreateConnection(reuse, command);
         }

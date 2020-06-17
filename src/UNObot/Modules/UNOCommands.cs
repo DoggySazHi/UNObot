@@ -343,8 +343,7 @@ namespace UNObot.Modules
                                 }
 
                                 await QueueHandlerService.NextPlayer(Context.Guild.Id);
-                                await UNODatabaseService.AddCard(Context.User.Id, RandomCard());
-                                await UNODatabaseService.AddCard(Context.User.Id, RandomCard());
+                                await UNODatabaseService.AddCard(Context.User.Id, RandomCard(2));
                                 await ReplyAsync(
                                     $"You have drawn two cards. It is now <@{await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
                                 AfKtimer.ResetTimer(Context.Guild.Id);
@@ -635,8 +634,7 @@ namespace UNObot.Modules
                         {
                             await ReplyAsync(
                                 $"<@{unoPlayer}> was too slow to call out their UNO by {Context.User.Username}! They have been given two cards.");
-                            await UNODatabaseService.AddCard(unoPlayer, RandomCard());
-                            await UNODatabaseService.AddCard(unoPlayer, RandomCard());
+                            await UNODatabaseService.AddCard(unoPlayer, RandomCard(2));
                             await UNODatabaseService.SetUNOPlayer(Context.Guild.Id, 0);
                         }
                         else
@@ -650,8 +648,7 @@ namespace UNObot.Modules
 
                             await ReplyAsync(
                                 "Uh oh, you still have more than one card! Two cards have been added to your hand.");
-                            await UNODatabaseService.AddCard(Context.User.Id, RandomCard());
-                            await UNODatabaseService.AddCard(Context.User.Id, RandomCard());
+                            await UNODatabaseService.AddCard(Context.User.Id, RandomCard(2));
                         }
                     }
                     else
@@ -752,8 +749,7 @@ namespace UNObot.Modules
                     {
                         case "+2":
                             var curuser = await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id);
-                            await UNODatabaseService.AddCard(curuser, RandomCard());
-                            await UNODatabaseService.AddCard(curuser, RandomCard());
+                            await UNODatabaseService.AddCard(curuser, RandomCard(2));
                             response += $"\nToo bad <@{curuser}>, you just got two cards!";
                             break;
                         case "Reverse":
@@ -951,7 +947,7 @@ namespace UNObot.Modules
                 return;
             }
 
-            var enforce = await UNODatabaseService.EnforceChannel(Context.Guild.Id);
+            var enforce = await UNODatabaseService.ChannelEnforced(Context.Guild.Id);
             await UNODatabaseService.SetEnforceChannel(Context.Guild.Id, !enforce);
             if (!enforce)
                 await ReplyAsync(
@@ -1011,7 +1007,7 @@ namespace UNObot.Modules
             }
 
             //end check
-            var enforced = await UNODatabaseService.EnforceChannel(Context.Guild.Id);
+            var enforced = await UNODatabaseService.ChannelEnforced(Context.Guild.Id);
             var yesno = enforced ? "Currently enforcing channels." : "Not enforcing channels.";
             var response = $"{yesno}\nCurrent channels allowed: \n";
             if (allowedChannels.Count == 0)

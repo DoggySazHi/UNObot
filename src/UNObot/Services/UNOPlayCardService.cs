@@ -92,8 +92,7 @@ namespace UNObot.Services
                 response +=
                     $"<@{await UNODatabaseService.GetUNOPlayer(server)}> forgot to say UNO! They have been given 2 cards.\n";
                 var unoPlayer = await UNODatabaseService.GetUNOPlayer(server);
-                await UNODatabaseService.AddCard(unoPlayer, UNOCoreServices.RandomCard());
-                await UNODatabaseService.AddCard(unoPlayer, UNOCoreServices.RandomCard());
+                await UNODatabaseService.AddCard(unoPlayer, UNOCoreServices.RandomCard(2));
                 await UNODatabaseService.SetUNOPlayer(server, 0);
             }
 
@@ -130,9 +129,8 @@ namespace UNObot.Services
                 {
                     response +=
                         $"<@{await QueueHandlerService.GetCurrentPlayer(server)}> has recieved four cards from the action.\n";
-                    for (var i = 0; i < 4; i++)
-                        await UNODatabaseService.AddCard(await QueueHandlerService.GetCurrentPlayer(server),
-                            UNOCoreServices.RandomCard());
+                    await UNODatabaseService.AddCard(await QueueHandlerService.GetCurrentPlayer(server), 
+                        UNOCoreServices.RandomCard(4));
                 }
 
                 response += $"Due to the wild card, the current card is now {wild}.\n";
@@ -150,9 +148,7 @@ namespace UNObot.Services
                     response +=
                         $"<@{await QueueHandlerService.GetCurrentPlayer(server)}> has recieved two cards from the action.\n";
                     await UNODatabaseService.AddCard(await QueueHandlerService.GetCurrentPlayer(server),
-                        UNOCoreServices.RandomCard());
-                    await UNODatabaseService.AddCard(await QueueHandlerService.GetCurrentPlayer(server),
-                        UNOCoreServices.RandomCard());
+                        UNOCoreServices.RandomCard(2));
                     break;
                 case "Skip":
                     response += $"<@{await QueueHandlerService.GetCurrentPlayer(server)}> has been skipped!\n";

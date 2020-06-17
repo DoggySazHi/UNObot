@@ -66,9 +66,9 @@ namespace UNObot.Modules
 
 #if DEBUG
         [Command("translate", RunMode = RunMode.Async)]
-        public async Task Translate(string @from, string to, [Remainder] string message)
+        public async Task Translate(string from, string to, [Remainder] string message)
         {
-            await ReplyAsync(GoogleTranslateService.GetSingleton().Translate(message, @from, to)).ConfigureAwait(false);
+            await ReplyAsync(GoogleTranslateService.GetSingleton().Translate(message, from, to)).ConfigureAwait(false);
         }
 
         [Command("debugstatus", RunMode = RunMode.Async)]

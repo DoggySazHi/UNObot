@@ -50,7 +50,7 @@ namespace UNObot.Services
             }
             */
 
-            if (!context.IsPrivate && await UNODatabaseService.EnforceChannel(context.Guild.Id))
+            if (!context.IsPrivate && await UNODatabaseService.ChannelEnforced(context.Guild.Id))
             {
                 //start check
                 var allowedChannels = await UNODatabaseService.GetAllowedChannels(context.Guild.Id);
