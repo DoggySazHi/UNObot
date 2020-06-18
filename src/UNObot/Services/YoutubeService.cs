@@ -38,9 +38,7 @@ namespace UNObot.Services
 
         public static YoutubeService GetSingleton()
         {
-            if (_instance == null)
-                _instance = new YoutubeService();
-            return _instance;
+            return _instance ??= new YoutubeService();
         }
 
         public async Task<Tuple<string, string, string>> GetInfo(string url)

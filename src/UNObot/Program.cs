@@ -135,6 +135,7 @@ namespace UNObot
                 .AddSingleton(Client)
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
+                .AddSingleton<GoogleTranslateService>()
                 // Extra
                 .AddSingleton(_config)
                 // Add additional services here...
@@ -211,6 +212,7 @@ namespace UNObot
 
         private static async Task LoadHelp()
         {
+            //TODO Help does not load assemblies loaded from plugins!
             var types = from c in Assembly.GetExecutingAssembly().GetTypes()
                 where c.IsClass
                 select c;

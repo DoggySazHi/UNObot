@@ -32,9 +32,7 @@ namespace UNObot.Services
 
         public static LocalizationService GetSingleton()
         {
-            if (_instance == null)
-                _instance = new LocalizationService();
-            return _instance;
+            return _instance ??= new LocalizationService();
         }
 
         private void CreateNewLocalization()

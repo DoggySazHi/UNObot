@@ -16,6 +16,13 @@ namespace UNObot.Modules
 {
     public class DebugCommands : ModuleBase<SocketCommandContext>
     {
+        private readonly GoogleTranslateService _gts;
+        public DebugCommands(GoogleTranslateService gts)
+        {
+            _gts = gts;
+            LoggerService.Log(LogSeverity.Debug, $"{(gts == null ? "null" : "not null")}");
+        }
+        
         [Command("purge", RunMode = RunMode.Async)]
         [RequireUserPermission(GuildPermission.Administrator)]
         [RequireBotPermission(ChannelPermission.ManageMessages)]

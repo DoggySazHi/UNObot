@@ -48,9 +48,7 @@ namespace UNObot.Services
 
         public static UnturnedReleaseNotes GetSingleton()
         {
-            if (_instance == null)
-                _instance = new UnturnedReleaseNotes();
-            return _instance;
+            return _instance ??= new UnturnedReleaseNotes();
         }
 
         public static string GetLatestLink()

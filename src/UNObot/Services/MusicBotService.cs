@@ -563,9 +563,7 @@ namespace UNObot.Services
 
         public static MusicBotService GetSingleton()
         {
-            if (_instance == null)
-                _instance = new MusicBotService();
-            return _instance;
+            return _instance ??= new MusicBotService();
         }
 
         public async ValueTask DisposeAsync()

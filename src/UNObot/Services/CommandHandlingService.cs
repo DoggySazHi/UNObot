@@ -32,7 +32,7 @@ namespace UNObot.Services
 
         public async Task<IEnumerable<ModuleInfo>> AddModulesAsync(Assembly assembly)
         {
-            return await _commands.AddModulesAsync(assembly, null);
+            return await _commands.AddModulesAsync(assembly, _provider);
         }
         
         public async Task<bool> RemoveModulesAsync(Type type)

@@ -2,6 +2,8 @@
 using System.Net;
 using System.Text;
 using System.Web;
+using Discord;
+using Discord.WebSocket;
 
 namespace UNObot.Services
 {
@@ -11,9 +13,12 @@ namespace UNObot.Services
 
         public static GoogleTranslateService GetSingleton()
         {
-            if (_instance == null)
-                _instance = new GoogleTranslateService();
-            return _instance;
+            return _instance ??= new GoogleTranslateService(null, null, null);
+        }
+        
+        public GoogleTranslateService(IServiceProvider services, CommandHandlingService commands, DiscordSocketClient client)
+        {
+            LoggerService.Log(LogSeverity.Debug, $"{(services == null ? "null" : "not null")} {(commands == null ? "null" : "not null")} {(client == null ? "null" : "not null")}");
         }
 
         public string Translate(string text, string fromCulture, string toCulture)

@@ -14,9 +14,7 @@
 
         public static DebugService GetSingleton()
         {
-            if (_instance == null)
-                _instance = new DebugService();
-            return _instance;
+            return _instance ??= new DebugService();
         }
     }
 }
