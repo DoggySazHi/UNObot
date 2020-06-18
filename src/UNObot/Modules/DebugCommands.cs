@@ -8,6 +8,7 @@ using Discord.Commands;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UNObot.Interop;
+using UNObot.Plugins.Attributes;
 using UNObot.Services;
 using static UNObot.Services.IRCON;
 

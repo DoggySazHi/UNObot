@@ -14,16 +14,6 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <Optimize>true</Optimize>
-    <CustomCommands>
-      <CustomCommands>
-        <Command>
-          <type>Custom</type>
-          <name>Publish</name>
-          <command>dotnet build &amp;&amp; rm -rf src/UNObot/bin/Release/netcoreapp3.1/publish/ &amp;&amp; rm -rf src/UNObot/bin/Release/netcoreapp3.1/publish/ &amp;&amp; dotnet publish -c Release &amp;&amp; mv src/UNObot/bin/Release/netcoreapp3.1/publish/ src/UNObot/bin/Release/netcoreapp3.1/UNObot &amp;&amp; scp -r src/UNObot/bin/Release/netcoreapp3.1/UNObot doggysazhi@williamle.com:/mnt/backup/Projects/</command>
-          <workingdir>${SolutionDir}</workingdir>
-        </Command>
-      </CustomCommands>
-    </CustomCommands>
     <LangVersion>latestmajor</LangVersion>
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
@@ -33,18 +23,17 @@
     <LangVersion>latestmajor</LangVersion>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.5" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="3.1.5" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.5" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.5" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="System.ServiceModel.Syndication" Version="4.7.0" />
-    <PackageReference Include="System.Threading.Timer" Version="4.3.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.5" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.5" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.5" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.1.5" />
     <PackageReference Include="MySql.Data" Version="8.0.20" />
     <PackageReference Include="Discord.Net" Version="2.2.0" />
     <PackageReference Include="YoutubeExplode" Version="5.1.0" />
-    <PackageReference Include="YoutubeExplode.Converter" Version="1.5.1" />
     <PackageReference Include="System.Linq.Async" Version="4.1.1" />
+    <PackageReference Include="YoutubeExplode.Converter" Version="1.5.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -52,10 +41,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-<!--
+
+  <ItemGroup>
+    <ProjectReference Include="..\UNObot.Plugins\UNObot.Plugins.csproj" />
+  </ItemGroup>
+  
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy /y &quot;$(SolutionDir)cmake-build-debug-visual-studio-x64\*.dll&quot; &quot;$(ProjectDir)$(OutDir)&quot;" />
-    <Exec Command="xcopy /y &quot;$(SolutionDir)cmake-build-debug-visual-studio-x64\*.lib&quot; &quot;$(ProjectDir)$(OutDir)&quot;" />
+    <Exec Command="xcopy /y &quot;$(SolutionDir)src\UNObot.Core\bin\Debug\netcoreapp3.1\*.dll&quot; &quot;$(ProjectDir)$(OutDir)plugins&quot;" />
   </Target>
--->
 </Project>

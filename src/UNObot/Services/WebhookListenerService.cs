@@ -20,16 +20,16 @@ namespace UNObot.Services
         OctoPrint = 1
     }
 
-    public class WebhookListener : IDisposable
+    public class WebhookListenerService : IDisposable
     {
-        private static WebhookListener _instance;
+        private static WebhookListenerService _instance;
         private readonly byte[] _defaultResponse;
         private readonly ManualResetEvent _exited;
         private readonly HttpListener _server;
         private bool _disposed;
         private bool _stop;
 
-        private WebhookListener()
+        private WebhookListenerService()
         {
             if (!HttpListener.IsSupported)
             {
@@ -73,14 +73,14 @@ namespace UNObot.Services
             }
             catch (Exception e)
             {
-                LoggerService.Log(LogSeverity.Error, "Failed to dispose WebhookListener properly: ", e);
+                LoggerService.Log(LogSeverity.Error, "Failed to dispose WebhookListenerService properly: ", e);
                 // ignored
             }
         }
 
-        public static WebhookListener GetSingleton()
+        public static WebhookListenerService GetSingleton()
         {
-            return _instance ??= new WebhookListener();
+            return _instance ??= new WebhookListenerService();
         }
 
         private void Listener()

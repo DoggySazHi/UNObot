@@ -12,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using UNObot.Plugins.Attributes;
 using UNObot.Services;
 
 namespace UNObot
@@ -23,6 +24,7 @@ namespace UNObot
         public static string Build = "???";
         public static List<Command> Commands = new List<Command>();
 
+        public static IServiceProvider Services;
         public static DiscordSocketClient Client;
         private static readonly ManualResetEvent ExitEvent = new ManualResetEvent(false);
         private IConfiguration _config;
@@ -49,17 +51,17 @@ namespace UNObot
 
             Client.Log += LoggerService.GetSingleton().LogDiscord;
 
-            var services = ConfigureServices();
-            await services.GetRequiredService<CommandHandlingService>().InitializeAsync(services);
-
+            Services = ConfigureServices();
+            await Services.GetRequiredService<CommandHandlingService>().InitializeAsync(Services);
             await Client.LoginAsync(TokenType.Bot, _config["token"]);
             await Client.StartAsync();
             //_client.ReactionAdded += Modules.InputHandler.ReactionAdded;
 #if DEBUG
             DebugService.GetSingleton();
 #endif
+            PluginLoaderService.GetSingleton();
             UBOWServerLoggerService.GetSingleton();
-            WebhookListener.GetSingleton();
+            WebhookListenerService.GetSingleton();
             await UNODatabaseService.CleanAll();
             await Client.SetGameAsync($"UNObot {Version}");
             Console.Title = $"UNObot {Version}";
@@ -115,7 +117,7 @@ namespace UNObot
             LoggerService.Log(LogSeverity.Info, "Quitting...");
             await MusicBotService.GetSingleton().DisposeAsync();
             LoggerService.Log(LogSeverity.Info, "Music Bot service disabled.");
-            WebhookListener.GetSingleton().Dispose();
+            WebhookListenerService.GetSingleton().Dispose();
             LoggerService.Log(LogSeverity.Info, "Webhook Listener service disabled.");
             RCONManager.GetSingleton().Dispose();
             LoggerService.Log(LogSeverity.Info, "RCON service disabled.");

@@ -27,10 +27,24 @@ namespace UNObot.Services
         public async Task InitializeAsync(IServiceProvider provider)
         {
             _provider = provider;
-            await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), null);
-            // TODO When handling multiple plugins into UNObot, we should RemoveModulesAsync when unloading and reloading.
-            // Services might need to be rebound.
-            // Add additional initialization code here...
+            await AddModulesAsync(Assembly.GetEntryAssembly());
+        }
+
+        public async Task<IEnumerable<ModuleInfo>> AddModulesAsync(Assembly assembly)
+        {
+            return await _commands.AddModulesAsync(assembly, null);
+        }
+        
+        public async Task<bool> RemoveModulesAsync(Type type)
+        {
+            return await _commands.RemoveModuleAsync(type);
+        }
+        
+        public async Task RemoveModulesAsync(Assembly assembly)
+        {
+            foreach(var type in assembly.GetTypes())
+                if(typeof(ModuleBase<SocketCommandContext>).IsAssignableFrom(type))
+                    await _commands.RemoveModuleAsync(type);
         }
 
         private async Task MessageReceived(SocketMessage rawMessage)
@@ -41,14 +55,6 @@ namespace UNObot.Services
 
             var argPos = 0;
             var context = new SocketCommandContext(_discord, message);
-
-            /*
-            if (context.IsPrivate)
-            {
-                await context.Channel.SendMessageAsync("I do not accept DM messages. Please use me in a guild/server.");
-                return;
-            }
-            */
 
             if (!context.IsPrivate && await UNODatabaseService.ChannelEnforced(context.Guild.Id))
             {

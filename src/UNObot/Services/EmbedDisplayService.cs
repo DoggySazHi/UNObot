@@ -755,7 +755,7 @@ namespace UNObot.Services
             return true;
         }
 
-        public static bool WebhookEmbed(WebhookListener.CommitInfo info, out Embed result)
+        public static bool WebhookEmbed(WebhookListenerService.CommitInfo info, out Embed result)
         {
             var random = ThreadSafeRandom.ThisThreadsRandom;
 
@@ -781,7 +781,7 @@ namespace UNObot.Services
             return true;
         }
 
-        public static bool OctoprintEmbed(WebhookListener.OctoprintInfo info, out Embed result)
+        public static bool OctoprintEmbed(WebhookListenerService.OctoprintInfo info, out Embed result)
         {
             var random = ThreadSafeRandom.ThisThreadsRandom;
 
