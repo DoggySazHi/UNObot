@@ -15,20 +15,6 @@ pipelines:
           - export PROJECT_NAME=src/UNObot
           - dotnet restore
           - dotnet build $PROJECT_NAME
-    - step:
-        name: Deploy
-        script:
-          - dotnet publish -c Release src/UNObot
-          - rm -rf src/UNObot/bin/Release/netcoreapp3.1/UNObot
-          - mv src/UNObot/bin/Release/netcoreapp3.1/publish/ src/UNObot/bin/Release/netcoreapp3.1/UNObot
-          - echo "$BITBUCKET_COMMIT $BITBUCKET_BUILD_NUMBER" > src/UNObot/bin/Release/netcoreapp3.1/UNObot/commit
-          - pipe: atlassian/scp-deploy:0.3.1
-            variables:
-              USER: 'doggysazhi'
-              SERVER: 'williamle.com'
-              REMOTE_PATH: '/mnt/backup/Projects'
-              LOCAL_PATH: 'src/UNObot/bin/Release/netcoreapp3.1/UNObot'
-              DEBUG: 'true'
   custom:
     manualdeploy:
       - step:
@@ -68,3 +54,26 @@ pipelines:
             - export PROJECT_NAME=src/UNObot
             - dotnet restore
             - dotnet build $PROJECT_NAME
+    master:
+      - step:
+          deployment: Server
+          caches:
+            - dotnetcore
+          script:
+            - export PROJECT_NAME=src/UNObot
+            - dotnet restore
+            - dotnet build $PROJECT_NAME
+      - step:
+          name: Deploy
+          script:
+            - dotnet publish -c Release src/UNObot
+            - rm -rf src/UNObot/bin/Release/netcoreapp3.1/UNObot
+            - mv src/UNObot/bin/Release/netcoreapp3.1/publish/ src/UNObot/bin/Release/netcoreapp3.1/UNObot
+            - echo "$BITBUCKET_COMMIT $BITBUCKET_BUILD_NUMBER" > src/UNObot/bin/Release/netcoreapp3.1/UNObot/commit
+            - pipe: atlassian/scp-deploy:0.3.1
+              variables:
+                USER: 'doggysazhi'
+                SERVER: 'williamle.com'
+                REMOTE_PATH: '/mnt/backup/Projects'
+                LOCAL_PATH: 'src/UNObot/bin/Release/netcoreapp3.1/UNObot'
+                DEBUG: 'true'
