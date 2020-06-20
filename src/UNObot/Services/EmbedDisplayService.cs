@@ -4,28 +4,45 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
+using Discord.WebSocket;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Linq;
+using UNObot.TerminalCore;
+using UNObot.UNOCore;
 using YoutubeExplode.Playlists;
-using static UNObot.Services.MinecraftProcessorService;
-using static UNObot.Services.QueryHandlerService;
+using UNObot.Services.MinecraftProcessorService;
+using UNObot.Services.QueryHandlerService;
 
 namespace UNObot.Services
 {
-    public static class ImageHandler
+    internal class ImageHandler
     {
-        public static string GetImage(Card c)
+        internal string GetImage(Card c)
         {
             return $"https://williamle.com/unobot/{c.Color}_{c.Value}.png";
         }
     }
 
-    public static class EmbedDisplayService
+    internal class EmbedDisplayService
     {
         private const int Attempts = 3;
 
-        public static async Task<Embed> DisplayGame(ulong serverId)
+        private readonly LoggerService _logger;
+        private readonly IConfiguration _config;
+        private readonly UNODatabaseService _db;
+        private readonly DiscordSocketClient _client;
+
+        internal EmbedDisplayService(LoggerService logger, IConfiguration config, UNODatabaseService db, DiscordSocketClient client)
         {
-            var card = await UNODatabaseService.GetCurrentCard(serverId);
+            _logger = logger;
+            _config = config;
+            _db = db;
+            _client = client;
+        }
+
+        internal async Task<Embed> DisplayGame(ulong serverId)
+        {
+            var card = await _db.GetCurrentCard(serverId);
 
             uint cardColor = card.Color switch
             {
@@ -35,15 +52,15 @@ namespace UNObot.Services
                 _ => 0x00FF00
             };
             var response = "";
-            var gamemode = await UNODatabaseService.GetGameMode(serverId);
-            var server = Program.Client.GetGuild(serverId).Name;
-            foreach (var id in await UNODatabaseService.GetPlayers(serverId))
+            var gamemode = await _db.GetGameMode(serverId);
+            var server = _client.GetGuild(serverId).Name;
+            foreach (var id in await _db.GetPlayers(serverId))
             {
-                var user = Program.Client.GetUser(id);
-                var cardCount = (await UNODatabaseService.GetCards(id)).Count();
-                if (!gamemode.HasFlag(UNOCoreServices.GameMode.Private))
+                var user = _client.GetUser(id);
+                var cardCount = (await _db.GetCards(id)).Count();
+                if (!gamemode.HasFlag(GameMode.Private))
                 {
-                    if (id == (await UNODatabaseService.GetPlayers(serverId)).Peek())
+                    if (id == (await _db.GetPlayers(serverId)).Peek())
                         response += $"**{user.Username}** - {cardCount} card";
                     else
                         response += $"{user.Username} - {cardCount} card";
@@ -54,7 +71,7 @@ namespace UNObot.Services
                 }
                 else
                 {
-                    if (id == (await UNODatabaseService.GetPlayers(serverId)).Peek())
+                    if (id == (await _db.GetPlayers(serverId)).Peek())
                         response += $"**{user.Username}** - ??? cards\n";
                     else
                         response += $"{user.Username} - ??? cards\n";
@@ -63,13 +80,13 @@ namespace UNObot.Services
 
             var builder = new EmbedBuilder()
                 .WithTitle("Current Game")
-                .WithDescription(await UNODatabaseService.GetDescription(serverId))
+                .WithDescription(await _db.GetDescription(serverId))
                 .WithColor(new Color(cardColor))
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
+                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithThumbnailUrl(ImageHandler.GetImage(card))
@@ -86,11 +103,11 @@ namespace UNObot.Services
             //Remember to ReplyAsync("It is now <@832983482589>'s turn.", Embed);
         }
 
-        public static async Task<Embed> DisplayCards(ulong userid, ulong serverId)
+        internal async Task<Embed> DisplayCards(ulong userid, ulong serverId)
         {
-            var server = Program.Client.GetGuild(serverId).Name;
-            var currentCard = await UNODatabaseService.GetCurrentCard(serverId);
-            var cards = await UNODatabaseService.GetCards(userid);
+            var server = _client.GetGuild(serverId).Name;
+            var currentCard = await _db.GetCurrentCard(serverId);
+            var cards = await _db.GetCards(userid);
             cards = cards.OrderBy(o => o.Color).ThenBy(o => o.Value).ToList();
 
             var redCards = "";
@@ -147,7 +164,7 @@ namespace UNObot.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
+                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithThumbnailUrl(ImageHandler.GetImage(currentCard))
@@ -166,11 +183,11 @@ namespace UNObot.Services
             return embed;
         }
 
-        public static Tuple<Embed, Tuple<string, string, string>> DisplayAddSong(ulong userId, ulong serverId,
+        internal Tuple<Embed, Tuple<string, string, string>> DisplayAddSong(ulong userId, ulong serverId,
             string songUrl, Tuple<string, string, string> information)
         {
-            var server = Program.Client.GetGuild(serverId).Name;
-            var username = Program.Client.GetUser(userId).Username;
+            var server = _client.GetGuild(serverId).Name;
+            var username = _client.GetUser(userId).Username;
             var r = ThreadSafeRandom.ThisThreadsRandom;
 
             var builder = new EmbedBuilder()
@@ -181,7 +198,7 @@ namespace UNObot.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
+                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithThumbnailUrl(information.Item3)
@@ -197,10 +214,10 @@ namespace UNObot.Services
             return new Tuple<Embed, Tuple<string, string, string>>(embed, information);
         }
 
-        public static Embed DisplayNowPlaying(Song song, string currentDuration)
+        internal Embed DisplayNowPlaying(Song song, string currentDuration)
         {
-            var username = Program.Client.GetUser(song.RequestedBy).Username;
-            var servername = Program.Client.GetGuild(song.RequestedGuild).Name;
+            var username = _client.GetUser(song.RequestedBy).Username;
+            var servername = _client.GetGuild(song.RequestedGuild).Name;
             var r = ThreadSafeRandom.ThisThreadsRandom;
 
             var builder = new EmbedBuilder()
@@ -211,7 +228,7 @@ namespace UNObot.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
+                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithThumbnailUrl(song.ThumbnailUrl)
@@ -227,10 +244,10 @@ namespace UNObot.Services
             return builder.Build();
         }
 
-        public static async Task<Tuple<Embed, Playlist>> DisplayPlaylist(ulong userId, ulong serverId, string songUrl)
+        internal async Task<Tuple<Embed, Playlist>> DisplayPlaylist(ulong userId, ulong serverId, string songUrl)
         {
-            var username = Program.Client.GetUser(userId).Username;
-            var servername = Program.Client.GetGuild(serverId).Name;
+            var username = _client.GetUser(userId).Username;
+            var servername = _client.GetGuild(serverId).Name;
             var r = ThreadSafeRandom.ThisThreadsRandom;
             var playlist = await YoutubeService.GetSingleton().GetPlaylist(songUrl);
             var thumbnail = await YoutubeService.GetSingleton().GetPlaylistThumbnail(playlist.Id);
@@ -243,7 +260,7 @@ namespace UNObot.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
+                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithThumbnailUrl(thumbnail)
@@ -259,11 +276,11 @@ namespace UNObot.Services
             return new Tuple<Embed, Playlist>(builder.Build(), playlist);
         }
 
-        public static Tuple<Embed, int> DisplaySongList(Song nowPlaying, List<Song> songs, int page)
+        internal Tuple<Embed, int> DisplaySongList(Song nowPlaying, List<Song> songs, int page)
         {
             var containers = new List<StringBuilder>();
             var r = ThreadSafeRandom.ThisThreadsRandom;
-            var server = Program.Client.GetGuild(nowPlaying.RequestedGuild).Name;
+            var server = _client.GetGuild(nowPlaying.RequestedGuild).Name;
 
             var index = 0;
 
@@ -279,7 +296,7 @@ namespace UNObot.Services
                     if (index >= songs.Count)
                         break;
                     var s = songs[index++];
-                    var username = Program.Client.GetUser(s.RequestedBy).Username;
+                    var username = _client.GetUser(s.RequestedBy).Username;
                     var nextLine = $"``{index}.``[{s.Name}]({s.Url}) |``{s.Duration} Requested by: {username}``\n\n";
                     if (list.Length + nextLine.Length > 1024)
                     {
@@ -299,19 +316,19 @@ namespace UNObot.Services
                 DisplaySongList(server, r, page, containers.Count, containers[page - 1], nowPlaying), containers.Count);
         }
 
-        private static Embed DisplaySongList(string server, Random r, int page, int maxPages, StringBuilder list,
+        private Embed DisplaySongList(string server, Random r, int page, int maxPages, StringBuilder list,
             Song nowPlaying)
         {
             var builder = new EmbedBuilder()
                 .WithTitle("Now Playing")
                 .WithDescription(
-                    $"[{nowPlaying.Name}]({nowPlaying.Url}) |``{nowPlaying.Duration} Requested by: {Program.Client.GetUser(nowPlaying.RequestedBy).Username}``")
+                    $"[{nowPlaying.Name}]({nowPlaying.Url}) |``{nowPlaying.Duration} Requested by: {_client.GetUser(nowPlaying.RequestedBy).Username}``")
                 .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
+                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
@@ -325,7 +342,7 @@ namespace UNObot.Services
             return builder.Build();
         }
 
-        public static bool UnturnedQueryEmbed(string ip, ushort port, out Embed result, ServerAverages averages = null)
+        internal bool UnturnedQueryEmbed(string ip, ushort port, out Embed result, ServerAverages averages = null)
         {
             A2SInfo information = null;
             var informationGet = false;
@@ -397,7 +414,7 @@ namespace UNObot.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
+                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithThumbnailUrl(serverImageUrl)
@@ -429,7 +446,7 @@ namespace UNObot.Services
             return true;
         }
 
-        public static bool MinecraftQueryEmbed(string ip, ushort port, out Embed result)
+        internal bool MinecraftQueryEmbed(string ip, ushort port, out Embed result)
         {
             //TODO with the new option to disable status, it might be that queries work but not simple statuses.
             var defaultStatus = new MCStatus(ip, port);
@@ -481,7 +498,7 @@ namespace UNObot.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
+                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
@@ -500,7 +517,7 @@ namespace UNObot.Services
             return true;
         }
 
-        public static bool OuchiesEmbed(string ip, ushort port, out Embed result)
+        internal bool OuchiesEmbed(string ip, ushort port, out Embed result)
         {
             var random = ThreadSafeRandom.ThisThreadsRandom;
 
@@ -512,7 +529,7 @@ namespace UNObot.Services
                     .WithFooter(footer =>
                     {
                         footer
-                            .WithText($"UNObot {Program.Version} - By DoggySazHi")
+                            .WithText($"UNObot {_config["version"]} - By DoggySazHi")
                             .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                     })
                     .WithAuthor(author =>
@@ -554,7 +571,7 @@ namespace UNObot.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
+                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
@@ -571,7 +588,7 @@ namespace UNObot.Services
             return true;
         }
 
-        public static bool LocationsEmbed(string ip, ushort port, out Embed result)
+        internal bool LocationsEmbed(string ip, ushort port, out Embed result)
         {
             var random = ThreadSafeRandom.ThisThreadsRandom;
 
@@ -583,7 +600,7 @@ namespace UNObot.Services
                     .WithFooter(footer =>
                     {
                         footer
-                            .WithText($"UNObot {Program.Version} - By DoggySazHi")
+                            .WithText($"UNObot {_config["version"]} - By DoggySazHi")
                             .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                     })
                     .WithAuthor(author =>
@@ -639,7 +656,7 @@ namespace UNObot.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
+                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
@@ -656,7 +673,7 @@ namespace UNObot.Services
             return true;
         }
 
-        public static bool TransferEmbed(string ip, ushort port, ulong source, string target, string amountIn,
+        internal bool TransferEmbed(string ip, ushort port, ulong source, string target, string amountIn,
             out Embed result)
         {
             var messageTitle = "Mukyu~";
@@ -681,7 +698,7 @@ namespace UNObot.Services
                     {
                         var server = SpecialServers[port];
                         var users = GetMCUsers(server.Server, server.RCONPort, server.Password, out var client, false);
-                        var sourceMCUsername = UNODatabaseService.GetMinecraftUser(source).GetAwaiter().GetResult();
+                        var sourceMCUsername = _db.GetMinecraftUser(source).GetAwaiter().GetResult();
                         var sourceUser = users.Find(o => o.Online && o.Username == sourceMCUsername);
                         var targetUser = users.Find(o => o.Online && o.Username == target);
 
@@ -741,7 +758,7 @@ namespace UNObot.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
+                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
@@ -755,7 +772,7 @@ namespace UNObot.Services
             return true;
         }
 
-        public static bool WebhookEmbed(WebhookListenerService.CommitInfo info, out Embed result)
+        internal bool WebhookEmbed(WebhookListenerService.CommitInfo info, out Embed result)
         {
             var random = ThreadSafeRandom.ThisThreadsRandom;
 
@@ -765,7 +782,7 @@ namespace UNObot.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
+                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
@@ -781,7 +798,7 @@ namespace UNObot.Services
             return true;
         }
 
-        public static bool OctoprintEmbed(WebhookListenerService.OctoprintInfo info, out Embed result)
+        internal bool OctoprintEmbed(WebhookListenerService.OctoprintInfo info, out Embed result)
         {
             var random = ThreadSafeRandom.ThisThreadsRandom;
 
@@ -791,7 +808,7 @@ namespace UNObot.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
+                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>

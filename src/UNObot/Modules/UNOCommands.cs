@@ -5,11 +5,12 @@ using Discord;
 using Discord.Commands;
 using UNObot.Plugins.Attributes;
 using UNObot.Services;
+using UNObot.UNOCore;
 using static UNObot.Services.UNOCoreServices;
 
 namespace UNObot.Modules
 {
-    public class UNOCommands : ModuleBase<SocketCommandContext>
+    internal class UNOCommands : ModuleBase<SocketCommandContext>
     {
         private readonly UNOPlayCardService _playCard = new UNOPlayCardService();
 
@@ -232,7 +233,7 @@ namespace UNObot.Modules
                                 "You have recieved: " + card.Color + " " + card.Value + ".");
                             await UNODatabaseService.AddCard(Context.User.Id, card);
                             await UNODatabaseService.SetCardsDrawn(Context.Guild.Id, 1);
-                            AfKtimer.ResetTimer(Context.Guild.Id);
+                            AFKTimerService.ResetTimer(Context.Guild.Id);
 
                             return;
                         }
@@ -347,7 +348,7 @@ namespace UNObot.Modules
                                 await UNODatabaseService.AddCard(Context.User.Id, RandomCard(2));
                                 await ReplyAsync(
                                     $"You have drawn two cards. It is now <@{await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
-                                AfKtimer.ResetTimer(Context.Guild.Id);
+                                AFKTimerService.ResetTimer(Context.Guild.Id);
                             }
                             else if (gamemode.HasFlag(GameMode.Retro))
                             {
@@ -382,7 +383,7 @@ namespace UNObot.Modules
                                 await QueueHandlerService.NextPlayer(Context.Guild.Id);
                                 await ReplyAsync(
                                     $"You have skipped, and it is now <@{await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
-                                AfKtimer.ResetTimer(Context.Guild.Id);
+                                AFKTimerService.ResetTimer(Context.Guild.Id);
                             }
                             else
                             {
@@ -456,7 +457,7 @@ namespace UNObot.Modules
                 await QueueHandlerService.NextPlayer(Context.Guild.Id);
                 await ReplyAsync(
                     $"It is now <@{await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
-                AfKtimer.ResetTimer(Context.Guild.Id);
+                AFKTimerService.ResetTimer(Context.Guild.Id);
             }
 
             if (await UNODatabaseService.IsPlayerInGame(Context.User.Id))
@@ -532,7 +533,7 @@ namespace UNObot.Modules
                                 }
                             }
 
-                            AfKtimer.ResetTimer(Context.Guild.Id);
+                            AFKTimerService.ResetTimer(Context.Guild.Id);
                         }
                         else
                         {
@@ -770,7 +771,7 @@ namespace UNObot.Modules
                     await UNODatabaseService.UpdateDescription(Context.Guild.Id, "The game has just started!");
                     await ReplyAsync(response);
                     await UNODatabaseService.StarterCard(Context.Guild.Id);
-                    AfKtimer.StartTimer(Context.Guild.Id);
+                    AFKTimerService.StartTimer(Context.Guild.Id);
                 }
             }
             else
@@ -803,7 +804,7 @@ namespace UNObot.Modules
                             }
                             else
                             {
-                                AfKtimer.ResetTimer(Context.Guild.Id);
+                                AFKTimerService.ResetTimer(Context.Guild.Id);
                                 await ReplyAsync(await _playCard.Play(color, value, null, Context.User.Id,
                                     Context.Guild.Id));
                             }
@@ -846,7 +847,7 @@ namespace UNObot.Modules
                     {
                         if (Context.User.Id == await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id))
                         {
-                            AfKtimer.ResetTimer(Context.Guild.Id);
+                            AFKTimerService.ResetTimer(Context.Guild.Id);
                             await ReplyAsync(await _playCard.Play(color, value, wild, Context.User.Id,
                                 Context.Guild.Id));
                         }

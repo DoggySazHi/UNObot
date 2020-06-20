@@ -4,11 +4,12 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using UNObot.Plugins.Attributes;
-using UNObot.Services;
+using UNObot.TerminalCore;
+using UNObot.UNOCore;
 
 namespace UNObot.Modules
 {
-    public class BaseCommands : ModuleBase<SocketCommandContext>
+    internal class BaseCommands : ModuleBase<SocketCommandContext>
     {
         [Command("info", RunMode = RunMode.Async), Alias("version")]
         [Help(new[] {".info"}, "Get the current version of UNObot.", true, "UNObot 1.0")]

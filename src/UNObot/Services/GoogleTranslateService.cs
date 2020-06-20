@@ -2,23 +2,14 @@
 using System.Net;
 using System.Text;
 using System.Web;
-using Discord;
-using Discord.WebSocket;
 
 namespace UNObot.Services
 {
-    public class GoogleTranslateService
+    internal class GoogleTranslateService
     {
-        private static GoogleTranslateService _instance;
-
-        public static GoogleTranslateService GetSingleton()
+        private GoogleTranslateService()
         {
-            return _instance ??= new GoogleTranslateService(null, null, null);
-        }
-        
-        public GoogleTranslateService(IServiceProvider services, CommandHandlingService commands, DiscordSocketClient client)
-        {
-            LoggerService.Log(LogSeverity.Debug, $"{(services == null ? "null" : "not null")} {(commands == null ? "null" : "not null")} {(client == null ? "null" : "not null")}");
+            
         }
 
         public string Translate(string text, string fromCulture, string toCulture)
@@ -62,9 +53,7 @@ namespace UNObot.Services
             // Extract out trans":"...[Extracted]...","from the JSON string
             //string result = Regex.Match(html, "trans\":(\".*?\"),\"", RegexOptions.IgnoreCase).Groups[1].Value;
 
-            if (string.IsNullOrEmpty(html)) return "Error: No response was returned.";
-
-            return html;
+            return string.IsNullOrEmpty(html) ? "Error: No response was returned." : html;
         }
     }
 }

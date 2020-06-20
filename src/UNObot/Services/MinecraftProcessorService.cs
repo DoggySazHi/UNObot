@@ -10,7 +10,7 @@ using static UNObot.Services.IRCON;
 
 namespace UNObot.Services
 {
-    public class MCUser
+    internal class MCUser
     {
         public string Username { get; set; }
         public string Ouchies { get; set; }

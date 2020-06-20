@@ -8,9 +8,21 @@ using static UNObot.Services.IRCON;
 
 namespace UNObot.Modules
 {
-    public class ServerCommands : ModuleBase<SocketCommandContext>
+    internal class ServerCommands : ModuleBase<SocketCommandContext>
     {
         private const string TooLong = "[Message is too long; trimmed.]\n";
+
+        private readonly LoggerService _logger;
+        private readonly UBOWServerLoggerService _ubowLogger;
+        private readonly EmbedDisplayService _embed;
+        private readonly QueryHandlerService _query;
+        internal ServerCommands(LoggerService logger, UBOWServerLoggerService ubowLogger, EmbedDisplayService embed, QueryHandlerService query)
+        {
+            _logger = logger;
+            _ubowLogger = ubowLogger;
+            _embed = embed;
+            _query = query;
+        }
 
         [Command("ubows", RunMode = RunMode.Async)]
         [Alias("ubow")]
@@ -18,7 +30,7 @@ namespace UNObot.Modules
             "UNObot 2.4")]
         public async Task Ubows()
         {
-            await CheckUnturned("108.61.100.48", 25444, UBOWServerLoggerService.GetSingleton().GetAverages());
+            await CheckUnturned("108.61.100.48", 25444, _ubowLogger.GetAverages());
         }
 
         [Command("unturnedreleasenotes", RunMode = RunMode.Async)]
@@ -35,7 +47,7 @@ namespace UNObot.Modules
             "UNObot 2.4")]
         public async Task Slamc()
         {
-            var response = QueryHandlerService.GetInfoMC("williamle.com");
+            var response = _query.GetInfoMC("williamle.com");
             if (response.ServerUp)
                 await ReplyAsync(
                     $"Current players: {response.CurrentPlayers}/{response.MaximumPlayers}\nCurrently running on {response.Version}.");
@@ -59,7 +71,7 @@ namespace UNObot.Modules
             var message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
             {
-                var success = EmbedDisplayService.MinecraftQueryEmbed(ip, port, out var embed);
+                var success = _embed.MinecraftQueryEmbed(ip, port, out var embed);
                 if (!success || embed == null)
                 {
                     await message.ModifyAsync(o =>
@@ -75,7 +87,7 @@ namespace UNObot.Modules
             }
             catch (Exception ex)
             {
-                LoggerService.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
+                _logger.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
                 await message.ModifyAsync(o =>
                     o.Content = "We had some difficulties displaying the status. Please try again?");
             }
@@ -96,7 +108,7 @@ namespace UNObot.Modules
             var message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
             {
-                var success = EmbedDisplayService.OuchiesEmbed("williamle.com", 27285, out var embed);
+                var success = _embed.OuchiesEmbed("williamle.com", 27285, out var embed);
                 if (!success || embed == null)
                 {
                     await message.ModifyAsync(o =>
@@ -112,7 +124,7 @@ namespace UNObot.Modules
             }
             catch (Exception ex)
             {
-                LoggerService.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
+                _logger.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
                 await message.ModifyAsync(o =>
                     o.Content = "We had some difficulties displaying the status. Please try again?");
             }
@@ -125,7 +137,7 @@ namespace UNObot.Modules
             var message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
             {
-                var success = EmbedDisplayService.OuchiesEmbed("williamle.com", port, out var embed);
+                var success = _embed.OuchiesEmbed("williamle.com", port, out var embed);
                 if (!success || embed == null)
                 {
                     await message.ModifyAsync(o =>
@@ -141,7 +153,7 @@ namespace UNObot.Modules
             }
             catch (Exception ex)
             {
-                LoggerService.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
+                _logger.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
                 await message.ModifyAsync(o =>
                     o.Content = "We had some difficulties displaying the status. Please try again?");
             }
@@ -154,7 +166,7 @@ namespace UNObot.Modules
             var message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
             {
-                var success = EmbedDisplayService.LocationsEmbed("williamle.com", 27285, out var embed);
+                var success = _embed.LocationsEmbed("williamle.com", 27285, out var embed);
                 if (!success || embed == null)
                 {
                     await message.ModifyAsync(o =>
@@ -170,7 +182,7 @@ namespace UNObot.Modules
             }
             catch (Exception ex)
             {
-                LoggerService.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
+                _logger.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
                 await message.ModifyAsync(o =>
                     o.Content = "We had some difficulties displaying the status. Please try again?");
             }
@@ -183,7 +195,7 @@ namespace UNObot.Modules
             var message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
             {
-                var success = EmbedDisplayService.LocationsEmbed("williamle.com", port, out var embed);
+                var success = _embed.LocationsEmbed("williamle.com", port, out var embed);
                 if (!success || embed == null)
                 {
                     await message.ModifyAsync(o =>
@@ -199,7 +211,7 @@ namespace UNObot.Modules
             }
             catch (Exception ex)
             {
-                LoggerService.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
+                _logger.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
                 await message.ModifyAsync(o =>
                     o.Content = "We had some difficulties displaying the status. Please try again?");
             }
@@ -212,7 +224,7 @@ namespace UNObot.Modules
             var message = await ReplyAsync("I am now contacting the server, please wait warmly...");
             try
             {
-                var success = EmbedDisplayService.TransferEmbed("williamle.com", 27285, Context.User.Id, target, amount,
+                var success = _embed.TransferEmbed("williamle.com", 27285, Context.User.Id, target, amount,
                     out var embed);
                 if (!success || embed == null)
                 {
@@ -229,7 +241,7 @@ namespace UNObot.Modules
             }
             catch (Exception ex)
             {
-                LoggerService.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
+                _logger.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
                 await message.ModifyAsync(o =>
                     o.Content = "We had some difficulties displaying the status. Please try again?");
             }
@@ -242,7 +254,7 @@ namespace UNObot.Modules
             var message = await ReplyAsync("I am now contacting the server, please wait warmly...");
             try
             {
-                var success = EmbedDisplayService.TransferEmbed("williamle.com", port, Context.User.Id, target, amount,
+                var success = _embed.TransferEmbed("williamle.com", port, Context.User.Id, target, amount,
                     out var embed);
                 if (!success || embed == null)
                 {
@@ -259,7 +271,7 @@ namespace UNObot.Modules
             }
             catch (Exception ex)
             {
-                LoggerService.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
+                _logger.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
                 await message.ModifyAsync(o =>
                     o.Content = "We had some difficulties displaying the status. Please try again?");
             }
@@ -269,7 +281,7 @@ namespace UNObot.Modules
         [Help(new[] {".mctime"}, "SLEEP GUYS", true, "UNObot 4.0.16")]
         public async Task GetMCTime()
         {
-            var server = QueryHandlerService.SpecialServers[27285];
+            var server = _query.SpecialServers[27285];
             await RunRCON(server.Server, server.RCONPort, server.Password, "time query daytime");
         }
 
@@ -277,13 +289,13 @@ namespace UNObot.Modules
         [Help(new[] {".mctime (port)"}, "SLEEP GUYS", true, "UNObot 4.0.16")]
         public async Task GetMCTime(ushort port)
         {
-            if (!QueryHandlerService.SpecialServers.ContainsKey(port))
+            if (!_query.SpecialServers.ContainsKey(port))
             {
                 await ReplyAsync("This is not a valid server port!");
                 return;
             }
 
-            var server = QueryHandlerService.SpecialServers[port];
+            var server = _query.SpecialServers[port];
             await RunRCON(server.Server, server.RCONPort, server.Password, "time query daytime");
         }
 
@@ -312,7 +324,7 @@ namespace UNObot.Modules
         public async Task RunRCON(string ip, ushort port, string password, [Remainder] string command)
         {
             var message = await ReplyAsync("Executing...");
-            var success = QueryHandlerService.SendRCON(ip, port, command, password, out var output);
+            var success = _query.SendRCON(ip, port, command, password, out var output);
             if (!success)
             {
                 var error = "Failed to execute command. ";
@@ -345,7 +357,7 @@ namespace UNObot.Modules
         public async Task ExecRCON([Remainder] string command)
         {
             var message = await ReplyAsync("Executing...");
-            var success = QueryHandlerService.ExecuteRCON(Context.User.Id, command, out var output);
+            var success = _query.ExecuteRCON(Context.User.Id, command, out var output);
             if (!success)
             {
                 var error = "Failed to execute command. ";
@@ -383,7 +395,7 @@ namespace UNObot.Modules
         public async Task RunRCON(string ip, ushort port, string password)
         {
             var message = await ReplyAsync("Initializing...");
-            var success = QueryHandlerService.CreateRCON(ip, port, password, Context.User.Id, out var output);
+            var success = _query.CreateRCON(ip, port, password, Context.User.Id, out var output);
             if (!success)
             {
                 var error = "Failed to login. ";
@@ -431,7 +443,7 @@ namespace UNObot.Modules
         private async Task CloseRCON()
         {
             var message = await ReplyAsync("Searching...");
-            var success = QueryHandlerService.CloseRCON(Context.User.Id);
+            var success = _query.CloseRCON(Context.User.Id);
             if (!success)
                 await message.ModifyAsync(o => o.Content = "Could not find an open connection owned by you.");
             else
@@ -441,7 +453,7 @@ namespace UNObot.Modules
         private async Task GetRCON()
         {
             var message = await ReplyAsync("Searching...");
-            var success = QueryHandlerService.ExecuteRCON(Context.User.Id, "", out var output);
+            var success = _query.ExecuteRCON(Context.User.Id, "", out var output);
             if (!success)
                 await message.ModifyAsync(o => o.Content = "Could not find an open connection owned by you.");
             else
@@ -454,7 +466,7 @@ namespace UNObot.Modules
             var message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
             {
-                var success = EmbedDisplayService.UnturnedQueryEmbed(ip, port, out var embed, averages);
+                var success = _embed.UnturnedQueryEmbed(ip, port, out var embed, averages);
                 if (!success || embed == null)
                 {
                     await message.ModifyAsync(o =>
@@ -470,7 +482,7 @@ namespace UNObot.Modules
             }
             catch (Exception ex)
             {
-                LoggerService.Log(LogSeverity.Error, "Error loading embeds for a server.", ex);
+                _logger.Log(LogSeverity.Error, "Error loading embeds for a server.", ex);
                 await message.ModifyAsync(o =>
                     o.Content = "We had some difficulties displaying the status. Please try again?");
             }

@@ -19,13 +19,17 @@ namespace UNObot.Services
 
     //Credit to https://github.com/maxime-paquatte/csharp-minecraft-query/blob/master/src/Status.cs
     //Mukyu... but I implemented the Minecraft RCON (Valve RCON) protocol by hand, as well as the query.
-    public static class QueryHandlerService
+    internal class QueryHandlerService
     {
-        public static IReadOnlyList<string> OutsideServers;
-        public static IReadOnlyDictionary<ushort, RCONServer> SpecialServers;
+        internal IReadOnlyList<string> OutsideServers;
+        internal readonly IReadOnlyDictionary<ushort, RCONServer> SpecialServers;
 
-        static QueryHandlerService()
+        private RCONManager _manager;
+
+        internal QueryHandlerService(RCONManager manager)
         {
+            _manager = manager;
+            
             var external = new List<string>();
             external.Add("williamle.com");
             OutsideServers = external;
@@ -36,7 +40,7 @@ namespace UNObot.Services
             SpecialServers = servers;
         }
 
-        public static string HumanReadable(float time)
+        internal static string HumanReadable(float time)
         {
             var formatted = TimeSpan.FromSeconds(time);
             string output;
@@ -49,7 +53,7 @@ namespace UNObot.Services
             return output;
         }
 
-        public static bool GetInfo(string ip, ushort port, out A2SInfo output)
+        internal bool GetInfo(string ip, ushort port, out A2SInfo output)
         {
             var success = TryParseServer(ip, port, out var iPEndPoint);
             if (!success)
@@ -62,7 +66,7 @@ namespace UNObot.Services
             return output.ServerUp;
         }
 
-        public static bool GetPlayers(string ip, ushort port, out A2SPlayer output)
+        internal bool GetPlayers(string ip, ushort port, out A2SPlayer output)
         {
             var success = TryParseServer(ip, port, out var iPEndPoint);
             if (!success)
@@ -75,7 +79,7 @@ namespace UNObot.Services
             return output.ServerUp;
         }
 
-        public static bool GetRules(string ip, ushort port, out A2SRules output)
+        internal bool GetRules(string ip, ushort port, out A2SRules output)
         {
             var success = TryParseServer(ip, port, out var iPEndPoint);
             if (!success)
@@ -88,7 +92,7 @@ namespace UNObot.Services
             return output.ServerUp;
         }
 
-        public static bool GetInfoMCNew(string ip, ushort port, out MinecraftStatus output)
+        internal bool GetInfoMCNew(string ip, ushort port, out MinecraftStatus output)
         {
             var success = TryParseServer(ip, port, out var iPEndPoint);
             if (!success)
@@ -96,12 +100,11 @@ namespace UNObot.Services
                 output = null;
                 return false;
             }
-
             output = new MinecraftStatus(iPEndPoint);
             return output.ServerUp;
         }
 
-        public static bool SendRCON(string ip, ushort port, string command, string password, out IRCON output)
+        internal bool SendRCON(string ip, ushort port, string command, string password, out IRCON output)
         {
             var success = TryParseServer(ip, port, out var iPEndPoint);
             if (!success)
@@ -110,13 +113,13 @@ namespace UNObot.Services
                 return false;
             }
 
-            output = RCONManager.GetSingleton().CreateRCON(iPEndPoint, password, false, command);
+            output = _manager.CreateRCON(iPEndPoint, password, false, command);
             return output.Status == RCONStatus.Success;
         }
 
-        public static bool CreateRCON(string ip, ushort port, string password, ulong user, out IRCON output)
+        internal bool CreateRCON(string ip, ushort port, string password, ulong user, out IRCON output)
         {
-            var possibleRCON = RCONManager.GetSingleton().GetRCON(user);
+            var possibleRCON = _manager.GetRCON(user);
             if (possibleRCON != null)
             {
                 output = possibleRCON;
@@ -130,14 +133,14 @@ namespace UNObot.Services
                 return false;
             }
 
-            output = RCONManager.GetSingleton().CreateRCON(iPEndPoint, password, true);
+            output = _manager.CreateRCON(iPEndPoint, password, true);
             output.Owner = user;
             return output.Status == RCONStatus.Success;
         }
 
-        public static bool ExecuteRCON(ulong user, string command, out IRCON output)
+        internal bool ExecuteRCON(ulong user, string command, out IRCON output)
         {
-            var possibleRCON = RCONManager.GetSingleton().GetRCON(user);
+            var possibleRCON = _manager.GetRCON(user);
             output = possibleRCON;
             if (possibleRCON == null)
                 return false;
@@ -146,9 +149,9 @@ namespace UNObot.Services
             return output.Status == RCONStatus.Success;
         }
 
-        public static bool CloseRCON(ulong user)
+        internal bool CloseRCON(ulong user)
         {
-            var possibleRCON = RCONManager.GetSingleton().GetRCON(user);
+            var possibleRCON = _manager.GetRCON(user);
             if (possibleRCON == null)
                 return false;
 
@@ -192,7 +195,7 @@ namespace UNObot.Services
             return addresses;
         }
 
-        public static MCStatus GetInfoMC(string ip, ushort port = 25565)
+        internal MCStatus GetInfoMC(string ip, ushort port = 25565)
         {
             return new MCStatus(ip, port);
         }
@@ -205,7 +208,7 @@ namespace UNObot.Services
         }
     }
 
-    public class A2SInfo
+    internal class A2SInfo
     {
         // \xFF\xFF\xFF\xFFTSource Engine Query\x00 because UTF-8 doesn't like to encode 0xFF
         public static readonly byte[] Request =
@@ -276,7 +279,6 @@ namespace UNObot.Services
             }
             catch (Exception ex)
             {
-                LoggerService.Log(LogSeverity.Error, "Failed to query via A2S.", ex);
                 ServerUp = false;
             }
         }
@@ -352,7 +354,7 @@ namespace UNObot.Services
         #endregion
     }
 
-    public class A2SPlayer
+    internal class A2SPlayer
     {
         private static readonly byte[] Handshake = {0xFF, 0xFF, 0xFF, 0xFF, 0x55, 0xFF, 0xFF, 0xFF, 0xFF};
 
@@ -413,7 +415,6 @@ namespace UNObot.Services
             }
             catch (Exception ex)
             {
-                LoggerService.Log(LogSeverity.Error, "Failed to query via A2S.", ex);
                 ServerUp = false;
             }
         }
@@ -433,7 +434,7 @@ namespace UNObot.Services
         }
     }
 
-    public class A2SRules
+    internal class A2SRules
     {
         private static readonly byte[] Handshake = {0xFF, 0xFF, 0xFF, 0xFF, 0x56, 0xFF, 0xFF, 0xFF, 0xFF};
 
@@ -494,7 +495,6 @@ namespace UNObot.Services
             }
             catch (Exception ex)
             {
-                LoggerService.Log(LogSeverity.Error, "Failed to query via A2S.", ex);
                 ServerUp = false;
             }
         }
@@ -527,7 +527,7 @@ namespace UNObot.Services
         }
     }
 
-    public class MCStatus
+    internal class MCStatus
     {
         private const ushort DataSize = 512; // this will hopefully suffice since the MotD should be <=59 characters
         private const ushort NumFields = 6; // number of values expected from server
@@ -599,7 +599,7 @@ namespace UNObot.Services
     /// <summary>
     ///     William's proud of himself for writing this class.
     /// </summary>
-    public class MinecraftStatus
+    internal class MinecraftStatus
     {
         private readonly byte[] _sessionHandshake = {0xFE, 0xFD, 0x09, 0x00, 0x00, 0x00, 0x01};
 
@@ -697,9 +697,8 @@ namespace UNObot.Services
             {
                 ServerUp = false;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                LoggerService.Log(LogSeverity.Error, "Failed to query via MCStatusFull.", ex);
                 ServerUp = false;
             }
             finally
@@ -744,12 +743,11 @@ namespace UNObot.Services
         public bool Connected();
     }
 
-    public class RCONManager : IDisposable
+    internal class RCONManager : IDisposable
     {
-        private static RCONManager _instance;
         private List<IRCON> _reusableRCONSockets;
 
-        private RCONManager()
+        public RCONManager()
         {
             _reusableRCONSockets = new List<IRCON>();
         }
@@ -759,11 +757,6 @@ namespace UNObot.Services
             _reusableRCONSockets.ForEach(o => o.Dispose());
             _reusableRCONSockets.Clear();
             _reusableRCONSockets = null;
-        }
-
-        public static RCONManager GetSingleton()
-        {
-            return _instance ??= new RCONManager();
         }
 
         public IRCON GetRCON(ulong user)
@@ -858,7 +851,6 @@ namespace UNObot.Services
             {
                 if (!_client.ConnectAsync(Server).Wait(5000))
                 {
-                    LoggerService.Log(LogSeverity.Verbose, $"Failed to connect to {Server.Address} at {Server.Port}.");
                     Status = RCONStatus.ConnFail;
                     return;
                 }
@@ -869,7 +861,6 @@ namespace UNObot.Services
                 return;
             }
 
-            LoggerService.Log(LogSeverity.Verbose, "Successfully created RCON connection!");
             if (Authenticate() && command != null)
                 Execute(command, reuse);
         }
@@ -892,11 +883,9 @@ namespace UNObot.Services
                 if (id == -1 || type != 2)
                 {
                     Status = RCONStatus.AuthFail;
-                    LoggerService.Log(LogSeverity.Verbose, "RCON failed to authenticate!");
                     return false;
                 }
 
-                LoggerService.Log(LogSeverity.Verbose, "RCON login successful!");
                 Status = RCONStatus.Success;
                 return true;
             }
@@ -919,19 +908,15 @@ namespace UNObot.Services
                     var payload = MakePacketData(command, PacketType.ServerdataExeccommand, 0);
                     try
                     {
-                        LoggerService.Log(LogSeverity.Verbose, "Sending payload...");
                         _client.Send(payload);
                     }
                     catch (ObjectDisposedException)
                     {
-                        LoggerService.Log(LogSeverity.Warning, "Socket was disposed, attempting to re-auth...");
                         CreateConnection(reuse);
                         _client.Send(payload);
                     }
 
-                    LoggerService.Log(LogSeverity.Verbose, "Sending bad type...");
                     _client.Send(EndOfCommandPacket);
-                    LoggerService.Log(LogSeverity.Verbose, $"Now reading... Connection status: {Connected()}");
                     var end = false;
                     do
                     {
@@ -940,7 +925,6 @@ namespace UNObot.Services
                         if (size == 0)
                         {
                             // Connection failed.
-                            LoggerService.Log(LogSeverity.Warning, "Failed to execute. Attempting to retry...");
                             packetCount = 0;
                             _packetCollector.Clear();
                             CreateConnection(reuse);
@@ -958,8 +942,6 @@ namespace UNObot.Services
                         var type = LittleEndianReader(ref rxData, 8);
                         if ((id == -1 || type != (int) PacketType.ServerdataResponseValue) && packetCount == 0)
                         {
-                            LoggerService.Log(LogSeverity.Verbose,
-                                $"Failed to execute \"{command}\", type of {type}!");
                             Status = RCONStatus.AuthFail;
                             return;
                         }
@@ -991,48 +973,38 @@ namespace UNObot.Services
                         }
 
                         packetCount++;
-                        LoggerService.Log(LogSeverity.Debug, $"Packet {packetCount}, Size {size}");
 
                         // Excess packets.
                         if (packetCount == 100)
                         {
-                            LoggerService.Log(LogSeverity.Warning, $"Over-read {packetCount} packets!");
                             end = true;
                         }
                     } while (!end);
 
                     Data = Stringifier(ref _packetCollector);
                     _packetCollector.Clear();
-                    LoggerService.Log(LogSeverity.Verbose, command + "\n\n" + Data);
                     Status = RCONStatus.Success;
                 }
                 catch (SocketException ex)
                 {
                     if (ex.ErrorCode == 10060 && _packetCollector.Count > 0)
                     {
-                        LoggerService.Log(LogSeverity.Warning,
-                            "Timed out, but got data... did we try to read another packet?", ex);
                         Status = RCONStatus.Success;
                         Data = Stringifier(ref _packetCollector);
-                        LoggerService.Log(LogSeverity.Verbose, Data);
                     }
                     else if ((ex.ErrorCode == 10053 || ex.ErrorCode == 32) && reuse)
                     {
-                        LoggerService.Log(LogSeverity.Warning,
-                            "We were closed, however attempting to reopen connection...", ex);
                         Status = RCONStatus.IntFail;
                         CreateConnection(true);
                     }
                     else
                     {
                         Status = RCONStatus.IntFail;
-                        LoggerService.Log(LogSeverity.Verbose, "Something went wrong while querying!", ex);
                     }
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     Status = RCONStatus.IntFail;
-                    LoggerService.Log(LogSeverity.Verbose, "Something went wrong while querying!", ex);
                 }
 
                 if (Status != RCONStatus.Success || !reuse)
@@ -1051,7 +1023,6 @@ namespace UNObot.Services
                 var type = LittleEndianReader(ref rxData, 8);
                 if (id == -1 || type != 0)
                 {
-                    LoggerService.Log(LogSeverity.Verbose, $"Failed to execute \"{command}\"!");
                     Status = RCONStatus.AuthFail;
                     return;
                 }

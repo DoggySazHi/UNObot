@@ -14,13 +14,17 @@ using static UNObot.Services.IRCON;
 
 namespace UNObot.Modules
 {
-    public class DebugCommands : ModuleBase<SocketCommandContext>
+    internal class DebugCommands : ModuleBase<SocketCommandContext>
     {
+        private readonly LoggerService _logger;
         private readonly GoogleTranslateService _gts;
-        public DebugCommands(GoogleTranslateService gts)
+        private readonly ShellService _shell;
+        
+        internal DebugCommands(LoggerService logger, GoogleTranslateService gts, ShellService shell)
         {
+            _logger = logger;
             _gts = gts;
-            LoggerService.Log(LogSeverity.Debug, $"{(gts == null ? "null" : "not null")}");
+            _shell = shell;
         }
         
         [Command("purge", RunMode = RunMode.Async)]
@@ -35,7 +39,7 @@ namespace UNObot.Modules
 
             if (!(Context.Channel is ITextChannel textchannel))
             {
-                LoggerService.Log(LogSeverity.Warning, "error cast");
+                _logger.Log(LogSeverity.Warning, "error cast");
                 return;
             }
 
@@ -51,7 +55,7 @@ namespace UNObot.Modules
 
             if (!(Context.Channel is ITextChannel textchannel))
             {
-                LoggerService.Log(LogSeverity.Warning, "error cast");
+                _logger.Log(LogSeverity.Warning, "error cast");
                 return;
             }
 
@@ -76,14 +80,14 @@ namespace UNObot.Modules
         [Command("translate", RunMode = RunMode.Async)]
         public async Task Translate(string from, string to, [Remainder] string message)
         {
-            await ReplyAsync(GoogleTranslateService.GetSingleton().Translate(message, from, to)).ConfigureAwait(false);
+            await ReplyAsync(_gts.Translate(message, from, to)).ConfigureAwait(false);
         }
 
         [Command("debugstatus", RunMode = RunMode.Async)]
         public async Task DebugStatus()
         {
-            await ShellService.GitFetch().ConfigureAwait(false);
-            await ReplyAsync(await ShellService.GitStatus().ConfigureAwait(false)).ConfigureAwait(false);
+            await _shell.GitFetch().ConfigureAwait(false);
+            await ReplyAsync(await _shell.GitStatus().ConfigureAwait(false));
         }
 
         [Command("interop", RunMode = RunMode.Async)]
@@ -139,7 +143,7 @@ namespace UNObot.Modules
             }
             catch (JsonReaderException ex)
             {
-                LoggerService.Log(LogSeverity.Error, "Failed to process JSON!", ex);
+                _logger.Log(LogSeverity.Error, "Failed to process JSON!", ex);
 
                 await ReplyAsync("JSON_FAIL");
             }

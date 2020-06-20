@@ -8,8 +8,15 @@ using UNObot.Services;
 
 namespace UNObot.Modules
 {
-    public class FunCommands : ModuleBase<SocketCommandContext>
+    internal class FunCommands : ModuleBase<SocketCommandContext>
     {
+        private readonly LoggerService _logger;
+        
+        internal FunCommands(LoggerService logger)
+        {
+            _logger = logger;
+        }
+        
         [Command("gulag", RunMode = RunMode.Async)]
         [Help(new[] {".gulag"}, "Blyat.", false, "UNObot 1.4")]
         public async Task Gulag()
@@ -161,7 +168,7 @@ namespace UNObot.Modules
 
             if (!(Context.Channel is ITextChannel textchannel))
             {
-                LoggerService.Log(LogSeverity.Warning, "error cast");
+                _logger.Log(LogSeverity.Warning, "error cast");
                 return;
             }
 

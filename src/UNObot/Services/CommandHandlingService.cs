@@ -9,17 +9,21 @@ using Discord.WebSocket;
 
 namespace UNObot.Services
 {
-    public class CommandHandlingService
+    internal class CommandHandlingService
     {
         private readonly CommandService _commands;
         private readonly DiscordSocketClient _discord;
         private IServiceProvider _provider;
+        private readonly LoggerService _logger;
+        private readonly UNODatabaseService _db;
 
-        public CommandHandlingService(IServiceProvider provider, DiscordSocketClient discord, CommandService commands)
+        public CommandHandlingService(IServiceProvider provider, LoggerService logger, UNODatabaseService db, DiscordSocketClient discord, CommandService commands)
         {
+            _logger = logger;
             _discord = discord;
             _commands = commands;
-            _commands.Log += LoggerService.GetSingleton().LogCommand;
+            _commands.Log += logger.LogCommand;
+            _db = db;
             _provider = provider;
             _discord.MessageReceived += MessageReceived;
         }
@@ -56,10 +60,10 @@ namespace UNObot.Services
             var argPos = 0;
             var context = new SocketCommandContext(_discord, message);
 
-            if (!context.IsPrivate && await UNODatabaseService.ChannelEnforced(context.Guild.Id))
+            if (!context.IsPrivate && await _db.ChannelEnforced(context.Guild.Id))
             {
                 //start check
-                var allowedChannels = await UNODatabaseService.GetAllowedChannels(context.Guild.Id);
+                var allowedChannels = await _db.GetAllowedChannels(context.Guild.Id);
                 var currentChannels = context.Guild.TextChannels.ToList();
                 var currentChannelsIDs = currentChannels.Select(channel => channel.Id).ToList();
                 if (allowedChannels.Except(currentChannelsIDs).Any())
@@ -67,7 +71,7 @@ namespace UNObot.Services
                     var tempList = new List<ulong>(allowedChannels.Except(currentChannelsIDs));
                     foreach (var toRemove in tempList)
                         allowedChannels.Remove(toRemove);
-                    await UNODatabaseService.SetAllowedChannels(context.Guild.Id, allowedChannels);
+                    await _db.SetAllowedChannels(context.Guild.Id, allowedChannels);
                 }
 
                 //end check
@@ -75,7 +79,7 @@ namespace UNObot.Services
                 {
                     await context.Channel.SendMessageAsync(
                         "Warning: Since there are no channels that allow UNObot to speak normally, enforcechannels has been disabled.");
-                    await UNODatabaseService.SetEnforceChannel(context.Guild.Id, false);
+                    await _db.SetEnforceChannel(context.Guild.Id, false);
                 }
                 else if (!allowedChannels.Contains(context.Channel.Id))
                 {
@@ -87,8 +91,8 @@ namespace UNObot.Services
                 !message.HasMentionPrefix(_discord.CurrentUser, ref argPos)) return;
 
             if (!context.IsPrivate)
-                await UNODatabaseService.AddGame(context.Guild.Id);
-            await UNODatabaseService.AddUser(context.User.Id, context.User.Username);
+                await _db.AddGame(context.Guild.Id);
+            await _db.AddUser(context.User.Id, context.User.Username);
             try
             {
                 if (context.IsPrivate)
@@ -149,7 +153,7 @@ namespace UNObot.Services
             }
             catch (Exception e)
             {
-                LoggerService.Log(LogSeverity.Error, "While attempting to execute a command, we got an error!", e);
+                _logger.Log(LogSeverity.Error, "While attempting to execute a command, we got an error!", e);
             }
         }
     }

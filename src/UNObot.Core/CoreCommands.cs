@@ -6,7 +6,7 @@ using UNObot.Plugins.Attributes;
 
 namespace UNObot.Core
 {
-    public class Initializer : IPlugin
+    internal class Initializer : IPlugin
     {
         public string Name { get; private set; }
         public string Description { get; private set; }
@@ -29,7 +29,7 @@ namespace UNObot.Core
         }
     }
     
-    public class CoreCommands : ModuleBase<SocketCommandContext>
+    internal class CoreCommands : ModuleBase<SocketCommandContext>
     {
         [Command("testperms", RunMode = RunMode.Async)]
         [RequireUserPermission(GuildPermission.ManageGuild)]

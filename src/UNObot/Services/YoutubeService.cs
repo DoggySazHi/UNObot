@@ -12,7 +12,7 @@ using YoutubeExplode.Videos.Streams;
 
 namespace UNObot.Services
 {
-    public class YoutubeService
+    internal class YoutubeService
     {
         // Seconds.
         private const double DlTimeout = 5.0;
@@ -23,12 +23,14 @@ namespace UNObot.Services
         private const int DlDelay = 5000;
         private static readonly string DownloadPath = Path.Combine(Directory.GetCurrentDirectory(), "Music");
 
-        private static YoutubeService _instance;
         private readonly YoutubeClient _client;
         private readonly YoutubeConverter _converter;
 
-        private YoutubeService()
+        private LoggerService _logger;
+
+        public YoutubeService(LoggerService logger)
         {
+            _logger = logger;
             _client = new YoutubeClient();
             _converter = new YoutubeConverter(_client, "/usr/local/bin/ffmpeg");
             if (Directory.Exists(DownloadPath))
@@ -36,15 +38,10 @@ namespace UNObot.Services
             Directory.CreateDirectory(DownloadPath);
         }
 
-        public static YoutubeService GetSingleton()
-        {
-            return _instance ??= new YoutubeService();
-        }
-
         public async Task<Tuple<string, string, string>> GetInfo(string url)
         {
             url = url.Replace("<", "").Replace(">", "");
-            LoggerService.Log(LogSeverity.Debug, url);
+            _logger.Log(LogSeverity.Debug, url);
             var videoData = await _client.Videos.GetAsync(url);
             var duration = TimeString(videoData.Duration);
             return new Tuple<string, string, string>(videoData.Title, duration, videoData.Thumbnails.MediumResUrl);
@@ -52,13 +49,13 @@ namespace UNObot.Services
 
         public async Task<Tuple<Tuple<string, string, string>, string>> SearchVideo(string query)
         {
-            LoggerService.Log(LogSeverity.Verbose, "Searching videos...");
+            _logger.Log(LogSeverity.Verbose, "Searching videos...");
             var data = await _client.Search.GetVideosAsync(query).ToListAsync();
             if (data.Count == 0)
                 throw new Exception("No results found!");
             var videoData = data[0];
             var duration = TimeString(videoData.Duration);
-            LoggerService.Log(LogSeverity.Verbose, "Found video.");
+            _logger.Log(LogSeverity.Verbose, "Found video.");
             return new Tuple<Tuple<string, string, string>, string>(
                 new Tuple<string, string, string>(videoData.Title, duration, videoData.Thumbnails.MediumResUrl),
                 videoData.Url);
@@ -67,7 +64,7 @@ namespace UNObot.Services
         public async Task<Playlist> GetPlaylist(string url)
         {
             url = url.Replace("<", "").Replace(">", "");
-            LoggerService.Log(LogSeverity.Debug, url);
+            _logger.Log(LogSeverity.Debug, url);
             var videoData = await _client.Playlists.GetAsync(url);
             return videoData;
         }
@@ -109,7 +106,7 @@ namespace UNObot.Services
                     if (File.Exists(filePath))
                         File.Delete(filePath);
                     else
-                        LoggerService.Log(LogSeverity.Warning, "Song didn't exist?");
+                        _logger.Log(LogSeverity.Warning, "Song didn't exist?");
                 }
                 catch (Exception)
                 {
@@ -121,7 +118,7 @@ namespace UNObot.Services
         {
             url = url.TrimStart('<', '>').TrimEnd('<', '>');
 
-            LoggerService.Log(LogSeverity.Debug, "New URL: " + url);
+            _logger.Log(LogSeverity.Debug, "New URL: " + url);
             var video = await _client.Videos.GetAsync(url);
             var mediaStreams = await _client.Videos.Streams.GetManifestAsync(video.Id);
             if (!mediaStreams.GetAudio().Any())
@@ -135,11 +132,11 @@ namespace UNObot.Services
                 }
                 catch (Exception ex)
                 {
-                    LoggerService.Log(LogSeverity.Debug, "Error downloading song!", ex);
+                    _logger.Log(LogSeverity.Debug, "Error downloading song!", ex);
                     throw;
                 }
 
-                LoggerService.Log(LogSeverity.Debug, "Downloaded");
+                _logger.Log(LogSeverity.Debug, "Downloaded");
                 return path;
             }
 
@@ -155,10 +152,10 @@ namespace UNObot.Services
             }
             catch (Exception ex)
             {
-                LoggerService.Log(LogSeverity.Debug, "Error downloading song!", ex);
+                _logger.Log(LogSeverity.Debug, "Error downloading song!", ex);
             }
 
-            LoggerService.Log(LogSeverity.Debug, "Got Extension");
+            _logger.Log(LogSeverity.Debug, "Got Extension");
 
             var fileName = GetNextFile(guild, id, extension);
 
@@ -169,7 +166,7 @@ namespace UNObot.Services
                 try
                 {
                     await _client.Videos.Streams.DownloadAsync(audioStream, fileName);
-                    LoggerService.Log(LogSeverity.Debug, $"Downloaded at {fileName}.");
+                    _logger.Log(LogSeverity.Debug, $"Downloaded at {fileName}.");
                     break;
                 }
                 catch (Exception e)
@@ -178,8 +175,8 @@ namespace UNObot.Services
                     // I really hate this. But there's no enum for web status. And the Web stuff is embedded in the library.
                     if (message.Contains("429") ||
                         message.Contains("too many requests", StringComparison.CurrentCultureIgnoreCase))
-                        LoggerService.Log(LogSeverity.Warning, "We're getting rate-limited by YouTube!!!");
-                    LoggerService.Log(LogSeverity.Error,
+                        _logger.Log(LogSeverity.Warning, "We're getting rate-limited by YouTube!!!");
+                    _logger.Log(LogSeverity.Error,
                         $"Failed to download! This is attempt {i}/{DlAttempts}. Waiting for {DlDelay / 1000.0} seconds.",
                         e);
                     await Task.Delay(DlDelay);
@@ -197,7 +194,7 @@ namespace UNObot.Services
         private string GetNextFile(ulong guild, string id, string extension)
         {
             var fileName = Path.Combine(PathToGuildFolder(guild), $"{id}.{extension}");
-            LoggerService.Log(LogSeverity.Debug, "Saving to " + fileName);
+            _logger.Log(LogSeverity.Debug, "Saving to " + fileName);
             return fileName;
         }
 

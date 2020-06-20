@@ -8,20 +8,14 @@ using UNObot.TerminalCore;
 
 namespace UNObot.Services
 {
-    public class LoggerService : IDisposable
+    internal class LoggerService : IDisposable
     {
         private const string LogFolder = "Logs";
-        private static LoggerService _instance;
-        private static StreamWriter _fileLog;
-        private static readonly object LockObj;
+        private readonly StreamWriter _fileLog;
+        private readonly object _lockObj = new object();
         private readonly string _currentLog;
 
-        static LoggerService()
-        {
-            LockObj = new object();
-        }
-
-        private LoggerService()
+        public LoggerService()
         {
             _currentLog = $"{DateTime.Today:MM-dd-yyyy}.log";
             if (!Directory.Exists(LogFolder))
@@ -39,16 +33,11 @@ namespace UNObot.Services
         public void Dispose()
         {
             if (_fileLog == null) return;
-            lock (LockObj)
+            lock (_lockObj)
             {
                 _fileLog.Flush();
                 _fileLog.Dispose();
             }
-        }
-
-        public static LoggerService GetSingleton()
-        {
-            return _instance ??= new LoggerService();
         }
 
         private async Task CompressOldLogs()
@@ -66,7 +55,7 @@ namespace UNObot.Services
                         {
                             await using var compressionStream =
                                 new GZipStream(compressedFileStream, CompressionMode.Compress);
-                            originalFileStream.CopyTo(compressionStream);
+                            await originalFileStream.CopyToAsync(compressionStream);
                         }
 
                         compressed = true;
@@ -108,12 +97,12 @@ namespace UNObot.Services
             });
         }
 
-        public static void Log(LogSeverity severity, string message, Exception exception = null)
+        public void Log(LogSeverity severity, string message, Exception exception = null)
         {
             // Don't hold the actions with a basic logger.
             Task.Run(() =>
             {
-                lock (LockObj)
+                lock (_lockObj)
                 {
                     Console.Write("[");
                     switch (severity)
