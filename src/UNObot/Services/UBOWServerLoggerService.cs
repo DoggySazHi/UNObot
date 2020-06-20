@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 
 namespace UNObot.Services
 {
-    public class UBOWServerLoggerService
+    internal class UBOWServerLoggerService
     {
         private const string JsonFileName = "UBOWLog.json";
         private const string FileName = "UBOWLog.serverlog";
@@ -19,7 +19,6 @@ namespace UNObot.Services
 
         private const int Attempts = 3;
 
-        private static UBOWServerLoggerService _instance;
         private readonly Timer _logTimer;
         private ServerLog _logs;
 
@@ -134,11 +133,6 @@ namespace UNObot.Services
             _logs.AverageLastYear = 1.0f * lastYear.Sum(o => o.PlayerCount) / lastYear.Count;
         }
 
-        public static UBOWServerLoggerService GetSingleton()
-        {
-            return _instance ??= new UBOWServerLoggerService();
-        }
-
         public ServerAverages GetAverages()
         {
             return new ServerAverages
@@ -159,7 +153,7 @@ namespace UNObot.Services
         public bool ServerUp { get; set; }
     }
 
-    public class ServerAverages
+    internal class ServerAverages
     {
         public float AverageLastHour { get; set; }
         public float AverageLast24H { get; set; }
@@ -168,7 +162,7 @@ namespace UNObot.Services
         public float AverageLastYear { get; set; }
     }
 
-    public class ServerLog
+    internal class ServerLog
     {
         public float AverageLastHour { get; set; }
         public float AverageLast24H { get; set; }

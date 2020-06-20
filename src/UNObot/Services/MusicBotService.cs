@@ -14,7 +14,7 @@ using Timer = System.Timers.Timer;
 namespace UNObot.Services
 {
     // Can't use Struct, needs passing by reference.
-    public class Song
+    internal class Song
     {
         private ManualResetEvent _endCache;
 
@@ -67,7 +67,7 @@ namespace UNObot.Services
         }
     }
 
-    public class Player : IAsyncDisposable
+    internal class Player : IAsyncDisposable
     {
         private readonly IVoiceChannel _audioChannel;
         private readonly ManualResetEvent _cacheEvent;
@@ -541,9 +541,8 @@ namespace UNObot.Services
         }
     }
 
-    public class MusicBotService
+    internal class MusicBotService
     {
-        private static MusicBotService _instance;
         private readonly List<Player> _musicPlayers = new List<Player>();
 
         private MusicBotService()
@@ -559,11 +558,6 @@ namespace UNObot.Services
             else if (oldState.VoiceChannel == null && newState.VoiceChannel != null)
                 foreach (var player in _musicPlayers)
                     await player.CheckOnJoin().ConfigureAwait(false);
-        }
-
-        public static MusicBotService GetSingleton()
-        {
-            return _instance ??= new MusicBotService();
         }
 
         public async ValueTask DisposeAsync()

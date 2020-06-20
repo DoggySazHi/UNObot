@@ -6,14 +6,16 @@ using Newtonsoft.Json;
 
 namespace UNObot.Services
 {
-    public class LocalizationService
+    internal class LocalizationService
     {
-        private static LocalizationService _instance;
         private static readonly string LocalizationFile = "translations_en.json";
         private Dictionary<string, string> _localizations;
+        private LoggerService _logger;
 
-        private LocalizationService()
+        public LocalizationService(LoggerService logger)
         {
+            _logger = logger;
+            
             if (File.Exists(LocalizationFile))
                 try
                 {
@@ -23,16 +25,11 @@ namespace UNObot.Services
                 }
                 catch (Exception e)
                 {
-                    LoggerService.Log(LogSeverity.Warning, $"Failed to read localizations; generating a new one!\n{e}");
+                    _logger.Log(LogSeverity.Warning, $"Failed to read localizations; generating a new one!\n{e}");
                     CreateNewLocalization();
                 }
             else
                 CreateNewLocalization();
-        }
-
-        public static LocalizationService GetSingleton()
-        {
-            return _instance ??= new LocalizationService();
         }
 
         private void CreateNewLocalization()
@@ -40,7 +37,7 @@ namespace UNObot.Services
             _localizations = new Dictionary<string, string>();
             using var sw = new StreamWriter(LocalizationFile);
             sw.Write(JsonConvert.SerializeObject(_localizations));
-            LoggerService.Log(LogSeverity.Info, "Created empty localization file.");
+            _logger.Log(LogSeverity.Info, "Created empty localization file.");
         }
     }
 }

@@ -4,54 +4,36 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
+using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using UNObot.UNOCore;
 
 namespace UNObot.Services
 {
-    public static class UNODatabaseService
+    public static class DatabaseExtensions
     {
-        private static string _connString = "";
+        public static bool HasDBValue(this object item) => !DBNull.Value.Equals(item) && item != null;
+    }
+    
+    internal class UNODatabaseService
+    {
+        private readonly IConfiguration _config;
 
-        private static void GetConnectionString()
+        private string _connString = "";
+
+        private void GetConnectionString()
         {
-            using (var r = new StreamReader("config.json"))
-            {
-                var json = r.ReadToEnd();
-                var jObject = JObject.Parse(json);
-                if (jObject["connStr"] == null)
-                {
-                    LoggerService.Log(LogSeverity.Critical,
-                        "ERROR: Database string has not been written in config.json!\nIt must contain a connStr.");
-                    return;
-                }
-
-                _connString = (string) jObject["connStr"];
-            }
-
+            _connString = _config["connStr"];
             //ha, damn the limited encodings.
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             Encoding.GetEncoding("windows-1254");
         }
 
-        public static async Task CleanAll()
+        public UNODatabaseService(IConfiguration config)
         {
-            using (var r = new StreamReader("config.json"))
-            {
-                var json = await r.ReadToEndAsync();
-                var jObject = JObject.Parse(json);
-                if (jObject["version"] == null)
-                {
-                    LoggerService.Log(LogSeverity.Error,
-                        "ERROR: Version has not been written in config.json!\nIt must contain a version.");
-                    return;
-                }
-
-                Program.Version = (string) jObject["version"];
-                LoggerService.Log(LogSeverity.Info, $"Running {Program.Version}!");
-            }
-
+            _config = config;
             GetConnectionString();
             var parameters = new List<MySqlParameter>();
 
@@ -74,7 +56,7 @@ namespace UNObot.Services
             parameters.Add(p3);
             try
             {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
+                MySqlHelper.ExecuteNonQuery(_connString, commandText, parameters.ToArray());
             }
             catch (MySqlException ex)
             {
@@ -82,7 +64,7 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task<bool> IsServerInGame(ulong server)
+        public async Task<bool> IsServerInGame(ulong server)
         {
             var inGame = false;
             var parameters = new List<MySqlParameter>();
@@ -107,7 +89,7 @@ namespace UNObot.Services
             return inGame;
         }
 
-        public static async Task AddGame(ulong server)
+        public async Task AddGame(ulong server)
         {
             const string commandText = "INSERT IGNORE INTO Games (server) VALUES(?)";
             var parameters = new List<MySqlParameter>();
@@ -127,7 +109,7 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task UpdateDescription(ulong server, string text)
+        public async Task UpdateDescription(ulong server, string text)
         {
             const string commandText = "UPDATE Games SET description = ? WHERE server = ?";
             var parameters = new List<MySqlParameter>();
@@ -152,7 +134,7 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task<string> GetDescription(ulong server)
+        public async Task<string> GetDescription(ulong server)
         {
             const string commandText = "SELECT description FROM UNObot.Games WHERE server = ?";
             var description = "";
@@ -176,13 +158,13 @@ namespace UNObot.Services
             return description;
         }
 
-        public static async Task ResetGame(ulong server)
+        public async Task ResetGame(ulong server)
         {
             var parameters = new List<MySqlParameter>();
 
             const string commandText =
                 "UPDATE Games SET inGame = 0, currentCard = ?, `order` = 1, oneCardLeft = 0, queue = ?, description = null WHERE server = ?";
-            AfKtimer.DeleteTimer(server);
+            AFKTimerService.DeleteTimer(server);
             var p1 = new MySqlParameter
             {
                 Value = "[]"
@@ -208,7 +190,7 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task AddUser(ulong id, string username, ulong server)
+        public async Task AddUser(ulong id, string username, ulong server)
         {
             var parameters = new List<MySqlParameter>();
 
@@ -259,7 +241,7 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task AddUser(ulong id, string username)
+        public async Task AddUser(ulong id, string username)
         {
             var parameters = new List<MySqlParameter>();
 
@@ -290,7 +272,7 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task RemoveUser(ulong id)
+        public async Task RemoveUser(ulong id)
         {
             var parameters = new List<MySqlParameter>();
 
@@ -321,12 +303,12 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task AddGuild(ulong guild, ushort inGame)
+        public async Task AddGuild(ulong guild, ushort inGame)
         {
             await AddGuild(guild, inGame, 1);
         }
 
-        public static async Task AddGuild(ulong guild, ushort inGame, ushort gameMode)
+        public async Task AddGuild(ulong guild, ushort inGame, ushort gameMode)
         {
             /* 
              * 1 - In a regular game.
@@ -372,7 +354,7 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task<UNOCoreServices.GameMode> GetGameMode(ulong server)
+        public async Task<UNOCoreServices.GameMode> GetGameMode(ulong server)
         {
             var gamemode = UNOCoreServices.GameMode.Normal;
             var parameters = new List<MySqlParameter>();
@@ -399,7 +381,7 @@ namespace UNObot.Services
         }
 
         //NOTE THAT THIS GETS DIRECTLY FROM SERVER; YOU MUST AddPlayersToServer
-        public static async Task<Queue<ulong>> GetPlayers(ulong server)
+        public async Task<Queue<ulong>> GetPlayers(ulong server)
         {
             var parameters = new List<MySqlParameter>();
 
@@ -425,7 +407,7 @@ namespace UNObot.Services
             return players;
         }
 
-        public static async Task<ulong> GetUserServer(ulong player)
+        public async Task<ulong> GetUserServer(ulong player)
         {
             ulong server = 0;
             var parameters = new List<MySqlParameter>();
@@ -451,7 +433,7 @@ namespace UNObot.Services
             return server;
         }
 
-        public static async Task SetPlayers(ulong server, Queue<ulong> players)
+        public async Task SetPlayers(ulong server, Queue<ulong> players)
         {
             var json = JsonConvert.SerializeObject(players);
             var parameters = new List<MySqlParameter>();
@@ -478,7 +460,7 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task<Queue<ulong>> GetUsersWithServer(ulong server)
+        public async Task<Queue<ulong>> GetUsersWithServer(ulong server)
         {
             var players = new Queue<ulong>();
             var parameters = new List<MySqlParameter>();
@@ -503,7 +485,7 @@ namespace UNObot.Services
             return players;
         }
 
-        public static async Task<ulong> GetUNOPlayer(ulong server)
+        public async Task<ulong> GetUNOPlayer(ulong server)
         {
             ulong player = 0;
             var parameters = new List<MySqlParameter>();
@@ -530,7 +512,7 @@ namespace UNObot.Services
             return player;
         }
 
-        public static async Task SetUNOPlayer(ulong server, ulong player)
+        public async Task SetUNOPlayer(ulong server, ulong player)
         {
             var parameters = new List<MySqlParameter>();
 
@@ -557,7 +539,7 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task SetDefaultChannel(ulong server, ulong channel)
+        public async Task SetDefaultChannel(ulong server, ulong channel)
         {
             var parameters = new List<MySqlParameter>();
 
@@ -583,7 +565,7 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task SetHasDefaultChannel(ulong server, bool hasDefault)
+        public async Task SetHasDefaultChannel(ulong server, bool hasDefault)
         {
             var parameters = new List<MySqlParameter>();
 
@@ -609,7 +591,7 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task<bool> HasDefaultChannel(ulong server)
+        public async Task<bool> HasDefaultChannel(ulong server)
         {
             var yesOrNo = false;
             var parameters = new List<MySqlParameter>();
@@ -635,7 +617,7 @@ namespace UNObot.Services
             return yesOrNo;
         }
 
-        public static async Task<bool> ChannelEnforced(ulong server)
+        public async Task<bool> ChannelEnforced(ulong server)
         {
             var yesOrNo = false;
             var parameters = new List<MySqlParameter>();
@@ -661,7 +643,7 @@ namespace UNObot.Services
             return yesOrNo;
         }
 
-        public static async Task SetEnforceChannel(ulong server, bool enforce)
+        public async Task SetEnforceChannel(ulong server, bool enforce)
         {
             var parameters = new List<MySqlParameter>();
 
@@ -687,7 +669,7 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task<ulong> GetDefaultChannel(ulong server)
+        public async Task<ulong> GetDefaultChannel(ulong server)
         {
             ulong channel = 0;
             var parameters = new List<MySqlParameter>();
@@ -713,7 +695,7 @@ namespace UNObot.Services
             return channel;
         }
 
-        public static async Task<List<ulong>> GetAllowedChannels(ulong server)
+        public async Task<List<ulong>> GetAllowedChannels(ulong server)
         {
             var allowedChannels = new List<ulong>();
             var parameters = new List<MySqlParameter>();
@@ -739,7 +721,7 @@ namespace UNObot.Services
             return allowedChannels;
         }
 
-        public static async Task SetAllowedChannels(ulong server, List<ulong> allowedChannels)
+        public async Task SetAllowedChannels(ulong server, List<ulong> allowedChannels)
         {
             var parameters = new List<MySqlParameter>();
 
@@ -765,7 +747,7 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task<Card> GetCurrentCard(ulong server)
+        public async Task<Card> GetCurrentCard(ulong server)
         {
             var parameters = new List<MySqlParameter>();
 
@@ -791,7 +773,7 @@ namespace UNObot.Services
             return card;
         }
 
-        public static async Task SetCurrentCard(ulong server, Card card)
+        public async Task SetCurrentCard(ulong server, Card card)
         {
             var cardJson = JsonConvert.SerializeObject(card);
             var parameters = new List<MySqlParameter>();
@@ -818,7 +800,7 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task<bool> IsPlayerInGame(ulong player)
+        public async Task<bool> IsPlayerInGame(ulong player)
         {
             var yesOrNo = false;
             var parameters = new List<MySqlParameter>();
@@ -844,7 +826,7 @@ namespace UNObot.Services
             return yesOrNo;
         }
 
-        public static async Task<bool> IsPlayerInServerGame(ulong player, ulong server)
+        public async Task<bool> IsPlayerInServerGame(ulong player, ulong server)
         {
             var parameters = new List<MySqlParameter>();
 
@@ -870,7 +852,7 @@ namespace UNObot.Services
             return players.Contains(player);
         }
 
-        public static async Task<List<Card>> GetCards(ulong player)
+        public async Task<List<Card>> GetCards(ulong player)
         {
             var cards = new List<Card>();
             var parameters = new List<MySqlParameter>();
@@ -897,7 +879,7 @@ namespace UNObot.Services
             return cards;
         }
 
-        public static async Task<bool> UserExists(ulong player)
+        public async Task<bool> UserExists(ulong player)
         {
             var exists = false;
             var parameters = new List<MySqlParameter>();
@@ -923,7 +905,7 @@ namespace UNObot.Services
             return exists;
         }
 
-        public static async Task GetUsersAndAdd(ulong server)
+        public async Task GetUsersAndAdd(ulong server)
         {
             var players = await GetUsersWithServer(server);
             //slight randomization of order
@@ -951,7 +933,7 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task StarterCard(ulong server)
+        public async Task StarterCard(ulong server)
         {
             var players = await GetPlayers(server);
             foreach (var player in players)
@@ -960,7 +942,7 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task<int[]> GetStats(ulong player)
+        public async Task<int[]> GetStats(ulong player)
         {
             var parameters = new List<MySqlParameter>();
 
@@ -990,7 +972,7 @@ namespace UNObot.Services
             return stats;
         }
 
-        public static async Task<string> GetNote(ulong player)
+        public async Task<string> GetNote(ulong player)
         {
             var parameters = new List<MySqlParameter>();
 
@@ -1016,7 +998,7 @@ namespace UNObot.Services
             return message;
         }
 
-        public static async Task SetNote(ulong player, string note)
+        public async Task SetNote(ulong player, string note)
         {
             var parameters = new List<MySqlParameter>();
 
@@ -1042,7 +1024,7 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task RemoveNote(ulong player)
+        public async Task RemoveNote(ulong player)
         {
             var parameters = new List<MySqlParameter>();
 
@@ -1063,7 +1045,7 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task UpdateStats(ulong player, int mode)
+        public async Task UpdateStats(ulong player, int mode)
         {
             //1 is gamesJoined
             //2 is gamesPlayed
@@ -1091,14 +1073,14 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task AddCard(ulong player, params Card[] cardsAdd)
+        public async Task AddCard(ulong player, params Card[] cardsAdd)
         {
             var cards = await GetCards(player) ?? new List<Card>();
             cards.AddRange(cardsAdd);
             await SetCards(player, cards);
         }
 
-        private static async Task SetCards(ulong player, List<Card> cards)
+        private async Task SetCards(ulong player, List<Card> cards)
         {
             cards ??= new List<Card>();
             var json = JsonConvert.SerializeObject(cards);
@@ -1126,7 +1108,7 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task<char> GetPrefix(ulong server)
+        public async Task<char> GetPrefix(ulong server)
         {
             var prefix = '!';
             var parameters = new List<MySqlParameter>();
@@ -1152,7 +1134,7 @@ namespace UNObot.Services
             return prefix;
         }
 
-        public static async Task SetPrefix(ulong server, char prefix)
+        public async Task SetPrefix(ulong server, char prefix)
         {
             var parameters = new List<MySqlParameter>();
             const string commandText = "UPDATE Games SET commandPrefix = ? WHERE server = ?";
@@ -1177,7 +1159,7 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task<bool> RemoveCard(ulong player, Card card)
+        public async Task<bool> RemoveCard(ulong player, Card card)
         {
             var foundCard = false;
             var cards = await GetCards(player);
@@ -1223,7 +1205,7 @@ namespace UNObot.Services
             return true;
         }
 
-        public static async Task SetServerCards(ulong server, string text)
+        public async Task SetServerCards(ulong server, string text)
         {
             const string commandText = "UPDATE Games SET cards = ? WHERE server = ?";
             var parameters = new List<MySqlParameter>();
@@ -1249,7 +1231,7 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task<List<Card>> GetServerCards(ulong server)
+        public async Task<List<Card>> GetServerCards(ulong server)
         {
             var cards = new List<Card>();
             const string commandText = "SELECT cards FROM UNObot.Games WHERE server = ?";
@@ -1273,7 +1255,7 @@ namespace UNObot.Services
             return cards;
         }
 
-        public static async Task<string> GetMinecraftUser(ulong user)
+        public async Task<string> GetMinecraftUser(ulong user)
         {
             string username = null;
             var parameters = new List<MySqlParameter>();
@@ -1299,7 +1281,7 @@ namespace UNObot.Services
             return username;
         }
 
-        public static async Task<int> GetCardsDrawn(ulong server)
+        public async Task<int> GetCardsDrawn(ulong server)
         {
             var cardsDrawn = 0;
             var parameters = new List<MySqlParameter>();
@@ -1325,7 +1307,7 @@ namespace UNObot.Services
             return cardsDrawn;
         }
 
-        public static async Task SetCardsDrawn(ulong server, int count)
+        public async Task SetCardsDrawn(ulong server, int count)
         {
             const string commandText = "UPDATE Games SET cardsDrawn = ? WHERE server = ?";
             var parameters = new List<MySqlParameter>();
@@ -1350,7 +1332,7 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task AddWebhook(string key, ulong guild, ulong channel, string type = "bitbucket")
+        public async Task AddWebhook(string key, ulong guild, ulong channel, string type = "bitbucket")
         {
             const string commandText =
                 "INSERT INTO UNObot.Webhooks (webhookKey, channel, guild, type) VALUES (?, ?, ?, ?)";
@@ -1382,7 +1364,7 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task DeleteWebhook(string key)
+        public async Task DeleteWebhook(string key)
         {
             const string commandText = "DELETE FROM UNObot.Webhooks WHERE webhookKey = ?";
             var parameters = new List<MySqlParameter>();
@@ -1402,7 +1384,7 @@ namespace UNObot.Services
             }
         }
 
-        public static async Task<(ulong Guild, byte Type)> GetWebhook(ulong channel, string key)
+        public async Task<(ulong Guild, byte Type)> GetWebhook(ulong channel, string key)
         {
             const string commandText = "SELECT guild, type FROM UNObot.Webhooks WHERE channel = ? AND webhookKey = ?";
             ulong guild = 0;
@@ -1436,7 +1418,7 @@ namespace UNObot.Services
         }
 
         /*
-        public class Server
+        internal class Server
         {
             public bool InGame;
 
@@ -1511,6 +1493,5 @@ namespace UNObot.Services
             }
         }
         */
-        private static bool HasDBValue(this object item) => !DBNull.Value.Equals(item) && item != null;
     }
 }

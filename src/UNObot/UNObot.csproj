@@ -46,7 +46,10 @@
     <ProjectReference Include="..\UNObot.Plugins\UNObot.Plugins.csproj" />
   </ItemGroup>
   
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="xcopy /y &quot;$(SolutionDir)src\UNObot.Core\bin\Debug\netcoreapp3.1\*.dll&quot; &quot;$(ProjectDir)$(OutDir)plugins&quot;" />
+  <Target Name="CopyPlugins" AfterTargets="PostBuildEvent">
+    <ItemGroup>
+      <CorePlugins Include="$(SolutionDir)src\UNObot.Core\bin\Debug\netcoreapp3.1\*.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(CorePlugins)" DestinationFolder="$(ProjectDir)$(OutDir)plugins" SkipUnchangedFiles="true" />
   </Target>
 </Project>

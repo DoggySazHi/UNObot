@@ -29,12 +29,11 @@ namespace UNObot.Services
     
     public enum PluginStatus { Success = 0, Failed, NotFound, Conflict, AlreadyUnloaded, AlreadyLoaded }
     
-    public class PluginLoaderService
+    internal class PluginLoaderService
     {
-        private static PluginLoaderService _instance;
         private readonly bool _init;
 
-        public class PluginInfo
+        internal class PluginInfo
         {
             internal string FileName { get; }
             internal Assembly PluginAssembly { get; }
@@ -53,11 +52,6 @@ namespace UNObot.Services
         private List<PluginInfo> _plugins { get; }
 
         public IReadOnlyList<PluginInfo> Plugins => _plugins;
-
-        public static PluginLoaderService GetSingleton()
-        {
-            return _instance ??= new PluginLoaderService();
-        }
 
         private PluginLoaderService()
         {

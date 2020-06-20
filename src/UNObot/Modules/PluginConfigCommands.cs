@@ -7,13 +7,20 @@ using UNObot.Services;
 
 namespace UNObot.Modules
 {
-    public class PluginConfigCommands : ModuleBase<SocketCommandContext>
+    internal class PluginConfigCommands : ModuleBase<SocketCommandContext>
     {
+        private readonly PluginLoaderService _pluginService;
+
+        internal PluginConfigCommands(PluginLoaderService pluginService)
+        {
+            _pluginService = pluginService;
+        }
+        
         [Command("plugins", RunMode = RunMode.Async), Alias("pl")]
         [Help(new[] {".plugins"}, "Get all plugins loaded in the bot.", true, "UNObot 4.1.8")]
         public async Task Plugin()
         {
-            var plugins = PluginLoaderService.GetSingleton().Plugins;
+            var plugins = _pluginService.Plugins;
             if (plugins.Count > 0)
             {
                 var response = plugins.Aggregate($"Plugins loaded ({plugins.Count}): \n" + "```",
@@ -49,7 +56,7 @@ namespace UNObot.Modules
         private async Task LoadPlugin(string plugin)
         {
             var messageLoad = await ReplyAsync($"Loading {plugin}...");
-            var result = PluginLoaderService.GetSingleton().LoadPluginByName(plugin);
+            var result = _pluginService.LoadPluginByName(plugin);
             var message = $"Failed to load {plugin}.";
             switch (result)
             {
@@ -81,7 +88,7 @@ namespace UNObot.Modules
         private async Task UnloadPlugin(string plugin)
         {
             var messageUnload = await ReplyAsync($"Unloading {plugin}...");
-            var pluginList = PluginLoaderService.GetSingleton().Plugins.Where(o =>
+            var pluginList = _pluginService.Plugins.Where(o =>
                 o.Plugin.Name.Trim().Contains(plugin.Trim(), StringComparison.CurrentCultureIgnoreCase)).ToList();
             if (pluginList.Count == 0)
                 await messageUnload.ModifyAsync(o => o.Content = $"Failed to find {plugin}!");
@@ -93,7 +100,7 @@ namespace UNObot.Modules
             else
             {
                 var removePlugin = pluginList[0];
-                var result = await PluginLoaderService.GetSingleton().UnloadPlugin(removePlugin);
+                var result = await _pluginService.UnloadPlugin(removePlugin);
                 var message = $"Failed to unload {removePlugin.Plugin.Name}.";
                 switch (result)
                 {

@@ -7,7 +7,7 @@ using static UNObot.Services.IRCON;
 
 namespace UNObot.Interop
 {
-    public class RCONHelper : IRCON
+    internal class RCONHelper : IRCON
     {
         private readonly IntPtr _rconInstance;
 

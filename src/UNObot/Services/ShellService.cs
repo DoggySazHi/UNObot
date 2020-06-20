@@ -6,16 +6,22 @@ using Discord;
 
 namespace UNObot.Services
 {
-    public static class ShellService
+    internal class ShellService
     {
-        public static async Task<string> RunYtdl(string cmd)
+        private LoggerService _logger;
+        internal ShellService(LoggerService logger)
+        {
+            _logger = logger;
+        }
+        
+        internal async Task<string> RunYtdl(string cmd)
         {
             var result = new TaskCompletionSource<string>();
 
             new Thread(() =>
             {
                 var escapedArgs = cmd.Replace("\"", "\\\"");
-                LoggerService.Log(LogSeverity.Debug, escapedArgs);
+                _logger.Log(LogSeverity.Debug, escapedArgs);
 
                 var process = new Process
                 {
@@ -34,14 +40,14 @@ namespace UNObot.Services
             }).Start();
 
             var awaited = await result.Task;
-            LoggerService.Log(LogSeverity.Debug, $"Shell result: {awaited}");
+            _logger.Log(LogSeverity.Debug, $"Shell result: {awaited}");
             if (awaited == null)
                 throw new Exception("Shell failed!");
             return awaited;
         }
 
         // Should be a file path.
-        public static Process GetAudioStream(string path)
+        internal Process GetAudioStream(string path)
         {
             var ffmpeg = new ProcessStartInfo
             {
@@ -53,7 +59,7 @@ namespace UNObot.Services
             return Process.Start(ffmpeg);
         }
 
-        public static async Task<string> ConvertToMp3(string path)
+        internal async Task<string> ConvertToMp3(string path)
         {
             var result = new TaskCompletionSource<string>();
 
@@ -75,13 +81,13 @@ namespace UNObot.Services
             }).Start();
 
             var awaited = await result.Task;
-            LoggerService.Log(LogSeverity.Debug, $"Shell result: {awaited}");
+            _logger.Log(LogSeverity.Debug, $"Shell result: {awaited}");
             if (awaited == null)
                 throw new Exception("Shell failed!");
             return awaited;
         }
 
-        public static async Task<string> GitFetch()
+        internal async Task<string> GitFetch()
         {
             var result = new TaskCompletionSource<string>();
 
@@ -103,13 +109,13 @@ namespace UNObot.Services
             }).Start();
 
             var awaited = await result.Task;
-            LoggerService.Log(LogSeverity.Debug, $"Shell result: {awaited}");
+            _logger.Log(LogSeverity.Debug, $"Shell result: {awaited}");
             if (awaited == null)
                 throw new Exception("Shell failed!");
             return awaited;
         }
 
-        public static async Task<string> GitStatus()
+        internal async Task<string> GitStatus()
         {
             var result = new TaskCompletionSource<string>();
 
@@ -131,7 +137,7 @@ namespace UNObot.Services
             }).Start();
 
             var awaited = await result.Task;
-            LoggerService.Log(LogSeverity.Debug, $"Shell result: {awaited}");
+            _logger.Log(LogSeverity.Debug, $"Shell result: {awaited}");
             if (awaited == null)
                 throw new Exception("Shell failed!");
             return awaited;

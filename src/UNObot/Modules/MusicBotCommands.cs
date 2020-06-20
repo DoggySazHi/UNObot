@@ -6,8 +6,15 @@ using UNObot.Services;
 
 namespace UNObot.Modules
 {
-    public class MusicBotCommands : ModuleBase<SocketCommandContext>
+    internal class MusicBotCommands : ModuleBase<SocketCommandContext>
     {
+        private readonly MusicBotService _music;
+
+        internal MusicBotCommands(MusicBotService music)
+        {
+            _music = music;
+        }
+        
         [Command("playerplay", RunMode = RunMode.Async)]
         [Alias("playmusic", "pm")]
         [DisableDMs]
@@ -24,14 +31,11 @@ namespace UNObot.Modules
 
             var loading = await ReplyAsync("Loading music... (this may take a while, but not more than 10 seconds)");
 
-            var result = await MusicBotService.GetSingleton()
-                .AddList(Context.User.Id, Context.Guild.Id, link, audioChannel, Context.Channel);
+            var result = await _music.AddList(Context.User.Id, Context.Guild.Id, link, audioChannel, Context.Channel);
             if (result.Item1 == null)
-                result = await MusicBotService.GetSingleton()
-                    .Add(Context.User.Id, Context.Guild.Id, link, audioChannel, Context.Channel);
+                result = await _music.Add(Context.User.Id, Context.Guild.Id, link, audioChannel, Context.Channel);
             if (result.Item1 == null)
-                result = await MusicBotService.GetSingleton()
-                    .Search(Context.User.Id, Context.Guild.Id, link, audioChannel, Context.Channel);
+                result = await _music.Search(Context.User.Id, Context.Guild.Id, link, audioChannel, Context.Channel);
             if (result.Item1 == null)
             {
                 await loading.ModifyAsync(o => o.Content = $"Error: {result.Item2 ?? "I... don't know."}");
@@ -61,7 +65,7 @@ namespace UNObot.Modules
                 return;
             }
 
-            var result = await MusicBotService.GetSingleton().Play(Context.User.Id, Context.Guild.Id, audioChannel);
+            var result = await _music.Play(Context.User.Id, Context.Guild.Id, audioChannel);
             await ReplyAsync(result);
         }
 
@@ -81,13 +85,13 @@ namespace UNObot.Modules
 
             var loading = await ReplyAsync("Loading music... (this may take a while, but not more than 10 seconds)");
 
-            var result = await MusicBotService.GetSingleton().AddList(Context.User.Id, Context.Guild.Id, link,
+            var result = await _music.AddList(Context.User.Id, Context.Guild.Id, link,
                 audioChannel, Context.Channel, true);
             if (result.Item1 == null)
-                result = await MusicBotService.GetSingleton().Add(Context.User.Id, Context.Guild.Id, link, audioChannel,
+                result = await _music.Add(Context.User.Id, Context.Guild.Id, link, audioChannel,
                     Context.Channel, true);
             if (result.Item1 == null)
-                result = await MusicBotService.GetSingleton().Search(Context.User.Id, Context.Guild.Id, link,
+                result = await _music.Search(Context.User.Id, Context.Guild.Id, link,
                     audioChannel, Context.Channel, true);
             if (result.Item1 == null)
             {
@@ -119,7 +123,7 @@ namespace UNObot.Modules
                 return;
             }
 
-            var result = await MusicBotService.GetSingleton().Pause(Context.User.Id, Context.Guild.Id, audioChannel);
+            var result = await _music.Pause(Context.User.Id, Context.Guild.Id, audioChannel);
             await ReplyAsync(result);
         }
 
@@ -136,7 +140,7 @@ namespace UNObot.Modules
                 return;
             }
 
-            var result = await MusicBotService.GetSingleton().Shuffle(Context.User.Id, Context.Guild.Id, audioChannel);
+            var result = await _music.Shuffle(Context.User.Id, Context.Guild.Id, audioChannel);
             await ReplyAsync(result);
         }
 
@@ -152,7 +156,7 @@ namespace UNObot.Modules
                 return;
             }
 
-            var result = await MusicBotService.GetSingleton().Skip(Context.User.Id, Context.Guild.Id, audioChannel);
+            var result = await _music.Skip(Context.User.Id, Context.Guild.Id, audioChannel);
             if (!string.IsNullOrWhiteSpace(result))
                 await ReplyAsync(result);
         }
@@ -169,7 +173,7 @@ namespace UNObot.Modules
                 return;
             }
 
-            var result = await MusicBotService.GetSingleton()
+            var result = await _music
                 .ToggleLoop(Context.User.Id, Context.Guild.Id, audioChannel);
             await ReplyAsync(result);
         }
@@ -186,7 +190,7 @@ namespace UNObot.Modules
                 return;
             }
 
-            var result = await MusicBotService.GetSingleton()
+            var result = await _music
                 .ToggleLoopQueue(Context.User.Id, Context.Guild.Id, audioChannel);
             await ReplyAsync(result);
         }
@@ -204,7 +208,7 @@ namespace UNObot.Modules
                 return;
             }
 
-            var result = await MusicBotService.GetSingleton()
+            var result = await _music
                 .Disconnect(Context.User.Id, Context.Guild.Id, audioChannel).ConfigureAwait(true);
             await ReplyAsync(result).ConfigureAwait(false);
         }
@@ -215,7 +219,7 @@ namespace UNObot.Modules
         [Help(new[] {".playernp"}, "Get the song playing.", true, "UNObot 3.2 Beta 2")]
         public async Task NowPlaying()
         {
-            var result = MusicBotService.GetSingleton().GetNowPlaying(Context.Guild.Id);
+            var result = _music.GetNowPlaying(Context.Guild.Id);
             if (!string.IsNullOrWhiteSpace(result.Item2))
                 await ReplyAsync($"Error: {result.Item2}");
             else
@@ -229,7 +233,7 @@ namespace UNObot.Modules
             "UNObot 3.2 Beta 2")]
         public async Task Queue()
         {
-            var result = MusicBotService.GetSingleton().GetMusicQueue(Context.Guild.Id, 1);
+            var result = _music.GetMusicQueue(Context.Guild.Id, 1);
             if (!string.IsNullOrWhiteSpace(result.Item2))
                 await ReplyAsync($"Error: {result.Item2}").ConfigureAwait(false);
             else
@@ -241,7 +245,7 @@ namespace UNObot.Modules
         [DisableDMs]
         public async Task Queue(int page)
         {
-            var result = MusicBotService.GetSingleton().GetMusicQueue(Context.Guild.Id, page);
+            var result = _music.GetMusicQueue(Context.Guild.Id, page);
             if (!string.IsNullOrWhiteSpace(result.Item2))
                 await ReplyAsync($"Error: {result.Item2}").ConfigureAwait(false);
             else
@@ -261,7 +265,7 @@ namespace UNObot.Modules
                 return;
             }
 
-            var result = await MusicBotService.GetSingleton()
+            var result = await _music
                 .Remove(Context.User.Id, Context.Guild.Id, audioChannel, index);
             await ReplyAsync(result);
         }

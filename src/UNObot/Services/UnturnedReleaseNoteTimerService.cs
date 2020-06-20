@@ -6,9 +6,8 @@ using Discord;
 
 namespace UNObot.Services
 {
-    public class UnturnedReleaseNotes : IDisposable
+    internal class UnturnedReleaseNotes : IDisposable
     {
-        private static UnturnedReleaseNotes _instance;
         private readonly Timer _checkInterval;
         private string _lastLink;
 
@@ -44,11 +43,6 @@ namespace UNObot.Services
             {
                 LoggerService.Log(LogSeverity.Verbose, "No updates found.");
             }
-        }
-
-        public static UnturnedReleaseNotes GetSingleton()
-        {
-            return _instance ??= new UnturnedReleaseNotes();
         }
 
         public static string GetLatestLink()

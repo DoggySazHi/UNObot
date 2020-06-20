@@ -2,7 +2,7 @@
 
 namespace UNObot.TerminalCore
 {
-    public static class ColorConsole
+    static class ColorConsole
     {
         [Obsolete("Use a ConsoleColor instead, it's more reliable.")]
         private static void Write(string text, string colorText, string bgColor)
