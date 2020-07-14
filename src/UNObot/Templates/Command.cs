@@ -1,7 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace UNObot.UNOCore
+namespace UNObot.Templates
 {
     internal class Command
     {
@@ -31,5 +32,6 @@ namespace UNObot.UNOCore
         internal bool Active { get; set; }
         internal string Version { get; set; }
         internal bool DisableDMs { get; set; }
+        internal IServiceProvider Services { get; set; }
     }
 }

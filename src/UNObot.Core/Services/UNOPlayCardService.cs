@@ -1,8 +1,8 @@
 using System.Threading.Tasks;
 using Discord.Commands;
-using UNObot.UNOCore;
+using UNObot.Core.UNOCore;
 
-namespace UNObot.Services
+namespace UNObot.Core.Services
 {
     internal class UNOPlayCardService
     {

@@ -4,9 +4,10 @@ using System.Threading.Tasks;
 using System.Timers;
 using Discord;
 using Discord.WebSocket;
+using UNObot.Plugins.Helpers;
 using Timer = System.Timers.Timer;
 
-namespace UNObot.Services
+namespace UNObot.Core.Services
 {
     internal class AFKTimerService
     {
@@ -83,7 +84,6 @@ namespace UNObot.Services
             var currentPlayer = await _queue.GetCurrentPlayer(serverId);
             await _db.RemoveUser(currentPlayer);
             await _queue.DropFrontPlayer(serverId);
-            _logger.Log(LogSeverity.Debug, "SayPlayer");
             await SendMessage($"<@{currentPlayer}>, you have been AFK removed.\n", serverId);
             await SendDM("You have been AFK removed.", currentPlayer);
             if (await _queue.PlayerCount(serverId) == 0)
@@ -116,8 +116,8 @@ namespace UNObot.Services
         {
             var channel = _client.GetGuild(server).DefaultChannel.Id;
             _logger.Log(LogSeverity.Info, $"Channel: {channel}");
-            if (await _db.HasDefaultChannel(server))
-                channel = await _db.GetDefaultChannel(server);
+            if (await DatabaseExtensions.HasDefaultChannel(_db.ConnString, server))
+                channel = await DatabaseExtensions.GetDefaultChannel(_db.ConnString, server);
             _logger.Log(LogSeverity.Info, $"Channel: {channel}");
 
             try

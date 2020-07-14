@@ -10,7 +10,7 @@ using YoutubeExplode.Playlists;
 using YoutubeExplode.Videos;
 using YoutubeExplode.Videos.Streams;
 
-namespace UNObot.Services
+namespace UNObot.MusicBot.Services
 {
     internal class YoutubeService
     {
@@ -25,8 +25,7 @@ namespace UNObot.Services
 
         private readonly YoutubeClient _client;
         private readonly YoutubeConverter _converter;
-
-        private LoggerService _logger;
+        private readonly LoggerService _logger;
 
         public YoutubeService(LoggerService logger)
         {

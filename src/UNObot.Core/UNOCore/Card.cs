@@ -1,14 +1,16 @@
 ﻿using System;
+using Newtonsoft.Json;
 using UNObot.Plugins.TerminalCore;
 
-namespace UNObot.UNOCore
+namespace UNObot.Core.UNOCore
 {
-    internal class Card
+    public class Card
     {
-        internal readonly string Color;
-        internal readonly string Value;
+        public readonly string Color;
+        public readonly string Value;
 
-        internal Card(string color, string value)
+        [JsonConstructor]
+        public Card(string color, string value)
         {
             Color = color;
             Value = value;
@@ -30,7 +32,7 @@ namespace UNObot.UNOCore
             return HashCode.Combine(Color, Value);
         }
 
-        internal static Card RandomCard()
+        public static Card RandomCard()
         {
             var lockObject = new object();
             int myColor;
@@ -82,7 +84,7 @@ namespace UNObot.UNOCore
             return new Card(color, value);
         }
         
-        internal static Card[] RandomCard(int count)
+        public static Card[] RandomCard(int count)
         {
             var cards = new Card[count];
             for (var i = 0; i < count; i++)

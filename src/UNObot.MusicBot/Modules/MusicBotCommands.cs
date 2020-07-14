@@ -2,9 +2,9 @@
 using Discord;
 using Discord.Commands;
 using UNObot.Plugins.Attributes;
-using UNObot.Services;
+using UNObot.MusicBot.Services;
 
-namespace UNObot.Modules
+namespace UNObot.MusicBot.Modules
 {
     public class MusicBotCommands : ModuleBase<SocketCommandContext>
     {

@@ -1,31 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
+using UNObot.Core.UNOCore;
 using UNObot.Plugins.TerminalCore;
-using UNObot.UNOCore;
+using static UNObot.Plugins.Helpers.DatabaseExtensions;
 
-namespace UNObot.Services
+namespace UNObot.Core.Services
 {
-    internal static class DatabaseExtensions
-    {
-        internal static bool HasDBValue(this object item) => !DBNull.Value.Equals(item) && item != null;
-    }
-    
-    internal class UNODatabaseService
+    public class UNODatabaseService
     {
         private readonly IConfiguration _config;
         private readonly LoggerService _logger;
 
-        private string _connString = "";
+        internal string ConnString { get; private set; }
 
         private void GetConnectionString()
         {
-            _connString = _config["connStr"];
+            ConnString = _config["connStr"];
             //ha, damn the limited encodings.
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             Encoding.GetEncoding("windows-1254");
@@ -36,6 +31,11 @@ namespace UNObot.Services
             _config = config;
             _logger = logger;
             GetConnectionString();
+            Reset();
+        }
+
+        private void Reset()
+        {
             var parameters = new List<MySqlParameter>();
 
             const string commandText =
@@ -57,7 +57,7 @@ namespace UNObot.Services
             parameters.Add(p3);
             try
             {
-                MySqlHelper.ExecuteNonQuery(_connString, commandText, parameters.ToArray());
+                MySqlHelper.ExecuteNonQuery(ConnString, commandText, parameters.ToArray());
             }
             catch (MySqlException ex)
             {
@@ -79,7 +79,7 @@ namespace UNObot.Services
             parameters.Add(p1);
             try
             {
-                var result = await MySqlHelper.ExecuteScalarAsync(_connString, commandText, parameters.ToArray());
+                var result = await MySqlHelper.ExecuteScalarAsync(ConnString, commandText, parameters.ToArray());
                 inGame = result.HasDBValue() && (byte) result == 1;
             }
             catch (MySqlException ex)
@@ -102,7 +102,7 @@ namespace UNObot.Services
 
             try
             {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, commandText, parameters.ToArray());
             }
             catch (MySqlException ex)
             {
@@ -127,7 +127,7 @@ namespace UNObot.Services
 
             try
             {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, commandText, parameters.ToArray());
             }
             catch (MySqlException ex)
             {
@@ -147,7 +147,7 @@ namespace UNObot.Services
             parameters.Add(p1);
             try
             {
-                var result = await MySqlHelper.ExecuteScalarAsync(_connString, commandText, parameters.ToArray());
+                var result = await MySqlHelper.ExecuteScalarAsync(ConnString, commandText, parameters.ToArray());
                 if(result.HasDBValue()) 
                     description = (string) result;
             }
@@ -182,7 +182,7 @@ namespace UNObot.Services
             parameters.Add(p3);
             try
             {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, commandText, parameters.ToArray());
             }
             catch (MySqlException ex)
             {
@@ -233,7 +233,7 @@ namespace UNObot.Services
             parameters.Add(p7);
             try
             {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, commandText, parameters.ToArray());
             }
             catch (MySqlException ex)
             {
@@ -264,7 +264,7 @@ namespace UNObot.Services
             parameters.Add(p3);
             try
             {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, commandText, parameters.ToArray());
             }
             catch (MySqlException ex)
             {
@@ -277,11 +277,10 @@ namespace UNObot.Services
             var parameters = new List<MySqlParameter>();
 
             const string commandText =
-                "INSERT INTO Players (userid, inGame, cards, server) VALUES(@id, 0, ?, null) ON DUPLICATE KEY UPDATE inGame = 0, cards = ?, server = null";
+                "INSERT INTO Players (userid, inGame, cards, server) VALUES(?, 0, ?, null) ON DUPLICATE KEY UPDATE inGame = 0, cards = ?, server = null";
             var p1 = new MySqlParameter
             {
                 Value = id,
-                ParameterName = "id"
             };
             parameters.Add(p1);
             var p2 = new MySqlParameter
@@ -296,7 +295,7 @@ namespace UNObot.Services
             parameters.Add(p3);
             try
             {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, commandText, parameters.ToArray());
             }
             catch (MySqlException ex)
             {
@@ -347,7 +346,7 @@ namespace UNObot.Services
             parameters.Add(p5);
             try
             {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, commandText, parameters.ToArray());
             }
             catch (MySqlException ex)
             {
@@ -369,7 +368,7 @@ namespace UNObot.Services
             parameters.Add(p1);
             try
             {
-                var result = await MySqlHelper.ExecuteScalarAsync(_connString, commandText, parameters.ToArray());
+                var result = await MySqlHelper.ExecuteScalarAsync(ConnString, commandText, parameters.ToArray());
                 if (result.HasDBValue())
                     gamemode = (GameMode) result;
             }
@@ -396,7 +395,7 @@ namespace UNObot.Services
             var players = new Queue<ulong>();
             try
             {
-                var result = await MySqlHelper.ExecuteScalarAsync(_connString, commandText, parameters.ToArray());
+                var result = await MySqlHelper.ExecuteScalarAsync(ConnString, commandText, parameters.ToArray());
                 if(result.HasDBValue())
                     players = JsonConvert.DeserializeObject<Queue<ulong>>((string) result);
             }
@@ -422,7 +421,7 @@ namespace UNObot.Services
             parameters.Add(p1);
             try
             {
-                var result = await MySqlHelper.ExecuteScalarAsync(_connString, commandText, parameters.ToArray());
+                var result = await MySqlHelper.ExecuteScalarAsync(ConnString, commandText, parameters.ToArray());
                 if (result.HasDBValue())
                     server = (ulong) result;
             }
@@ -453,7 +452,7 @@ namespace UNObot.Services
             parameters.Add(p2);
             try
             {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, commandText, parameters.ToArray());
             }
             catch (MySqlException ex)
             {
@@ -473,7 +472,7 @@ namespace UNObot.Services
                 Value = server
             };
             parameters.Add(p1);
-            await using var dr = await MySqlHelper.ExecuteReaderAsync(_connString, commandText, parameters.ToArray());
+            await using var dr = await MySqlHelper.ExecuteReaderAsync(ConnString, commandText, parameters.ToArray());
             try
             {
                 while (dr.Read()) players.Enqueue(dr.GetUInt64(0));
@@ -501,7 +500,7 @@ namespace UNObot.Services
             
             try
             {
-                var result = await MySqlHelper.ExecuteScalarAsync(_connString, commandText, parameters.ToArray());
+                var result = await MySqlHelper.ExecuteScalarAsync(ConnString, commandText, parameters.ToArray());
                 if (result.HasDBValue())
                     player = (ulong) result;
             }
@@ -532,215 +531,7 @@ namespace UNObot.Services
             parameters.Add(p2);
             try
             {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
-            }
-            catch (MySqlException ex)
-            {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
-            }
-        }
-
-        internal async Task SetDefaultChannel(ulong server, ulong channel)
-        {
-            var parameters = new List<MySqlParameter>();
-
-            const string commandText = "UPDATE Games SET playChannel = ? WHERE server = ?";
-
-            var p1 = new MySqlParameter
-            {
-                Value = channel
-            };
-            parameters.Add(p1);
-            var p2 = new MySqlParameter
-            {
-                Value = server
-            };
-            parameters.Add(p2);
-            try
-            {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
-            }
-            catch (MySqlException ex)
-            {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
-            }
-        }
-
-        internal async Task SetHasDefaultChannel(ulong server, bool hasDefault)
-        {
-            var parameters = new List<MySqlParameter>();
-
-            const string commandText = "UPDATE Games SET hasDefaultChannel = ? WHERE server = ?";
-
-            var p1 = new MySqlParameter
-            {
-                Value = hasDefault
-            };
-            parameters.Add(p1);
-            var p2 = new MySqlParameter
-            {
-                Value = server
-            };
-            parameters.Add(p2);
-            try
-            {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
-            }
-            catch (MySqlException ex)
-            {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
-            }
-        }
-
-        internal async Task<bool> HasDefaultChannel(ulong server)
-        {
-            var yesOrNo = false;
-            var parameters = new List<MySqlParameter>();
-
-            const string commandText = "SELECT hasDefaultChannel FROM UNObot.Games WHERE server = ?";
-
-            var p1 = new MySqlParameter
-            {
-                Value = server
-            };
-            parameters.Add(p1);
-            try
-            {
-                var result = await MySqlHelper.ExecuteScalarAsync(_connString, commandText, parameters.ToArray());
-                if (result.HasDBValue())
-                    yesOrNo = (byte) result == 1;
-            }
-            catch (MySqlException ex)
-            {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
-            }
-
-            return yesOrNo;
-        }
-
-        internal async Task<bool> ChannelEnforced(ulong server)
-        {
-            var yesOrNo = false;
-            var parameters = new List<MySqlParameter>();
-
-            const string commandText = "SELECT enforceChannel FROM UNObot.Games WHERE server = ?";
-
-            var p1 = new MySqlParameter
-            {
-                Value = server
-            };
-            parameters.Add(p1);
-            try
-            {
-                var result = await MySqlHelper.ExecuteScalarAsync(_connString, commandText, parameters.ToArray());
-                if (result.HasDBValue())
-                    yesOrNo = (byte) result == 1;
-            }
-            catch (MySqlException ex)
-            {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
-            }
-
-            return yesOrNo;
-        }
-
-        internal async Task SetEnforceChannel(ulong server, bool enforce)
-        {
-            var parameters = new List<MySqlParameter>();
-
-            const string commandText = "UPDATE Games SET enforceChannel = ? WHERE server = ?";
-
-            var p1 = new MySqlParameter
-            {
-                Value = enforce
-            };
-            parameters.Add(p1);
-            var p2 = new MySqlParameter
-            {
-                Value = server
-            };
-            parameters.Add(p2);
-            try
-            {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
-            }
-            catch (MySqlException ex)
-            {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
-            }
-        }
-
-        internal async Task<ulong> GetDefaultChannel(ulong server)
-        {
-            ulong channel = 0;
-            var parameters = new List<MySqlParameter>();
-
-            const string commandText = "SELECT playChannel FROM UNObot.Games WHERE server = ?";
-
-            var p1 = new MySqlParameter
-            {
-                Value = server
-            };
-            parameters.Add(p1);
-            try
-            {
-                var result = await MySqlHelper.ExecuteScalarAsync(_connString, commandText, parameters.ToArray());
-                if (result.HasDBValue())
-                    channel = (ulong) result;
-            }
-            catch (MySqlException ex)
-            {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
-            }
-
-            return channel;
-        }
-
-        internal async Task<List<ulong>> GetAllowedChannels(ulong server)
-        {
-            var allowedChannels = new List<ulong>();
-            var parameters = new List<MySqlParameter>();
-
-            const string commandText = "SELECT allowedChannels FROM UNObot.Games WHERE server = ?";
-
-            var p1 = new MySqlParameter
-            {
-                Value = server
-            };
-            parameters.Add(p1);
-            try
-            {
-                var result = await MySqlHelper.ExecuteScalarAsync(_connString, commandText, parameters.ToArray());
-                if(result.HasDBValue())
-                    allowedChannels = JsonConvert.DeserializeObject<List<ulong>>((string) result);
-            }
-            catch (MySqlException ex)
-            {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
-            }
-
-            return allowedChannels;
-        }
-
-        internal async Task SetAllowedChannels(ulong server, List<ulong> allowedChannels)
-        {
-            var parameters = new List<MySqlParameter>();
-
-            const string commandText = "UPDATE Games SET allowedChannels = ? WHERE server = ?";
-
-            var p1 = new MySqlParameter
-            {
-                Value = JsonConvert.SerializeObject(allowedChannels)
-            };
-            parameters.Add(p1);
-            var p2 = new MySqlParameter
-            {
-                Value = server
-            };
-            parameters.Add(p2);
-            try
-            {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, commandText, parameters.ToArray());
             }
             catch (MySqlException ex)
             {
@@ -763,7 +554,7 @@ namespace UNObot.Services
             Card card = null;
             try
             {
-                var result = await MySqlHelper.ExecuteScalarAsync(_connString, commandText, parameters.ToArray());
+                var result = await MySqlHelper.ExecuteScalarAsync(ConnString, commandText, parameters.ToArray());
                 if(result.HasDBValue())
                     card = JsonConvert.DeserializeObject<Card>((string) result);
             }
@@ -794,7 +585,7 @@ namespace UNObot.Services
             parameters.Add(p2);
             try
             {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, commandText, parameters.ToArray());
             }
             catch (MySqlException ex)
             {
@@ -816,7 +607,7 @@ namespace UNObot.Services
             parameters.Add(p1);
             try
             {
-                var result = await MySqlHelper.ExecuteScalarAsync(_connString, commandText, parameters.ToArray());
+                var result = await MySqlHelper.ExecuteScalarAsync(ConnString, commandText, parameters.ToArray());
                 if (result.HasDBValue())
                     yesOrNo = (byte) result == 1;
             }
@@ -842,7 +633,7 @@ namespace UNObot.Services
             parameters.Add(p1);
             try
             {
-                var result = await MySqlHelper.ExecuteScalarAsync(_connString, commandText, parameters.ToArray());
+                var result = await MySqlHelper.ExecuteScalarAsync(ConnString, commandText, parameters.ToArray());
                 if(result.HasDBValue())
                     players = JsonConvert.DeserializeObject<Queue<ulong>>((string) result);
             }
@@ -866,10 +657,10 @@ namespace UNObot.Services
                 Value = player
             };
             parameters.Add(p1);
-            await using var dr = await MySqlHelper.ExecuteReaderAsync(_connString, commandText, parameters.ToArray());
+            await using var dr = await MySqlHelper.ExecuteReaderAsync(ConnString, commandText, parameters.ToArray());
             try
             {
-                var result = await MySqlHelper.ExecuteScalarAsync(_connString, commandText, parameters.ToArray());
+                var result = await MySqlHelper.ExecuteScalarAsync(ConnString, commandText, parameters.ToArray());
                 if (result.HasDBValue())
                     cards = JsonConvert.DeserializeObject<List<Card>>((string) result);
             }
@@ -895,7 +686,7 @@ namespace UNObot.Services
             parameters.Add(p1);
             try
             {
-                var result = await MySqlHelper.ExecuteScalarAsync(_connString, commandText, parameters.ToArray());
+                var result = await MySqlHelper.ExecuteScalarAsync(ConnString, commandText, parameters.ToArray());
                 if (result.HasDBValue())
                     exists = (int) result == 1;
             }
@@ -927,7 +718,7 @@ namespace UNObot.Services
             parameters.Add(p2);
             try
             {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, commandText, parameters.ToArray());
             }
             catch (MySqlException ex)
             {
@@ -956,7 +747,7 @@ namespace UNObot.Services
             };
             parameters.Add(p1);
             int[] stats = {0, 0, 0};
-            await using var dr = await MySqlHelper.ExecuteReaderAsync(_connString, commandText, parameters.ToArray());
+            await using var dr = await MySqlHelper.ExecuteReaderAsync(ConnString, commandText, parameters.ToArray());
             try
             {
                 while (dr.Read())
@@ -988,7 +779,7 @@ namespace UNObot.Services
             string message = null;
             try
             {
-                var result = await MySqlHelper.ExecuteScalarAsync(_connString, commandText, parameters.ToArray());
+                var result = await MySqlHelper.ExecuteScalarAsync(ConnString, commandText, parameters.ToArray());
                 if (result.HasDBValue())
                     message = (string) result;
             }
@@ -1018,7 +809,7 @@ namespace UNObot.Services
             parameters.Add(p2);
             try
             {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, commandText, parameters.ToArray());
             }
             catch (MySqlException ex)
             {
@@ -1039,7 +830,7 @@ namespace UNObot.Services
             parameters.Add(p1);
             try
             {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, commandText, parameters.ToArray());
             }
             catch (MySqlException ex)
             {
@@ -1067,7 +858,7 @@ namespace UNObot.Services
             parameters.Add(p1);
             try
             {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, commandText, parameters.ToArray());
             }
             catch (MySqlException ex)
             {
@@ -1102,7 +893,7 @@ namespace UNObot.Services
             parameters.Add(p2);
             try
             {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, commandText, parameters.ToArray());
             }
             catch (MySqlException ex)
             {
@@ -1124,7 +915,7 @@ namespace UNObot.Services
             parameters.Add(p1);
             try
             {
-                var result = await MySqlHelper.ExecuteScalarAsync(_connString, commandText, parameters.ToArray());
+                var result = await MySqlHelper.ExecuteScalarAsync(ConnString, commandText, parameters.ToArray());
                 if (result.HasDBValue())
                     prefix = (char) result;
             }
@@ -1153,7 +944,7 @@ namespace UNObot.Services
             parameters.Add(p2);
             try
             {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, commandText, parameters.ToArray());
             }
             catch (MySqlException ex)
             {
@@ -1197,7 +988,7 @@ namespace UNObot.Services
             parameters.Add(p2);
             try
             {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, commandText, parameters.ToArray());
             }
             catch (MySqlException ex)
             {
@@ -1225,7 +1016,7 @@ namespace UNObot.Services
 
             try
             {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, commandText, parameters.ToArray());
             }
             catch (MySqlException ex)
             {
@@ -1245,7 +1036,7 @@ namespace UNObot.Services
             parameters.Add(p1);
             try
             {
-                var result = await MySqlHelper.ExecuteScalarAsync(_connString, commandText, parameters.ToArray());
+                var result = await MySqlHelper.ExecuteScalarAsync(ConnString, commandText, parameters.ToArray());
                 if (result.HasDBValue())
                     cards = JsonConvert.DeserializeObject<List<Card>>((string) result);
             }
@@ -1255,32 +1046,6 @@ namespace UNObot.Services
             }
 
             return cards;
-        }
-
-        internal async Task<string> GetMinecraftUser(ulong user)
-        {
-            string username = null;
-            var parameters = new List<MySqlParameter>();
-
-            const string commandText = "SELECT minecraftUsername FROM UNObot.Players WHERE userid = ?";
-
-            var p1 = new MySqlParameter
-            {
-                Value = user
-            };
-            parameters.Add(p1);
-            try
-            {
-                var result = await MySqlHelper.ExecuteScalarAsync(_connString, commandText, parameters.ToArray());
-                if (result.HasDBValue())
-                    username = (string) result;
-            }
-            catch (MySqlException ex)
-            {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
-            }
-
-            return username;
         }
 
         internal async Task<int> GetCardsDrawn(ulong server)
@@ -1297,7 +1062,7 @@ namespace UNObot.Services
             parameters.Add(p1);
             try
             {
-                var result = await MySqlHelper.ExecuteScalarAsync(_connString, commandText, parameters.ToArray());
+                var result = await MySqlHelper.ExecuteScalarAsync(ConnString, commandText, parameters.ToArray());
                 if (result.HasDBValue())
                     cardsDrawn = (int) result;
             }
@@ -1326,97 +1091,12 @@ namespace UNObot.Services
 
             try
             {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
+                await MySqlHelper.ExecuteNonQueryAsync(ConnString, commandText, parameters.ToArray());
             }
             catch (MySqlException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
-        }
-
-        internal async Task AddWebhook(string key, ulong guild, ulong channel, string type = "bitbucket")
-        {
-            const string commandText =
-                "INSERT INTO UNObot.Webhooks (webhookKey, channel, guild, type) VALUES (?, ?, ?, ?)";
-
-            var p1 = new MySqlParameter
-            {
-                Value = key.Substring(0, 50)
-            };
-            var p2 = new MySqlParameter
-            {
-                Value = channel
-            };
-            var p3 = new MySqlParameter
-            {
-                Value = guild
-            };
-            var p4 = new MySqlParameter
-            {
-                Value = type
-            };
-
-            try
-            {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, p1, p2, p3, p4);
-            }
-            catch (MySqlException ex)
-            {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
-            }
-        }
-
-        internal async Task DeleteWebhook(string key)
-        {
-            const string commandText = "DELETE FROM UNObot.Webhooks WHERE webhookKey = ?";
-            var parameters = new List<MySqlParameter>();
-            var p1 = new MySqlParameter
-            {
-                Value = key.Substring(0, Math.Min(key.Length, 50))
-            };
-            parameters.Add(p1);
-
-            try
-            {
-                await MySqlHelper.ExecuteNonQueryAsync(_connString, commandText, parameters.ToArray());
-            }
-            catch (MySqlException ex)
-            {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
-            }
-        }
-
-        internal async Task<(ulong Guild, byte Type)> GetWebhook(ulong channel, string key)
-        {
-            const string commandText = "SELECT guild, type FROM UNObot.Webhooks WHERE channel = ? AND webhookKey = ?";
-            ulong guild = 0;
-            byte type = 0;
-            var parameters = new List<MySqlParameter>();
-            var p1 = new MySqlParameter
-            {
-                Value = channel
-            };
-            var p2 = new MySqlParameter
-            {
-                Value = key.Substring(0, Math.Min(key.Length, 50))
-            };
-            parameters.Add(p1);
-            parameters.Add(p2);
-            await using var dr = await MySqlHelper.ExecuteReaderAsync(_connString, commandText, parameters.ToArray());
-            try
-            {
-                while (dr.Read())
-                {
-                    guild = dr.GetUInt64(0);
-                    type = dr.GetByte(1);
-                }
-            }
-            catch (MySqlException ex)
-            {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
-            }
-
-            return (guild, type);
         }
 
         /*

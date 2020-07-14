@@ -3,13 +3,13 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
 
-namespace UNObot.Services
+namespace UNObot.Core.Services
 {
-    internal class InputHandlerService
+    public class InputHandlerService
     {
         private readonly LoggerService _logger;
         private readonly DiscordSocketClient _client;
-        internal InputHandlerService(LoggerService logger, DiscordSocketClient client)
+        public InputHandlerService(LoggerService logger, DiscordSocketClient client)
         {
             _logger = logger;
             _client = client;

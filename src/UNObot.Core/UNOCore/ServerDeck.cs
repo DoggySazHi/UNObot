@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using UNObot.Plugins.TerminalCore;
 
-namespace UNObot.UNOCore
+namespace UNObot.Core.UNOCore
 {
-    internal class ServerDeck
+    public class ServerDeck
     {
         private static readonly List<string> Colors = new List<string> {"Red", "Green", "Blue", "Yellow"};
 
@@ -12,7 +12,7 @@ namespace UNObot.UNOCore
 
         private readonly List<ServerCard> _cards;
 
-        internal ServerDeck()
+        public ServerDeck()
         {
             _cards = new List<ServerCard>();
             //smells like spaghetti code
@@ -29,7 +29,7 @@ namespace UNObot.UNOCore
             }
         }
 
-        internal void Shuffle()
+        public void Shuffle()
         {
             _cards.Shuffle();
         }

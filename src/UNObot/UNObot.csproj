@@ -24,15 +24,15 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.0.35" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.5" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="3.1.5" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.5" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.5" />
-    <PackageReference Include="MySql.Data" Version="8.0.20" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.6" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="3.1.6" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.6" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.6" />
+    <PackageReference Include="MySql.Data" Version="8.0.21" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="System.ServiceModel.Syndication" Version="4.7.0" />
     <PackageReference Include="Discord.Net" Version="2.2.0" />
-    <PackageReference Include="YoutubeExplode" Version="5.1.0" />
+    <PackageReference Include="YoutubeExplode" Version="5.1.1" />
     <PackageReference Include="System.Linq.Async" Version="4.1.1" />
     <PackageReference Include="YoutubeExplode.Converter" Version="1.5.1" />
   </ItemGroup>
@@ -50,7 +50,9 @@
   <Target Name="CopyPlugins" AfterTargets="PostBuildEvent">
     <ItemGroup>
       <CorePlugins Include="$(SolutionDir)src\UNObot.Core\bin\Debug\netcoreapp3.1\*.dll" />
+      <MusicBotPlugins Include="$(SolutionDir)src\UNObot.MusicBot\bin\Debug\netcoreapp3.1\*.dll" />
     </ItemGroup>
-    <Copy SourceFiles="@(CorePlugins)" DestinationFolder="$(ProjectDir)$(OutDir)plugins" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(CorePlugins)" DestinationFolder="$(ProjectDir)$(OutDir)plugins" SkipUnchangedFiles="false" />
+    <Copy SourceFiles="@(MusicBotPlugins)" DestinationFolder="$(ProjectDir)$(OutDir)plugins" SkipUnchangedFiles="false" />
   </Target>
 </Project>

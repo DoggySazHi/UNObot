@@ -1,9 +1,9 @@
 ﻿using System;
 
-namespace UNObot.UNOCore
+namespace UNObot.Core.UNOCore
 {
     [Flags]
-    internal enum GameMode : byte
+    public enum GameMode : byte
     {
         Normal = 0,
 

@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UNObot.Core", "src\UNObot.C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UNObot.Plugins", "src\UNObot.Plugins\UNObot.Plugins.csproj", "{849C7A70-7B57-4093-B473-F34926704F62}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UNObot.MusicBot", "src\UNObot.MusicBot\UNObot.MusicBot.csproj", "{F158856B-DC2D-47F3-AE67-71B0F8F49509}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -59,6 +61,18 @@ Global
 		{849C7A70-7B57-4093-B473-F34926704F62}.Release|x64.Build.0 = Release|Any CPU
 		{849C7A70-7B57-4093-B473-F34926704F62}.Release|x86.ActiveCfg = Release|Any CPU
 		{849C7A70-7B57-4093-B473-F34926704F62}.Release|x86.Build.0 = Release|Any CPU
+		{F158856B-DC2D-47F3-AE67-71B0F8F49509}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F158856B-DC2D-47F3-AE67-71B0F8F49509}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F158856B-DC2D-47F3-AE67-71B0F8F49509}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F158856B-DC2D-47F3-AE67-71B0F8F49509}.Debug|x64.Build.0 = Debug|Any CPU
+		{F158856B-DC2D-47F3-AE67-71B0F8F49509}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F158856B-DC2D-47F3-AE67-71B0F8F49509}.Debug|x86.Build.0 = Debug|Any CPU
+		{F158856B-DC2D-47F3-AE67-71B0F8F49509}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F158856B-DC2D-47F3-AE67-71B0F8F49509}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F158856B-DC2D-47F3-AE67-71B0F8F49509}.Release|x64.ActiveCfg = Release|Any CPU
+		{F158856B-DC2D-47F3-AE67-71B0F8F49509}.Release|x64.Build.0 = Release|Any CPU
+		{F158856B-DC2D-47F3-AE67-71B0F8F49509}.Release|x86.ActiveCfg = Release|Any CPU
+		{F158856B-DC2D-47F3-AE67-71B0F8F49509}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

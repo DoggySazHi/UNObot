@@ -12,7 +12,7 @@ using Discord.WebSocket;
 using UNObot.Plugins.TerminalCore;
 using Timer = System.Timers.Timer;
 
-namespace UNObot.Services
+namespace UNObot.MusicBot.Services
 {
     // Can't use Struct, needs passing by reference.
     internal class Song
@@ -85,9 +85,9 @@ namespace UNObot.Services
 
         private readonly LoggerService _logger;
         private readonly YoutubeService _youtube;
-        private readonly EmbedDisplayService _embed;
+        private readonly EmbedService _embed;
         
-        internal Player(LoggerService logger, YoutubeService youtube, EmbedDisplayService embed, ulong guild, IVoiceChannel audioChannel, IAudioClient audioClient,
+        internal Player(LoggerService logger, YoutubeService youtube, EmbedService embed, ulong guild, IVoiceChannel audioChannel, IAudioClient audioClient,
             ISocketMessageChannel messageChannel)
         {
             _logger = logger;
@@ -547,9 +547,9 @@ namespace UNObot.Services
         private readonly LoggerService _logger;
         private readonly YoutubeService _youtube;
         private readonly DiscordSocketClient _client;
-        private readonly EmbedDisplayService _embed;
+        private readonly EmbedService _embed;
 
-        public MusicBotService(LoggerService logger, YoutubeService youtube, DiscordSocketClient client, EmbedDisplayService embed)
+        public MusicBotService(LoggerService logger, YoutubeService youtube, DiscordSocketClient client, EmbedService embed)
         {
             _logger = logger;
             _youtube = youtube;

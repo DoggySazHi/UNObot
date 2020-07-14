@@ -30,10 +30,10 @@ namespace UNObot.Services
         private bool _stop;
         private readonly LoggerService _logger;
         private readonly EmbedDisplayService _embed;
-        private readonly UNODatabaseService _db;
+        private readonly DatabaseService _db;
         private readonly DiscordSocketClient _client;
 
-        public WebhookListenerService(LoggerService logger, EmbedDisplayService embed, UNODatabaseService db, DiscordSocketClient client)
+        public WebhookListenerService(LoggerService logger, EmbedDisplayService embed, DatabaseService db, DiscordSocketClient client)
         {
             _logger = logger;
             _embed = embed;

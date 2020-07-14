@@ -7,9 +7,11 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using UNObot.Plugins.Attributes;
-using UNObot.UNOCore;
+using UNObot.Templates;
 
 namespace UNObot.Services
 {
@@ -19,12 +21,12 @@ namespace UNObot.Services
         private readonly DiscordSocketClient _discord;
         private IServiceProvider _provider;
         private readonly LoggerService _logger;
-        private readonly UNODatabaseService _db;
+        private readonly DatabaseService _db;
         private static List<Command> _loaded;
 
-        public IReadOnlyList<Command> Commands => _loaded;
+        public IEnumerable<Command> Commands => _loaded;
 
-        public CommandHandlingService(IServiceProvider provider, LoggerService logger, UNODatabaseService db, DiscordSocketClient discord, CommandService commands)
+        public CommandHandlingService(IServiceProvider provider, LoggerService logger, DatabaseService db, DiscordSocketClient discord, CommandService commands)
         {
             _logger = logger;
             _discord = discord;
@@ -40,13 +42,18 @@ namespace UNObot.Services
         {
             _provider = provider;
             await AddModulesAsync(Assembly.GetEntryAssembly());
-            await LoadHelp(Assembly.GetEntryAssembly());
         }
-
-        internal async Task<IEnumerable<ModuleInfo>> AddModulesAsync(Assembly assembly)
+        
+        internal async Task<IEnumerable<ModuleInfo>> AddModulesAsync(Assembly assembly, IServiceCollection services = null)
         {
-            var thing = await _commands.AddModulesAsync(assembly, _provider);
-            return thing;
+            var provider = _provider;
+            if (services != null)
+                provider = services.AddSingleton(_discord)
+                    .AddSingleton(_logger)
+                    .AddSingleton(_provider.GetRequiredService<IConfiguration>())
+                    .BuildServiceProvider();
+            await LoadHelp(assembly, provider);
+            return await _commands.AddModulesAsync(assembly, provider);
         }
         
         internal async Task<bool> RemoveModulesAsync(Type type)
@@ -105,30 +112,28 @@ namespace UNObot.Services
             await _db.AddUser(context.User.Id, context.User.Username);
             try
             {
-                if (context.IsPrivate)
+                var messageString = message.ToString();
+                var endOfCommand = messageString.IndexOf(' ', argPos);
+                var attemptCommandExecute =
+                    messageString.Substring(argPos,
+                        (endOfCommand == -1 ? messageString.Length : endOfCommand) - argPos);
+                var provider = _provider;
+                foreach (var command in _loaded)
                 {
-                    var messageString = message.ToString();
-                    var endOfCommand = messageString.IndexOf(' ', argPos);
-                    var attemptCommandExecute =
-                        messageString.Substring(argPos,
-                            (endOfCommand == -1 ? messageString.Length : endOfCommand) - argPos);
-                    foreach (var command in _loaded)
-                    {
-                        if (!command.DisableDMs) continue;
-                        var sameCommand =
-                            command.CommandName.Equals(attemptCommandExecute,
-                                StringComparison.CurrentCultureIgnoreCase) ||
-                            command.Aliases.Any(o =>
-                                o.Equals(attemptCommandExecute, StringComparison.CurrentCultureIgnoreCase));
-                        if (sameCommand)
-                        {
-                            await context.Channel.SendMessageAsync(
-                                "This command cannot be run in DMs. Please try again in a server.");
-                            return;
-                        }
-                    }
+                    var sameCommand =
+                        command.CommandName.Equals(attemptCommandExecute,
+                            StringComparison.CurrentCultureIgnoreCase) ||
+                        command.Aliases.Any(o =>
+                            o.Equals(attemptCommandExecute, StringComparison.CurrentCultureIgnoreCase));
+                    if (!sameCommand) continue;
+                    if (command.Services != null)
+                        provider = command.Services;
+                    if (!context.IsPrivate || !command.DisableDMs) continue;
+                    await context.Channel.SendMessageAsync(
+                        "This command cannot be run in DMs. Please try again in a server.");
+                    return;
                 }
-                var result = await _commands.ExecuteAsync(context, argPos, _provider);
+                var result = await _commands.ExecuteAsync(context, argPos, provider);
                 if (result.Error.HasValue)
                 {
                     switch (result.Error.Value)
@@ -172,9 +177,8 @@ namespace UNObot.Services
             return cmd;
         }
 
-        private async Task LoadHelp(Assembly asm)
+        private async Task LoadHelp(Assembly asm, IServiceProvider provider)
         {
-            //TODO Help does not load assemblies loaded from plugins!
             var types = from c in asm.GetTypes()
                 where c.IsClass
                 select c;
@@ -184,49 +188,41 @@ namespace UNObot.Services
                 var helpAtt = module.GetCustomAttribute(typeof(HelpAttribute)) as HelpAttribute;
                 var aliasAtt = module.GetCustomAttribute(typeof(AliasAttribute)) as AliasAttribute;
                 var disableDmsAtt = module.GetCustomAttribute(typeof(DisableDMsAttribute)) as DisableDMsAttribute;
-
-                /*
-
-                    var ownerOnlyAtt = module.GetCustomAttribute(typeof(RequireOwnerAttribute)) as RequireOwnerAttribute;
-                    var userPermsAtt = module.GetCustomAttribute(typeof(RequireUserPermissionAttribute)) as RequireUserPermissionAttribute;
-                    var remainder = module.GetCustomAttribute(typeof(RemainderAttribute)) as RemainderAttribute;
-
-                    foreach (var pInfo in module.GetParameters())
-                    {
-                        var name = pInfo.Name;
-                    }
-
-                    */
+                var ownerOnlyAtt = module.GetCustomAttribute(typeof(RequireOwnerAttribute)) as RequireOwnerAttribute;
 
                 var aliases = new List<string>();
                 //check if it is a command
                 if (!(module.GetCustomAttribute(typeof(CommandAttribute)) is CommandAttribute nameAtt)) continue;
 
-                var foundHelp = helpAtt == null ? "Missing help." : "Found help.";
+                // var foundHelp = helpAtt == null ? "Missing help." : "Found help.";
                 var disabledForDMs = disableDmsAtt != null;
-                _logger.Log(LogSeverity.Verbose, $"Loaded \"{nameAtt.Text}\". {foundHelp}");
+                // _logger.Log(LogSeverity.Verbose, $"Loaded \"{nameAtt.Text}\". {foundHelp}");
                 var positionCmd = _loaded.FindIndex(o => o.CommandName == nameAtt.Text);
                 if (aliasAtt?.Aliases != null)
                     aliases = aliasAtt.Aliases.ToList();
                 if (positionCmd < 0)
                 {
-                    _loaded.Add(helpAtt != null
+                    var cmd = helpAtt != null
                         ? new Command(nameAtt.Text, aliases, helpAtt.Usages.ToList(), helpAtt.HelpMsg,
                             helpAtt.Active, helpAtt.Version)
                         : new Command(nameAtt.Text, aliases, new List<string> {$".{nameAtt.Text}"},
-                            "No help is given for this command.", true, "Unknown Version", disabledForDMs));
+                            "No help is given for this command.", ownerOnlyAtt == null, "Unknown Version",
+                            disabledForDMs);
+                    cmd.Services = provider;
+                    _loaded.Add(cmd);
                 }
                 else
                 {
                     _loaded[positionCmd].DisableDMs = disabledForDMs;
+                    _loaded[positionCmd].Services = provider;
                     if (helpAtt != null)
                     {
-                        if (_loaded[positionCmd].Help == "No help is given for this command.")
+                        if (!string.IsNullOrEmpty(helpAtt.HelpMsg))
                             _loaded[positionCmd].Help = helpAtt.HelpMsg;
                         _loaded[positionCmd].Usages =
                             _loaded[positionCmd].Usages.Union(helpAtt.Usages.ToList()).ToList();
                         _loaded[positionCmd].Active |= helpAtt.Active;
-                        if (_loaded[positionCmd].Version == "Unknown Version")
+                        if (!string.IsNullOrEmpty(helpAtt.Version))
                             _loaded[positionCmd].Version = helpAtt.Version;
                     }
 

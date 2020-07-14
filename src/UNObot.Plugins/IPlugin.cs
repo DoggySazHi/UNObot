@@ -1,4 +1,6 @@
-﻿namespace UNObot.Plugins
+﻿using Microsoft.Extensions.DependencyInjection;
+
+namespace UNObot.Plugins
 {
     public interface IPlugin
     {
@@ -6,6 +8,7 @@
         string Description { get; }
         string Author { get; }
         string Version { get; }
+        IServiceCollection Services { get; }
 
         int OnLoad();
         int OnUnload();

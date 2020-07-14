@@ -3,12 +3,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 
-namespace UNObot.Services
+namespace UNObot.Core.Services
 {
     internal class QueueHandlerService
     {
-        private LoggerService _logger;
-        private UNODatabaseService _db;
+        private readonly LoggerService _logger;
+        private readonly UNODatabaseService _db;
 
         public QueueHandlerService(LoggerService logger, UNODatabaseService db)
         {

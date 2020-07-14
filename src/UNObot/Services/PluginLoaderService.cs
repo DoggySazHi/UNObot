@@ -69,7 +69,6 @@ namespace UNObot.Services
             _plugins =
                 Directory.EnumerateFiles("plugins").Select(path =>
                 {
-                    _logger.Log(LogSeverity.Debug, path);
                     var pluginAssembly = LoadPlugin(path);
                     var (plugin, loaded) = CreatePlugin(pluginAssembly);
                     return new PluginInfo(path, pluginAssembly, plugin, loaded);
@@ -98,15 +97,32 @@ namespace UNObot.Services
                 if (!(Activator.CreateInstance(type) is IPlugin result)) continue;
                 if (plugin != null) throw new InvalidOperationException("Read multiple IPlugins from one assembly!");
                 plugin = result;
-                var status = plugin.OnLoad();
+                var status = -1;
+                Exception ex = null;
+                try
+                {
+                    status = plugin.OnLoad();
+                }
+                catch (Exception e)
+                {
+                    ex = e;
+                }
                 if (status != 0)
                 {
                     _logger.Log(LogSeverity.Error,
-                        $"Plugin {plugin.GetName()} failed to load with error code {status}. Unloading.");
-                    var unloadStatus = plugin.OnUnload();
-                    if (unloadStatus != 0)
+                        $"Plugin {plugin.GetName()} failed to load with error code {status}. Unloading.", ex);
+                    ex = null;
+                    try
+                    {
+                        status = plugin.OnUnload();
+                    }
+                    catch (Exception e)
+                    {
+                        ex = e;
+                    }
+                    if (status != 0)
                         _logger.Log(LogSeverity.Error,
-                        $"Plugin {plugin.GetName()} failed to unload with error code {unloadStatus}.");
+                        $"Plugin {plugin.GetName()} failed to unload with error code {status}.", ex);
                 }
                 else
                 {
@@ -114,10 +130,10 @@ namespace UNObot.Services
                     loaded = true;
                 }
             }
-
+            
             Task.Run(async () =>
             {
-                var moduleCounter = (await _commands.AddModulesAsync(assembly)).Count();
+                var moduleCounter = (await _commands.AddModulesAsync(assembly, plugin?.Services)).Count();
                 _logger.Log(LogSeverity.Info, $"Found {moduleCounter} module{(moduleCounter == 1 ? "" : "s")} in {assembly.GetName().Name}.");
             });
             
@@ -137,25 +153,40 @@ namespace UNObot.Services
             if (availablePlugins.Count == 0) return PluginStatus.NotFound;
             if (availablePlugins.Count > 1) return PluginStatus.Conflict;
             var pluginAssembly = LoadPlugin(availablePlugins[0]);
-            var (plugin, loaded) = CreatePlugin(pluginAssembly);
-            if (!loaded) return PluginStatus.Failed;
-            _plugins.Add(new PluginInfo(availablePlugins[0], pluginAssembly, plugin));
-            return PluginStatus.Success;
+            try
+            {
+                var (plugin, loaded) = CreatePlugin(pluginAssembly);
+                if (!loaded) return PluginStatus.Failed;
+                _plugins.Add(new PluginInfo(availablePlugins[0], pluginAssembly, plugin));
+                return PluginStatus.Success;
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                _logger.Log(LogSeverity.Error, "Exception trying to load plugin!", ex);
+                return PluginStatus.Failed;
+            }
         }
 
         internal async Task<PluginStatus> UnloadPlugin(PluginInfo plugin)
         {
             if (!plugin.Loaded) return PluginStatus.AlreadyUnloaded;
             await _commands.RemoveModulesAsync(plugin.PluginAssembly);
-            var unloadStatus = plugin.Plugin.OnUnload();
-            plugin.Loaded = false;
-            if (unloadStatus == 0)
+            var unloadStatus = -1;
+            Exception ex = null;
+            try
             {
-                _plugins.Remove(plugin);
-                return PluginStatus.Success;
+                unloadStatus = plugin.Plugin.OnUnload();
             }
+            catch (Exception e)
+            {
+                ex = e;
+            }
+            plugin.Loaded = false;
+            _plugins.Remove(plugin);
+            if (unloadStatus == 0)
+                return PluginStatus.Success;
             _logger.Log(LogSeverity.Error,
-                $"Plugin {plugin.Plugin.Name} failed to unload with error code {unloadStatus}.");
+                $"Plugin {plugin.Plugin.Name} failed to unload with error code {unloadStatus}.", ex);
             return PluginStatus.Failed;
         }
     }
