@@ -3,35 +3,42 @@ using System.Globalization;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Microsoft.Extensions.Configuration;
 using UNObot.Plugins.Attributes;
-using UNObot.TerminalCore;
-using UNObot.UNOCore;
+using UNObot.Plugins.TerminalCore;
+using UNObot.Services;
 
 namespace UNObot.Modules
 {
-    internal class BaseCommands : ModuleBase<SocketCommandContext>
+    public class BaseCommands : ModuleBase<SocketCommandContext>
     {
+        private readonly IConfiguration _config;
+        private readonly CommandHandlingService _commands;
+        
+        internal BaseCommands(IConfiguration config, CommandHandlingService commands)
+        {
+            _config = config;
+            _commands = commands;
+        }
+        
         [Command("info", RunMode = RunMode.Async), Alias("version")]
         [Help(new[] {".info"}, "Get the current version of UNObot.", true, "UNObot 1.0")]
-        public async Task Info()
+        internal async Task Info()
         {
-            var (commit, build) = Program.ReadCommitBuild();
             var output =
-                $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {Program.Version}\nCurrent Time (PST): {DateTime.Now.ToString(CultureInfo.InvariantCulture)}" +
-                $"\n\nCommit {Program.Commit}\nBuild #{Program.Build}";
-            if (commit != Program.Commit)
-                output += $"\nThere is a pending update: Commit {commit} Build #{build}.";
+                $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {_config["version"]}\nCurrent Time (PST): {DateTime.Now.ToString(CultureInfo.InvariantCulture)}" +
+                $"\n\nCommit {_config["commit"]}\nBuild #{_config["build"]}";
             await ReplyAsync(output);
         }
         
         [Command("fullhelp", RunMode = RunMode.Async)]
         [Help(new[] {".fullhelp"}, "If you need help using help, you're truly lost.", true, "UNObot 1.0")]
-        public async Task FullHelp()
+        internal async Task FullHelp()
         {
             if (!Context.IsPrivate)
-                await ReplyAsync("HelpAttribute has been sent. Or, I think it has.");
+                await ReplyAsync("Help has been sent. Or, I think it has.");
             var response = "```Commands: @UNOBot#4308 command/ .command\n (Required) {May be required} [Optional]\n \n";
-            foreach (var cmd in Program.Commands)
+            foreach (var cmd in _commands.Commands)
             {
                 var oldResponse = response;
                 if (cmd.Active)
@@ -72,7 +79,7 @@ namespace UNObot.Modules
 
         [Command("help", RunMode = RunMode.Async)]
         [Alias("ahh", "ahhh", "ahhhh", "commands", "command")]
-        public async Task Help()
+        internal async Task Help()
         {
             var r = ThreadSafeRandom.ThisThreadsRandom;
             var builder = new EmbedBuilder()
@@ -82,7 +89,7 @@ namespace UNObot.Modules
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
+                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
@@ -113,7 +120,7 @@ namespace UNObot.Modules
 
         [Command("playerhelp", RunMode = RunMode.Async)]
         [Alias("playercommand", "playercommands", "playercmd", "playercmds")]
-        public async Task PlayerHelp()
+        internal async Task PlayerHelp()
         {
             var r = ThreadSafeRandom.ThisThreadsRandom;
             var builder = new EmbedBuilder()
@@ -123,7 +130,7 @@ namespace UNObot.Modules
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {Program.Version} - By DoggySazHi")
+                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
@@ -153,21 +160,11 @@ namespace UNObot.Modules
         [Command("help", RunMode = RunMode.Async)]
         [Alias("ahh", "ahhh", "ahhhh")]
         [Help(new[] {".help (command)"}, "If you need help using help, you're truly lost.", true, "UNObot 1.0")]
-        public async Task Help(string cmdSearch)
+        internal async Task Help(string cmdSearch)
         {
             var response = "";
-            var index = Program.Commands.FindIndex(o => o.CommandName == cmdSearch);
-            var index2 = Program.Commands.FindIndex(o => o.Aliases.Contains(cmdSearch));
-            Command cmd;
-            if (index >= 0)
-            {
-                cmd = Program.Commands[index];
-            }
-            else if (index2 >= 0)
-            {
-                cmd = Program.Commands[index2];
-            }
-            else
+            var cmd = _commands.FindCommand(cmdSearch);
+            if(cmd == null)
             {
                 await ReplyAsync("Command was not found in the help list.");
                 return;

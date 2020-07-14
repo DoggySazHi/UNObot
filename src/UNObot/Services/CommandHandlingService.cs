@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using Newtonsoft.Json;
+using UNObot.Plugins.Attributes;
+using UNObot.UNOCore;
 
 namespace UNObot.Services
 {
@@ -16,6 +20,9 @@ namespace UNObot.Services
         private IServiceProvider _provider;
         private readonly LoggerService _logger;
         private readonly UNODatabaseService _db;
+        private static List<Command> _loaded;
+
+        public IReadOnlyList<Command> Commands => _loaded;
 
         public CommandHandlingService(IServiceProvider provider, LoggerService logger, UNODatabaseService db, DiscordSocketClient discord, CommandService commands)
         {
@@ -26,25 +33,28 @@ namespace UNObot.Services
             _db = db;
             _provider = provider;
             _discord.MessageReceived += MessageReceived;
+            _loaded = new List<Command>();
         }
 
-        public async Task InitializeAsync(IServiceProvider provider)
+        internal async Task InitializeAsync(IServiceProvider provider)
         {
             _provider = provider;
             await AddModulesAsync(Assembly.GetEntryAssembly());
+            await LoadHelp(Assembly.GetEntryAssembly());
         }
 
-        public async Task<IEnumerable<ModuleInfo>> AddModulesAsync(Assembly assembly)
+        internal async Task<IEnumerable<ModuleInfo>> AddModulesAsync(Assembly assembly)
         {
-            return await _commands.AddModulesAsync(assembly, _provider);
+            var thing = await _commands.AddModulesAsync(assembly, _provider);
+            return thing;
         }
         
-        public async Task<bool> RemoveModulesAsync(Type type)
+        internal async Task<bool> RemoveModulesAsync(Type type)
         {
             return await _commands.RemoveModuleAsync(type);
         }
         
-        public async Task RemoveModulesAsync(Assembly assembly)
+        internal async Task RemoveModulesAsync(Assembly assembly)
         {
             foreach(var type in assembly.GetTypes())
                 if(typeof(ModuleBase<SocketCommandContext>).IsAssignableFrom(type))
@@ -102,7 +112,7 @@ namespace UNObot.Services
                     var attemptCommandExecute =
                         messageString.Substring(argPos,
                             (endOfCommand == -1 ? messageString.Length : endOfCommand) - argPos);
-                    foreach (var command in Program.Commands)
+                    foreach (var command in _loaded)
                     {
                         if (!command.DisableDMs) continue;
                         var sameCommand =
@@ -118,7 +128,6 @@ namespace UNObot.Services
                         }
                     }
                 }
-
                 var result = await _commands.ExecuteAsync(context, argPos, _provider);
                 if (result.Error.HasValue)
                 {
@@ -137,23 +146,126 @@ namespace UNObot.Services
                                 $"There are multiple commands with the same name. Type '<@{context.Client.CurrentUser.Id}> help' to see which one you need.");
                             break;
                         case CommandError.UnmetPrecondition:
-                            //await context.Channel.SendMessageAsync("You do not have the **power** to run this command!");
-                            break;
                         case CommandError.UnknownCommand:
                         case CommandError.ObjectNotFound:
                         case CommandError.Exception:
                         case CommandError.Unsuccessful:
                             break;
                     }
-#if DEBUG
-                    if (result.Error.Value != CommandError.UnknownCommand)
-                        await context.Channel.SendMessageAsync($"Debug error: {result}");
-#endif
                 }
             }
             catch (Exception e)
             {
                 _logger.Log(LogSeverity.Error, "While attempting to execute a command, we got an error!", e);
+            }
+        }
+
+        internal Command FindCommand(string name)
+        {
+            var index = _loaded.FindIndex(o => o.CommandName == name);
+            var index2 = _loaded.FindIndex(o => o.Aliases.Contains(name));
+            Command cmd = null;
+            if (index >= 0)
+                cmd = _loaded[index];
+            else if (index2 >= 0)
+                cmd = _loaded[index2];
+            return cmd;
+        }
+
+        private async Task LoadHelp(Assembly asm)
+        {
+            //TODO Help does not load assemblies loaded from plugins!
+            var types = from c in asm.GetTypes()
+                where c.IsClass
+                select c;
+            foreach (var type in types)
+            foreach (var module in type.GetMethods().Concat(type.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)))
+            {
+                var helpAtt = module.GetCustomAttribute(typeof(HelpAttribute)) as HelpAttribute;
+                var aliasAtt = module.GetCustomAttribute(typeof(AliasAttribute)) as AliasAttribute;
+                var disableDmsAtt = module.GetCustomAttribute(typeof(DisableDMsAttribute)) as DisableDMsAttribute;
+
+                /*
+
+                    var ownerOnlyAtt = module.GetCustomAttribute(typeof(RequireOwnerAttribute)) as RequireOwnerAttribute;
+                    var userPermsAtt = module.GetCustomAttribute(typeof(RequireUserPermissionAttribute)) as RequireUserPermissionAttribute;
+                    var remainder = module.GetCustomAttribute(typeof(RemainderAttribute)) as RemainderAttribute;
+
+                    foreach (var pInfo in module.GetParameters())
+                    {
+                        var name = pInfo.Name;
+                    }
+
+                    */
+
+                var aliases = new List<string>();
+                //check if it is a command
+                if (!(module.GetCustomAttribute(typeof(CommandAttribute)) is CommandAttribute nameAtt)) continue;
+
+                var foundHelp = helpAtt == null ? "Missing help." : "Found help.";
+                var disabledForDMs = disableDmsAtt != null;
+                _logger.Log(LogSeverity.Verbose, $"Loaded \"{nameAtt.Text}\". {foundHelp}");
+                var positionCmd = _loaded.FindIndex(o => o.CommandName == nameAtt.Text);
+                if (aliasAtt?.Aliases != null)
+                    aliases = aliasAtt.Aliases.ToList();
+                if (positionCmd < 0)
+                {
+                    _loaded.Add(helpAtt != null
+                        ? new Command(nameAtt.Text, aliases, helpAtt.Usages.ToList(), helpAtt.HelpMsg,
+                            helpAtt.Active, helpAtt.Version)
+                        : new Command(nameAtt.Text, aliases, new List<string> {$".{nameAtt.Text}"},
+                            "No help is given for this command.", true, "Unknown Version", disabledForDMs));
+                }
+                else
+                {
+                    _loaded[positionCmd].DisableDMs = disabledForDMs;
+                    if (helpAtt != null)
+                    {
+                        if (_loaded[positionCmd].Help == "No help is given for this command.")
+                            _loaded[positionCmd].Help = helpAtt.HelpMsg;
+                        _loaded[positionCmd].Usages =
+                            _loaded[positionCmd].Usages.Union(helpAtt.Usages.ToList()).ToList();
+                        _loaded[positionCmd].Active |= helpAtt.Active;
+                        if (_loaded[positionCmd].Version == "Unknown Version")
+                            _loaded[positionCmd].Version = helpAtt.Version;
+                    }
+
+                    if (aliasAtt != null)
+                        _loaded[positionCmd].Aliases = _loaded[positionCmd].Aliases
+                            .Union((aliasAtt.Aliases ?? throw new InvalidOperationException()).ToList()).ToList();
+                }
+            }
+
+            _loaded = _loaded.OrderBy(o => o.CommandName).ToList();
+            _logger.Log(LogSeverity.Info, $"Loaded {_loaded.Count} commands!");
+
+            //Fallback to help.json, ex; Updates, Custom help messages, or temporary troll "fixes"
+            if (File.Exists("help.json"))
+            {
+                _logger.Log(LogSeverity.Info, "Loading help.json into memory...");
+
+                using (var r = new StreamReader("help.json"))
+                {
+                    var json = await r.ReadToEndAsync();
+                    foreach (var c in JsonConvert.DeserializeObject<List<Command>>(json))
+                    {
+                        var index = _loaded.FindIndex(o => o.CommandName == c.CommandName);
+                        if (index >= 0 && _loaded[index].Help == "No help is given for this command.")
+                        {
+                            _loaded[index] = c;
+                        }
+                        else if (index < 0)
+                        {
+                            _logger.Log(LogSeverity.Warning,
+                                "A command was added that isn't in UNObot's code. It will be added to the help list, but will not be active.");
+                            var newCommand = c;
+                            newCommand.Active = false;
+                            _loaded.Add(newCommand);
+                        }
+                    }
+                }
+
+                _logger.Log(LogSeverity.Info, $"Loaded {_loaded.Count} commands including from help.json!");
             }
         }
     }

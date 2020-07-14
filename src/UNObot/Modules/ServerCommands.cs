@@ -8,7 +8,7 @@ using static UNObot.Services.IRCON;
 
 namespace UNObot.Modules
 {
-    internal class ServerCommands : ModuleBase<SocketCommandContext>
+    public class ServerCommands : ModuleBase<SocketCommandContext>
     {
         private const string TooLong = "[Message is too long; trimmed.]\n";
 
@@ -28,7 +28,7 @@ namespace UNObot.Modules
         [Alias("ubow")]
         [Help(new[] {".ubows"}, "Get basic server information about the Unturned Bunker Official Wikia Server.", true,
             "UNObot 2.4")]
-        public async Task Ubows()
+        internal async Task Ubows()
         {
             await CheckUnturned("108.61.100.48", 25444, _ubowLogger.GetAverages());
         }
@@ -37,7 +37,7 @@ namespace UNObot.Modules
         [Alias("urn")]
         [Help(new[] {".unturnedreleasenotes"}, "Find out what's in the latest release notes for Unturned.", true,
             "UNObot 3.1.7")]
-        public async Task Urn()
+        internal async Task Urn()
         {
             await ReplyAsync(UnturnedReleaseNotes.GetLatestLink());
         }
@@ -45,7 +45,7 @@ namespace UNObot.Modules
         [Command("slamc", RunMode = RunMode.Async)]
         [Help(new[] {".slamc"}, "Get basic server information about the Slightly Less Average Minecraft server.", true,
             "UNObot 2.4")]
-        public async Task Slamc()
+        internal async Task Slamc()
         {
             var response = _query.GetInfoMC("williamle.com");
             if (response.ServerUp)
@@ -58,7 +58,7 @@ namespace UNObot.Modules
         [Command("pcreative", RunMode = RunMode.Async)]
         [Help(new[] {".pcreative"}, "Get basic server information about the pCreative Minecraft server.", true,
             "UNObot 2.4")]
-        public async Task PCreative()
+        internal async Task PCreative()
         {
             await CheckMCNew("williamle.com", 25432);
         }
@@ -66,7 +66,7 @@ namespace UNObot.Modules
         [Command("checkmc", RunMode = RunMode.Async)]
         [Help(new[] {".checkmc (ip) (port)"}, "Get basic server information about any Minecraft server.", true,
             "UNObot 2.4, UNObot 4.0.11")]
-        public async Task CheckMCNew(string ip, ushort port = 25565)
+        internal async Task CheckMCNew(string ip, ushort port = 25565)
         {
             var message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
@@ -96,14 +96,14 @@ namespace UNObot.Modules
         [Command("psurvival", RunMode = RunMode.Async)]
         [Help(new[] {".psurvival"}, "Get basic server information about the pSurvival Minecraft server.", true,
             "UNObot 2.4")]
-        public async Task PSurvival()
+        internal async Task PSurvival()
         {
             await CheckMCNew("williamle.com", 27285);
         }
 
         [Command("ouchies", RunMode = RunMode.Async)]
         [Help(new[] {".ouchies"}, "That must hurt.", true, "UNObot 4.0.12")]
-        public async Task GetOuchies()
+        internal async Task GetOuchies()
         {
             var message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
@@ -132,7 +132,7 @@ namespace UNObot.Modules
 
         [Command("ouchies", RunMode = RunMode.Async)]
         [Help(new[] {".ouchies (Port)"}, "That must hurt.", true, "UNObot 4.0.12")]
-        public async Task GetOuchies(ushort port)
+        internal async Task GetOuchies(ushort port)
         {
             var message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
@@ -161,7 +161,7 @@ namespace UNObot.Modules
 
         [Command("locate", RunMode = RunMode.Async)]
         [Help(new[] {".locate"}, "¿Dónde están?", true, "UNObot 4.0.16")]
-        public async Task GetLocations()
+        internal async Task GetLocations()
         {
             var message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
@@ -190,7 +190,7 @@ namespace UNObot.Modules
 
         [Command("locate", RunMode = RunMode.Async)]
         [Help(new[] {".locate (port)"}, "¿Dónde están?", true, "UNObot 4.0.16")]
-        public async Task GetLocations(ushort port)
+        internal async Task GetLocations(ushort port)
         {
             var message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
@@ -219,7 +219,7 @@ namespace UNObot.Modules
 
         [Command("expay", RunMode = RunMode.Async)]
         [Help(new[] {".expay (target) (amount)"}, "Where's my experience?", true, "UNObot 4.0.17")]
-        public async Task GetLocations(string target, string amount)
+        internal async Task GetLocations(string target, string amount)
         {
             var message = await ReplyAsync("I am now contacting the server, please wait warmly...");
             try
@@ -249,7 +249,7 @@ namespace UNObot.Modules
 
         [Command("expay", RunMode = RunMode.Async)]
         [Help(new[] {".expay (port) (target) (amount)"}, "Where's my experience?", true, "UNObot 4.0.17")]
-        public async Task GetLocations(ushort port, string target, string amount)
+        internal async Task GetLocations(ushort port, string target, string amount)
         {
             var message = await ReplyAsync("I am now contacting the server, please wait warmly...");
             try
@@ -279,7 +279,7 @@ namespace UNObot.Modules
 
         [Command("mctime", RunMode = RunMode.Async)]
         [Help(new[] {".mctime"}, "SLEEP GUYS", true, "UNObot 4.0.16")]
-        public async Task GetMCTime()
+        internal async Task GetMCTime()
         {
             var server = _query.SpecialServers[27285];
             await RunRCON(server.Server, server.RCONPort, server.Password, "time query daytime");
@@ -287,7 +287,7 @@ namespace UNObot.Modules
 
         [Command("mctime", RunMode = RunMode.Async)]
         [Help(new[] {".mctime (port)"}, "SLEEP GUYS", true, "UNObot 4.0.16")]
-        public async Task GetMCTime(ushort port)
+        internal async Task GetMCTime(ushort port)
         {
             if (!_query.SpecialServers.ContainsKey(port))
             {
@@ -303,7 +303,7 @@ namespace UNObot.Modules
         [Alias("unwiki")]
         [Help(new[] {".unofficialwiki"}, "Get basic server information about the Unofficial Wikia Server.", true,
             "UNObot 2.4")]
-        public async Task UnoffWiki()
+        internal async Task UnoffWiki()
         {
             await CheckUnturned("williamle.com", 27040);
         }
@@ -312,7 +312,7 @@ namespace UNObot.Modules
         [Alias("checku")]
         [Help(new[] {".checkunturned (ip) (port)"}, "Get basic server information about any Unturned server.", true,
             "UNObot 3.7")]
-        public async Task CheckUnturnedServer(string ip, ushort port = 27015)
+        internal async Task CheckUnturnedServer(string ip, ushort port = 27015)
         {
             await CheckUnturned(ip, port);
         }
@@ -321,7 +321,7 @@ namespace UNObot.Modules
         [RequireOwner]
         [Help(new[] {".rcon (ip) (port) (password) (command)"},
             "Run a command on a remote server. Limited to DoggySazHi ATM.", true, "UNObot 4.0.12")]
-        public async Task RunRCON(string ip, ushort port, string password, [Remainder] string command)
+        internal async Task RunRCON(string ip, ushort port, string password, [Remainder] string command)
         {
             var message = await ReplyAsync("Executing...");
             var success = _query.SendRCON(ip, port, command, password, out var output);
@@ -354,7 +354,7 @@ namespace UNObot.Modules
         [RequireOwner]
         [Help(new[] {".rconexec (command)"},
             "Run a command on a remote server. Limited to DoggySazHi ATM.", true, "UNObot 4.0.12")]
-        public async Task ExecRCON([Remainder] string command)
+        internal async Task ExecRCON([Remainder] string command)
         {
             var message = await ReplyAsync("Executing...");
             var success = _query.ExecuteRCON(Context.User.Id, command, out var output);
@@ -392,7 +392,7 @@ namespace UNObot.Modules
         [RequireOwner]
         [Help(new[] {".rcon (ip) (port) (password)"},
             "Run a command on a remote server. Limited to DoggySazHi ATM.", true, "UNObot 4.0.12")]
-        public async Task RunRCON(string ip, ushort port, string password)
+        internal async Task RunRCON(string ip, ushort port, string password)
         {
             var message = await ReplyAsync("Initializing...");
             var success = _query.CreateRCON(ip, port, password, Context.User.Id, out var output);
@@ -424,7 +424,7 @@ namespace UNObot.Modules
         [RequireOwner]
         [Help(new[] {".rcon (command)"},
             "Run a command on a remote server. Limited to DoggySazHi ATM.", true, "UNObot 4.0.12")]
-        public async Task RunRCON(string trigger)
+        internal async Task RunRCON(string trigger)
         {
             switch (trigger.ToLower().Trim())
             {
@@ -461,7 +461,7 @@ namespace UNObot.Modules
                     o.Content = $"Connected to {output.Server.Address} on {output.Server.Port}.");
         }
 
-        public async Task CheckUnturned(string ip, ushort port = 27015, ServerAverages averages = null)
+        internal async Task CheckUnturned(string ip, ushort port = 27015, ServerAverages averages = null)
         {
             var message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try

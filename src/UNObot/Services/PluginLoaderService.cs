@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Runtime.Loader;
 using System.Threading.Tasks;
 using Discord;
-using Microsoft.Extensions.DependencyInjection;
 using UNObot.Plugins;
 
 namespace UNObot.Services
@@ -15,7 +14,7 @@ namespace UNObot.Services
     {
         private readonly AssemblyDependencyResolver _resolver;
 
-        public PluginLoadContext(string pluginPath)
+        internal PluginLoadContext(string pluginPath)
         {
             _resolver = new AssemblyDependencyResolver(pluginPath);
         }
@@ -27,18 +26,18 @@ namespace UNObot.Services
         }
     }
     
-    public enum PluginStatus { Success = 0, Failed, NotFound, Conflict, AlreadyUnloaded, AlreadyLoaded }
+    internal enum PluginStatus { Success = 0, Failed, NotFound, Conflict, AlreadyUnloaded, AlreadyLoaded }
     
     internal class PluginLoaderService
     {
         private readonly bool _init;
 
-        internal class PluginInfo
+        public class PluginInfo
         {
             internal string FileName { get; }
             internal Assembly PluginAssembly { get; }
-            public IPlugin Plugin { get; }
-            public bool Loaded { get; protected internal set; }
+            internal IPlugin Plugin { get; }
+            internal bool Loaded { get; set; }
 
             public PluginInfo(string fileName, Assembly pluginAssembly, IPlugin plugin, bool loaded = true)
             {
@@ -48,16 +47,21 @@ namespace UNObot.Services
                 Loaded = loaded;
             }
         }
-        
-        private List<PluginInfo> _plugins { get; }
 
-        public IReadOnlyList<PluginInfo> Plugins => _plugins;
+        private readonly List<PluginInfo> _plugins;
 
-        private PluginLoaderService()
+        internal IReadOnlyList<PluginInfo> Plugins => _plugins;
+        private readonly LoggerService _logger;
+        private readonly CommandHandlingService _commands;
+
+        public PluginLoaderService(LoggerService logger, CommandHandlingService commands)
         {
+            _logger = logger;
+            _commands = commands;
+            
             if (_init)
             {
-                LoggerService.Log(LogSeverity.Warning, "Attempted to re-init plugins!");
+                _logger.Log(LogSeverity.Warning, "Attempted to re-init plugins!");
                 return;
             }
             if (!Directory.Exists("plugins"))
@@ -65,25 +69,25 @@ namespace UNObot.Services
             _plugins =
                 Directory.EnumerateFiles("plugins").Select(path =>
                 {
-                    LoggerService.Log(LogSeverity.Debug, path);
+                    _logger.Log(LogSeverity.Debug, path);
                     var pluginAssembly = LoadPlugin(path);
                     var (plugin, loaded) = CreatePlugin(pluginAssembly);
                     return new PluginInfo(path, pluginAssembly, plugin, loaded);
                 }).ToList();
             _plugins.RemoveAll(o => !o.Loaded);
-            LoggerService.Log(LogSeverity.Info, $"Loaded {Plugins.Count} plugins!");
+            _logger.Log(LogSeverity.Info, $"Loaded {Plugins.Count} plugins!");
             _init = true;
         }
 
-        private static Assembly LoadPlugin(string path)
+        private Assembly LoadPlugin(string path)
         {
             var pluginLocation = Path.GetFullPath(path);
-            LoggerService.Log(LogSeverity.Info, $"Loading plugin at {pluginLocation}");
+            _logger.Log(LogSeverity.Info, $"Loading plugin at {pluginLocation}");
             var loadContext = new PluginLoadContext(pluginLocation);
             return loadContext.LoadFromAssemblyName(new AssemblyName(Path.GetFileNameWithoutExtension(pluginLocation)));
         }
 
-        private static (IPlugin plugin, bool loaded) CreatePlugin(Assembly assembly)
+        private (IPlugin plugin, bool loaded) CreatePlugin(Assembly assembly)
         {
             IPlugin plugin = null;
             var loaded = false;
@@ -97,31 +101,32 @@ namespace UNObot.Services
                 var status = plugin.OnLoad();
                 if (status != 0)
                 {
-                    LoggerService.Log(LogSeverity.Error,
+                    _logger.Log(LogSeverity.Error,
                         $"Plugin {plugin.GetName()} failed to load with error code {status}. Unloading.");
                     var unloadStatus = plugin.OnUnload();
                     if (unloadStatus != 0)
-                        LoggerService.Log(LogSeverity.Error,
+                        _logger.Log(LogSeverity.Error,
                         $"Plugin {plugin.GetName()} failed to unload with error code {unloadStatus}.");
                 }
                 else
                 {
-                    LoggerService.Log(LogSeverity.Info, $"Loaded {plugin.GetName()}.");
+                    _logger.Log(LogSeverity.Info, $"Loaded {plugin.GetName()}.");
                     loaded = true;
                 }
             }
-            var moduleCounter = Program.Services.GetRequiredService<CommandHandlingService>()
-                .AddModulesAsync(assembly)
-                .GetAwaiter()
-                .GetResult()
-                .Count();
+
+            Task.Run(async () =>
+            {
+                var moduleCounter = (await _commands.AddModulesAsync(assembly)).Count();
+                _logger.Log(LogSeverity.Info, $"Found {moduleCounter} module{(moduleCounter == 1 ? "" : "s")} in {assembly.GetName().Name}.");
+            });
+            
             if(plugin == null)
                 throw new MissingMemberException("Could not find plugin information!");
-            LoggerService.Log(LogSeverity.Info, $"Found {moduleCounter} module{(moduleCounter == 1 ? "" : "s")} in {assembly.GetName().Name}.");
             return (plugin, loaded);
         }
 
-        public PluginStatus LoadPluginByName(string name)
+        internal PluginStatus LoadPluginByName(string name)
         {
             if (_plugins.Any(o => o.FileName.Contains(name, StringComparison.CurrentCultureIgnoreCase)))
                 return PluginStatus.AlreadyLoaded;
@@ -138,10 +143,10 @@ namespace UNObot.Services
             return PluginStatus.Success;
         }
 
-        public async Task<PluginStatus> UnloadPlugin(PluginInfo plugin)
+        internal async Task<PluginStatus> UnloadPlugin(PluginInfo plugin)
         {
             if (!plugin.Loaded) return PluginStatus.AlreadyUnloaded;
-            await Program.Services.GetRequiredService<CommandHandlingService>().RemoveModulesAsync(plugin.PluginAssembly);
+            await _commands.RemoveModulesAsync(plugin.PluginAssembly);
             var unloadStatus = plugin.Plugin.OnUnload();
             plugin.Loaded = false;
             if (unloadStatus == 0)
@@ -149,7 +154,7 @@ namespace UNObot.Services
                 _plugins.Remove(plugin);
                 return PluginStatus.Success;
             }
-            LoggerService.Log(LogSeverity.Error,
+            _logger.Log(LogSeverity.Error,
                 $"Plugin {plugin.Plugin.Name} failed to unload with error code {unloadStatus}.");
             return PluginStatus.Failed;
         }

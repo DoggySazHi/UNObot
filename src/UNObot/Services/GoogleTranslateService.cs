@@ -7,12 +7,12 @@ namespace UNObot.Services
 {
     internal class GoogleTranslateService
     {
-        private GoogleTranslateService()
+        public GoogleTranslateService()
         {
             
         }
 
-        public string Translate(string text, string fromCulture, string toCulture)
+        internal string Translate(string text, string fromCulture, string toCulture)
         {
             fromCulture = fromCulture.ToLower();
             toCulture = toCulture.ToLower();

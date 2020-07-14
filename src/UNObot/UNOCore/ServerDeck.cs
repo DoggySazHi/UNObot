@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
-using UNObot.Services;
-using UNObot.TerminalCore;
+using UNObot.Plugins.TerminalCore;
 
 namespace UNObot.UNOCore
 {
@@ -13,40 +12,24 @@ namespace UNObot.UNOCore
 
         private readonly List<ServerCard> _cards;
 
-        public ServerDeck()
+        internal ServerDeck()
         {
             _cards = new List<ServerCard>();
             //smells like spaghetti code
             for (var i = 0; i < 2; i++)
                 foreach (var color in Colors)
                 foreach (var value in Values)
-                    _cards.Add(new ServerCard(new Card
-                    {
-                        Color = color,
-                        Value = value
-                    }));
+                    _cards.Add(new ServerCard(new Card(color, value)));
             foreach (var color in Colors)
-                _cards.Add(new ServerCard(new Card
-                {
-                    Color = color,
-                    Value = "0"
-                }));
+                _cards.Add(new ServerCard(new Card(color, "0")));
             for (var i = 0; i < 4; i++)
             {
-                _cards.Add(new ServerCard(new Card
-                {
-                    Color = "Wild",
-                    Value = "Color"
-                }));
-                _cards.Add(new ServerCard(new Card
-                {
-                    Color = "Wild",
-                    Value = "+4"
-                }));
+                _cards.Add(new ServerCard(new Card("Wild", "Color")));
+                _cards.Add(new ServerCard(new Card("Wild", "+4")));
             }
         }
 
-        public void Shuffle()
+        internal void Shuffle()
         {
             _cards.Shuffle();
         }

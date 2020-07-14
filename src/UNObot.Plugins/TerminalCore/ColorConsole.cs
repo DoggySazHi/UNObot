@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace UNObot.TerminalCore
+namespace UNObot.Plugins.TerminalCore
 {
     static class ColorConsole
     {
@@ -52,32 +52,32 @@ namespace UNObot.TerminalCore
             Write(text, color, Console.BackgroundColor.ToString());
         }
 
-        public static void Write(string text, ConsoleColor color)
+        internal static void Write(string text, ConsoleColor color)
         {
             Write(text, color, Console.BackgroundColor);
         }
 
         [Obsolete("Use a ConsoleColor instead, it's more reliable.")]
-        public static void WriteLine(string text, string color)
+        internal static void WriteLine(string text, string color)
         {
             Write(text, color);
             Console.WriteLine();
         }
 
-        public static void WriteLine(string text, ConsoleColor color)
+        internal static void WriteLine(string text, ConsoleColor color)
         {
             Write(text, color);
             Console.WriteLine();
         }
 
         [Obsolete("Use a ConsoleColor instead, it's more reliable.")]
-        public static void WriteLine(string text, string color, string bgColor)
+        internal static void WriteLine(string text, string color, string bgColor)
         {
             Write(text, color, bgColor);
             Console.WriteLine();
         }
 
-        public static void WriteLine(string text, ConsoleColor color, ConsoleColor bgColor)
+        internal static void WriteLine(string text, ConsoleColor color, ConsoleColor bgColor)
         {
             Write(text, color, bgColor);
             Console.WriteLine();

@@ -4,19 +4,25 @@ using System.IO.Compression;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using UNObot.TerminalCore;
+using UNObot.Plugins.TerminalCore;
 
-namespace UNObot.Services
+// ReSharper disable once CheckNamespace
+namespace UNObot
 {
-    internal class LoggerService : IDisposable
+    public class LoggerService : IDisposable
     {
         private const string LogFolder = "Logs";
         private readonly StreamWriter _fileLog;
         private readonly object _lockObj = new object();
         private readonly string _currentLog;
+        private static bool _init;
 
         public LoggerService()
         {
+            if(_init)
+                throw new InvalidOperationException("The logger should not be created directly! Use your local singleton.");
+            _init = true;
+            
             _currentLog = $"{DateTime.Today:MM-dd-yyyy}.log";
             if (!Directory.Exists(LogFolder))
                 Directory.CreateDirectory(LogFolder);

@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -10,19 +7,13 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using UNObot.Plugins.Attributes;
 using UNObot.Services;
-using UNObot.UNOCore;
 
 namespace UNObot
 {
     internal class Program
     {
-        //TODO remove???
-        private static List<Command> _commands = new List<Command>();
-
         private ServiceProvider _services;
         private DiscordSocketClient _client;
         private readonly ManualResetEvent _exitEvent = new ManualResetEvent(false);
@@ -46,24 +37,24 @@ namespace UNObot
                     ExclusiveBulkDelete = true
                 }
             );
+            
+            _logger = new LoggerService();
+            
             _config = BuildConfig();
             
             _services = ConfigureServices();
 
-            _logger = _services.GetRequiredService<LoggerService>();
-            _logger.Log(LogSeverity.Info, "UNObot Launcher 2.1");
+            _logger.Log(LogSeverity.Info, "UNObot Launcher 3.0");
 
             _client.Log += _logger.LogDiscord;
 
             await _client.LoginAsync(TokenType.Bot, _config["token"]);
             await _client.StartAsync();
-            //_client.ReactionAdded += Modules.InputHandler.ReactionAdded;
-            
+            //_client.ReactionAdded += _services.GetRequiredService<InputHandler>().ReactionAdded;
             await _services.GetRequiredService<CommandHandlingService>().InitializeAsync(_services);
 
             await _client.SetGameAsync($"UNObot {_version}");
             Console.Title = $"UNObot {_version}";
-            await LoadHelp();
             SafeExitHandler();
             _exitEvent.WaitOne();
             _exitEvent.Dispose();
@@ -74,18 +65,22 @@ namespace UNObot
         {
             return new ServiceCollection()
                 .AddSingleton(_config)
-                .AddSingleton<LoggerService>()
+                .AddSingleton(_logger)
                 .AddSingleton(_client)
                 .AddSingleton<UNODatabaseService>()
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
                 .AddSingleton<PluginLoaderService>()
                 .AddSingleton<EmbedDisplayService>()
-
+                .AddSingleton<MusicBotService>()
+                .AddSingleton<MinecraftProcessorService>()
+                .AddSingleton<ShellService>()
                 .AddSingleton<UBOWServerLoggerService>()
                 .AddSingleton<WebhookListenerService>()
                 .AddSingleton<GoogleTranslateService>()
                 .AddSingleton<QueueHandlerService>()
+                .AddSingleton<UNOPlayCardService>()
+                .AddSingleton<AFKTimerService>()
                 .AddSingleton<RCONManager>()
                 .AddSingleton<QueryHandlerService>()
                 .AddSingleton<YoutubeService>()
@@ -123,7 +118,7 @@ namespace UNObot
             };
         }
 
-        public void Exit()
+        internal void Exit()
         {
             try
             {
@@ -178,7 +173,7 @@ namespace UNObot
 
             if (config["connStr"] == null)
             {
-                _logger.Log(LogSeverity.Error, "Error: Config is missing Database Connection String (connStr)!");
+                _logger.Log(LogSeverity.Error, "Error: Config is missing a Database Connection String (connStr)!");
                 success = false;
             }
 
@@ -205,103 +200,6 @@ namespace UNObot
             _logger.Log(LogSeverity.Info, $"Running {config["version"] ?? "an unknown version"}!");
 
             return config;
-        }
-
-        private async Task LoadHelp()
-        {
-            //TODO Help does not load assemblies loaded from plugins!
-            var types = from c in Assembly.GetExecutingAssembly().GetTypes()
-                where c.IsClass
-                select c;
-            foreach (var type in types)
-            foreach (var module in type.GetMethods())
-            {
-                var helpAtt = module.GetCustomAttribute(typeof(HelpAttribute)) as HelpAttribute;
-                var aliasAtt = module.GetCustomAttribute(typeof(AliasAttribute)) as AliasAttribute;
-                var disableDmsAtt = module.GetCustomAttribute(typeof(DisableDMsAttribute)) as DisableDMsAttribute;
-
-                /*
-
-                    var ownerOnlyAtt = module.GetCustomAttribute(typeof(RequireOwnerAttribute)) as RequireOwnerAttribute;
-                    var userPermsAtt = module.GetCustomAttribute(typeof(RequireUserPermissionAttribute)) as RequireUserPermissionAttribute;
-                    var remainder = module.GetCustomAttribute(typeof(RemainderAttribute)) as RemainderAttribute;
-
-                    foreach (var pInfo in module.GetParameters())
-                    {
-                        var name = pInfo.Name;
-                    }
-
-                    */
-
-                var aliases = new List<string>();
-                //check if it is a command
-                if (!(module.GetCustomAttribute(typeof(CommandAttribute)) is CommandAttribute nameAtt)) continue;
-
-                var foundHelp = helpAtt == null ? "Missing help." : "Found help.";
-                var disabledForDMs = disableDmsAtt != null;
-                _logger.Log(LogSeverity.Verbose, $"Loaded \"{nameAtt.Text}\". {foundHelp}");
-                var positionCmd = _commands.FindIndex(o => o.CommandName == nameAtt.Text);
-                if (aliasAtt?.Aliases != null)
-                    aliases = aliasAtt.Aliases.ToList();
-                if (positionCmd < 0)
-                {
-                    _commands.Add(helpAtt != null
-                        ? new Command(nameAtt.Text, aliases, helpAtt.Usages.ToList(), helpAtt.HelpMsg,
-                            helpAtt.Active, helpAtt.Version)
-                        : new Command(nameAtt.Text, aliases, new List<string> {$".{nameAtt.Text}"},
-                            "No help is given for this command.", true, "Unknown Version", disabledForDMs));
-                }
-                else
-                {
-                    _commands[positionCmd].DisableDMs = disabledForDMs;
-                    if (helpAtt != null)
-                    {
-                        if (_commands[positionCmd].Help == "No help is given for this command.")
-                            _commands[positionCmd].Help = helpAtt.HelpMsg;
-                        _commands[positionCmd].Usages =
-                            _commands[positionCmd].Usages.Union(helpAtt.Usages.ToList()).ToList();
-                        _commands[positionCmd].Active |= helpAtt.Active;
-                        if (_commands[positionCmd].Version == "Unknown Version")
-                            _commands[positionCmd].Version = helpAtt.Version;
-                    }
-
-                    if (aliasAtt != null)
-                        _commands[positionCmd].Aliases = _commands[positionCmd].Aliases
-                            .Union((aliasAtt.Aliases ?? throw new InvalidOperationException()).ToList()).ToList();
-                }
-            }
-
-            _commands = _commands.OrderBy(o => o.CommandName).ToList();
-            _logger.Log(LogSeverity.Info, $"Loaded {_commands.Count} commands!");
-
-            //Fallback to help.json, ex; Updates, Custom help messages, or temporary troll "fixes"
-            if (File.Exists("help.json"))
-            {
-                _logger.Log(LogSeverity.Info, "Loading help.json into memory...");
-
-                using (var r = new StreamReader("help.json"))
-                {
-                    var json = await r.ReadToEndAsync();
-                    foreach (var c in JsonConvert.DeserializeObject<List<Command>>(json))
-                    {
-                        var index = _commands.FindIndex(o => o.CommandName == c.CommandName);
-                        if (index >= 0 && _commands[index].Help == "No help is given for this command.")
-                        {
-                            _commands[index] = c;
-                        }
-                        else if (index < 0)
-                        {
-                            _logger.Log(LogSeverity.Warning,
-                                "A command was added that isn't in UNObot's code. It will be added to the help list, but will not be active.");
-                            var newCommand = c;
-                            newCommand.Active = false;
-                            _commands.Add(newCommand);
-                        }
-                    }
-                }
-
-                _logger.Log(LogSeverity.Info, $"Loaded {_commands.Count} commands including from help.json!");
-            }
         }
     }
 }

@@ -11,7 +11,7 @@ namespace UNObot.Interop
     {
         private readonly IntPtr _rconInstance;
 
-        public RCONHelper(IPEndPoint server, [NotNull] string password, string command = null)
+        internal RCONHelper(IPEndPoint server, [NotNull] string password, string command = null)
         {
             // Note: It is split into two parts as C++ does not allow null strings.
             _rconInstance = command switch
@@ -21,7 +21,7 @@ namespace UNObot.Interop
             };
         }
 
-        public RCONHelper([NotNull] string ip, ushort port, [NotNull] string password, string command = null)
+        internal RCONHelper([NotNull] string ip, ushort port, [NotNull] string password, string command = null)
         {
             // Note: It is split into two parts as C++ does not allow null strings.
             _rconInstance = command switch
@@ -92,13 +92,13 @@ namespace UNObot.Interop
         private static extern void Mukyu(IntPtr rcon);
 
         [DllImport(@"libRCONHelper.so")]
-        public static extern void MukyuN();
+        internal static extern void MukyuN();
 
         [DllImport(@"libRCONHelper.so")]
-        public static extern IntPtr Say(string thing);
+        internal static extern IntPtr Say(string thing);
 
         [DllImport(@"libRCONHelper.so")]
-        public static extern void SayDelete(IntPtr thing);
+        internal static extern void SayDelete(IntPtr thing);
 
         [DllImport(@"libRCONHelper.so")]
         private static extern RCONStatus GetStatus(IntPtr obj);
@@ -121,7 +121,7 @@ namespace UNObot.Interop
         [DllImport(@"libRCONHelper.so")]
         private static extern void Execute(IntPtr obj, string command);
 
-        public void Mukyu()
+        internal void Mukyu()
         {
             CheckDispose();
             // to mukyu, mukyu (test to check interop)

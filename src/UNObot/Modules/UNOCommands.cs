@@ -4,51 +4,64 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using UNObot.Plugins.Attributes;
+using UNObot.Plugins.TerminalCore;
 using UNObot.Services;
 using UNObot.UNOCore;
-using static UNObot.Services.UNOCoreServices;
 
 namespace UNObot.Modules
 {
-    internal class UNOCommands : ModuleBase<SocketCommandContext>
+    public class UNOCommands : ModuleBase<SocketCommandContext>
     {
-        private readonly UNOPlayCardService _playCard = new UNOPlayCardService();
+        private readonly UNOPlayCardService _playCard;
+        private readonly UNODatabaseService _db;
+        private readonly QueueHandlerService _queue;
+        private readonly AFKTimerService _afk;
+        private readonly EmbedDisplayService _embed;
+
+        internal UNOCommands(UNOPlayCardService playCard, UNODatabaseService db, QueueHandlerService queue, AFKTimerService afk, EmbedDisplayService embed)
+        {
+            _playCard = playCard;
+            _db = db;
+            _queue = queue;
+            _afk = afk;
+            _embed = embed;
+        }
 
         [Command("join", RunMode = RunMode.Async)]
         [Help(new[] {".join"}, "Join the queue in the current server.", true, "UNObot 0.1")]
         [DisableDMs]
-        public async Task Join()
+        internal async Task Join()
         {
-            await UNODatabaseService.AddGame(Context.Guild.Id);
-            await UNODatabaseService.AddUser(Context.User.Id, Context.User.Username);
-            if (await UNODatabaseService.IsServerInGame(Context.Guild.Id))
+            await _db.AddGame(Context.Guild.Id);
+            await _db.AddUser(Context.User.Id, Context.User.Username);
+            if (await _db.IsServerInGame(Context.Guild.Id))
             {
                 await ReplyAsync("The game has already started in this server!\n");
                 return;
             }
 
-            if (await UNODatabaseService.IsPlayerInGame(Context.User.Id))
+            if (await _db.IsPlayerInGame(Context.User.Id))
             {
                 await ReplyAsync($"{Context.User.Username}, you are already in a game!\n");
                 return;
             }
 
-            await UNODatabaseService.AddUser(Context.User.Id, Context.User.Username, Context.Guild.Id);
+            await _db.AddUser(Context.User.Id, Context.User.Username, Context.Guild.Id);
             await ReplyAsync($"{Context.User.Username} has been added to the queue.\n");
         }
 
         [Command("leave", RunMode = RunMode.Async)]
         [DisableDMs]
         [Help(new[] {".leave"}, "Leave the queue (or game) in the current server.", true, "UNObot 0.2")]
-        public async Task Leave()
+        internal async Task Leave()
         {
-            await UNODatabaseService.AddGame(Context.Guild.Id);
-            await UNODatabaseService.AddUser(Context.User.Id, Context.User.Username);
-            if (await UNODatabaseService.IsPlayerInGame(Context.User.Id) &&
-                Context.Guild.Id == await UNODatabaseService.GetUserServer(Context.User.Id))
+            await _db.AddGame(Context.Guild.Id);
+            await _db.AddUser(Context.User.Id, Context.User.Username);
+            if (await _db.IsPlayerInGame(Context.User.Id) &&
+                Context.Guild.Id == await _db.GetUserServer(Context.User.Id))
             {
-                await UNODatabaseService.RemoveUser(Context.User.Id);
-                await QueueHandlerService.RemovePlayer(Context.User.Id, Context.Guild.Id);
+                await _db.RemoveUser(Context.User.Id);
+                await _queue.RemovePlayer(Context.User.Id, Context.Guild.Id);
             }
             else
             {
@@ -57,30 +70,30 @@ namespace UNObot.Modules
                 return;
             }
 
-            if (await UNODatabaseService.IsServerInGame(Context.Guild.Id) &&
-                await QueueHandlerService.PlayerCount(Context.Guild.Id) == 0)
+            if (await _db.IsServerInGame(Context.Guild.Id) &&
+                await _queue.PlayerCount(Context.Guild.Id) == 0)
             {
-                await UNODatabaseService.ResetGame(Context.Guild.Id);
+                await _db.ResetGame(Context.Guild.Id);
                 await ReplyAsync($"Due to {Context.User.Username}'s departure, the game has been reset.");
                 return;
             }
 
             await ReplyAsync($"{Context.User.Username} has been removed from the queue.\n");
-            if (await QueueHandlerService.PlayerCount(Context.Guild.Id) > 1 &&
-                await UNODatabaseService.IsServerInGame(Context.Guild.Id))
+            if (await _queue.PlayerCount(Context.Guild.Id) > 1 &&
+                await _db.IsServerInGame(Context.Guild.Id))
                 await ReplyAsync(
-                    $"It is now <@{await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
+                    $"It is now <@{await _queue.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
         }
 
         [Command("stats", RunMode = RunMode.Async)]
         [Help(new[] {".stats"},
             "Get the statistics of you or another player to see if they are a noob, pro, or cheater.", true,
             "UNObot 1.4")]
-        public async Task Stats()
+        internal async Task Stats()
         {
-            var stats = await UNODatabaseService.GetStats(Context.User.Id);
-            var note = await UNODatabaseService.GetNote(Context.User.Id);
-            if (!await UNODatabaseService.UserExists(Context.User.Id))
+            var stats = await _db.GetStats(Context.User.Id);
+            var note = await _db.GetNote(Context.User.Id);
+            if (!await _db.UserExists(Context.User.Id))
                 await ReplyAsync("You do not currently exist in the database. Maybe you should play a game.");
             if (note != null) await ReplyAsync($"NOTE: {note}");
             await ReplyAsync($"{Context.User.Username}'s stats:\n"
@@ -93,7 +106,7 @@ namespace UNObot.Modules
         [Help(new[] {".stats (ping another player, or their ID)"},
             "Get the statistics of you or another player to see if they are a noob, pro, or cheater.", true,
             "UNObot 1.4")]
-        public async Task Stats2([Remainder] string user)
+        internal async Task Stats2([Remainder] string user)
         {
             user = user.Trim();
             //Style of Username#XXXX or Username XXXX
@@ -113,15 +126,15 @@ namespace UNObot.Modules
                 return;
             }
 
-            if (!await UNODatabaseService.UserExists(userid))
+            if (!await _db.UserExists(userid))
             {
                 await ReplyAsync(
                     "The user does not exist; either you have typed it wrong, or that user doesn't exist in the UNObot database.");
                 return;
             }
 
-            var stats = await UNODatabaseService.GetStats(userid);
-            var note = await UNODatabaseService.GetNote(userid);
+            var stats = await _db.GetStats(userid);
+            var note = await _db.GetNote(userid);
             if (note != null) await ReplyAsync($"NOTE: {note}");
             await ReplyAsync($"{Context.Client.GetUser(userid).Username}'s stats:\n"
                              + $"Games joined: {stats[0]}\n"
@@ -132,16 +145,16 @@ namespace UNObot.Modules
         [Command("setnote", RunMode = RunMode.Async)]
         [Help(new[] {".setnote"}, "Set a note about yourself. Write nothing to delete your message", true,
             "UNObot 2.1")]
-        public async Task SetNote()
+        internal async Task SetNote()
         {
-            await UNODatabaseService.RemoveNote(Context.User.Id);
+            await _db.RemoveNote(Context.User.Id);
             await ReplyAsync("Successfully removed note!");
         }
 
         [Command("setnote", RunMode = RunMode.Async)]
         [Help(new[] {".setnote"}, "Set a note about yourself. Write nothing to delete your message", true,
             "UNObot 2.1")]
-        public async Task SetNote([Remainder] string text)
+        internal async Task SetNote([Remainder] string text)
         {
             text = text.Trim().Normalize();
             if (text == "")
@@ -154,26 +167,15 @@ namespace UNObot.Modules
                 return;
             }
 
-            await UNODatabaseService.SetNote(Context.User.Id, text);
+            await _db.SetNote(Context.User.Id, text);
             await ReplyAsync("Successfully set note!");
-        }
-
-        [Command("welcome", RunMode = RunMode.Async)]
-        public async Task Welcome()
-        {
-            var response = "Permissions:\n";
-            var user = Context.Guild.GetUser(Context.Client.CurrentUser.Id);
-            var perms = user.GetPermissions(Context.Channel as IGuildChannel);
-            foreach (var c in perms.ToList()) response += $"- {c.ToString()} | \n";
-            LoggerService.Log(LogSeverity.Debug, response);
-            await ReplyAsync("UNObot was already succcessfully initialized in this server. But thank you.");
         }
 
         [Command("setusernote", RunMode = RunMode.Async)]
         [RequireOwner]
         [Help(new[] {".setusernote"}, "Set a note about others. This command can only be ran by DoggySazHi.", false,
             "UNObot 2.1")]
-        public async Task SetNote(string user, [Remainder] string text)
+        internal async Task SetNote(string user, [Remainder] string text)
         {
             user = user.Trim(' ', '<', '>', '!', '@');
             if (!ulong.TryParse(user, out var userid))
@@ -182,7 +184,7 @@ namespace UNObot.Modules
                 return;
             }
 
-            if (!await UNODatabaseService.UserExists(userid))
+            if (!await _db.UserExists(userid))
             {
                 await ReplyAsync(
                     "The user does not exist; either you have typed it wrong, or that user doesn't exist in the UNObot database.");
@@ -191,15 +193,15 @@ namespace UNObot.Modules
 
             if (text.Trim().Normalize() == "")
                 text = "???";
-            await UNODatabaseService.SetNote(userid, text);
+            await _db.SetNote(userid, text);
             await ReplyAsync("Successfully set note!");
         }
 
         [Command("removenote", RunMode = RunMode.Async)]
         [Help(new[] {".removenote"}, "Remove your current note.", true, "UNObot 2.1")]
-        public async Task RemoveNote()
+        internal async Task RemoveNote()
         {
-            await UNODatabaseService.RemoveNote(Context.User.Id);
+            await _db.RemoveNote(Context.User.Id);
             await ReplyAsync("Successfully removed note!");
         }
 
@@ -208,32 +210,32 @@ namespace UNObot.Modules
         [DisableDMs]
         [Help(new[] {".draw"}, "Draw a randomized card, which is based off probabilities instead of the real deck.",
             true, "UNObot 0.2")]
-        public async Task Draw()
+        internal async Task Draw()
         {
-            await UNODatabaseService.AddGame(Context.Guild.Id);
-            await UNODatabaseService.AddUser(Context.User.Id, Context.User.Username);
-            if (await UNODatabaseService.IsPlayerInGame(Context.User.Id))
+            await _db.AddGame(Context.Guild.Id);
+            await _db.AddUser(Context.User.Id, Context.User.Username);
+            if (await _db.IsPlayerInGame(Context.User.Id))
             {
-                if (await UNODatabaseService.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
+                if (await _db.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
                 {
-                    if (await UNODatabaseService.IsServerInGame(Context.Guild.Id))
+                    if (await _db.IsServerInGame(Context.Guild.Id))
                     {
-                        if (await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id) == Context.User.Id)
+                        if (await _queue.GetCurrentPlayer(Context.Guild.Id) == Context.User.Id)
                         {
-                            if ((await UNODatabaseService.GetGameMode(Context.Guild.Id)).HasFlag(GameMode.Retro))
-                                if (await UNODatabaseService.GetCardsDrawn(Context.Guild.Id) > 0)
+                            if ((await _db.GetGameMode(Context.Guild.Id)).HasFlag(GameMode.Retro))
+                                if (await _db.GetCardsDrawn(Context.Guild.Id) > 0)
                                 {
                                     await ReplyAsync(
                                         "You cannot draw again, as you have already drawn a card previously.");
                                     return;
                                 }
 
-                            var card = RandomCard();
+                            var card = Card.RandomCard();
                             await Context.Message.Author.SendMessageAsync(
                                 "You have recieved: " + card.Color + " " + card.Value + ".");
-                            await UNODatabaseService.AddCard(Context.User.Id, card);
-                            await UNODatabaseService.SetCardsDrawn(Context.Guild.Id, 1);
-                            AFKTimerService.ResetTimer(Context.Guild.Id);
+                            await _db.AddCard(Context.User.Id, card);
+                            await _db.SetCardsDrawn(Context.Guild.Id, 1);
+                            _afk.ResetTimer(Context.Guild.Id);
 
                             return;
                         }
@@ -260,20 +262,20 @@ namespace UNObot.Modules
         [Alias("hand", "cards", "d", "h")]
         [DisableDMs]
         [Help(new[] {".deck"}, "View all of the cards you possess.", true, "UNObot 0.2")]
-        public async Task Deck()
+        internal async Task Deck()
         {
-            await UNODatabaseService.AddGame(Context.Guild.Id);
-            await UNODatabaseService.AddUser(Context.User.Id, Context.User.Username);
-            if (await UNODatabaseService.IsPlayerInGame(Context.User.Id))
+            await _db.AddGame(Context.Guild.Id);
+            await _db.AddUser(Context.User.Id, Context.User.Username);
+            if (await _db.IsPlayerInGame(Context.User.Id))
             {
-                if (await UNODatabaseService.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
+                if (await _db.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
                 {
-                    if (await UNODatabaseService.IsServerInGame(Context.Guild.Id))
+                    if (await _db.IsServerInGame(Context.Guild.Id))
                     {
-                        var num = (await UNODatabaseService.GetCards(Context.User.Id)).Count;
+                        var num = (await _db.GetCards(Context.User.Id)).Count;
                         await Context.Message.Author.SendMessageAsync(
                             $"You have {num} {(num == 1 ? "card" : "cards")} left.", false,
-                            await EmbedDisplayService.DisplayCards(Context.User.Id, Context.Guild.Id));
+                            await _embed.DisplayCards(Context.User.Id, Context.Guild.Id));
                     }
                     else
                     {
@@ -314,21 +316,21 @@ namespace UNObot.Modules
         [DisableDMs]
         [Help(new[] {".skip"}, "Skip your turn if the game is in fast mode. However, you are forced to draw two cards.",
             true, "UNObot 2.7")]
-        public async Task Skip()
+        internal async Task Skip()
         {
-            if (await UNODatabaseService.IsPlayerInGame(Context.User.Id))
+            if (await _db.IsPlayerInGame(Context.User.Id))
             {
-                if (await UNODatabaseService.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
+                if (await _db.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
                 {
-                    if (await UNODatabaseService.IsServerInGame(Context.Guild.Id))
+                    if (await _db.IsServerInGame(Context.Guild.Id))
                     {
-                        if (Context.User.Id == await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id))
+                        if (Context.User.Id == await _queue.GetCurrentPlayer(Context.Guild.Id))
                         {
-                            var gamemode = await UNODatabaseService.GetGameMode(Context.Guild.Id);
+                            var gamemode = await _db.GetGameMode(Context.Guild.Id);
                             if (gamemode.HasFlag(GameMode.Fast))
                             {
-                                var playerCards = await UNODatabaseService.GetCards(Context.User.Id);
-                                var currentCard = await UNODatabaseService.GetCurrentCard(Context.Guild.Id);
+                                var playerCards = await _db.GetCards(Context.User.Id);
+                                var currentCard = await _db.GetCurrentCard(Context.Guild.Id);
                                 var found = false;
                                 foreach (var c in playerCards)
                                     if (c.Color == currentCard.Color || c.Value == currentCard.Value)
@@ -344,16 +346,16 @@ namespace UNObot.Modules
                                     return;
                                 }
 
-                                await QueueHandlerService.NextPlayer(Context.Guild.Id);
-                                await UNODatabaseService.AddCard(Context.User.Id, RandomCard(2));
+                                await _queue.NextPlayer(Context.Guild.Id);
+                                await _db.AddCard(Context.User.Id, Card.RandomCard(2));
                                 await ReplyAsync(
-                                    $"You have drawn two cards. It is now <@{await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
-                                AFKTimerService.ResetTimer(Context.Guild.Id);
+                                    $"You have drawn two cards. It is now <@{await _queue.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
+                                _afk.ResetTimer(Context.Guild.Id);
                             }
                             else if (gamemode.HasFlag(GameMode.Retro))
                             {
-                                var playerCards = await UNODatabaseService.GetCards(Context.User.Id);
-                                var currentCard = await UNODatabaseService.GetCurrentCard(Context.Guild.Id);
+                                var playerCards = await _db.GetCards(Context.User.Id);
+                                var currentCard = await _db.GetCurrentCard(Context.Guild.Id);
                                 var found = false;
                                 foreach (var c in playerCards)
                                     if (c.Color == currentCard.Color || c.Value == currentCard.Value)
@@ -369,7 +371,7 @@ namespace UNObot.Modules
                                     return;
                                 }
 
-                                var cardsDrawn = await UNODatabaseService.GetCardsDrawn(Context.Guild.Id);
+                                var cardsDrawn = await _db.GetCardsDrawn(Context.Guild.Id);
                                 if (cardsDrawn == 0)
                                 {
                                     await ReplyAsync(
@@ -378,12 +380,12 @@ namespace UNObot.Modules
                                 }
 
                                 // Useless, it will be cleared.
-                                //await UNODatabaseService.SetCardsDrawn(Context.Guild.Id, CardsDrawn + 1);
+                                //await _db.SetCardsDrawn(Context.Guild.Id, CardsDrawn + 1);
 
-                                await QueueHandlerService.NextPlayer(Context.Guild.Id);
+                                await _queue.NextPlayer(Context.Guild.Id);
                                 await ReplyAsync(
-                                    $"You have skipped, and it is now <@{await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
-                                AFKTimerService.ResetTimer(Context.Guild.Id);
+                                    $"You have skipped, and it is now <@{await _queue.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
+                                _afk.ResetTimer(Context.Guild.Id);
                             }
                             else
                             {
@@ -415,17 +417,17 @@ namespace UNObot.Modules
         [Alias("top", "c")]
         [DisableDMs]
         [Help(new[] {".card"}, "See the most recently placed card.", true, "UNObot 0.2")]
-        public async Task Card()
+        internal async Task CardCmd()
         {
-            await UNODatabaseService.AddGame(Context.Guild.Id);
-            await UNODatabaseService.AddUser(Context.User.Id, Context.User.Username);
-            if (await UNODatabaseService.IsPlayerInGame(Context.User.Id))
+            await _db.AddGame(Context.Guild.Id);
+            await _db.AddUser(Context.User.Id, Context.User.Username);
+            if (await _db.IsPlayerInGame(Context.User.Id))
             {
-                if (await UNODatabaseService.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
+                if (await _db.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
                 {
-                    if (await UNODatabaseService.IsServerInGame(Context.Guild.Id))
+                    if (await _db.IsServerInGame(Context.Guild.Id))
                     {
-                        var currentCard = await UNODatabaseService.GetCurrentCard(Context.Guild.Id);
+                        var currentCard = await _db.GetCurrentCard(Context.Guild.Id);
                         await ReplyAsync("Current card: " + currentCard);
                     }
                     else
@@ -450,41 +452,40 @@ namespace UNObot.Modules
         [Help(new[] {".quickplay"},
             "Autodraw/play the first card possible. This is very inefficient, and should only be used if you are saving a wild card, or you don't have usable cards left.",
             true, "UNObot 2.4")]
-        public async Task QuickPlay()
+        internal async Task QuickPlay()
         {
             async Task Skip()
             {
-                await QueueHandlerService.NextPlayer(Context.Guild.Id);
+                await _queue.NextPlayer(Context.Guild.Id);
                 await ReplyAsync(
-                    $"It is now <@{await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
-                AFKTimerService.ResetTimer(Context.Guild.Id);
+                    $"It is now <@{await _queue.GetCurrentPlayer(Context.Guild.Id)}>'s turn.");
+                _afk.ResetTimer(Context.Guild.Id);
             }
 
-            if (await UNODatabaseService.IsPlayerInGame(Context.User.Id))
+            if (await _db.IsPlayerInGame(Context.User.Id))
             {
-                if (await UNODatabaseService.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
+                if (await _db.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
                 {
-                    if (await UNODatabaseService.IsServerInGame(Context.Guild.Id))
+                    if (await _db.IsServerInGame(Context.Guild.Id))
                     {
-                        if (Context.User.Id == await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id))
+                        if (Context.User.Id == await _queue.GetCurrentPlayer(Context.Guild.Id))
                         {
-                            var gamemode = await UNODatabaseService.GetGameMode(Context.Guild.Id);
-                            var playerCards = await UNODatabaseService.GetCards(Context.User.Id);
-                            var currentCard = await UNODatabaseService.GetCurrentCard(Context.Guild.Id);
+                            var gamemode = await _db.GetGameMode(Context.Guild.Id);
+                            var playerCards = await _db.GetCards(Context.User.Id);
+                            var currentCard = await _db.GetCurrentCard(Context.Guild.Id);
 
                             foreach (var c in playerCards)
                                 if (c.Color == currentCard.Color || c.Value == currentCard.Value)
                                 {
                                     await Context.Message.Author.SendMessageAsync(
                                         "Played the first card that matched the criteria!");
-                                    await ReplyAsync(await _playCard.Play(c.Color, c.Value, null, Context.User.Id,
-                                        Context.Guild.Id));
+                                    await ReplyAsync(await _playCard.Play(c.Color, c.Value, null, Context));
                                     return;
                                 }
 
                             if (gamemode.HasFlag(GameMode.Retro))
                             {
-                                var cardsAlreadyDrawn = await UNODatabaseService.GetCardsDrawn(Context.Guild.Id);
+                                var cardsAlreadyDrawn = await _db.GetCardsDrawn(Context.Guild.Id);
                                 if (cardsAlreadyDrawn > 0)
                                 {
                                     await Skip();
@@ -497,8 +498,8 @@ namespace UNObot.Modules
                             var response = "Cards drawn:\n";
                             while (true)
                             {
-                                var rngCard = RandomCard();
-                                await UNODatabaseService.AddCard(Context.User.Id, rngCard);
+                                var rngCard = Card.RandomCard();
+                                await _db.AddCard(Context.User.Id, rngCard);
                                 cardsTaken.Add(rngCard);
                                 cardsDrawn++;
 
@@ -509,7 +510,7 @@ namespace UNObot.Modules
                                         $"You have drawn {cardsDrawn} card{(cardsDrawn == 1 ? "" : "s")}.");
                                     await Context.Message.Author.SendMessageAsync(response);
                                     await ReplyAsync(await _playCard.Play(rngCard.Color, rngCard.Value, null,
-                                        Context.User.Id, Context.Guild.Id));
+                                        Context));
                                     break;
                                 }
 
@@ -520,7 +521,7 @@ namespace UNObot.Modules
                                         $"\n\nYou have drawn {cardsDrawn} cards, however the autodrawer has stopped at a Wild card." +
                                         $"{(gamemode.HasFlag(GameMode.Retro) ? "If you want to skip, use .skip or .quickplay." : "\nIf you want to draw for a regular card, run the command again.")}";
                                     await Context.Message.Author.SendMessageAsync(response);
-                                    await UNODatabaseService.SetCardsDrawn(Context.Guild.Id, cardsDrawn);
+                                    await _db.SetCardsDrawn(Context.Guild.Id, cardsDrawn);
                                     break;
                                 }
 
@@ -533,7 +534,7 @@ namespace UNObot.Modules
                                 }
                             }
 
-                            AFKTimerService.ResetTimer(Context.Guild.Id);
+                            _afk.ResetTimer(Context.Guild.Id);
                         }
                         else
                         {
@@ -562,7 +563,7 @@ namespace UNObot.Modules
         [Help(new[] {".players"},
             "See all players in the game, as well as the amount of cards they have. Note however that if the server is running in private mode, it will not show the exact amount of cards that they have.",
             false, "UNObot 1.0")]
-        public async Task Players()
+        internal async Task Players()
         {
             await ReplyAsync(".players has been deprecated and has been replaced with .game.");
             await Game();
@@ -571,13 +572,13 @@ namespace UNObot.Modules
         [Command("game", RunMode = RunMode.Async)]
         [Help(new[] {".game"}, "Display all information about the current game.", true, "UNObot 3.0")]
         [DisableDMs]
-        public async Task Game()
+        internal async Task Game()
         {
-            await UNODatabaseService.AddGame(Context.Guild.Id);
-            await UNODatabaseService.AddUser(Context.User.Id, Context.User.Username);
-            if (await UNODatabaseService.IsServerInGame(Context.Guild.Id))
-                await ReplyAsync($"It is now <@{await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id)}>'s turn.",
-                    false, await EmbedDisplayService.DisplayGame(Context.Guild.Id));
+            await _db.AddGame(Context.Guild.Id);
+            await _db.AddUser(Context.User.Id, Context.User.Username);
+            if (await _db.IsServerInGame(Context.Guild.Id))
+                await ReplyAsync($"It is now <@{await _queue.GetCurrentPlayer(Context.Guild.Id)}>'s turn.",
+                    false, await _embed.DisplayGame(Context.Guild.Id));
             else
                 await ReplyAsync("The game has not started!");
         }
@@ -586,12 +587,12 @@ namespace UNObot.Modules
         [Alias("q")]
         [DisableDMs]
         [Help(new[] {".queue"}, "See which players are currently waiting to play a game.", true, "UNObot 2.4")]
-        public async Task Queue()
+        internal async Task Queue()
         {
-            await UNODatabaseService.AddGame(Context.Guild.Id);
-            await UNODatabaseService.AddUser(Context.User.Id, Context.User.Username);
-            var currqueue = await UNODatabaseService.GetUsersWithServer(Context.Guild.Id);
-            if (await UNODatabaseService.IsServerInGame(Context.Guild.Id))
+            await _db.AddGame(Context.Guild.Id);
+            await _db.AddUser(Context.User.Id, Context.User.Username);
+            var currqueue = await _db.GetUsersWithServer(Context.Guild.Id);
+            if (await _db.IsServerInGame(Context.Guild.Id))
             {
                 await ReplyAsync("Since the server is already in a game, you can also use .game!");
                 await Game();
@@ -614,34 +615,34 @@ namespace UNObot.Modules
         [Alias("u")]
         [DisableDMs]
         [Help(new[] {".uno"}, "Quickly use this when you have one card left.", true, "UNObot 0.2")]
-        public async Task UnOcmd()
+        internal async Task UnOcmd()
         {
-            await UNODatabaseService.AddGame(Context.Guild.Id);
-            await UNODatabaseService.AddUser(Context.User.Id, Context.User.Username);
-            if (await UNODatabaseService.IsPlayerInGame(Context.User.Id))
+            await _db.AddGame(Context.Guild.Id);
+            await _db.AddUser(Context.User.Id, Context.User.Username);
+            if (await _db.IsPlayerInGame(Context.User.Id))
             {
-                if (await UNODatabaseService.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
+                if (await _db.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
                 {
-                    if (await UNODatabaseService.IsServerInGame(Context.Guild.Id))
+                    if (await _db.IsServerInGame(Context.Guild.Id))
                     {
-                        var unoPlayer = await UNODatabaseService.GetUNOPlayer(Context.Guild.Id);
-                        var gamemode = await UNODatabaseService.GetGameMode(Context.Guild.Id);
+                        var unoPlayer = await _db.GetUNOPlayer(Context.Guild.Id);
+                        var gamemode = await _db.GetGameMode(Context.Guild.Id);
                         if (unoPlayer == Context.User.Id)
                         {
                             await ReplyAsync(
                                 "Great, you have one card left! Everyone still has a chance however, so keep going!");
-                            await UNODatabaseService.SetUNOPlayer(Context.Guild.Id, 0);
+                            await _db.SetUNOPlayer(Context.Guild.Id, 0);
                         }
                         else if (unoPlayer != 0 && gamemode.HasFlag(GameMode.UNOCallout))
                         {
                             await ReplyAsync(
                                 $"<@{unoPlayer}> was too slow to call out their UNO by {Context.User.Username}! They have been given two cards.");
-                            await UNODatabaseService.AddCard(unoPlayer, RandomCard(2));
-                            await UNODatabaseService.SetUNOPlayer(Context.Guild.Id, 0);
+                            await _db.AddCard(unoPlayer, Card.RandomCard(2));
+                            await _db.SetUNOPlayer(Context.Guild.Id, 0);
                         }
                         else
                         {
-                            var description = await UNODatabaseService.GetDescription(Context.Guild.Id);
+                            var description = await _db.GetDescription(Context.Guild.Id);
                             if (description.Contains("forgot") && description.Contains(Context.User.Id.ToString()))
                             {
                                 await ReplyAsync("You have already been penalized; no extra cards will be drawn.");
@@ -650,7 +651,7 @@ namespace UNObot.Modules
 
                             await ReplyAsync(
                                 "Uh oh, you still have more than one card! Two cards have been added to your hand.");
-                            await UNODatabaseService.AddCard(Context.User.Id, RandomCard(2));
+                            await _db.AddCard(Context.User.Id, Card.RandomCard(2));
                         }
                     }
                     else
@@ -674,7 +675,7 @@ namespace UNObot.Modules
         [Help(new[] {".start"},
             "Start the game you have joined in the current server. Now, you can also add an option to it, which currently include \"fast\", which allows the skip command, \"retro\", which like fast, allows skipping but limits draws, \"unocallout\", allowing .uno to be used to penalize a person who forgot to call out UNO, and \"private\", preventing others to see the exact amount of cards you have.",
             true, "UNObot 0.2")]
-        public async Task Start()
+        internal async Task Start()
         {
             await Start("normal");
         }
@@ -684,13 +685,13 @@ namespace UNObot.Modules
         [Help(new[] {".start (gamemode)"},
             "Start the game you have joined in the current server. Now, you can also add an option to it, which currently include \"fast\", which allows the skip command, \"retro\", which like fast, allows skipping but limits draws, \"unocallout\", allowing .uno to be used to penalize a person who forgot to call out UNO, and \"private\", preventing others to see the exact amount of cards you have.",
             true, "UNObot 0.2")]
-        public async Task Start(params string[] modes)
+        internal async Task Start(params string[] modes)
         {
-            if (await UNODatabaseService.IsPlayerInGame(Context.User.Id))
+            if (await _db.IsPlayerInGame(Context.User.Id))
             {
-                await UNODatabaseService.AddGame(Context.Guild.Id);
-                await UNODatabaseService.AddUser(Context.User.Id, Context.User.Username);
-                if (await UNODatabaseService.IsServerInGame(Context.Guild.Id))
+                await _db.AddGame(Context.Guild.Id);
+                await _db.AddUser(Context.User.Id, Context.User.Username);
+                if (await _db.IsServerInGame(Context.Guild.Id))
                 {
                     await ReplyAsync("The game has already started!");
                 }
@@ -728,50 +729,50 @@ namespace UNObot.Modules
                         return;
                     }
 
-                    await UNODatabaseService.AddGuild(Context.Guild.Id, 1, (ushort) flagMode);
+                    await _db.AddGuild(Context.Guild.Id, 1, (ushort) flagMode);
                     response += $"Playing in modes: {flagMode}!";
-                    await UNODatabaseService.GetUsersAndAdd(Context.Guild.Id);
-                    foreach (var player in await UNODatabaseService.GetPlayers(Context.Guild.Id))
-                        await UNODatabaseService.UpdateStats(player, 1);
+                    await _db.GetUsersAndAdd(Context.Guild.Id);
+                    foreach (var player in await _db.GetPlayers(Context.Guild.Id))
+                        await _db.UpdateStats(player, 1);
                     //randomize start
                     for (var i = 0;
                         i < ThreadSafeRandom.ThisThreadsRandom.Next(0,
-                            await QueueHandlerService.PlayerCount(Context.Guild.Id));
+                            await _queue.PlayerCount(Context.Guild.Id));
                         i++)
-                        await QueueHandlerService.NextPlayer(Context.Guild.Id);
+                        await _queue.NextPlayer(Context.Guild.Id);
 
                     response += "\n\nGame has started. All information about your cards will be PMed.\n" +
                                 "You have been given 7 cards; run \".deck\" to view them.\n" +
                                 "Remember; you have 1 minute and 30 seconds to place a card.\n" +
-                                $"The first player is <@{await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id)}>.\n";
-                    var currentCard = RandomCard();
+                                $"The first player is <@{await _queue.GetCurrentPlayer(Context.Guild.Id)}>.\n";
+                    var currentCard = Card.RandomCard();
                     while (currentCard.Color == "Wild")
-                        currentCard = RandomCard();
+                        currentCard = Card.RandomCard();
                     switch (currentCard.Value)
                     {
                         case "+2":
-                            var curuser = await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id);
-                            await UNODatabaseService.AddCard(curuser, RandomCard(2));
+                            var curuser = await _queue.GetCurrentPlayer(Context.Guild.Id);
+                            await _db.AddCard(curuser, Card.RandomCard(2));
                             response += $"\nToo bad <@{curuser}>, you just got two cards!";
                             break;
                         case "Reverse":
-                            await QueueHandlerService.ReversePlayers(Context.Guild.Id);
+                            await _queue.ReversePlayers(Context.Guild.Id);
                             response +=
-                                $"\nWhat? The order has been reversed! Now, it's <@{await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id)}>'s turn.";
+                                $"\nWhat? The order has been reversed! Now, it's <@{await _queue.GetCurrentPlayer(Context.Guild.Id)}>'s turn.";
                             break;
                         case "Skip":
-                            await QueueHandlerService.NextPlayer(Context.Guild.Id);
+                            await _queue.NextPlayer(Context.Guild.Id);
                             response +=
-                                $"What's this? A skip? Oh well, now it's <@{await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id)}>'s turn.";
+                                $"What's this? A skip? Oh well, now it's <@{await _queue.GetCurrentPlayer(Context.Guild.Id)}>'s turn.";
                             break;
                     }
 
-                    await UNODatabaseService.SetCurrentCard(Context.Guild.Id, currentCard);
+                    await _db.SetCurrentCard(Context.Guild.Id, currentCard);
                     response += $"\nCurrent card: {currentCard}\n";
-                    await UNODatabaseService.UpdateDescription(Context.Guild.Id, "The game has just started!");
+                    await _db.UpdateDescription(Context.Guild.Id, "The game has just started!");
                     await ReplyAsync(response);
-                    await UNODatabaseService.StarterCard(Context.Guild.Id);
-                    AFKTimerService.StartTimer(Context.Guild.Id);
+                    await _db.StarterCard(Context.Guild.Id);
+                    _afk.StartTimer(Context.Guild.Id);
                 }
             }
             else
@@ -787,15 +788,15 @@ namespace UNObot.Modules
         [Help(new[] {".play (color) (value)"},
             "Play a card that is of the same color or value. Exceptions include all Wild cards, which you can play on any card.",
             true, "UNObot 0.2")]
-        public async Task Play(string color, string value)
+        internal async Task Play(string color, string value)
         {
-            if (await UNODatabaseService.IsPlayerInGame(Context.User.Id))
+            if (await _db.IsPlayerInGame(Context.User.Id))
             {
-                if (await UNODatabaseService.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
+                if (await _db.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
                 {
-                    if (await UNODatabaseService.IsServerInGame(Context.Guild.Id))
+                    if (await _db.IsServerInGame(Context.Guild.Id))
                     {
-                        if (Context.User.Id == await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id))
+                        if (Context.User.Id == await _queue.GetCurrentPlayer(Context.Guild.Id))
                         {
                             if (color.ToLower() == "wild")
                             {
@@ -804,9 +805,8 @@ namespace UNObot.Modules
                             }
                             else
                             {
-                                AFKTimerService.ResetTimer(Context.Guild.Id);
-                                await ReplyAsync(await _playCard.Play(color, value, null, Context.User.Id,
-                                    Context.Guild.Id));
+                                _afk.ResetTimer(Context.Guild.Id);
+                                await ReplyAsync(await _playCard.Play(color, value, null, Context));
                             }
                         }
                         else
@@ -837,19 +837,18 @@ namespace UNObot.Modules
         [Help(new[] {".play (color) (value) (new color)"},
             "Play a card that is of the same color or value. Exceptions include all Wild cards, which you can play on any card.",
             true, "UNObot 0.2")]
-        public async Task PlayWild(string color, string value, string wild)
+        internal async Task PlayWild(string color, string value, string wild)
         {
-            if (await UNODatabaseService.IsPlayerInGame(Context.User.Id))
+            if (await _db.IsPlayerInGame(Context.User.Id))
             {
-                if (await UNODatabaseService.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
+                if (await _db.IsPlayerInServerGame(Context.User.Id, Context.Guild.Id))
                 {
-                    if (await UNODatabaseService.IsServerInGame(Context.Guild.Id))
+                    if (await _db.IsServerInGame(Context.Guild.Id))
                     {
-                        if (Context.User.Id == await QueueHandlerService.GetCurrentPlayer(Context.Guild.Id))
+                        if (Context.User.Id == await _queue.GetCurrentPlayer(Context.Guild.Id))
                         {
-                            AFKTimerService.ResetTimer(Context.Guild.Id);
-                            await ReplyAsync(await _playCard.Play(color, value, wild, Context.User.Id,
-                                Context.Guild.Id));
+                            _afk.ResetTimer(Context.Guild.Id);
+                            await ReplyAsync(await _playCard.Play(color, value, wild, Context));
                         }
                         else
                         {
@@ -878,16 +877,16 @@ namespace UNObot.Modules
         [DisableDMs]
         [Help(new[] {".setdefaultchannel"}, "Set the default channel for UNObot to chat in. Managers only.", true,
             "UNObot 2.0")]
-        public async Task SetDefaultChannel()
+        internal async Task SetDefaultChannel()
         {
             await ReplyAsync($":white_check_mark: Set default UNO channel to #{Context.Channel.Name}.");
-            await UNODatabaseService.SetDefaultChannel(Context.Guild.Id, Context.Channel.Id);
-            await UNODatabaseService.SetHasDefaultChannel(Context.Guild.Id, true);
+            await _db.SetDefaultChannel(Context.Guild.Id, Context.Channel.Id);
+            await _db.SetHasDefaultChannel(Context.Guild.Id, true);
 
             //default channel should be allowed, by default
-            var currentChannels = await UNODatabaseService.GetAllowedChannels(Context.Guild.Id);
+            var currentChannels = await _db.GetAllowedChannels(Context.Guild.Id);
             currentChannels.Add(Context.Channel.Id);
-            await UNODatabaseService.SetAllowedChannels(Context.Guild.Id, currentChannels);
+            await _db.SetAllowedChannels(Context.Guild.Id, currentChannels);
         }
 
         [Command("removedefaultchannel", RunMode = RunMode.Async)]
@@ -896,21 +895,21 @@ namespace UNObot.Modules
         [DisableDMs]
         [Help(new[] {".removedefaultchannel"}, "Remove the default channel for UNObot to chat in. Managers only.", true,
             "UNObot 2.0")]
-        public async Task RemoveDefaultChannel()
+        internal async Task RemoveDefaultChannel()
         {
             await ReplyAsync(":white_check_mark: Removed default UNO channel, assuming there was one.");
-            if (!await UNODatabaseService.HasDefaultChannel(Context.Guild.Id))
+            if (!await _db.HasDefaultChannel(Context.Guild.Id))
             {
-                var channel = await UNODatabaseService.GetDefaultChannel(Context.Guild.Id);
+                var channel = await _db.GetDefaultChannel(Context.Guild.Id);
                 //remove default channel
-                var currentChannels = await UNODatabaseService.GetAllowedChannels(Context.Guild.Id);
+                var currentChannels = await _db.GetAllowedChannels(Context.Guild.Id);
                 currentChannels.Remove(channel);
-                await UNODatabaseService.SetAllowedChannels(Context.Guild.Id, currentChannels);
+                await _db.SetAllowedChannels(Context.Guild.Id, currentChannels);
             }
 
             //ok tbh, it should be null, but doesn't really matter imo
-            await UNODatabaseService.SetDefaultChannel(Context.Guild.Id, Context.Guild.DefaultChannel.Id);
-            await UNODatabaseService.SetHasDefaultChannel(Context.Guild.Id, false);
+            await _db.SetDefaultChannel(Context.Guild.Id, Context.Guild.DefaultChannel.Id);
+            await _db.SetHasDefaultChannel(Context.Guild.Id, false);
         }
 
         [Command("enforcechannels", RunMode = RunMode.Async)]
@@ -919,10 +918,10 @@ namespace UNObot.Modules
         [DisableDMs]
         [Help(new[] {".enforcechannels"},
             "Only allow UNObot to recieve commands from enforced channels. Managers only.", true, "UNObot 2.0")]
-        public async Task EnforceChannel()
+        internal async Task EnforceChannel()
         {
             //start check (make sure all channels exist at time of enforcing)
-            var allowedChannels = await UNODatabaseService.GetAllowedChannels(Context.Guild.Id);
+            var allowedChannels = await _db.GetAllowedChannels(Context.Guild.Id);
             var currentChannels = Context.Guild.TextChannels.ToList();
             var currentChannelsIDs = new List<ulong>();
             foreach (var channel in currentChannels)
@@ -931,7 +930,7 @@ namespace UNObot.Modules
             {
                 foreach (var toRemove in allowedChannels.Except(currentChannelsIDs))
                     allowedChannels.Remove(toRemove);
-                await UNODatabaseService.SetAllowedChannels(Context.Guild.Id, allowedChannels);
+                await _db.SetAllowedChannels(Context.Guild.Id, allowedChannels);
             }
 
             //end check
@@ -942,15 +941,15 @@ namespace UNObot.Modules
                 return;
             }
 
-            if (!await UNODatabaseService.HasDefaultChannel(Context.Guild.Id))
+            if (!await _db.HasDefaultChannel(Context.Guild.Id))
             {
                 await Context.Channel.SendMessageAsync(
                     "Error: Cannot enable enforcechannels if there is no default channel!");
                 return;
             }
 
-            var enforce = await UNODatabaseService.ChannelEnforced(Context.Guild.Id);
-            await UNODatabaseService.SetEnforceChannel(Context.Guild.Id, !enforce);
+            var enforce = await _db.ChannelEnforced(Context.Guild.Id);
+            await _db.SetEnforceChannel(Context.Guild.Id, !enforce);
             if (!enforce)
                 await ReplyAsync(
                     ":white_check_mark: Currently enforcing UNObot to only respond to messages in the filter.");
@@ -963,26 +962,26 @@ namespace UNObot.Modules
         [DisableDMs]
         [Help(new[] {".addallowedchannel"}, "Allow the current channel to accept commands. Managers only.", true,
             "UNObot 2.0")]
-        public async Task AddAllowedChannel()
+        internal async Task AddAllowedChannel()
         {
-            if (!await UNODatabaseService.HasDefaultChannel(Context.Guild.Id))
+            if (!await _db.HasDefaultChannel(Context.Guild.Id))
             {
                 await ReplyAsync("Error: You need to set a default channel first.");
             }
-            else if (await UNODatabaseService.GetDefaultChannel(Context.Guild.Id) == Context.Channel.Id)
+            else if (await _db.GetDefaultChannel(Context.Guild.Id) == Context.Channel.Id)
             {
                 await ReplyAsync(
                     "The default UNO channel has been set to this already; there is no need to add this as a default channel.");
             }
-            else if ((await UNODatabaseService.GetAllowedChannels(Context.Guild.Id)).Contains(Context.Channel.Id))
+            else if ((await _db.GetAllowedChannels(Context.Guild.Id)).Contains(Context.Channel.Id))
             {
                 await ReplyAsync("This channel is already allowed! To see all channels, use .listallowedchannels.");
             }
             else
             {
-                var currentChannels = await UNODatabaseService.GetAllowedChannels(Context.Guild.Id);
+                var currentChannels = await _db.GetAllowedChannels(Context.Guild.Id);
                 currentChannels.Add(Context.Channel.Id);
-                await UNODatabaseService.SetAllowedChannels(Context.Guild.Id, currentChannels);
+                await _db.SetAllowedChannels(Context.Guild.Id, currentChannels);
                 await ReplyAsync(
                     $"Added #{Context.Channel.Name} to the list of allowed channels. Make sure you .enforcechannels for this to work.");
             }
@@ -993,9 +992,9 @@ namespace UNObot.Modules
         [DisableDMs]
         [Help(new[] {".listallowedchannels"},
             "See all channels that UNObot can accept commands if enforced mode was on.", true, "UNObot 2.0")]
-        public async Task ListAllowedChannels()
+        internal async Task ListAllowedChannels()
         {
-            var allowedChannels = await UNODatabaseService.GetAllowedChannels(Context.Guild.Id);
+            var allowedChannels = await _db.GetAllowedChannels(Context.Guild.Id);
             //start check
             var currentChannels = Context.Guild.TextChannels.ToList();
             var currentChannelsIDs = new List<ulong>();
@@ -1005,11 +1004,11 @@ namespace UNObot.Modules
             {
                 foreach (var toRemove in allowedChannels.Except(currentChannelsIDs))
                     allowedChannels.Remove(toRemove);
-                await UNODatabaseService.SetAllowedChannels(Context.Guild.Id, allowedChannels);
+                await _db.SetAllowedChannels(Context.Guild.Id, allowedChannels);
             }
 
             //end check
-            var enforced = await UNODatabaseService.ChannelEnforced(Context.Guild.Id);
+            var enforced = await _db.ChannelEnforced(Context.Guild.Id);
             var yesno = enforced ? "Currently enforcing channels." : "Not enforcing channels.";
             var response = $"{yesno}\nCurrent channels allowed: \n";
             if (allowedChannels.Count == 0)
@@ -1029,10 +1028,10 @@ namespace UNObot.Modules
         [DisableDMs]
         [Help(new[] {".removeallowedchannel"},
             "Remove a channel that UNObot previously was allowed to accept commands from.", true, "UNObot 2.0")]
-        public async Task RemoveAllowedChannel()
+        internal async Task RemoveAllowedChannel()
         {
             //start check
-            var allowedChannels = await UNODatabaseService.GetAllowedChannels(Context.Guild.Id);
+            var allowedChannels = await _db.GetAllowedChannels(Context.Guild.Id);
             var currentChannels = Context.Guild.TextChannels.ToList();
             var currentChannelsIDs = new List<ulong>();
             foreach (var channel in currentChannels)
@@ -1041,14 +1040,14 @@ namespace UNObot.Modules
             {
                 foreach (var toRemove in allowedChannels.Except(currentChannelsIDs))
                     allowedChannels.Remove(toRemove);
-                await UNODatabaseService.SetAllowedChannels(Context.Guild.Id, allowedChannels);
+                await _db.SetAllowedChannels(Context.Guild.Id, allowedChannels);
             }
 
             //end check
             if (allowedChannels.Contains(Context.Channel.Id))
             {
                 allowedChannels.Remove(Context.Channel.Id);
-                await UNODatabaseService.SetAllowedChannels(Context.Guild.Id, allowedChannels);
+                await _db.SetAllowedChannels(Context.Guild.Id, allowedChannels);
                 await ReplyAsync($"Removed <#{Context.Channel.Id}> from the allowed channels!");
             }
             else
@@ -1062,7 +1061,7 @@ namespace UNObot.Modules
         [Alias("em", "leaveserver")]
         [DisableDMs]
         [Help(new[] {".emergency"}, "Kick the bot from the server.", false, "UNObot 2.0")]
-        public async Task Emergency()
+        internal async Task Emergency()
         {
             await ReplyAsync(
                 "If a rogue bot has taken over this account, it will be disabled with the use of this command.\n" +

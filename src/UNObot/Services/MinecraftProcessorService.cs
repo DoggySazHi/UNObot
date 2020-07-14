@@ -12,19 +12,28 @@ namespace UNObot.Services
 {
     internal class MCUser
     {
-        public string Username { get; set; }
-        public string Ouchies { get; set; }
-        public bool Online { get; set; }
-        public double[] Coordinates { get; set; }
-        public string Health { get; set; }
-        public string Food { get; set; }
-        public int Experience { get; set; }
+        internal string Username { get; set; }
+        internal string Ouchies { get; set; }
+        internal bool Online { get; set; }
+        internal double[] Coordinates { get; set; }
+        internal string Health { get; set; }
+        internal string Food { get; set; }
+        internal int Experience { get; set; }
     }
 
-    public static class MinecraftProcessorService
+    internal class MinecraftProcessorService
     {
+        private readonly LoggerService _logger;
+        private readonly QueryHandlerService _query;
+        
+        public MinecraftProcessorService(LoggerService logger, QueryHandlerService query)
+        {
+            _logger = logger;
+            _query = query;
+        }
+        
         // NOTE: It's the query port!
-        public static List<MCUser> GetMCUsers(string ip, ushort port, string password, out IRCON client,
+        internal List<MCUser> GetMCUsers(string ip, ushort port, string password, out IRCON client,
             bool dispose = true)
         {
             var output = new List<MCUser>();
@@ -32,10 +41,10 @@ namespace UNObot.Services
             // Smaller than ulong keys, big enough for RNG.
             var random = new Random();
             var randomKey = (ulong) random.Next(0, 10000);
-            var success = QueryHandlerService.CreateRCON(ip, port, password, randomKey, out client);
+            var success = _query.CreateRCON(ip, port, password, randomKey, out client);
             if (!success)
             {
-                LoggerService.Log(LogSeverity.Error, "Failed to create an RCON connection to get players!");
+                _logger.Log(LogSeverity.Error, "Failed to create an RCON connection to get players!");
                 return output;
             }
 
@@ -69,7 +78,7 @@ namespace UNObot.Services
                 /*
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
-                    LoggerService.Log(LogSeverity.Warning, "Linux platform: safety to use old parser.");
+                    _logger.Log(LogSeverity.Warning, "Linux platform: safety to use old parser.");
                     OldUserProcessor(ref Output, Name, Client);
                     continue;
                 }
@@ -77,10 +86,10 @@ namespace UNObot.Services
 
                 var command = $"data get entity {name}";
                 var randomKey2 = (ulong) random.Next(0, 10000);
-                var success2 = QueryHandlerService.CreateRCON(ip, port, password, randomKey2, out var client2);
+                var success2 = _query.CreateRCON(ip, port, password, randomKey2, out var client2);
                 if (!success2)
                 {
-                    LoggerService.Log(LogSeverity.Error,
+                    _logger.Log(LogSeverity.Error,
                         "Failed to create a second RCON connection to get player data!");
                     return output;
                 }
@@ -95,8 +104,8 @@ namespace UNObot.Services
                 var jsonString = "No string was found.";
                 try
                 {
-                    // Ignore the (PLAYERNAME) has the following data:
-                    LoggerService.Log(LogSeverity.Debug, command + " | " + client2.Data);
+                    // Ignore the (PLAYER_NAME) has the following data:
+                    _logger.Log(LogSeverity.Debug, command + " | " + client2.Data);
                     jsonString = client2.Data.Substring(client2.Data.IndexOf('{'));
                     // For UUIDs, they start an array with I; to indicate all values are integers; ignore it.
                     jsonString = jsonString.Replace("I;", "");
@@ -113,7 +122,7 @@ namespace UNObot.Services
                     }
                     catch (JsonReaderException ex)
                     {
-                        LoggerService.Log(LogSeverity.Error, $@"Error near string: {JSONString.Substring(
+                        _logger.Log(LogSeverity.Error, $@"Error near string: {JSONString.Substring(
                             Math.Max(0, ex.LinePosition - 10), Math.Min(20, JSONString.Length - ex.LinePosition - 10)
                         )}", ex);
                         
@@ -134,7 +143,7 @@ namespace UNObot.Services
                         catch (JsonReaderException ex)
                         {
                             exceptionPath = ex.Path;
-                            LoggerService.Log(LogSeverity.Error, $@"Error near string: {jsonString.Substring(
+                            _logger.Log(LogSeverity.Error, $@"Error near string: {jsonString.Substring(
                                 Math.Max(0, ex.LinePosition - 10), Math.Min(20, jsonString.Length - ex.LinePosition - 10)
                             )}", ex);
                         }
@@ -145,7 +154,7 @@ namespace UNObot.Services
                     if (exceptionPath != null)
                     {
                         var badToken = json.SelectToken(exceptionPath);
-                        LoggerService.Log(LogSeverity.Error, $"Error occurred with token: {badToken}");
+                        _logger.Log(LogSeverity.Error, $"Error occurred with token: {badToken}");
                     }
 
                     var dimension = json["Dimension"];
@@ -188,7 +197,7 @@ namespace UNObot.Services
                 }
                 catch (Exception ex)
                 {
-                    LoggerService.Log(LogSeverity.Error, $"Failed to process JSON! Falling back...\n{jsonString}", ex);
+                    _logger.Log(LogSeverity.Error, $"Failed to process JSON! Falling back...\n{jsonString}", ex);
                     OldUserProcessor(ref output, name, client);
                 }
 
@@ -200,7 +209,7 @@ namespace UNObot.Services
             return output;
         }
 
-        private static void OldUserProcessor(ref List<MCUser> users, string name, IRCON client)
+        private void OldUserProcessor(ref List<MCUser> users, string name, IRCON client)
         {
             client.ExecuteSingle(
                 $"execute as {name} at @s run summon minecraft:armor_stand ~ ~ ~ {{Invisible:1b,PersistenceRequired:1b,Tags:[\"coordfinder\"]}}",
@@ -224,24 +233,24 @@ namespace UNObot.Services
                 }
                 catch (FormatException)
                 {
-                    LoggerService.Log(LogSeverity.Warning, $"Failed to process coordinates. Response: {client.Data}");
+                    _logger.Log(LogSeverity.Warning, $"Failed to process coordinates. Response: {client.Data}");
                 }
 
             client.ExecuteSingle(
                 $"execute as @e[tag=coordfinder] at @s in the_nether run execute as @a[name={name}, distance=..1] run tag @e[tag=coordfinder] add found",
                 true);
-            LoggerService.Log(LogSeverity.Debug, $"Armor-stand for dimension check: {client.Data}");
-            client.ExecuteSingle("tag @e[tag=cooordfinder] list", true);
-            LoggerService.Log(LogSeverity.Debug, $"Armor-stand for dimension check: {client.Data}");
+            _logger.Log(LogSeverity.Debug, $"Armor-stand for dimension check: {client.Data}");
+            client.ExecuteSingle("tag @e[tag=coordfinder] list", true);
+            _logger.Log(LogSeverity.Debug, $"Armor-stand for dimension check: {client.Data}");
             if (!client.Data.Contains("found"))
             {
                 coordinates[3] = 1;
                 client.ExecuteSingle(
                     $"execute as @e[tag=coordfinder] at @s in the_end run execute as @a[name={name}, distance=..1] run tag @e[tag=coordfinder] add found",
                     true);
-                LoggerService.Log(LogSeverity.Debug, $"Armor-stand for dimension check: {client.Data}");
-                client.ExecuteSingle("tag @e[tag=cooordfinder] list", true);
-                LoggerService.Log(LogSeverity.Debug, $"Armor-stand for dimension check: {client.Data}");
+                _logger.Log(LogSeverity.Debug, $"Armor-stand for dimension check: {client.Data}");
+                client.ExecuteSingle("tag @e[tag=coordfinder] list", true);
+                _logger.Log(LogSeverity.Debug, $"Armor-stand for dimension check: {client.Data}");
                 if (!client.Data.Contains("found"))
                     coordinates[3] = 0;
             }
@@ -266,7 +275,7 @@ namespace UNObot.Services
                 }
                 catch (FormatException)
                 {
-                    LoggerService.Log(LogSeverity.Warning, $"Failed to process experience. Response: {client.Data}");
+                    _logger.Log(LogSeverity.Warning, $"Failed to process experience. Response: {client.Data}");
                 }
 
             foreach (var correctUser in users.Where(user => user.Username == name))

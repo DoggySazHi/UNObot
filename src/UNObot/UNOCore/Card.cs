@@ -1,25 +1,37 @@
-﻿using UNObot.TerminalCore;
+﻿using System;
+using UNObot.Plugins.TerminalCore;
 
 namespace UNObot.UNOCore
 {
     internal class Card
     {
-        public string Color;
-        public string Value;
+        internal readonly string Color;
+        internal readonly string Value;
+
+        internal Card(string color, string value)
+        {
+            Color = color;
+            Value = value;
+        }
 
         public override string ToString()
         {
             return $"{Color} {Value}";
         }
 
-        public bool Equals(Card other)
+        public override bool Equals(object other)
         {
-            return Value == other.Value && Color == other.Color;
+            if (!(other is Card otherCard)) return false;
+            return Value == otherCard.Value && Color == otherCard.Color;
+        }
+        
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Color, Value);
         }
 
-        static Card RandomCard()
+        internal static Card RandomCard()
         {
-            var card = new Card();
             var lockObject = new object();
             int myColor;
             int myCard;
@@ -31,16 +43,18 @@ namespace UNObot.UNOCore
                 myColor = ThreadSafeRandom.ThisThreadsRandom.Next(1, 5);
             }
 
-            card.Color = myColor switch
+            var color = myColor switch
             {
                 1 => "Red",
                 2 => "Yellow",
                 3 => "Green",
                 _ => "Blue"
             };
+            
+            string value;
             if (myCard < 10)
             {
-                card.Value = myCard.ToString();
+                value = myCard.ToString();
             }
             else
             {
@@ -49,29 +63,26 @@ namespace UNObot.UNOCore
                 switch (action)
                 {
                     case 1:
-                        card.Value = "Skip";
+                        value = "Skip";
                         break;
                     case 2:
-                        card.Value = "Reverse";
+                        value = "Reverse";
                         break;
                     case 3:
-                        card.Value = "+2";
+                        value = "+2";
                         break;
-                    case 4:
+                    default:
                         var wild = ThreadSafeRandom.ThisThreadsRandom.Next(1, 3);
-                        card.Color = "Wild";
-                        if (wild == 1)
-                            card.Value = "Color";
-                        else
-                            card.Value = "+4";
+                        color = "Wild";
+                        value = wild == 1 ? "Color" : "+4";
                         break;
                 }
             }
 
-            return card;
+            return new Card(color, value);
         }
         
-        static Card[] RandomCard(int count)
+        internal static Card[] RandomCard(int count)
         {
             var cards = new Card[count];
             for (var i = 0; i < count; i++)

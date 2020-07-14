@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using UNObot.Plugins;
@@ -6,13 +7,13 @@ using UNObot.Plugins.Attributes;
 
 namespace UNObot.Core
 {
-    internal class Initializer : IPlugin
+    public class Initializer : IPlugin
     {
         public string Name { get; private set; }
         public string Description { get; private set; }
         public string Author { get; private set; }
         public string Version { get; private set; }
-        
+
         public int OnLoad()
         {
             Name = "UNObot-Core Module";
@@ -29,8 +30,14 @@ namespace UNObot.Core
         }
     }
     
-    internal class CoreCommands : ModuleBase<SocketCommandContext>
+    public class CoreCommands : ModuleBase<SocketCommandContext>
     {
+        private LoggerService _logger;
+        public CoreCommands(LoggerService logger)
+        {
+            _logger = logger;
+        }
+        
         [Command("testperms", RunMode = RunMode.Async)]
         [RequireUserPermission(GuildPermission.ManageGuild)]
         [DisableDMs]
@@ -57,6 +64,17 @@ namespace UNObot.Core
             var perms = user.GetPermissions(Context.Channel as IGuildChannel);
             foreach (var c in perms.ToList()) response += $"- {c.ToString()} | \n";
             await ReplyAsync(response);
+        }
+        
+        [Command("welcome", RunMode = RunMode.Async)]
+        public async Task Welcome()
+        {
+            var response = "Permissions:\n";
+            var user = Context.Guild.GetUser(Context.Client.CurrentUser.Id);
+            var perms = user.GetPermissions(Context.Channel as IGuildChannel);
+            foreach (var c in perms.ToList()) response += $"- {c.ToString()} | \n";
+            _logger.Log(LogSeverity.Debug, response);
+            await ReplyAsync("UNObot was already succcessfully initialized in this server. But thank you.");
         }
 
         [Command("nick", RunMode = RunMode.Async)]

@@ -6,7 +6,7 @@ namespace UNObot.UNOCore
     internal class Command
     {
         [JsonConstructor]
-        public Command(string commandName, List<string> aliases, List<string> usages, string help, bool active,
+        internal Command(string commandName, List<string> aliases, List<string> usages, string help, bool active,
             string version)
         {
             CommandName = commandName;
@@ -18,18 +18,18 @@ namespace UNObot.UNOCore
         }
 
         [JsonConstructor]
-        public Command(string commandName, List<string> aliases, List<string> usages, string help, bool active,
+        internal Command(string commandName, List<string> aliases, List<string> usages, string help, bool active,
             string version, bool disableDMs) : this(commandName, aliases, usages, help, active, version)
         {
             DisableDMs = disableDMs;
         }
 
-        public string CommandName { get; set; }
-        public List<string> Usages { get; set; }
-        public List<string> Aliases { get; set; }
-        public string Help { get; set; }
-        public bool Active { get; set; }
-        public string Version { get; set; }
-        public bool DisableDMs { get; set; }
+        internal string CommandName { get; set; }
+        internal List<string> Usages { get; set; }
+        internal List<string> Aliases { get; set; }
+        internal string Help { get; set; }
+        internal bool Active { get; set; }
+        internal string Version { get; set; }
+        internal bool DisableDMs { get; set; }
     }
 }

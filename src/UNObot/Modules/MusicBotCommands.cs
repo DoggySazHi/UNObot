@@ -6,7 +6,7 @@ using UNObot.Services;
 
 namespace UNObot.Modules
 {
-    internal class MusicBotCommands : ModuleBase<SocketCommandContext>
+    public class MusicBotCommands : ModuleBase<SocketCommandContext>
     {
         private readonly MusicBotService _music;
 
@@ -20,7 +20,7 @@ namespace UNObot.Modules
         [DisableDMs]
         [Help(new[] {".playerplay", ".playerplay (link)", ".playerplay (search)"},
             "Wait, MusicBot functionality in UNObot?", true, "UNObot 3.2 Beta 1")]
-        public async Task PlayMusic([Remainder] string link)
+        internal async Task PlayMusic([Remainder] string link)
         {
             var audioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
             if (audioChannel == null)
@@ -56,7 +56,7 @@ namespace UNObot.Modules
         [Command("playerplay", RunMode = RunMode.Async)]
         [Alias("playmusic", "pm")]
         [DisableDMs]
-        public async Task Play()
+        internal async Task Play()
         {
             var audioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
             if (audioChannel == null)
@@ -74,7 +74,7 @@ namespace UNObot.Modules
         [DisableDMs]
         [Help(new[] {".playerplay", ".playerplay (link)", ".playerplay (search)"},
             "Wait, MusicBot functionality in UNObot?", true, "UNObot 3.2 Beta 1")]
-        public async Task PlayMusicTop([Remainder] string link)
+        internal async Task PlayMusicTop([Remainder] string link)
         {
             var audioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
             if (audioChannel == null)
@@ -114,7 +114,7 @@ namespace UNObot.Modules
         [Alias("pause", "pauseplayer")]
         [DisableDMs]
         [Help(new[] {".playerpause"}, "Pause the player.", true, "UNObot 3.2 Beta 2")]
-        public async Task Pause()
+        internal async Task Pause()
         {
             var audioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
             if (audioChannel == null)
@@ -131,7 +131,7 @@ namespace UNObot.Modules
         [Alias("shuffle")]
         [DisableDMs]
         [Help(new[] {".playershuffle"}, "Shuffle the player.", true, "UNObot 3.2 Beta 3")]
-        public async Task Shuffle()
+        internal async Task Shuffle()
         {
             var audioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
             if (audioChannel == null)
@@ -147,7 +147,7 @@ namespace UNObot.Modules
         [Command("playerskip", RunMode = RunMode.Async)]
         [DisableDMs]
         [Help(new[] {".playerskip"}, "Skip the current song.", true, "UNObot 3.2 Beta 3")]
-        public async Task Skip()
+        internal async Task Skip()
         {
             var audioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
             if (audioChannel == null)
@@ -164,7 +164,7 @@ namespace UNObot.Modules
         [Command("playerloop", RunMode = RunMode.Async)]
         [DisableDMs]
         [Help(new[] {".playerloop"}, "Loop the current song.", true, "UNObot 3.2 Beta 4")]
-        public async Task Loop()
+        internal async Task Loop()
         {
             var audioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
             if (audioChannel == null)
@@ -181,7 +181,7 @@ namespace UNObot.Modules
         [Command("playerloopqueue", RunMode = RunMode.Async)]
         [DisableDMs]
         [Help(new[] {".playerloopqueue"}, "Loop the entire queue.", true, "UNObot 3.2 Beta 4")]
-        public async Task LoopQueue()
+        internal async Task LoopQueue()
         {
             var audioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
             if (audioChannel == null)
@@ -199,7 +199,7 @@ namespace UNObot.Modules
         [Alias("dc", "playerdisconnect")]
         [DisableDMs]
         [Help(new[] {".playerdc"}, "Disconnect the bot from the channel.", true, "UNObot 3.2 Beta 4")]
-        public async Task Disconnect()
+        internal async Task Disconnect()
         {
             var audioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
             if (audioChannel == null)
@@ -217,7 +217,7 @@ namespace UNObot.Modules
         [Alias("playernowplaying", "np")]
         [DisableDMs]
         [Help(new[] {".playernp"}, "Get the song playing.", true, "UNObot 3.2 Beta 2")]
-        public async Task NowPlaying()
+        internal async Task NowPlaying()
         {
             var result = _music.GetNowPlaying(Context.Guild.Id);
             if (!string.IsNullOrWhiteSpace(result.Item2))
@@ -231,7 +231,7 @@ namespace UNObot.Modules
         [DisableDMs]
         [Help(new[] {".playerqueue", ".playerqueue (page)"}, "Get the songs in the player's queue.", true,
             "UNObot 3.2 Beta 2")]
-        public async Task Queue()
+        internal async Task Queue()
         {
             var result = _music.GetMusicQueue(Context.Guild.Id, 1);
             if (!string.IsNullOrWhiteSpace(result.Item2))
@@ -243,7 +243,7 @@ namespace UNObot.Modules
         [Command("playerqueue", RunMode = RunMode.Async)]
         [Alias("pq")]
         [DisableDMs]
-        public async Task Queue(int page)
+        internal async Task Queue(int page)
         {
             var result = _music.GetMusicQueue(Context.Guild.Id, page);
             if (!string.IsNullOrWhiteSpace(result.Item2))
@@ -256,7 +256,7 @@ namespace UNObot.Modules
         [Alias("prm, rm")]
         [DisableDMs]
         [Help(new[] {".playerremove"}, "Remove the song.", true, "UNObot 3.2 Beta 3")]
-        public async Task Remove(int index)
+        internal async Task Remove(int index)
         {
             var audioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
             if (audioChannel == null)
@@ -274,7 +274,7 @@ namespace UNObot.Modules
         [Command("vctest1", RunMode = RunMode.Async)]
         [DisableDMsAttribute]
         [RequireOwner]
-        public async Task VCTest1([Remainder] string Link)
+        internal async Task VCTest1([Remainder] string Link)
         {
             var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
             if (AudioChannel == null)
@@ -310,7 +310,7 @@ namespace UNObot.Modules
         [Command("vctest2", RunMode = RunMode.Async)]
         [DisableDMsAttribute]
         [RequireOwner]
-        public async Task VCTest2([Remainder] string song)
+        internal async Task VCTest2([Remainder] string song)
         {
             var AudioChannel = (Context.User as IVoiceState)?.VoiceChannel;
             if (AudioChannel == null)

@@ -7,17 +7,15 @@ using Discord;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Linq;
-using UNObot.TerminalCore;
+using UNObot.Plugins.TerminalCore;
 using UNObot.UNOCore;
 using YoutubeExplode.Playlists;
-using UNObot.Services.MinecraftProcessorService;
-using UNObot.Services.QueryHandlerService;
 
 namespace UNObot.Services
 {
-    internal class ImageHandler
+    internal static class ImageHandler
     {
-        internal string GetImage(Card c)
+        internal static string GetImage(Card c)
         {
             return $"https://williamle.com/unobot/{c.Color}_{c.Value}.png";
         }
@@ -31,13 +29,19 @@ namespace UNObot.Services
         private readonly IConfiguration _config;
         private readonly UNODatabaseService _db;
         private readonly DiscordSocketClient _client;
+        private readonly QueryHandlerService _query;
+        private readonly MinecraftProcessorService _minecraft;
+        private readonly YoutubeService _youtube;
 
-        internal EmbedDisplayService(LoggerService logger, IConfiguration config, UNODatabaseService db, DiscordSocketClient client)
+        public EmbedDisplayService(LoggerService logger, IConfiguration config, UNODatabaseService db, DiscordSocketClient client, QueryHandlerService query, MinecraftProcessorService minecraft, YoutubeService youtube)
         {
             _logger = logger;
             _config = config;
             _db = db;
             _client = client;
+            _query = query;
+            _minecraft = minecraft;
+            _youtube = youtube;
         }
 
         internal async Task<Embed> DisplayGame(ulong serverId)
@@ -57,7 +61,7 @@ namespace UNObot.Services
             foreach (var id in await _db.GetPlayers(serverId))
             {
                 var user = _client.GetUser(id);
-                var cardCount = (await _db.GetCards(id)).Count();
+                var cardCount = (await _db.GetCards(id)).Count;
                 if (!gamemode.HasFlag(GameMode.Private))
                 {
                     if (id == (await _db.GetPlayers(serverId)).Peek())
@@ -249,8 +253,8 @@ namespace UNObot.Services
             var username = _client.GetUser(userId).Username;
             var servername = _client.GetGuild(serverId).Name;
             var r = ThreadSafeRandom.ThisThreadsRandom;
-            var playlist = await YoutubeService.GetSingleton().GetPlaylist(songUrl);
-            var thumbnail = await YoutubeService.GetSingleton().GetPlaylistThumbnail(playlist.Id);
+            var playlist = await _youtube.GetPlaylist(songUrl);
+            var thumbnail = await _youtube.GetPlaylistThumbnail(playlist.Id);
 
             var builder = new EmbedBuilder()
                 .WithTitle(playlist.Title)
@@ -353,11 +357,11 @@ namespace UNObot.Services
             for (var i = 0; i < Attempts; i++)
             {
                 if (!informationGet)
-                    informationGet = GetInfo(ip, (ushort) (port + 1), out information);
+                    informationGet = _query.GetInfo(ip, (ushort) (port + 1), out information);
                 if (!playersGet)
-                    playersGet = GetPlayers(ip, (ushort) (port + 1), out players);
+                    playersGet = _query.GetPlayers(ip, (ushort) (port + 1), out players);
                 if (!rulesGet)
-                    rulesGet = GetRules(ip, (ushort) (port + 1), out rules);
+                    rulesGet = _query.GetRules(ip, (ushort) (port + 1), out rules);
             }
 
             if (!informationGet || !playersGet || !rulesGet)
@@ -392,7 +396,7 @@ namespace UNObot.Services
             for (var i = 0; i < players.PlayerCount; i++)
             {
                 playersOnline +=
-                    $"{players.Players[i].Name} - {HumanReadable(players.Players[i].Duration)}";
+                    $"{players.Players[i].Name} - {QueryHandlerService.HumanReadable(players.Players[i].Duration)}";
                 if (i != players.PlayerCount - 1)
                     playersOnline += "\n";
             }
@@ -450,7 +454,7 @@ namespace UNObot.Services
         {
             //TODO with the new option to disable status, it might be that queries work but not simple statuses.
             var defaultStatus = new MCStatus(ip, port);
-            var extendedGet = GetInfoMCNew(ip, port, out var extendedStatus);
+            var extendedGet = _query.GetInfoMCNew(ip, port, out var extendedStatus);
 
             if (!defaultStatus.ServerUp && !extendedGet)
             {
@@ -459,10 +463,10 @@ namespace UNObot.Services
             }
 
             List<MCUser> mcUserInfo = null;
-            if (OutsideServers.Contains(ip) && SpecialServers.ContainsKey(port))
+            if (_query.OutsideServers.Contains(ip) && _query.SpecialServers.ContainsKey(port))
             {
-                var server = SpecialServers[port];
-                mcUserInfo = GetMCUsers(server.Server, server.RCONPort, server.Password, out _);
+                var server = _query.SpecialServers[port];
+                mcUserInfo = _minecraft.GetMCUsers(server.Server, server.RCONPort, server.Password, out _);
             }
 
             var random = ThreadSafeRandom.ThisThreadsRandom;
@@ -521,7 +525,7 @@ namespace UNObot.Services
         {
             var random = ThreadSafeRandom.ThisThreadsRandom;
 
-            if (!OutsideServers.Contains(ip) || !SpecialServers.ContainsKey(port))
+            if (!_query.OutsideServers.Contains(ip) || !_query.SpecialServers.ContainsKey(port))
             {
                 result = new EmbedBuilder()
                     .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
@@ -546,7 +550,7 @@ namespace UNObot.Services
             var extendedGet = false;
             for (var i = 0; i < Attempts; i++)
                 if (!extendedGet)
-                    extendedGet = GetInfoMCNew(ip, port, out status);
+                    extendedGet = _query.GetInfoMCNew(ip, port, out status);
 
             if (!extendedGet || status == null)
             {
@@ -554,8 +558,8 @@ namespace UNObot.Services
                 return false;
             }
 
-            var server = SpecialServers[port];
-            var ouchies = GetMCUsers(server.Server, server.RCONPort, server.Password, out _);
+            var server = _query.SpecialServers[port];
+            var ouchies = _minecraft.GetMCUsers(server.Server, server.RCONPort, server.Password, out _);
 
             var playersOnline = "";
 
@@ -592,7 +596,7 @@ namespace UNObot.Services
         {
             var random = ThreadSafeRandom.ThisThreadsRandom;
 
-            if (!OutsideServers.Contains(ip) || !SpecialServers.ContainsKey(port))
+            if (!_query.OutsideServers.Contains(ip) || !_query.SpecialServers.ContainsKey(port))
             {
                 result = new EmbedBuilder()
                     .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
@@ -617,7 +621,7 @@ namespace UNObot.Services
             var extendedGet = false;
             for (var i = 0; i < Attempts; i++)
                 if (!extendedGet)
-                    extendedGet = GetInfoMCNew(ip, port, out status);
+                    extendedGet = _query.GetInfoMCNew(ip, port, out status);
 
             if (!extendedGet || status == null)
             {
@@ -625,8 +629,8 @@ namespace UNObot.Services
                 return false;
             }
 
-            var server = SpecialServers[port];
-            var users = GetMCUsers(server.Server, server.RCONPort, server.Password, out _);
+            var server = _query.SpecialServers[port];
+            var users = _minecraft.GetMCUsers(server.Server, server.RCONPort, server.Password, out _);
 
             var playersOnline = "";
             foreach (var user in users)
@@ -681,14 +685,14 @@ namespace UNObot.Services
 
             try
             {
-                if (!OutsideServers.Contains(ip) || !SpecialServers.ContainsKey(port))
+                if (!_query.OutsideServers.Contains(ip) || !_query.SpecialServers.ContainsKey(port))
                 {
                     message = "This server does not support experience transfer.";
                 }
                 else
                 {
                     // One-shot query, since it takes too long if it does fail. Plus, it's only one query instead of multi-A2S.
-                    var extendedGet = GetInfoMCNew(ip, port, out var status);
+                    var extendedGet = _query.GetInfoMCNew(ip, port, out var status);
 
                     if (!extendedGet || status == null)
                     {
@@ -696,8 +700,8 @@ namespace UNObot.Services
                     }
                     else
                     {
-                        var server = SpecialServers[port];
-                        var users = GetMCUsers(server.Server, server.RCONPort, server.Password, out var client, false);
+                        var server = _query.SpecialServers[port];
+                        var users = _minecraft.GetMCUsers(server.Server, server.RCONPort, server.Password, out var client, false);
                         var sourceMCUsername = _db.GetMinecraftUser(source).GetAwaiter().GetResult();
                         var sourceUser = users.Find(o => o.Online && o.Username == sourceMCUsername);
                         var targetUser = users.Find(o => o.Online && o.Username == target);
@@ -747,7 +751,7 @@ namespace UNObot.Services
             }
             catch (Exception e)
             {
-                LoggerService.Log(LogSeverity.Error, message, e);
+                _logger.Log(LogSeverity.Error, message, e);
             }
 
             var random = ThreadSafeRandom.ThisThreadsRandom;
@@ -772,7 +776,7 @@ namespace UNObot.Services
             return true;
         }
 
-        internal bool WebhookEmbed(WebhookListenerService.CommitInfo info, out Embed result)
+        internal Embed WebhookEmbed(WebhookListenerService.CommitInfo info)
         {
             var random = ThreadSafeRandom.ThisThreadsRandom;
 
@@ -794,11 +798,10 @@ namespace UNObot.Services
                 .WithThumbnailUrl(info.RepoAvatar)
                 .WithDescription(info.CommitMessage)
                 .AddField("Commit Hash", info.CommitHash.Substring(0, Math.Min(7, info.CommitHash.Length)), true);
-            result = builder.Build();
-            return true;
+            return builder.Build();
         }
 
-        internal bool OctoprintEmbed(WebhookListenerService.OctoprintInfo info, out Embed result)
+        internal Embed OctoprintEmbed(WebhookListenerService.OctoprintInfo info)
         {
             var random = ThreadSafeRandom.ThisThreadsRandom;
 
@@ -827,16 +830,15 @@ namespace UNObot.Services
             if (completion != null && completion.Type != JTokenType.Null)
                 builder.AddField("Progress", completion.ToObject<double>().ToString("N2") + "%", true);
             if (printTime != null && printTime.Type != JTokenType.Null)
-                builder.AddField("Time", HumanReadable(printTime.ToObject<float>()), true);
+                builder.AddField("Time", QueryHandlerService.HumanReadable(printTime.ToObject<float>()), true);
             if (printTimeLeft != null && printTimeLeft.Type != JTokenType.Null)
-                builder.AddField("Estimated Time Left", HumanReadable(printTimeLeft.ToObject<float>()), true);
+                builder.AddField("Estimated Time Left", QueryHandlerService.HumanReadable(printTimeLeft.ToObject<float>()), true);
             if (bytesFile != null && bytesFile.Type != JTokenType.Null)
                 builder.AddField("File Size", (bytesFile.ToObject<float>() / 1000000.0).ToString("N2") + " MB", true);
             if (bytesPrinted != null && bytesPrinted.Type != JTokenType.Null)
                 builder.AddField("Bytes Printed", (bytesPrinted.ToObject<float>() / 1000000.0).ToString("N2") + " MB",
                     true);
-            result = builder.Build();
-            return true;
+            return builder.Build();
         }
     }
 }

@@ -7,7 +7,7 @@ using UNObot.Services;
 
 namespace UNObot.Modules
 {
-    internal class PluginConfigCommands : ModuleBase<SocketCommandContext>
+    public class PluginConfigCommands : ModuleBase<SocketCommandContext>
     {
         private readonly PluginLoaderService _pluginService;
 
@@ -18,7 +18,7 @@ namespace UNObot.Modules
         
         [Command("plugins", RunMode = RunMode.Async), Alias("pl")]
         [Help(new[] {".plugins"}, "Get all plugins loaded in the bot.", true, "UNObot 4.1.8")]
-        public async Task Plugin()
+        internal async Task Plugin()
         {
             var plugins = _pluginService.Plugins;
             if (plugins.Count > 0)
@@ -37,7 +37,7 @@ namespace UNObot.Modules
         
         [Command("plugins", RunMode = RunMode.Async), Alias("pl")]
         [Help(new[] {".plugins (mode)"}, "Get all plugins loaded in the bot.", true, "UNObot 4.1.8")]
-        public async Task Plugin(string mode, [Remainder] string plugin)
+        internal async Task Plugin(string mode, [Remainder] string plugin)
         {
             switch (mode.Trim().ToLower())
             {

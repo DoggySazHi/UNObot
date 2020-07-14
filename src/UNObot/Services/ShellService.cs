@@ -9,7 +9,7 @@ namespace UNObot.Services
     internal class ShellService
     {
         private LoggerService _logger;
-        internal ShellService(LoggerService logger)
+        public ShellService(LoggerService logger)
         {
             _logger = logger;
         }

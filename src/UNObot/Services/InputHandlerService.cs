@@ -5,8 +5,16 @@ using Discord.WebSocket;
 
 namespace UNObot.Services
 {
-    public static class InputHandlerService
+    internal class InputHandlerService
     {
+        private readonly LoggerService _logger;
+        private readonly DiscordSocketClient _client;
+        internal InputHandlerService(LoggerService logger, DiscordSocketClient client)
+        {
+            _logger = logger;
+            _client = client;
+        }
+        
         private static readonly Dictionary<IEmote, string> Reactions = new Dictionary<IEmote, string>
         {
             {Emote.Parse("<:red:498252114972114999>"), "Red"},
@@ -27,15 +35,15 @@ namespace UNObot.Services
             {new Emoji("9⃣"), "9"}
         };
 
-        public static async Task ReactionAdded(Cacheable<IUserMessage, ulong> reactmessage,
+        internal async Task ReactionAdded(Cacheable<IUserMessage, ulong> reactmessage,
             ISocketMessageChannel channel, SocketReaction reaction)
         {
             //TODO add check for what type of message (kete)
             string input;
             var message = await reactmessage.GetOrDownloadAsync();
-            var reacter = Program.Client.GetUser(reaction.UserId);
+            var reacter = _client.GetUser(reaction.UserId);
 
-            if (reacter.IsBot || message.Author.Id != Program.Client.CurrentUser.Id)
+            if (reacter.IsBot || message.Author.Id != _client.CurrentUser.Id)
                 return;
 
             /*
@@ -58,12 +66,12 @@ namespace UNObot.Services
             else
                 //probably a wrong icon
             {
-                LoggerService.Log(LogSeverity.Debug, reaction.Emote.Name);
+                _logger.Log(LogSeverity.Debug, reaction.Emote.Name);
             }
 #endif
         }
 
-        public static async Task AddReactions(IUserMessage s)
+        internal static async Task AddReactions(IUserMessage s)
         {
             foreach (var emoji in Reactions.Keys)
                 await s.AddReactionAsync(emoji);

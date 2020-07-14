@@ -12,7 +12,7 @@ namespace UNObot.Services
         private Dictionary<string, string> _localizations;
         private LoggerService _logger;
 
-        public LocalizationService(LoggerService logger)
+        internal LocalizationService(LoggerService logger)
         {
             _logger = logger;
             

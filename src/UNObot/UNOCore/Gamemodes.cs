@@ -3,7 +3,7 @@
 namespace UNObot.UNOCore
 {
     [Flags]
-    public enum GameMode : byte
+    internal enum GameMode : byte
     {
         Normal = 0,
 

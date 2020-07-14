@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Threading;
 
-namespace UNObot.TerminalCore
+namespace UNObot.Plugins.TerminalCore
 {
-    internal static class ThreadSafeRandom
+    public static class ThreadSafeRandom
     {
         [ThreadStatic] private static Random _local;
 
-        internal static Random ThisThreadsRandom =>
+        public static Random ThisThreadsRandom =>
             _local ??= new Random(unchecked(Environment.TickCount * 31 + Thread.CurrentThread.ManagedThreadId));
 
         public static void Shuffle<T>(this IList<T> list)

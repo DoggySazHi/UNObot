@@ -22,9 +22,15 @@ namespace UNObot.Services
         private readonly Timer _logTimer;
         private ServerLog _logs;
 
-        private UBOWServerLoggerService()
+        private readonly LoggerService _logger;
+        private readonly QueryHandlerService _query;
+
+        public UBOWServerLoggerService(LoggerService logger, QueryHandlerService query)
         {
-            LoggerService.Log(LogSeverity.Info, "Loading logger service...");
+            _logger = logger;
+            _query = query;
+            
+            _logger.Log(LogSeverity.Info, "Loading logger service...");
             _logTimer = new Timer
             {
                 AutoReset = true,
@@ -38,7 +44,7 @@ namespace UNObot.Services
         {
             if (!File.Exists(FileName) && File.Exists(JsonFileName))
             {
-                LoggerService.Log(LogSeverity.Info, "Found old JSON file, please wait as we upgrade...");
+                _logger.Log(LogSeverity.Info, "Found old JSON file, please wait as we upgrade...");
                 string data;
                 using (var sr = new StreamReader(JsonFileName))
                 {
@@ -50,19 +56,19 @@ namespace UNObot.Services
                 {
                     _logs = logFile;
                     await _logs.WriteToFile(FileName);
-                    LoggerService.Log(LogSeverity.Info, "Successfully upgraded file!");
+                    _logger.Log(LogSeverity.Info, "Successfully upgraded file!");
                 }
                 else
                 {
-                    LoggerService.Log(LogSeverity.Error, "Failed to read logs! Created new logging service.");
+                    _logger.Log(LogSeverity.Error, "Failed to read logs! Created new logging service.");
                     File.Delete(JsonFileName);
                 }
             }
 
             if (!File.Exists(FileName) && !File.Exists(JsonFileName))
             {
-                LoggerService.Log(LogSeverity.Info, "Started new logging service.");
-                _logs = new ServerLog
+                _logger.Log(LogSeverity.Info, "Started new logging service.");
+                _logs = new ServerLog(_logger)
                 {
                     ListOLogs = new List<Log>()
                 };
@@ -71,17 +77,15 @@ namespace UNObot.Services
                 return;
             }
 
-            _logs = new ServerLog();
+            _logs = new ServerLog(_logger);
             await _logs.ReadFromFile(FileName);
             _logTimer.Enabled = true;
-            LoggerService.Log(LogSeverity.Info, "UBOWS Logger initialized!");
+            _logger.Log(LogSeverity.Info, "UBOWS Logger initialized!");
         }
 
         private void LogMinute(object sender, ElapsedEventArgs e)
         {
-#pragma warning disable 4014
             Task.Run(async () =>
-#pragma warning restore 4014
             {
                 var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
                 byte playerCount = 0;
@@ -89,12 +93,10 @@ namespace UNObot.Services
 
                 for (var i = 0; i < Attempts; i++)
                 {
-                    serverUp = QueryHandlerService.GetInfo(Ip, QueryPort, out var output);
-                    if (serverUp)
-                    {
-                        playerCount = output.Players;
-                        break;
-                    }
+                    serverUp = _query.GetInfo(Ip, QueryPort, out var output);
+                    if (!serverUp) continue;
+                    playerCount = output.Players;
+                    break;
                 }
 
                 var nowLog = new Log
@@ -133,7 +135,7 @@ namespace UNObot.Services
             _logs.AverageLastYear = 1.0f * lastYear.Sum(o => o.PlayerCount) / lastYear.Count;
         }
 
-        public ServerAverages GetAverages()
+        internal ServerAverages GetAverages()
         {
             return new ServerAverages
             {
@@ -146,32 +148,39 @@ namespace UNObot.Services
         }
     }
 
-    public struct Log
+    internal struct Log
     {
-        public long Timestamp { get; set; }
-        public byte PlayerCount { get; set; }
-        public bool ServerUp { get; set; }
+        internal long Timestamp { get; set; }
+        internal byte PlayerCount { get; set; }
+        internal bool ServerUp { get; set; }
     }
 
     internal class ServerAverages
     {
-        public float AverageLastHour { get; set; }
-        public float AverageLast24H { get; set; }
-        public float AverageLastWeek { get; set; }
-        public float AverageLastMonth { get; set; }
-        public float AverageLastYear { get; set; }
+        internal float AverageLastHour { get; set; }
+        internal float AverageLast24H { get; set; }
+        internal float AverageLastWeek { get; set; }
+        internal float AverageLastMonth { get; set; }
+        internal float AverageLastYear { get; set; }
     }
 
     internal class ServerLog
     {
-        public float AverageLastHour { get; set; }
-        public float AverageLast24H { get; set; }
-        public float AverageLastWeek { get; set; }
-        public float AverageLastMonth { get; set; }
-        public float AverageLastYear { get; set; }
-        public List<Log> ListOLogs { get; set; }
+        private readonly LoggerService _logger;
+        
+        internal ServerLog(LoggerService logger)
+        {
+            _logger = logger;
+        }
 
-        public async Task WriteToFile(string fileName)
+        internal float AverageLastHour { get; set; }
+        internal float AverageLast24H { get; set; }
+        internal float AverageLastWeek { get; set; }
+        internal float AverageLastMonth { get; set; }
+        internal float AverageLastYear { get; set; }
+        internal List<Log> ListOLogs { get; set; }
+
+        internal async Task WriteToFile(string fileName)
         {
             await using var sw = new StreamWriter(fileName);
             await sw.WriteLineAsync("LH" + AverageLastHour);
@@ -182,7 +191,7 @@ namespace UNObot.Services
             foreach (var item in ListOLogs) await AppendToFile(fileName, item, sw);
         }
 
-        public async Task AppendToFile(string fileName, Log log, StreamWriter sw = null)
+        internal async Task AppendToFile(string fileName, Log log, StreamWriter sw = null)
         {
             var selfCreated = false;
             if (sw == null)
@@ -203,7 +212,7 @@ namespace UNObot.Services
                 await sw.DisposeAsync();
         }
 
-        public async Task ReadFromFile(string fileName)
+        internal async Task ReadFromFile(string fileName)
         {
             if (ListOLogs == null)
                 ListOLogs = new List<Log>();
@@ -240,7 +249,7 @@ namespace UNObot.Services
                         var split = data.Substring(1).Split(",");
                         if (split.Length != 3)
                         {
-                            LoggerService.Log(LogSeverity.Warning, $"Invalid record in file! Read {data}.");
+                            _logger.Log(LogSeverity.Warning, $"Invalid record in file! Read {data}.");
                             continue;
                         }
 
@@ -257,7 +266,7 @@ namespace UNObot.Services
                 }
                 catch (FormatException e)
                 {
-                    LoggerService.Log(LogSeverity.Warning, $"Failed to convert numbers for this: {data}", e);
+                    _logger.Log(LogSeverity.Warning, $"Failed to convert numbers for this: {data}", e);
                 }
 
                 data = await sr.ReadLineAsync();

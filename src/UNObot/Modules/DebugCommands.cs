@@ -14,17 +14,19 @@ using static UNObot.Services.IRCON;
 
 namespace UNObot.Modules
 {
-    internal class DebugCommands : ModuleBase<SocketCommandContext>
+    public class DebugCommands : ModuleBase<SocketCommandContext>
     {
         private readonly LoggerService _logger;
         private readonly GoogleTranslateService _gts;
         private readonly ShellService _shell;
+        private readonly QueryHandlerService _query;
         
-        internal DebugCommands(LoggerService logger, GoogleTranslateService gts, ShellService shell)
+        internal DebugCommands(LoggerService logger, GoogleTranslateService gts, ShellService shell, QueryHandlerService query)
         {
             _logger = logger;
             _gts = gts;
             _shell = shell;
+            _query = query;
         }
         
         [Command("purge", RunMode = RunMode.Async)]
@@ -33,7 +35,7 @@ namespace UNObot.Modules
         [DisableDMs]
         [Help(new[] {".purge (number of messages)"},
             "Delete messages via a range. Testing command; do not rely on forever.", false, "UNObot 1.4")]
-        public async Task Purge(int length)
+        internal async Task Purge(int length)
         {
             var messages = await Context.Channel.GetMessagesAsync(length + 1).FlattenAsync();
 
@@ -49,7 +51,7 @@ namespace UNObot.Modules
         [Command("helpmeplz", RunMode = RunMode.Async)]
         [RequireOwner]
         [DisableDMs]
-        public async Task HelpmePlz(int length)
+        internal async Task HelpmePlz(int length)
         {
             var messages = await Context.Channel.GetMessagesAsync(length + 1).FlattenAsync();
 
@@ -63,7 +65,7 @@ namespace UNObot.Modules
         }
 
         [Command("exit", RunMode = RunMode.Async)]
-        public async Task Exit()
+        internal async Task Exit()
         {
             if (Context.User.Id == 278524552462598145)
             {
@@ -71,27 +73,26 @@ namespace UNObot.Modules
             }
             else if (Context.User.Id == 191397590946807809)
             {
-                await ReplyAsync("Resetting!");
-                Program.Exit();
+                await ReplyAsync("Error: You deprecated this command. Nice job.");
             }
         }
 
 #if DEBUG
         [Command("translate", RunMode = RunMode.Async)]
-        public async Task Translate(string from, string to, [Remainder] string message)
+        internal async Task Translate(string from, string to, [Remainder] string message)
         {
             await ReplyAsync(_gts.Translate(message, from, to)).ConfigureAwait(false);
         }
 
         [Command("debugstatus", RunMode = RunMode.Async)]
-        public async Task DebugStatus()
+        internal async Task DebugStatus()
         {
             await _shell.GitFetch().ConfigureAwait(false);
             await ReplyAsync(await _shell.GitStatus().ConfigureAwait(false));
         }
 
         [Command("interop", RunMode = RunMode.Async)]
-        public async Task Interop()
+        internal async Task Interop()
         {
             RCONHelper.MukyuN();
             await ReplyAsync("Successfully interop local!");
@@ -108,10 +109,10 @@ namespace UNObot.Modules
         }
 
         [Command("getplayerdata", RunMode = RunMode.Async)]
-        public async Task RCONLongPacketTest(string user)
+        internal async Task RCONLongPacketTest(string user)
         {
-            var server = QueryHandlerService.SpecialServers[27285];
-            QueryHandlerService.SendRCON(server.Server, server.RCONPort, $"data get entity {user}", "mukyumukyu",
+            var server = _query.SpecialServers[27285];
+            _query.SendRCON(server.Server, server.RCONPort, $"data get entity {user}", "mukyumukyu",
                 out var data);
             if (data.Data.Equals("No entity was found", StringComparison.CurrentCultureIgnoreCase))
             {
@@ -153,7 +154,7 @@ namespace UNObot.Modules
         /*
         [Command("getbuttons", RunMode = RunMode.Async)]
         [HelpAttribute(new string[] { "yes." }, "", false, "no")]
-        public async Task AddButtons()
+        internal async Task AddButtons()
         {
             var message = await ReplyAsync("Loading buttons...");
             await InputHandler.AddReactions(message);
@@ -166,7 +167,7 @@ namespace UNObot.Modules
         ulong server = 0;
 
         [Command("enablespam")]
-        public async Task StartSpam()
+        internal async Task StartSpam()
         {
             spamTimer = new Timer
             {

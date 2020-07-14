@@ -15,7 +15,7 @@ using Newtonsoft.Json.Linq;
 
 namespace UNObot.Services
 {
-    public enum WebhookType : byte
+    internal enum WebhookType : byte
     {
         Bitbucket = 0,
         OctoPrint = 1
@@ -224,7 +224,7 @@ namespace UNObot.Services
                                            "Unknown User Name",
                                 UserAvatar = commit?["author"]?["user"]?["links"]?["avatar"]?["href"]?.ToString() ?? ""
                             };
-                            _embed.WebhookEmbed(commitInfo, out var embed);
+                            var embed = _embed.WebhookEmbed(commitInfo);
                             embeds.Add(embed);
                         }
 
@@ -314,7 +314,7 @@ namespace UNObot.Services
                         Message = data["message"],
                         Progress = JObject.Parse(data["progress"])
                     };
-                    _embed.OctoprintEmbed(info, out var embed);
+                    var embed = _embed.OctoprintEmbed(info);
                     _client.GetGuild(guild).GetTextChannel(channel).SendMessageAsync(null, false, embed);
                 }
             }
@@ -324,28 +324,28 @@ namespace UNObot.Services
             }
         }
 
-        public struct CommitInfo
+        internal struct CommitInfo
         {
-            public string RepoName { get; set; }
-            public string RepoAvatar { get; set; }
+            internal string RepoName { get; set; }
+            internal string RepoAvatar { get; set; }
 
-            public string CommitHash { get; set; }
-            public string CommitMessage { get; set; }
-            public DateTime CommitDate { get; set; }
+            internal string CommitHash { get; set; }
+            internal string CommitMessage { get; set; }
+            internal DateTime CommitDate { get; set; }
 
-            public string UserName { get; set; }
-            public string UserAvatar { get; set; }
+            internal string UserName { get; set; }
+            internal string UserAvatar { get; set; }
         }
 
-        public struct OctoprintInfo
+        internal struct OctoprintInfo
         {
-            public string Topic { get; set; }
-            public JObject Extra { get; set; }
-            public string Message { get; set; }
-            public JObject Progress { get; set; }
-            public JObject State { get; set; }
-            public JObject Job { get; set; }
-            public DateTimeOffset Timestamp { get; set; }
+            internal string Topic { get; set; }
+            internal JObject Extra { get; set; }
+            internal string Message { get; set; }
+            internal JObject Progress { get; set; }
+            internal JObject State { get; set; }
+            internal JObject Job { get; set; }
+            internal DateTimeOffset Timestamp { get; set; }
         }
     }
 }

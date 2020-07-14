@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using Discord;
@@ -11,13 +10,13 @@ namespace UNObot.Services
 {
     internal class AFKTimerService
     {
-        private static Dictionary<ulong, Timer> PlayTimers = new Dictionary<ulong, Timer>();
-        private LoggerService _logger;
-        private UNODatabaseService _db;
-        private QueueHandlerService _queue;
-        private DiscordSocketClient _client;
+        private static readonly Dictionary<ulong, Timer> PlayTimers = new Dictionary<ulong, Timer>();
+        private readonly LoggerService _logger;
+        private readonly UNODatabaseService _db;
+        private readonly QueueHandlerService _queue;
+        private readonly DiscordSocketClient _client;
 
-        internal AFKTimerService(LoggerService logger, UNODatabaseService db, QueueHandlerService queue, DiscordSocketClient client)
+        public AFKTimerService(LoggerService logger, UNODatabaseService db, QueueHandlerService queue, DiscordSocketClient client)
         {
             _logger = logger;
             _db = db;
@@ -25,7 +24,7 @@ namespace UNObot.Services
             _client = client;
         }
 
-        void ResetTimer(ulong server)
+        internal void ResetTimer(ulong server)
         {
             if (!PlayTimers.ContainsKey(server))
             {
@@ -38,7 +37,7 @@ namespace UNObot.Services
             }
         }
 
-        void StartTimer(ulong server)
+        internal void StartTimer(ulong server)
         {
             _logger.Log(LogSeverity.Debug, "Starting timer!");
             if (PlayTimers.ContainsKey(server))
@@ -70,10 +69,17 @@ namespace UNObot.Services
 
             if (serverId == 0)
             {
+                // Me when I'm looking back at my code after years
+                // https://cdn.discordapp.com/attachments/466827186901614592/731673102559215636/CC2IYg5.png
                 _logger.Log(LogSeverity.Error, "Couldn't figure out what server timer belonged to!");
                 return;
             }
 
+            if (!await _db.IsServerInGame(serverId))
+            {
+                DeleteTimer(serverId);
+                return;
+            }
             var currentPlayer = await _queue.GetCurrentPlayer(serverId);
             await _db.RemoveUser(currentPlayer);
             await _queue.DropFrontPlayer(serverId);
@@ -93,7 +99,7 @@ namespace UNObot.Services
                 serverId);
         }
 
-        public void DeleteTimer(ulong server)
+        private void DeleteTimer(ulong server)
         {
             if (PlayTimers.ContainsKey(server))
             {

@@ -3,6 +3,7 @@ using System.ServiceModel.Syndication;
 using System.Timers;
 using System.Xml;
 using Discord;
+using Discord.WebSocket;
 
 namespace UNObot.Services
 {
@@ -10,9 +11,13 @@ namespace UNObot.Services
     {
         private readonly Timer _checkInterval;
         private string _lastLink;
+        private readonly DiscordSocketClient _client;
+        private readonly LoggerService _logger;
 
-        private UnturnedReleaseNotes()
+        internal UnturnedReleaseNotes(DiscordSocketClient client, LoggerService logger)
         {
+            _logger = logger;
+            _client = client;
             _lastLink = GetLatestLink();
             _checkInterval = new Timer
             {
@@ -34,18 +39,18 @@ namespace UNObot.Services
             if (_lastLink != link)
             {
                 _lastLink = link;
-                await Program.Client.GetGuild(185593135458418701).GetTextChannel(477647595175411718)
+                await _client.GetGuild(185593135458418701).GetTextChannel(477647595175411718)
                     .SendMessageAsync(link);
                 //_ = Program.SendPM(Link, 191397590946807809);
-                LoggerService.Log(LogSeverity.Verbose, "Found update.");
+                _logger.Log(LogSeverity.Verbose, "Found update.");
             }
             else
             {
-                LoggerService.Log(LogSeverity.Verbose, "No updates found.");
+                _logger.Log(LogSeverity.Verbose, "No updates found.");
             }
         }
 
-        public static string GetLatestLink()
+        internal static string GetLatestLink()
         {
             var url = "https://steamcommunity.com/games/304930/rss/";
             SyndicationFeed feed;
