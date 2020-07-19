@@ -1,18 +1,62 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Microsoft.Extensions.Configuration;
 using UNObot.Plugins.Attributes;
 using UNObot.MusicBot.Services;
+using UNObot.Plugins.TerminalCore;
 
 namespace UNObot.MusicBot.Modules
 {
     public class MusicBotCommands : ModuleBase<SocketCommandContext>
     {
         private readonly MusicBotService _music;
+        private readonly IConfiguration _config;
 
-        internal MusicBotCommands(MusicBotService music)
+        internal MusicBotCommands(MusicBotService music, IConfiguration config)
         {
             _music = music;
+            _config = config;
+        }
+        
+        [Command("playerhelp", RunMode = RunMode.Async), Priority(100)]
+        [Alias("playercommand", "playercommands", "playercmd", "playercmds")]
+        internal async Task PlayerHelp()
+        {
+            var r = ThreadSafeRandom.ThisThreadsRandom;
+            var builder = new EmbedBuilder()
+                .WithTitle("Quick-start guide to UNObot-MusicBot")
+                .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
+                .WithTimestamp(DateTimeOffset.Now)
+                .WithFooter(footer =>
+                {
+                    footer
+                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
+                })
+                .WithAuthor(author =>
+                {
+                    var guildName = $"{Context.User.Username}'s DMs";
+                    if (!Context.IsPrivate)
+                        guildName = Context.Guild.Name;
+                    author
+                        .WithName($"Playing in {guildName}")
+                        .WithIconUrl("https://williamle.com/unobot/unobot.png");
+                })
+                .AddField("Usages", $"@{Context.Client.CurrentUser.Username}#{Context.Client.CurrentUser.Discriminator} *commandtorun*\n.*commandtorun*")
+                .AddField(".playerplay (Link)", "Add a song to the queue, or continue if the player is paused.", true)
+                .AddField(".playerpause", "Pause the player. Duh.", true)
+                .AddField(".playershuffle", "Shuffle the contents of the queue.", true)
+                .AddField(".playerskip", "Skip the current song playing to the next one in the queue.", true)
+                .AddField(".playerqueue", "Display the contents of the queue.", true)
+                .AddField(".playernp", "Find out what song is playing currently.", true)
+                .AddField(".playerloop", "Loop the current song playing.", true)
+                .AddField(".playerloopqueue", "Loop the contents of the queue.", true);
+            var embed = builder.Build();
+            await Context.Channel.SendMessageAsync(
+                "",
+                embed: embed);
         }
         
         [Command("playerplay", RunMode = RunMode.Async)]

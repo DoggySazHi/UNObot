@@ -1,16 +1,63 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Microsoft.Extensions.Configuration;
 using UNObot.Plugins.Attributes;
+using UNObot.Plugins.TerminalCore;
 
 namespace UNObot.Core.Modules
 {
     public class CoreCommands : ModuleBase<SocketCommandContext>
     {
-        private LoggerService _logger;
-        public CoreCommands(LoggerService logger)
+        private readonly LoggerService _logger;
+        private readonly IConfiguration _config;
+        
+        public CoreCommands(LoggerService logger, IConfiguration config)
         {
             _logger = logger;
+            _config = config;
+        }
+        
+                [Command("help", RunMode = RunMode.Async), Priority(100)]
+        [Alias("ahh", "ahhh", "ahhhh", "commands", "command")]
+        internal async Task Help()
+        {
+            var r = ThreadSafeRandom.ThisThreadsRandom;
+            var builder = new EmbedBuilder()
+                .WithTitle("Quick-start guide to UNObot")
+                .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
+                .WithTimestamp(DateTimeOffset.Now)
+                .WithFooter(footer =>
+                {
+                    footer
+                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
+                })
+                .WithAuthor(author =>
+                {
+                    var guildName = $"{Context.User.Username}'s DMs";
+                    if (!Context.IsPrivate)
+                        guildName = Context.Guild.Name;
+                    author
+                        .WithName($"Playing in {guildName}")
+                        .WithIconUrl("https://williamle.com/unobot/unobot.png");
+                })
+                .AddField("Usages", $"@{Context.Client.CurrentUser.Username}#{Context.Client.CurrentUser.Discriminator} *commandtorun*\n.*commandtorun*")
+                .AddField(".join", "Join a game in the current server.", true)
+                .AddField(".start", "Start a game in the current server.\nYou must have joined beforehand.", true)
+                .AddField(".play (color) (value) [new color]",
+                    "Play a card, assuming if it's your turn.\nIf you are playing a Wild card, also\nadd the color to change to.",
+                    true)
+                .AddField(".hand", "See which cards you have, as well as\nwhich ones you can play.", true)
+                .AddField(".game", "See everything about the current game.\nThis also shows the current card.", true)
+                .AddField(".draw", "Draw a card. Duh. Can be used indefinitely.", true)
+                .AddField(".quickplay", "Auto-magically draw and play the first valid card that comes out.", true)
+                .AddField(".fullhelp", "See an extended listing of commands.\nNice!", true);
+            var embed = builder.Build();
+            await Context.Channel.SendMessageAsync(
+                ":+1: got cha fam",
+                embed: embed);
         }
         
         [Command("testperms", RunMode = RunMode.Async)]

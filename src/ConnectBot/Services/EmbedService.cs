@@ -77,7 +77,7 @@ namespace ConnectBot.Services
         {
             var help = new EmbedBuilder()
                 .WithTitle("Quick-start guide to ConnectBot")
-                .AddField("Usages", "@UNOBot#4308 cbot *commandtorun*\n.cbot *commandtorun*")
+                .AddField("Usages", $"@{context.Client.CurrentUser.Username}#{context.Client.CurrentUser.Discriminator} cbot *commandtorun*\n.cbot *commandtorun*")
                 .AddField(".cbot join", "Join a game in the current server.", true)
                 .AddField(".cbot leave", "Leave a game in the current server.", true)
                 .AddField(".cbot start", "Start a game in the current server.\nYou must have joined beforehand.", true)
