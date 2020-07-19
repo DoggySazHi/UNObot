@@ -14,6 +14,12 @@ namespace ConnectBot.Modules
             _embed = embed;
         }
         
+        [Command("cbot", RunMode = RunMode.Async)]
+        public async Task ConnectBot()
+        {
+            await _embed.DisplayHelp(Context);
+        }
+        
         [DisableDMs]
         [Command("cbot", RunMode = RunMode.Async)]
         public async Task ConnectBot([Remainder] string input)

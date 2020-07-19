@@ -40,6 +40,7 @@ namespace ConnectBot.Services
         {
             var queue = game.Queue;
             var board = game.Board;
+            game.Description = $"It is now {context.Client.GetUser(queue.CurrentPlayer().Player).Username}'s turn.";
 
             var builder = new EmbedBuilder()
                 .WithTitle("Current Game")
@@ -60,6 +61,14 @@ namespace ConnectBot.Services
             var message = await context.Channel.SendMessageAsync(text, embed: Build(builder, context));
             game.LastChannel = context.Channel.Id;
             game.LastMessage = message.Id;
+
+            var winnerColor = board.Winner();
+            if (winnerColor != 0)
+            {
+                var index = queue.InGame.Values.ToList().FindIndex(o => o == winnerColor);
+                await context.Channel.SendMessageAsync($"<@{queue.InGame[index].Key}> won the game!");
+                await NextGame(context, game);
+            }
             
             await _db.UpdateGame(game);
         }
@@ -95,6 +104,7 @@ namespace ConnectBot.Services
                 return;
             }
 
+            await SuccessEmbed(context, "You have joined the queue.");
             queue.AddPlayer(context.User.Id);
             await _db.UpdateGame(game);
         }
@@ -107,6 +117,7 @@ namespace ConnectBot.Services
             if (queue.Players.Contains(context.User.Id))
             {
                 queue.RemovePlayer(context.User.Id);
+                await _db.UpdateGame(game);
                 await SuccessEmbed(context, "You have left the queue.");
                 return;
             }
@@ -122,9 +133,12 @@ namespace ConnectBot.Services
                 else
                 {
                     var nextPlayer = queue.Next();
+                    await _db.UpdateGame(game);
                     await SuccessEmbed(context, $"You have left the game. It is now <@{nextPlayer.Player}>'s turn.");
                 }
             }
+
+            await ErrorEmbed(context, "You are not in the queue or a game!");
         }
         
         public async Task StartGame(SocketCommandContext context)
@@ -166,7 +180,7 @@ namespace ConnectBot.Services
                 await DisplayGame(context, game,
                     "The next batch of players are up!\n" +
                     $"Players for this round: {players}\n" +
-                    $"It is now <@{queue.CurrentPlayer()}>'s turn.");
+                    $"It is now <@{queue.CurrentPlayer().Player}>'s turn.");
             }
             else
             {
@@ -213,6 +227,7 @@ namespace ConnectBot.Services
                     return;
                 case BoardStatus.Success:
                     var nextPlayer = queue.Next();
+                    await context.Message.DeleteAsync();
                     await DisplayGame(context, game, $"It is now <@{nextPlayer.Player}>'s turn.");
                     break;
                 default:

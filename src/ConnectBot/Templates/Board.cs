@@ -65,6 +65,7 @@ namespace ConnectBot.Templates
         
         public static readonly IndexedDictionary<string, Color> Colors = new IndexedDictionary<string, Color>
         {
+            {":black_circle: ", new Color(49, 55, 61)},
             {":red_circle: ", Color.Red},
             {":blue_circle: ", Color.Blue},
             {":green_circle: ", Color.Green},
@@ -72,16 +73,15 @@ namespace ConnectBot.Templates
             {":purple_circle: ", Color.Purple},
             {":white_circle: ", new Color(230, 231, 232)},
             {":orange_circle: ", Color.Orange},
-            {":brown_circle: ", new Color(193, 105, 79)},
-            {":black_circle: ", new Color(49, 55, 61)}
+            {":brown_circle: ", new Color(193, 105, 79)}
         };
 
         public string GenerateField()
         {
             var output = new StringBuilder();
-            for (var a = 0; a < _board.GetLength(0); a++)
+            for (var b =  _board.GetLength(1) - 1; b >= 0; b--)
             {
-                for (var b = _board.GetLength(1) - 1; b >= 0; b--)
+                for (var a = 0; a < _board.GetLength(0); a++)
                     output.Append(Colors[_board[a, b]].Key);
                 output.Remove(output.Length - 1, 1);
                 output.Append('\n');

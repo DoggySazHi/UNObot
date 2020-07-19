@@ -12,6 +12,7 @@ namespace ConnectBot.Templates
         [JsonIgnore] public IReadOnlyList<ulong> Players => _players;
 
         [JsonProperty]
+        [JsonConverter(typeof(IndexedDictionaryConverter))]
         private IndexedDictionary<ulong, int> _inGame;
         
         [JsonIgnore] public IReadOnlyIndexedDictionary<ulong, int> InGame => _inGame;
@@ -50,7 +51,8 @@ namespace ConnectBot.Templates
             _inGame.Clear();
             if (_players.Count < count)
                 return false;
-            for (var i = 0; i < count; i++)
+            // Start at 1, because 0 is "empty".
+            for (var i = 1; i <= count; i++)
             {
                 _inGame.Add(_players[0], i);
                 _players.RemoveAt(0);
@@ -62,8 +64,9 @@ namespace ConnectBot.Templates
 
         public (ulong Player, int Color) Next()
         {
-            _inGame.Add(_inGame[0]);
+            var temp = _inGame[0];
             _inGame.RemoveAt(0);
+            _inGame.Add(temp);
             return CurrentPlayer();
         }
 

@@ -11,5 +11,12 @@ namespace ConnectBot.Templates
         public string Description { get; set; }
         public ulong? LastChannel { get; set; }
         public ulong? LastMessage { get; set; }
+
+        public Game(ulong server)
+        {
+            Server = server;
+            Board = new Board();
+            Queue = new GameQueue();
+        }
     }
 }

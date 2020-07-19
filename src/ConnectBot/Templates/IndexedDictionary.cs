@@ -1,6 +1,8 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json;
 
 namespace ConnectBot.Templates
 {
@@ -13,11 +15,19 @@ namespace ConnectBot.Templates
     
     public class IndexedDictionary<T, TU> : IReadOnlyIndexedDictionary<T, TU>
     {
-        private readonly List<T> _a;
-        private readonly List<TU> _b;
+        [JsonProperty] private Type _aType;
+        [JsonProperty] private Type _bType;
+        
+        [JsonProperty]
+        private List<T> _a;
+        
+        [JsonProperty]
+        private List<TU> _b;
         
         public IndexedDictionary()
         {
+            _aType = typeof(T);
+            _bType = typeof(TU);
             _a = new List<T>();
             _b = new List<TU>();
         }
@@ -45,9 +55,14 @@ namespace ConnectBot.Templates
             return true;
         }
 
+        [JsonIgnore]
         TU IReadOnlyDictionary<T, TU>.this[T key] => this[key];
 
+        [JsonIgnore]
         public IEnumerable<T> Keys => _a;
+        
+        [JsonIgnore]
+
         public IEnumerable<TU> Values => _b;
 
         public TU this[T item]
@@ -104,6 +119,7 @@ namespace ConnectBot.Templates
             return GetEnumerator();
         }
 
+        [JsonIgnore]
         public int Count => _a.Count;
 
         public void RemoveAt(int index)

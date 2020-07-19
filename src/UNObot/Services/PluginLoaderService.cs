@@ -133,8 +133,16 @@ namespace UNObot.Services
             
             Task.Run(async () =>
             {
-                var moduleCounter = (await _commands.AddModulesAsync(assembly, plugin?.Services)).Count();
-                _logger.Log(LogSeverity.Info, $"Found {moduleCounter} module{(moduleCounter == 1 ? "" : "s")} in {assembly.GetName().Name}.");
+                try
+                {
+                    var moduleCounter = (await _commands.AddModulesAsync(assembly, plugin?.Services)).Count();
+                    _logger.Log(LogSeverity.Info, $"Found {moduleCounter} module{(moduleCounter == 1 ? "" : "s")} in {assembly.GetName().Name}.");
+                }
+                catch (Exception e)
+                {
+                    _logger.Log(LogSeverity.Critical, $"Could not load {assembly.GetName().Name}!", e);
+                    throw;
+                }
             });
             
             if(plugin == null)

@@ -7,7 +7,6 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using UNObot;
-using UNObot.Plugins.Helpers;
 using Timer = System.Timers.Timer;
 using Game = ConnectBot.Templates.Game;
 
@@ -112,13 +111,13 @@ namespace ConnectBot.Services
 
             if (queue.InGame.Count <= 1)
             {
-                await SendMessage($"<@{afkPlayer}>, you have been AFK removed. The game will be reset.\n", game);
+                await SendMessage($"<@{afkPlayer}>, you have been AFK removed. The game will be reset.\n", timer);
                 await _callback(timer.Context, game);
             }
             else
             {
                 var nextPlayer = queue.Next();
-                await SendMessage($"<@{afkPlayer}>, you have been AFK removed. It is now <@{nextPlayer.Player}>'s turn.", game);
+                await SendMessage($"<@{afkPlayer}>, you have been AFK removed. It is now <@{nextPlayer.Player}>'s turn.", timer);
             }
 
             await _db.UpdateGame(game);
@@ -133,37 +132,9 @@ namespace ConnectBot.Services
             }
         }
         
-        private async Task SendMessage(string text, Game game)
+        private async Task SendMessage(string text, ServerTimer timer)
         {
-            if (game.LastChannel != null)
-            {
-                await _client.GetGuild(game.Server).GetTextChannel(game.LastChannel.Value).SendMessageAsync(text);
-                return;
-            }
-            
-            var channel = _client.GetGuild(game.Server).DefaultChannel.Id;
-            _logger.Log(LogSeverity.Info, $"Channel: {channel}");
-            if (await DatabaseExtensions.HasDefaultChannel(_db.ConnString, game.Server))
-                channel = await DatabaseExtensions.GetDefaultChannel(_db.ConnString, game.Server);
-            _logger.Log(LogSeverity.Info, $"Channel: {channel}");
-
-            try
-            {
-                await _client.GetGuild(game.Server).GetTextChannel(channel).SendMessageAsync(text);
-            }
-            catch (Exception)
-            {
-                try
-                {
-                    await _client.GetGuild(game.Server).GetTextChannel(_client.GetGuild(game.Server).DefaultChannel.Id)
-                        .SendMessageAsync(text);
-                }
-                catch (Exception)
-                {
-                    _logger.Log(LogSeverity.Error,
-                        "Ok what the heck is this? Can't post in the default OR secondary channel?");
-                }
-            }
+            await _client.GetGuild(timer.Context.Guild.Id).GetTextChannel(timer.Context.Channel.Id).SendMessageAsync(text);
         }
 
         private async Task SendDM(string text, ulong user)
