@@ -49,10 +49,16 @@
   
   <Target Name="CopyPlugins" AfterTargets="PostBuildEvent">
     <ItemGroup>
-      <CorePlugins Include="$(SolutionDir)src\UNObot.Core\bin\Debug\netcoreapp3.1\*.dll" />
-      <MusicBotPlugins Include="$(SolutionDir)src\UNObot.MusicBot\bin\Debug\netcoreapp3.1\*.dll" />
+      <CorePlugin Include="$(SolutionDir)src\UNObot.Core\bin\Debug\netcoreapp3.1\*.dll" />
+      <MusicBotPlugin Include="$(SolutionDir)src\UNObot.MusicBot\bin\Debug\netcoreapp3.1\*.dll" />
+      <DuplicateDetectorPlugin Include="$(SolutionDir)src\DuplicateDetector\bin\Debug\netcoreapp3.1\*.dll" />
+      <ConnectBotPlugin Include="$(SolutionDir)src\ConnectBot\bin\Debug\netcoreapp3.1\*.dll" />
+      <Config Include="$(SolutionDir)src\UNObot\config.json" />
     </ItemGroup>
-    <Copy SourceFiles="@(CorePlugins)" DestinationFolder="$(ProjectDir)$(OutDir)plugins" SkipUnchangedFiles="false" />
-    <Copy SourceFiles="@(MusicBotPlugins)" DestinationFolder="$(ProjectDir)$(OutDir)plugins" SkipUnchangedFiles="false" />
+    <Copy SourceFiles="@(CorePlugin)" DestinationFolder="$(ProjectDir)$(OutDir)plugins" SkipUnchangedFiles="false" />
+    <Copy SourceFiles="@(MusicBotPlugin)" DestinationFolder="$(ProjectDir)$(OutDir)plugins" SkipUnchangedFiles="false" />
+    <Copy SourceFiles="@(DuplicateDetectorPlugin)" DestinationFolder="$(ProjectDir)$(OutDir)plugins" SkipUnchangedFiles="false" />
+    <Copy SourceFiles="@(ConnectBotPlugin)" DestinationFolder="$(ProjectDir)$(OutDir)plugins" SkipUnchangedFiles="false" />
+    <Copy SourceFiles="@(Config)" DestinationFolder="$(ProjectDir)$(OutDir)" SkipUnchangedFiles="false" />
   </Target>
 </Project>

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 
 namespace UNObot.Plugins.Helpers
@@ -59,6 +61,15 @@ namespace UNObot.Plugins.Helpers
             }
 
             return channel;
+        }
+        
+        public static string GetConnectionString(this IConfiguration config, string parameter = "connStr")
+        {
+            var connString = config[parameter];
+            //ha, damn the limited encodings.
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            Encoding.GetEncoding("windows-1254");
+            return connString;
         }
     }
 }

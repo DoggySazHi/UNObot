@@ -26,7 +26,7 @@ namespace UNObot.Core.Modules
                 .AddSingleton<QueueHandlerService>()
                 .AddSingleton<UNODatabaseService>()
                 .AddSingleton<UNOPlayCardService>();
-
+            
             return 0;
         }
 

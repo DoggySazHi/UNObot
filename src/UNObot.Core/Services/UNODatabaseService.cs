@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Microsoft.Extensions.Configuration;
@@ -13,24 +12,14 @@ namespace UNObot.Core.Services
 {
     public class UNODatabaseService
     {
-        private readonly IConfiguration _config;
         private readonly LoggerService _logger;
-
-        internal string ConnString { get; private set; }
-
-        private void GetConnectionString()
-        {
-            ConnString = _config["connStr"];
-            //ha, damn the limited encodings.
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-            Encoding.GetEncoding("windows-1254");
-        }
+        
+        internal string ConnString { get; }
 
         public UNODatabaseService(IConfiguration config, LoggerService logger)
         {
-            _config = config;
             _logger = logger;
-            GetConnectionString();
+            ConnString = config.GetConnectionString();
             Reset();
         }
 

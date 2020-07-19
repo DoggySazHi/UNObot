@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Microsoft.Extensions.Configuration;
@@ -13,25 +12,15 @@ namespace UNObot.Services
     internal class DatabaseService
     {
         private readonly LoggerService _logger;
-        private readonly IConfiguration _config;
 
-        internal string ConnString { get; private set; }
+        internal string ConnString { get; }
 
         public DatabaseService(LoggerService logger, IConfiguration config)
         {
             _logger = logger;
-            _config = config;
-            GetConnectionString();
+            ConnString = config.GetConnectionString();
         }
-        
-        private void GetConnectionString()
-        {
-            ConnString = _config["connStr"];
-            //ha, damn the limited encodings.
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-            Encoding.GetEncoding("windows-1254");
-        }
-        
+
         internal async Task SetDefaultChannel(ulong server, ulong channel)
         {
             var parameters = new List<MySqlParameter>();

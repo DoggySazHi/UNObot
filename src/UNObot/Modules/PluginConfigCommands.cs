@@ -16,6 +16,7 @@ namespace UNObot.Modules
             _pluginService = pluginService;
         }
         
+        [RequireOwner]
         [Command("plugins", RunMode = RunMode.Async), Alias("pl")]
         [Help(new[] {".plugins"}, "Get all plugins loaded in the bot.", true, "UNObot 4.1.8")]
         internal async Task Plugin()
@@ -35,6 +36,7 @@ namespace UNObot.Modules
             await ReplyAsync("There are no plugins loaded.");
         }
         
+        [RequireOwner]
         [Command("plugins", RunMode = RunMode.Async), Alias("pl")]
         [Help(new[] {".plugins (mode)"}, "Get all plugins loaded in the bot.", true, "UNObot 4.1.8")]
         internal async Task Plugin(string mode, [Remainder] string plugin)

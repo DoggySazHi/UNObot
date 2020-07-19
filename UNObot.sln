@@ -11,6 +11,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UNObot.Plugins", "src\UNObo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UNObot.MusicBot", "src\UNObot.MusicBot\UNObot.MusicBot.csproj", "{F158856B-DC2D-47F3-AE67-71B0F8F49509}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConnectBot", "src\ConnectBot\ConnectBot.csproj", "{0E426CCB-4549-444B-950E-F3D2BD0E6646}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DuplicateDetector", "src\DuplicateDetector\DuplicateDetector.csproj", "{D81B3736-3D20-4FDC-A6F7-4DE1173D0C73}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -73,6 +77,30 @@ Global
 		{F158856B-DC2D-47F3-AE67-71B0F8F49509}.Release|x64.Build.0 = Release|Any CPU
 		{F158856B-DC2D-47F3-AE67-71B0F8F49509}.Release|x86.ActiveCfg = Release|Any CPU
 		{F158856B-DC2D-47F3-AE67-71B0F8F49509}.Release|x86.Build.0 = Release|Any CPU
+		{0E426CCB-4549-444B-950E-F3D2BD0E6646}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0E426CCB-4549-444B-950E-F3D2BD0E6646}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0E426CCB-4549-444B-950E-F3D2BD0E6646}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{0E426CCB-4549-444B-950E-F3D2BD0E6646}.Debug|x64.Build.0 = Debug|Any CPU
+		{0E426CCB-4549-444B-950E-F3D2BD0E6646}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0E426CCB-4549-444B-950E-F3D2BD0E6646}.Debug|x86.Build.0 = Debug|Any CPU
+		{0E426CCB-4549-444B-950E-F3D2BD0E6646}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0E426CCB-4549-444B-950E-F3D2BD0E6646}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0E426CCB-4549-444B-950E-F3D2BD0E6646}.Release|x64.ActiveCfg = Release|Any CPU
+		{0E426CCB-4549-444B-950E-F3D2BD0E6646}.Release|x64.Build.0 = Release|Any CPU
+		{0E426CCB-4549-444B-950E-F3D2BD0E6646}.Release|x86.ActiveCfg = Release|Any CPU
+		{0E426CCB-4549-444B-950E-F3D2BD0E6646}.Release|x86.Build.0 = Release|Any CPU
+		{D81B3736-3D20-4FDC-A6F7-4DE1173D0C73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D81B3736-3D20-4FDC-A6F7-4DE1173D0C73}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D81B3736-3D20-4FDC-A6F7-4DE1173D0C73}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D81B3736-3D20-4FDC-A6F7-4DE1173D0C73}.Debug|x64.Build.0 = Debug|Any CPU
+		{D81B3736-3D20-4FDC-A6F7-4DE1173D0C73}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D81B3736-3D20-4FDC-A6F7-4DE1173D0C73}.Debug|x86.Build.0 = Debug|Any CPU
+		{D81B3736-3D20-4FDC-A6F7-4DE1173D0C73}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D81B3736-3D20-4FDC-A6F7-4DE1173D0C73}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D81B3736-3D20-4FDC-A6F7-4DE1173D0C73}.Release|x64.ActiveCfg = Release|Any CPU
+		{D81B3736-3D20-4FDC-A6F7-4DE1173D0C73}.Release|x64.Build.0 = Release|Any CPU
+		{D81B3736-3D20-4FDC-A6F7-4DE1173D0C73}.Release|x86.ActiveCfg = Release|Any CPU
+		{D81B3736-3D20-4FDC-A6F7-4DE1173D0C73}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
