@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 
 namespace ConnectBot.Templates
 {
-    public enum BoardStatus {Invalid, Full, Success, Win}
+    public enum BoardStatus {Invalid, Full, Success}
     
     public class Board
     {
@@ -21,6 +21,10 @@ namespace ConnectBot.Templates
 
         [JsonProperty]
         private readonly int _connect;
+
+        [JsonIgnore] public int Width => _board.GetLength(0);
+        
+        [JsonIgnore] public int Height => _board.GetLength(1);
 
         public Board(int width = 7, int height = 6, int connect = 4)
         {

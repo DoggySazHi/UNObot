@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using ConnectBot.Services;
 using Discord.Commands;
+using UNObot.Plugins.Attributes;
 
 namespace ConnectBot.Modules
 {
@@ -13,7 +14,8 @@ namespace ConnectBot.Modules
             _embed = embed;
         }
         
-        [Command("cbot")]
+        [DisableDMs]
+        [Command("cbot", RunMode = RunMode.Async)]
         public async Task ConnectBot([Remainder] string input)
         {
             var args = input.Trim().ToLower().Split(' ');

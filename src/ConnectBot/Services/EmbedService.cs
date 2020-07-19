@@ -36,7 +36,7 @@ namespace ConnectBot.Services
             await DisplayGame(context, game);
         }
 
-        private async Task DisplayGame(SocketCommandContext context, Game game)
+        private async Task DisplayGame(SocketCommandContext context, Game game, string text = null)
         {
             var queue = game.Queue;
             var board = game.Board;
@@ -46,7 +46,7 @@ namespace ConnectBot.Services
                 .WithColor(Board.Colors[queue.CurrentPlayer().Color].Value)
                 .AddField(game.Description, board.GenerateField());
 
-            if (game.LastChannel != null && game.LastMessage != null)
+            if (game.LastChannel != null && game.LastMessage != null && game.LastMessage != 0)
                 try
                 {
                     await context.Channel.DeleteMessageAsync(game.LastMessage.Value);
@@ -57,7 +57,7 @@ namespace ConnectBot.Services
                     throw;
                 }
             
-            var message = await context.Channel.SendMessageAsync(embed: Build(builder, context));
+            var message = await context.Channel.SendMessageAsync(text, embed: Build(builder, context));
             game.LastChannel = context.Channel.Id;
             game.LastMessage = message.Id;
             
@@ -103,7 +103,6 @@ namespace ConnectBot.Services
         {
             var game = await _db.GetGame(context.Guild.Id);
             var queue = game.Queue;
-            var board = game.Board;
 
             if (queue.Players.Contains(context.User.Id))
             {
@@ -118,29 +117,65 @@ namespace ConnectBot.Services
                 if (queue.InGame.Count <= 1)
                 {
                     await SuccessEmbed(context, "You have left the game. The current game will be reset.");
-                    board.Reset();
-                    if (queue.Start())
-                        await StartGame(context);
-                    //TODO Reset game?
+                    await NextGame(context, game);
                 }
                 else
                 {
-                    queue.Next();
-                    await SuccessEmbed(context, $"You have left the game. It is now <@{queue.CurrentPlayer()}>'s turn.");
+                    var nextPlayer = queue.Next();
+                    await SuccessEmbed(context, $"You have left the game. It is now <@{nextPlayer.Player}>'s turn.");
                 }
             }
-
-            await _db.UpdateGame(game);
         }
-
+        
         public async Task StartGame(SocketCommandContext context)
         {
-            throw new NotImplementedException();
+            var game = await _db.GetGame(context.Guild.Id);
+            var queue = game.Queue;
+
+            if (!queue.Players.Contains(context.User.Id))
+            {
+                await ErrorEmbed(context, "You did not join the queue!");
+                return;
+            }
+            
+            if (queue.GameStarted())
+            {
+                await ErrorEmbed(context, "The game has already started!");
+                return;
+            }
+
+            await NextGame(context, game, true);
+        }
+
+        
+        
+        private async Task NextGame(SocketCommandContext context, Game game, bool newGame = false)
+        {
+            var board = game.Board;
+            var queue = game.Queue;
+            
+            board.Reset();
+            if (queue.Start())
+            {
+                if(newGame)
+                    _afk.StartTimer(context, NextGame);
+                else
+                    _afk.ResetTimer(context);
+                var players = queue.InGame.Keys.Aggregate("", (current, id) => current + $"- <@{id}>\n");
+                players = players.Remove(players.Length - 1);
+                await DisplayGame(context, game,
+                    "The next batch of players are up!\n" +
+                    $"Players for this round: {players}\n" +
+                    $"It is now <@{queue.CurrentPlayer()}>'s turn.");
+            }
+            else
+            {
+                await ErrorEmbed(context, "There are not enough players to start another game!");
+            }
         }
 
         public async Task DropPiece(SocketCommandContext context, string[] args)
         {
-            //TODO AFK Timer?
             var game = await _db.GetGame(context.Guild.Id);
             var board = game.Board;
             var queue = game.Queue;
@@ -148,6 +183,12 @@ namespace ConnectBot.Services
             if (!queue.InGame.ContainsKey(context.User.Id))
             {
                 await ErrorEmbed(context, "You are currently not playing!");
+                return;
+            }
+            
+            if (queue.CurrentPlayer().Player != context.User.Id)
+            {
+                await ErrorEmbed(context, "It is not your turn!");
                 return;
             }
 
@@ -164,17 +205,19 @@ namespace ConnectBot.Services
             switch (result)
             {
                 case BoardStatus.Invalid:
-                    break;
+                    await ErrorEmbed(context, "That is not a valid position to place a piece! " +
+                                              $"Pick a position between 1 and {board.Width}, inclusive.");
+                    return;
                 case BoardStatus.Full:
-                    break;
+                    await ErrorEmbed(context, "The column is full. Pick another column.");
+                    return;
                 case BoardStatus.Success:
-                    await DisplayGame(context);
+                    var nextPlayer = queue.Next();
+                    await DisplayGame(context, game, $"It is now <@{nextPlayer.Player}>'s turn.");
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            
-            await _db.UpdateGame(game);
         }
 
         private async Task ErrorEmbed(SocketCommandContext context, string message)

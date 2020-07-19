@@ -15,7 +15,7 @@ namespace ConnectBot.Services
     public class DatabaseService
     {
         private readonly LoggerService _logger;
-        private readonly Board _defaultBoard = new Board(7, 6);
+        private readonly Board _defaultBoard = new Board();
         private readonly GameQueue _defaultQueue = new GameQueue();
         
         internal string ConnString { get; }
