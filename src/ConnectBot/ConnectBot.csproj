@@ -21,4 +21,11 @@
         </ProjectReference>
     </ItemGroup>
 
+    <Target Name="CopyPlugins" AfterTargets="PostBuildEvent">
+        <ItemGroup>
+            <Plugin Include="$(ProjectDir)$(OutDir)*.dll" />
+        </ItemGroup>
+        <Copy SourceFiles="$(Plugin)" DestinationFolder="$(SolutionDir)src\UNObot\bin\Debug\netcoreapp3.1\plugins" SkipUnchangedFiles="false" ContinueOnError="true"/>
+        <Copy SourceFiles="$(Plugin)" DestinationFolder="$(SolutionDir)src\UNObot\bin\Release\netcoreapp3.1\plugins" SkipUnchangedFiles="false" ContinueOnError="true"/>
+    </Target>
 </Project>

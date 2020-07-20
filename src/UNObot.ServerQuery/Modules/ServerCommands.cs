@@ -3,10 +3,10 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using UNObot.Plugins.Attributes;
-using UNObot.Services;
-using static UNObot.Services.IRCON;
+using UNObot.ServerQuery.Services;
+using static UNObot.ServerQuery.Services.IRCON;
 
-namespace UNObot.Modules
+namespace UNObot.ServerQuery.Modules
 {
     public class ServerCommands : ModuleBase<SocketCommandContext>
     {
@@ -14,9 +14,9 @@ namespace UNObot.Modules
 
         private readonly LoggerService _logger;
         private readonly UBOWServerLoggerService _ubowLogger;
-        private readonly EmbedDisplayService _embed;
+        private readonly EmbedService _embed;
         private readonly QueryHandlerService _query;
-        internal ServerCommands(LoggerService logger, UBOWServerLoggerService ubowLogger, EmbedDisplayService embed, QueryHandlerService query)
+        internal ServerCommands(LoggerService logger, UBOWServerLoggerService ubowLogger, EmbedService embed, QueryHandlerService query)
         {
             _logger = logger;
             _ubowLogger = ubowLogger;

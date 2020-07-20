@@ -7,9 +7,9 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
-using UNObot.Interop;
+using UNObot.ServerQuery.Interop;
 
-namespace UNObot.Services
+namespace UNObot.ServerQuery.Services
 {
     //Adopted from Valve description: https://developer.valvesoftware.com/wiki/Server_queries#A2S_INFO
     //Thanks to https://www.techpowerup.com/forums/threads/snippet-c-net-steam-a2s_info-query.229199/ for A2S_INFO, self-reimplemented for A2S_PLAYER and A2S_RULES
@@ -17,7 +17,7 @@ namespace UNObot.Services
 
     //Credit to https://github.com/maxime-paquatte/csharp-minecraft-query/blob/master/src/Status.cs
     //Mukyu... but I implemented the Minecraft RCON (Valve RCON) protocol by hand, as well as the query.
-    internal class QueryHandlerService
+    public class QueryHandlerService
     {
         internal IReadOnlyList<string> OutsideServers;
         internal readonly IReadOnlyDictionary<ushort, RCONServer> SpecialServers;
@@ -36,19 +36,6 @@ namespace UNObot.Services
             servers.Add(27285, new RCONServer {Server = "192.168.2.6", RCONPort = 27286, Password = "mukyumukyu"});
             servers.Add(29292, new RCONServer {Server = "192.168.2.11", RCONPort = 29293, Password = "mukyumukyu"});
             SpecialServers = servers;
-        }
-
-        internal static string HumanReadable(float time)
-        {
-            var formatted = TimeSpan.FromSeconds(time);
-            string output;
-            if (formatted.Hours != 0)
-                output = $"{(int) formatted.TotalHours}:{formatted.Minutes:00}:{formatted.Seconds:00}";
-            else if (formatted.Minutes != 0)
-                output = $"{formatted.Minutes}:{formatted.Seconds:00}";
-            else
-                output = $"{formatted.Seconds} second{(formatted.Seconds == 1 ? "" : "s")}";
-            return output;
         }
 
         internal bool GetInfo(string ip, ushort port, out A2SInfo output)
@@ -741,7 +728,7 @@ namespace UNObot.Services
         public bool Connected();
     }
 
-    internal class RCONManager : IDisposable
+    public class RCONManager : IDisposable
     {
         private List<IRCON> _reusableRCONSockets;
 

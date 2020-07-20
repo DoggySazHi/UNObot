@@ -71,14 +71,10 @@ namespace UNObot
                 .AddSingleton<CommandHandlingService>()
                 .AddSingleton<PluginLoaderService>()
                 .AddSingleton<EmbedDisplayService>()
-                .AddSingleton<MinecraftProcessorService>()
                 .AddSingleton<DatabaseService>()
                 .AddSingleton<ShellService>()
-                .AddSingleton<UBOWServerLoggerService>()
                 .AddSingleton<WebhookListenerService>()
                 .AddSingleton<GoogleTranslateService>()
-                .AddSingleton<RCONManager>()
-                .AddSingleton<QueryHandlerService>()
 #if DEBUG
                 .AddSingleton<DebugService>()
 #endif

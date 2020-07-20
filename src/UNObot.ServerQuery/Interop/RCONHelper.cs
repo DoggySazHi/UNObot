@@ -2,10 +2,9 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Runtime.InteropServices;
-using UNObot.Services;
-using static UNObot.Services.IRCON;
+using UNObot.ServerQuery.Services;
 
-namespace UNObot.Interop
+namespace UNObot.ServerQuery.Interop
 {
     internal class RCONHelper : IRCON
     {
@@ -43,7 +42,7 @@ namespace UNObot.Interop
 
         public ulong Owner { get; set; }
         public string Data => Marshal.PtrToStringAnsi(GetData(_rconInstance));
-        public RCONStatus Status => GetStatus(_rconInstance);
+        public IRCON.RCONStatus Status => GetStatus(_rconInstance);
 
         public IPEndPoint Server =>
             new IPEndPoint(
@@ -101,7 +100,7 @@ namespace UNObot.Interop
         internal static extern void SayDelete(IntPtr thing);
 
         [DllImport(@"libRCONHelper.so")]
-        private static extern RCONStatus GetStatus(IntPtr obj);
+        private static extern IRCON.RCONStatus GetStatus(IntPtr obj);
 
         [DllImport(@"libRCONHelper.so")]
         private static extern IntPtr GetData(IntPtr obj);

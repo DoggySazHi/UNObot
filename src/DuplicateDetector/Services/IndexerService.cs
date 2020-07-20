@@ -72,7 +72,7 @@ namespace DuplicateDetector.Services
                             
     #pragma warning disable 4014
                             db.ExecuteAsync(
-                                "INSERT INTO UNObot.DuplicateDetector (author, message, url, proxy_url, spoiler, posted) VALUES (@author, @message, @url, @proxy_url, @spoiler, @posted)",
+                                "INSERT INTO UNObot.DuplicateDetector (author, channel, message, url, proxy_url, spoiler, posted) VALUES (@author, @message, @url, @proxy_url, @spoiler, @posted)",
                                 new 
                                 {
                                     author = tempMessage.Author,

@@ -5,6 +5,8 @@ namespace DuplicateDetector.Templates
     public class ImageMessage
     {
         public ulong Author { get; set; }
+        public ulong Channel { get; set; }
+        public ulong Message { get; set; }
         public string Link { get; set; }
         public List<ImageAttachment> Attachments { get; set; }
     }

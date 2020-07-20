@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.5" />
+      <PackageReference Include="System.ServiceModel.Syndication" Version="4.7.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\UNObot.Plugins\UNObot.Plugins.csproj">
+            <Private>false</Private>
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </ProjectReference>
+    </ItemGroup>
+
+    <Target Name="CopyPlugins" AfterTargets="PostBuildEvent">
+        <ItemGroup>
+            <Plugin Include="$(ProjectDir)$(OutDir)*.dll" />
+        </ItemGroup>
+        <Copy SourceFiles="$(Plugin)" DestinationFolder="$(SolutionDir)src\UNObot\bin\Debug\netcoreapp3.1\plugins" SkipUnchangedFiles="false" ContinueOnError="true"/>
+        <Copy SourceFiles="$(Plugin)" DestinationFolder="$(SolutionDir)src\UNObot\bin\Release\netcoreapp3.1\plugins" SkipUnchangedFiles="false" ContinueOnError="true"/>
+    </Target>
+</Project>

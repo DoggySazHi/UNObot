@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConnectBot", "src\ConnectBo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DuplicateDetector", "src\DuplicateDetector\DuplicateDetector.csproj", "{D81B3736-3D20-4FDC-A6F7-4DE1173D0C73}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UNObot.ServerQuery", "src\UNObot.ServerQuery\UNObot.ServerQuery.csproj", "{2FCE1BC3-49F6-4760-B803-5CCFAFB265CF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -101,6 +103,18 @@ Global
 		{D81B3736-3D20-4FDC-A6F7-4DE1173D0C73}.Release|x64.Build.0 = Release|Any CPU
 		{D81B3736-3D20-4FDC-A6F7-4DE1173D0C73}.Release|x86.ActiveCfg = Release|Any CPU
 		{D81B3736-3D20-4FDC-A6F7-4DE1173D0C73}.Release|x86.Build.0 = Release|Any CPU
+		{2FCE1BC3-49F6-4760-B803-5CCFAFB265CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2FCE1BC3-49F6-4760-B803-5CCFAFB265CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2FCE1BC3-49F6-4760-B803-5CCFAFB265CF}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2FCE1BC3-49F6-4760-B803-5CCFAFB265CF}.Debug|x64.Build.0 = Debug|Any CPU
+		{2FCE1BC3-49F6-4760-B803-5CCFAFB265CF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2FCE1BC3-49F6-4760-B803-5CCFAFB265CF}.Debug|x86.Build.0 = Debug|Any CPU
+		{2FCE1BC3-49F6-4760-B803-5CCFAFB265CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2FCE1BC3-49F6-4760-B803-5CCFAFB265CF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2FCE1BC3-49F6-4760-B803-5CCFAFB265CF}.Release|x64.ActiveCfg = Release|Any CPU
+		{2FCE1BC3-49F6-4760-B803-5CCFAFB265CF}.Release|x64.Build.0 = Release|Any CPU
+		{2FCE1BC3-49F6-4760-B803-5CCFAFB265CF}.Release|x86.ActiveCfg = Release|Any CPU
+		{2FCE1BC3-49F6-4760-B803-5CCFAFB265CF}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

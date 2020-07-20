@@ -6,9 +6,9 @@ using System.Text.RegularExpressions;
 using Discord;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using static UNObot.Services.IRCON;
+using static UNObot.ServerQuery.Services.IRCON;
 
-namespace UNObot.Services
+namespace UNObot.ServerQuery.Services
 {
     internal class MCUser
     {
@@ -21,7 +21,7 @@ namespace UNObot.Services
         internal int Experience { get; set; }
     }
 
-    internal class MinecraftProcessorService
+    public class MinecraftProcessorService
     {
         private readonly LoggerService _logger;
         private readonly QueryHandlerService _query;
