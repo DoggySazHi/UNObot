@@ -14,7 +14,7 @@ pipelines:
         script:
           - dotnet restore
           - dotnet build
-          - ls src/UNObot/bin/Release/netcoreapp3.1/UNObot/plugins
+          - ls src/UNObot/bin/Release/netcoreapp3.1/plugins
   custom:
     manualdeploy:
       - step:
