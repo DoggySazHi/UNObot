@@ -42,7 +42,7 @@ namespace ConnectBot.Services
         private void Reset()
         {
             const string commandText =
-                "SET SQL_SAFE_UPDATES = 0; UPDATE UNObot.ConnectBot_Games SET board = @Board, queue = @Queue, description = null; SET SQL_SAFE_UPDATES = 1;";
+                "SET SQL_SAFE_UPDATES = 0; UPDATE UNObot.ConnectBot_Games SET board = @Board, queue = @Queue, description = NULL, lastChannel = NULL, lastMessage = NULL; SET SQL_SAFE_UPDATES = 1;";
 
             using var db = new MySqlConnection(ConnString);
             try

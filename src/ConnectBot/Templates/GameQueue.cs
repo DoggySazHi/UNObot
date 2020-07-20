@@ -33,7 +33,10 @@ namespace ConnectBot.Templates
 
         public bool RemovePlayer(ulong player)
         {
-            return _players.Remove(player) || _inGame.Remove(player);
+            // Prevent short-circuiting.
+            var a = _players.Remove(player);
+            var b = _inGame.Remove(player);
+            return a || b;
         }
 
         public bool GameStarted()

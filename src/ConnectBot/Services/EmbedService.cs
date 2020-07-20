@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using ConnectBot.Templates;
 using Discord;
 using Discord.Commands;
+using Discord.Net;
 using Microsoft.Extensions.Configuration;
 using UNObot.Plugins.TerminalCore;
 using Game = ConnectBot.Templates.Game;
@@ -52,24 +53,29 @@ namespace ConnectBot.Services
                 {
                     await context.Channel.DeleteMessageAsync(game.LastMessage.Value);
                 }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                    throw;
-                }
+                catch (HttpException) { /* ignore */ }
             
             var message = await context.Channel.SendMessageAsync(text, embed: Build(builder, context));
             game.LastChannel = context.Channel.Id;
             game.LastMessage = message.Id;
 
-            var winnerColor = board.Winner();
-            if (winnerColor != 0)
+            try
             {
-                var index = queue.InGame.Values.ToList().FindIndex(o => o == winnerColor);
-                await context.Channel.SendMessageAsync($"<@{queue.InGame[index].Key}> won the game!");
-                await NextGame(context, game);
+                var winnerColor = board.Winner();
+                if (winnerColor != 0)
+                {
+                    var index = queue.InGame.Values.ToList().FindIndex(o => o == winnerColor);
+                    await context.Channel.SendMessageAsync($"<@{queue.InGame[index].Key}> won the game!");
+                    await NextGame(context, game);
+                }
             }
-            
+            catch (IndexOutOfRangeException)
+            {
+                await ErrorEmbed(context, ">:[ There was an internal error with the table scanning algorithm.");
+                await _db.UpdateGame(game);
+                throw;
+            }
+
             await _db.UpdateGame(game);
         }
 
@@ -191,6 +197,7 @@ namespace ConnectBot.Services
         public async Task DropPiece(SocketCommandContext context, string[] args)
         {
             var game = await _db.GetGame(context.Guild.Id);
+            _afk.ResetTimer(context);
             var board = game.Board;
             var queue = game.Queue;
 
@@ -227,7 +234,11 @@ namespace ConnectBot.Services
                     return;
                 case BoardStatus.Success:
                     var nextPlayer = queue.Next();
-                    await context.Message.DeleteAsync();
+                    try
+                    {
+                        await context.Message.DeleteAsync();
+                    }
+                    catch (HttpException) { /* ignore */ }
                     await DisplayGame(context, game, $"It is now <@{nextPlayer.Player}>'s turn.");
                     break;
                 default:

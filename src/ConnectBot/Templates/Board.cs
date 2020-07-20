@@ -116,7 +116,7 @@ namespace ConnectBot.Templates
                         return a;
                 }
             }
-
+            
             //Vertical
             for (var i = 0; i < width; i++)
             {
@@ -131,12 +131,12 @@ namespace ConnectBot.Templates
                         return a;
                 }
             }
-
+            
             //Diag left ^> right
 
-            for (var i = 0; i < width - _connect; i++)
+            for (var i = 0; i <= width - _connect; i++)
             {
-                for (var j = 0; j < height - _connect; j++)
+                for (var j = 0; j <= height - _connect; j++)
                 {
                     var a = _board[i, j];
                     if (a == 0) continue;
@@ -147,7 +147,7 @@ namespace ConnectBot.Templates
                         return a;
                 }
             }
-
+            
             //Diag right <^ left
 
             for (var i = _connect - 1; i < width; i++)
@@ -158,12 +158,12 @@ namespace ConnectBot.Templates
                     if (a == 0) continue;
                     var same = true;
                     for (var k = 1; k < _connect; k++)
-                        same &= a == _board[i - k, i + k];
+                        same &= a == _board[i - k, j + k];
                     if (same)
                         return a;
                 }
             }
-
+            
             return 0;
         }
     }

@@ -108,7 +108,7 @@ namespace ConnectBot.Templates
             return true;
         }
         
-        public bool ContainsKey(T value) => _a.FindIndex(o => EqualityComparer<T>.Default.Equals(o, value)) >= 0;
+        public bool ContainsKey(T value) => _a.Any(o => EqualityComparer<T>.Default.Equals(o, value));
         public IEnumerator<KeyValuePair<T, TU>> GetEnumerator()
         {
             return _a.Select((t, i) => new KeyValuePair<T, TU>(t, _b[i])).GetEnumerator();
