@@ -5,7 +5,6 @@ using Discord;
 using Discord.Commands;
 using Microsoft.Extensions.Configuration;
 using UNObot.Plugins.Attributes;
-using UNObot.Plugins.TerminalCore;
 using UNObot.Services;
 
 namespace UNObot.Modules

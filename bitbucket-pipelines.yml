@@ -12,9 +12,9 @@ pipelines:
         caches:
           - dotnetcore
         script:
-          - export PROJECT_NAME=src/UNObot
           - dotnet restore
-          - dotnet build $PROJECT_NAME
+          - dotnet build
+          - ls src/UNObot/bin/Release/netcoreapp3.1/UNObot/plugins
   custom:
     manualdeploy:
       - step:
@@ -22,9 +22,8 @@ pipelines:
             - dotnetcore
           name: Manual Build and Deploy
           script:
-            - export PROJECT_NAME=src/UNObot
             - dotnet restore
-            - dotnet build $PROJECT_NAME
+            - dotnet build
             - dotnet publish -c Release src/UNObot
             - rm -rf src/UNObot/bin/Release/netcoreapp3.1/UNObot
             - mv src/UNObot/bin/Release/netcoreapp3.1/publish src/UNObot/bin/Release/netcoreapp3.1/UNObot
@@ -46,14 +45,6 @@ pipelines:
             - dotnet restore
             - dotnet build $PROJECT_NAME
   branches:
-    reactbuttons:
-      - step:
-          caches:
-            - dotnetcore
-          script:
-            - export PROJECT_NAME=src/UNObot
-            - dotnet restore
-            - dotnet build $PROJECT_NAME
     master:
       - step:
           deployment: Server
