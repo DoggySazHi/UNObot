@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ConnectBot.Templates;
 using Discord;
+using Discord.Commands;
 using Discord.Net;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
@@ -42,14 +43,16 @@ namespace ConnectBot.Services
 
         private static bool _working;
 
-        private async Task DisplayGame(ICommandContextEx context, Game game, string text = null)
+        private async Task DisplayGame(ICommandContextEx context, Game game, string text = null, bool force = false)
         {
             var queue = game.Queue;
             var board = game.Board;
             var client = context.Client as DiscordSocketClient;
             Debug.Assert(client != null, nameof(client) + " != null");
-            var currentPlayer = client.GetUser(queue.CurrentPlayer().Player);
-            game.Description = $"It is now {currentPlayer.Username}'s turn.";
+            var currentPlayer =
+                await (await context.Client.GetGuildAsync(game.Server)).GetUserAsync(queue.CurrentPlayer().Player);
+            
+            game.Description = $"It is now {currentPlayer.Nickname} ({currentPlayer.Username}#{currentPlayer.Discriminator})'s turn.";
 
             var builder = new EmbedBuilder()
                 .WithTitle("Current Game")
@@ -59,7 +62,7 @@ namespace ConnectBot.Services
             var embed = Build(builder, context);
             var modSuccess = false;
 
-            if (game.LastChannel != null && game.LastMessage != null && game.LastMessage != 0)
+            if (game.LastChannel != null && game.LastMessage != null && game.LastMessage != 0 && !force)
             {
                 try
                 {
@@ -70,9 +73,11 @@ namespace ConnectBot.Services
                         _working = true;
                         await message.ModifyAsync(o =>
                         {
-                            o.Content = text;
                             o.Embed = embed;
                         });
+#pragma warning disable 4014
+                        GhostMessage(context, text);
+#pragma warning restore 4014
                         modSuccess = true;
                         await _button.ClearReactions(message, currentPlayer);
                     }
@@ -89,7 +94,10 @@ namespace ConnectBot.Services
 
             if (!modSuccess)
             {
-                var newMessage = await context.Channel.SendMessageAsync(text, embed: embed);
+                var newMessage = await context.Channel.SendMessageAsync(embed: embed);
+#pragma warning disable 4014
+                GhostMessage(context, text);
+#pragma warning restore 4014
                 await _button.AddNumbers(newMessage, new Range(1, board.Width + 1));
                 game.LastChannel = context.Channel.Id;
                 game.LastMessage = newMessage.Id;
@@ -120,6 +128,15 @@ namespace ConnectBot.Services
             }
 
             await _db.UpdateGame(game);
+        }
+
+        private async Task GhostMessage(ICommandContext context, string text, int time = 5000)
+        {
+            if (text == null)
+                return;
+            var message = await context.Channel.SendMessageAsync(text);
+            await Task.Delay(time);
+            await message.DeleteAsync();
         }
 
         public async Task DisplayHelp(ICommandContextEx context)

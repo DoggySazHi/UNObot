@@ -32,7 +32,7 @@ namespace ConnectBot.Services
             if (!reaction.User.IsSpecified) return;
             if (!(channel is ITextChannel serverChannel)) return;
             var context =
-                new FakeContext(_client, reaction.User.Value, serverChannel.Guild, message, true) {IsMessage = false};
+                new FakeContext(_client, reaction.User.Value, serverChannel.Guild, message, false) {IsMessage = false};
             var game = await _db.GetGame(context.Guild.Id);
             if (game.Queue.GameStarted() && game.Queue.CurrentPlayer().Player == reaction.UserId)
             {
@@ -56,7 +56,7 @@ namespace ConnectBot.Services
             new Emoji("\u0037\u20E3"),
             new Emoji("\u0038\u20E3"),
             new Emoji("\u0039\u20E3"),
-            new Emoji( "\U0001F51F") //🔟
+            new Emoji( "\U0001F51F") // in short, a "bruh" moment
         };
 
         public async Task AddNumbers(IUserMessage message, Range range)
