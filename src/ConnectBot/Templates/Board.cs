@@ -76,9 +76,29 @@ namespace ConnectBot.Templates
             {":brown_circle: ", new Color(193, 105, 79)}
         };
 
+        private static readonly string[] Numbers =
+        {
+            ":one: ",
+            ":two: ",
+            ":three: ",
+            ":four: ",
+            ":five: ",
+            ":six: ",
+            ":seven: ",
+            ":eight: ",
+            ":nine: ",
+            ":keycap_ten: "
+        };
+
         public string GenerateField()
         {
             var output = new StringBuilder();
+            
+            for (var a = 0; a < _board.GetLength(0); a++)
+                output.Append(Numbers[a]);
+            output.Remove(output.Length - 1, 1);
+            output.Append('\n');
+            
             for (var b =  _board.GetLength(1) - 1; b >= 0; b--)
             {
                 for (var a = 0; a < _board.GetLength(0); a++)
@@ -163,6 +183,13 @@ namespace ConnectBot.Templates
                         return a;
                 }
             }
+
+            var full = true;
+            for(var i = 0; i < width; i++)
+            for (var j = 0; j < height; j++)
+                full &= _board[i, j] != 0;
+            if (full)
+                return -1;
             
             return 0;
         }

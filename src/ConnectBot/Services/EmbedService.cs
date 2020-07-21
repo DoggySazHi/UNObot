@@ -64,8 +64,15 @@ namespace ConnectBot.Services
                 var winnerColor = board.Winner();
                 if (winnerColor != 0)
                 {
-                    var index = queue.InGame.Values.ToList().FindIndex(o => o == winnerColor);
-                    await context.Channel.SendMessageAsync($"<@{queue.InGame[index].Key}> won the game!");
+                    if (winnerColor == -1)
+                    {
+                        await context.Channel.SendMessageAsync($"It's a draw... the board is full!");
+                    }
+                    else
+                    {
+                        var index = queue.InGame.Values.ToList().FindIndex(o => o == winnerColor);
+                        await context.Channel.SendMessageAsync($"<@{queue.InGame[index].Key}> won the game!");
+                    }
                     await NextGame(context, game);
                 }
             }
@@ -142,6 +149,7 @@ namespace ConnectBot.Services
                     await _db.UpdateGame(game);
                     await SuccessEmbed(context, $"You have left the game. It is now <@{nextPlayer.Player}>'s turn.");
                 }
+                return;
             }
 
             await ErrorEmbed(context, "You are not in the queue or a game!");
@@ -191,6 +199,7 @@ namespace ConnectBot.Services
             else
             {
                 await ErrorEmbed(context, "There are not enough players to start another game!");
+                await _db.UpdateGame(game);
             }
         }
 
