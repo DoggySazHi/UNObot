@@ -22,7 +22,8 @@ namespace ConnectBot.Modules
             Services = new ServiceCollection()
                 .AddSingleton<AFKTimerService>()
                 .AddSingleton<DatabaseService>()
-                .AddSingleton<EmbedService>();
+                .AddSingleton<EmbedService>()
+                .AddSingleton<ButtonHandler>();
 
             return 0;
         }

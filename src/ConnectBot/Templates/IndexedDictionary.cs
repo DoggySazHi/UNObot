@@ -102,7 +102,7 @@ namespace ConnectBot.Templates
         public bool Remove(T value)
         {
             var index = _a.FindIndex(o => EqualityComparer<T>.Default.Equals(o, value));
-            if (index <= 0) return false;
+            if (index < 0) return false;
             _a.RemoveAt(index);
             _b.RemoveAt(index);
             return true;

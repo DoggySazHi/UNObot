@@ -90,11 +90,13 @@ namespace ConnectBot.Templates
             ":keycap_ten: "
         };
 
+        private static readonly string Unknown = ":question: ";
+
         public string GenerateField()
         {
             var output = new StringBuilder();
             
-            for (var a = 0; a < _board.GetLength(0); a++)
+            for (var a = 0; a < Math.Min(_board.GetLength(0), Numbers.Length); a++)
                 output.Append(Numbers[a]);
             output.Remove(output.Length - 1, 1);
             output.Append('\n');
@@ -102,7 +104,10 @@ namespace ConnectBot.Templates
             for (var b =  _board.GetLength(1) - 1; b >= 0; b--)
             {
                 for (var a = 0; a < _board.GetLength(0); a++)
-                    output.Append(Colors[_board[a, b]].Key);
+                {
+                    var index = _board[a, b];
+                    output.Append(index >= Colors.Count ? Unknown : Colors[index].Key);
+                }
                 output.Remove(output.Length - 1, 1);
                 output.Append('\n');
             }

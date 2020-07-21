@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using ConnectBot.Templates;
 using Discord;
-using Discord.Commands;
 using Discord.Net;
+using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using UNObot.Plugins.TerminalCore;
 using Game = ConnectBot.Templates.Game;
@@ -16,15 +17,17 @@ namespace ConnectBot.Services
         private readonly IConfiguration _config;
         private readonly DatabaseService _db;
         private readonly AFKTimerService _afk;
+        private readonly ButtonHandler _button;
         
-        public EmbedService(IConfiguration config, DatabaseService db, AFKTimerService afk)
+        public EmbedService(IConfiguration config, DatabaseService db, AFKTimerService afk, ButtonHandler button)
         {
             _config = config;
             _db = db;
             _afk = afk;
+            _button = button;
         }
 
-        public async Task DisplayGame(SocketCommandContext context)
+        public async Task DisplayGame(ICommandContextEx context)
         {
             var game = await _db.GetGame(context.Guild.Id);
 
@@ -37,27 +40,60 @@ namespace ConnectBot.Services
             await DisplayGame(context, game);
         }
 
-        private async Task DisplayGame(SocketCommandContext context, Game game, string text = null)
+        private static bool _working;
+
+        private async Task DisplayGame(ICommandContextEx context, Game game, string text = null)
         {
             var queue = game.Queue;
             var board = game.Board;
-            game.Description = $"It is now {context.Client.GetUser(queue.CurrentPlayer().Player).Username}'s turn.";
+            var client = context.Client as DiscordSocketClient;
+            Debug.Assert(client != null, nameof(client) + " != null");
+            var currentPlayer = client.GetUser(queue.CurrentPlayer().Player);
+            game.Description = $"It is now {currentPlayer.Username}'s turn.";
 
             var builder = new EmbedBuilder()
                 .WithTitle("Current Game")
                 .WithColor(Board.Colors[queue.CurrentPlayer().Color].Value)
                 .AddField(game.Description, board.GenerateField());
 
+            var embed = Build(builder, context);
+            var modSuccess = false;
+
             if (game.LastChannel != null && game.LastMessage != null && game.LastMessage != 0)
+            {
                 try
                 {
-                    await context.Channel.DeleteMessageAsync(game.LastMessage.Value);
+                    if (await context.Channel.GetMessageAsync(game.LastMessage.Value) is IUserMessage message)
+                    {
+                        if (_working)
+                            throw new InvalidOperationException();
+                        _working = true;
+                        await message.ModifyAsync(o =>
+                        {
+                            o.Content = text;
+                            o.Embed = embed;
+                        });
+                        modSuccess = true;
+                        await _button.ClearReactions(message, currentPlayer);
+                    }
                 }
-                catch (HttpException) { /* ignore */ }
-            
-            var message = await context.Channel.SendMessageAsync(text, embed: Build(builder, context));
-            game.LastChannel = context.Channel.Id;
-            game.LastMessage = message.Id;
+                catch (HttpException ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                finally
+                {
+                    _working = false;
+                }
+            }
+
+            if (!modSuccess)
+            {
+                var newMessage = await context.Channel.SendMessageAsync(text, embed: embed);
+                await _button.AddNumbers(newMessage, new Range(1, board.Width + 1));
+                game.LastChannel = context.Channel.Id;
+                game.LastMessage = newMessage.Id;
+            }
 
             try
             {
@@ -86,7 +122,7 @@ namespace ConnectBot.Services
             await _db.UpdateGame(game);
         }
 
-        public async Task DisplayHelp(SocketCommandContext context)
+        public async Task DisplayHelp(ICommandContextEx context)
         {
             var help = new EmbedBuilder()
                 .WithTitle("Quick-start guide to ConnectBot")
@@ -100,7 +136,7 @@ namespace ConnectBot.Services
             await context.Channel.SendMessageAsync(embed: Build(help, context));
         }
         
-        public async Task JoinGame(SocketCommandContext context)
+        public async Task JoinGame(ICommandContextEx context)
         {
             var game = await _db.GetGame(context.Guild.Id);
             var queue = game.Queue;
@@ -122,7 +158,7 @@ namespace ConnectBot.Services
             await _db.UpdateGame(game);
         }
 
-        public async Task LeaveGame(SocketCommandContext context)
+        public async Task LeaveGame(ICommandContextEx context)
         {
             var game = await _db.GetGame(context.Guild.Id);
             var queue = game.Queue;
@@ -155,7 +191,7 @@ namespace ConnectBot.Services
             await ErrorEmbed(context, "You are not in the queue or a game!");
         }
         
-        public async Task StartGame(SocketCommandContext context)
+        public async Task StartGame(ICommandContextEx context)
         {
             var game = await _db.GetGame(context.Guild.Id);
             var queue = game.Queue;
@@ -177,7 +213,7 @@ namespace ConnectBot.Services
 
         
         
-        private async Task NextGame(SocketCommandContext context, Game game, bool newGame = false)
+        private async Task NextGame(ICommandContextEx context, Game game, bool newGame = false)
         {
             var board = game.Board;
             var queue = game.Queue;
@@ -185,6 +221,8 @@ namespace ConnectBot.Services
             board.Reset();
             if (queue.Start())
             {
+                game.LastChannel = null;
+                game.LastMessage = null;
                 if(newGame)
                     _afk.StartTimer(context, NextGame);
                 else
@@ -203,7 +241,7 @@ namespace ConnectBot.Services
             }
         }
 
-        public async Task DropPiece(SocketCommandContext context, string[] args)
+        public async Task DropPiece(ICommandContextEx context, string[] args)
         {
             var game = await _db.GetGame(context.Guild.Id);
             _afk.ResetTimer(context);
@@ -243,11 +281,12 @@ namespace ConnectBot.Services
                     return;
                 case BoardStatus.Success:
                     var nextPlayer = queue.Next();
-                    try
-                    {
-                        await context.Message.DeleteAsync();
-                    }
-                    catch (HttpException) { /* ignore */ }
+                    if(context.IsMessage)
+                        try
+                        {
+                            await context.Message.DeleteAsync();
+                        }
+                        catch (HttpException) { /* ignore */ }
                     await DisplayGame(context, game, $"It is now <@{nextPlayer.Player}>'s turn.");
                     break;
                 default:
@@ -255,7 +294,7 @@ namespace ConnectBot.Services
             }
         }
 
-        private async Task ErrorEmbed(SocketCommandContext context, string message)
+        private async Task ErrorEmbed(ICommandContextEx context, string message)
         {
             var error = new EmbedBuilder()
                 .WithTitle("Error!!")
@@ -264,7 +303,7 @@ namespace ConnectBot.Services
             await context.Channel.SendMessageAsync(embed: Build(error, context, false));
         }
         
-        private async Task SuccessEmbed(SocketCommandContext context, string message)
+        private async Task SuccessEmbed(ICommandContextEx context, string message)
         {
             var error = new EmbedBuilder()
                 .WithTitle("Success!!")
@@ -273,7 +312,7 @@ namespace ConnectBot.Services
             await context.Channel.SendMessageAsync(embed: Build(error, context, false));
         }
 
-        private Embed Build(EmbedBuilder embed, SocketCommandContext context, bool addColor = true)
+        private Embed Build(EmbedBuilder embed, ICommandContextEx context, bool addColor = true)
         {
             var r = ThreadSafeRandom.ThisThreadsRandom;
             if (addColor)
