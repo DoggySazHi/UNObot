@@ -14,10 +14,10 @@ namespace UNObot.ServerQuery.Modules
 
         public int OnLoad()
         {
-            Name = "ConnectBot";
-            Description = "Forgotten since 2018‑07‑22. UNObot was born on 2018‑03‑04.";
+            Name = "UNObot-ServerQuery";
+            Description = "Utilities for probing game servers.";
             Author = "DoggySazHi";
-            Version = "1.0.9 (4.2.0)";
+            Version = "1.0.0 (4.2.0)";
 
             Services = new ServiceCollection()
                 .AddSingleton<QueryHandlerService>()
