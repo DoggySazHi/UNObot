@@ -1,4 +1,5 @@
 ﻿using DuplicateDetector.Services;
+using DuplicateDetector.Templates;
 using Microsoft.Extensions.DependencyInjection;
 using UNObot.Plugins;
 
@@ -17,9 +18,10 @@ namespace DuplicateDetector.Modules
             Name = "Duplicate Detector";
             Description = "A test program to detect duplicate images. For private use only.";
             Author = "DoggySazHi";
-            Version = "0.0.9 (4.2.0)";
+            Version = "0.1.1 (4.2.0)";
 
             Services = new ServiceCollection()
+                .AddSingleton(new AIConfig().Build())
                 .AddSingleton<AIService>()
                 .AddSingleton<IndexerService>();
 

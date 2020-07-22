@@ -12,7 +12,6 @@ pipelines:
         caches:
           - dotnetcore
         script:
-          - dotnet restore
           - dotnet build -c Release
           - dotnet build src/UNObot -c Release
           - ls src/UNObot/bin/Release/netcoreapp3.1/plugins
@@ -23,13 +22,13 @@ pipelines:
             - dotnetcore
           name: Manual Build and Deploy
           script:
-            - dotnet restore
-            - dotnet build
+            - dotnet build -c Release
             - dotnet publish -c Release src/UNObot
             - rm -rf src/UNObot/bin/Release/netcoreapp3.1/UNObot
             - mv src/UNObot/bin/Release/netcoreapp3.1/publish src/UNObot/bin/Release/netcoreapp3.1/UNObot
-            - echo "$BITBUCKET_COMMIT $BITBUCKET_BUILD_NUMBER" > src/UNObot/bin/Release/netcoreapp3.1/UNObot/commit
-            - pipe: atlassian/scp-deploy:0.3.1
+            - >
+              echo "{\"commit\": \"$BITBUCKET_COMMIT\", \"build\":\"$BITBUCKET_BUILD_NUMBER\"}" > src/UNObot/bin/Release/netcoreapp3.1/UNObot/build.json
+            - pipe: atlassian/scp-deploy:0.3.12
               variables:
                 USER: 'doggysazhi'
                 SERVER: 'williamle.com'
@@ -42,9 +41,9 @@ pipelines:
             - dotnetcore
           name: Manual Build
           script:
-            - export PROJECT_NAME=src/UNObot
-            - dotnet restore
-            - dotnet build $PROJECT_NAME
+            - dotnet build -c Release
+            - dotnet build src/UNObot -c Release
+            - ls src/UNObot/bin/Release/netcoreapp3.1/plugins
   branches:
     master:
       - step:
@@ -52,17 +51,19 @@ pipelines:
           caches:
             - dotnetcore
           script:
-            - export PROJECT_NAME=src/UNObot
-            - dotnet restore
-            - dotnet build $PROJECT_NAME
+            - dotnet build -c Release
+            - dotnet build src/UNObot -c Release
+            - ls src/UNObot/bin/Release/netcoreapp3.1/plugins
       - step:
           name: Deploy
           script:
+            - dotnet build -c Release
             - dotnet publish -c Release src/UNObot
             - rm -rf src/UNObot/bin/Release/netcoreapp3.1/UNObot
-            - mv src/UNObot/bin/Release/netcoreapp3.1/publish/ src/UNObot/bin/Release/netcoreapp3.1/UNObot
-            - echo "$BITBUCKET_COMMIT $BITBUCKET_BUILD_NUMBER" > src/UNObot/bin/Release/netcoreapp3.1/UNObot/commit
-            - pipe: atlassian/scp-deploy:0.3.1
+            - mv src/UNObot/bin/Release/netcoreapp3.1/publish src/UNObot/bin/Release/netcoreapp3.1/UNObot
+            - >
+              echo "{\"commit\": \"$BITBUCKET_COMMIT\", \"build\":\"$BITBUCKET_BUILD_NUMBER\"}" > src/UNObot/bin/Release/netcoreapp3.1/UNObot/build.json
+            - pipe: atlassian/scp-deploy:0.3.12
               variables:
                 USER: 'doggysazhi'
                 SERVER: 'williamle.com'

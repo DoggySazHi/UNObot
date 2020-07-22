@@ -41,7 +41,7 @@ namespace ConnectBot.Services
                     if (_numbers[i].Name == reaction.Emote.Name)
                         number = i;
                 if (number != -1 && Callback != null)
-                    await Callback(context, new[] {"", number.ToString()});
+                    _ = Callback(context, new[] {"", number.ToString()}).ConfigureAwait(false);
             }
         }
 

@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 using DuplicateDetector.Services;
+using UNObot.Plugins.Attributes;
 
 namespace DuplicateDetector.Modules
 {
@@ -14,6 +16,7 @@ namespace DuplicateDetector.Modules
             _indexer = indexer;
         }
         
+        [DisableDMs]
         [RequireOwner]
         [Command("dd", RunMode = RunMode.Async)]
         public async Task DDCore([Remainder] string command)
@@ -37,8 +40,10 @@ namespace DuplicateDetector.Modules
                 ulong.TryParse(args[1], out var guild) &&
                 ulong.TryParse(args[2], out var channel))
                 _indexer.Index(guild, channel);
+            else if (!Context.IsPrivate)
+                _indexer.Index(Context.Channel as ITextChannel);
             else
-                _indexer.Index(Context.Channel);
+                await ReplyAsync("This cannot be run in DMs!");
 #pragma warning restore 4014
             await ReplyAsync("Started indexer!");
         }

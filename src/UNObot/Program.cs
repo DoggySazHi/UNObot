@@ -143,9 +143,8 @@ namespace UNObot
                         "server=127.0.0.1;user=UNObot;database=UNObot;port=3306;password=DBPassword"),
                     new JProperty("version", "Unknown Version")
                 );
-                File.CreateText("config.json").Dispose();
-                using (var sr = new StreamWriter("config.json", false))
-                    sr.Write(obj);
+                using var sr = File.CreateText("config.json");
+                sr.Write(obj);
                 Environment.Exit(1);
                 return null;
             }
