@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
 using UNObot.ServerQuery.Services;
 using static UNObot.ServerQuery.Services.IRCON;
@@ -12,11 +13,11 @@ namespace UNObot.ServerQuery.Modules
     {
         private const string TooLong = "[Message is too long; trimmed.]\n";
 
-        private readonly LoggerService _logger;
+        private readonly ILogger _logger;
         private readonly UBOWServerLoggerService _ubowLogger;
         private readonly EmbedService _embed;
         private readonly QueryHandlerService _query;
-        internal ServerCommands(LoggerService logger, UBOWServerLoggerService ubowLogger, EmbedService embed, QueryHandlerService query)
+        internal ServerCommands(ILogger logger, UBOWServerLoggerService ubowLogger, EmbedService embed, QueryHandlerService query)
         {
             _logger = logger;
             _ubowLogger = ubowLogger;

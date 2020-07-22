@@ -6,7 +6,7 @@ using System.Timers;
 using ConnectBot.Templates;
 using Discord;
 using Discord.WebSocket;
-using UNObot;
+using UNObot.Plugins;
 using Timer = System.Timers.Timer;
 using Game = ConnectBot.Templates.Game;
 
@@ -26,14 +26,14 @@ namespace ConnectBot.Services
     public class AFKTimerService
     {
         private static readonly List<ServerTimer> PlayTimers = new List<ServerTimer>();
-        private readonly LoggerService _logger;
+        private readonly ILogger _logger;
         private readonly DatabaseService _db;
         private readonly DiscordSocketClient _client;
         internal delegate Task NextGame(ICommandContextEx context, Game game, bool newGame = false);
 
         private NextGame _callback;
 
-        public AFKTimerService(LoggerService logger, DatabaseService db, DiscordSocketClient client)
+        public AFKTimerService(ILogger logger, DatabaseService db, DiscordSocketClient client)
         {
             _logger = logger;
             _db = db;

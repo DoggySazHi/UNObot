@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
+using UNObot.Plugins;
 using YoutubeExplode;
 using YoutubeExplode.Converter;
 using YoutubeExplode.Playlists;
@@ -25,9 +26,9 @@ namespace UNObot.MusicBot.Services
 
         private readonly YoutubeClient _client;
         private readonly YoutubeConverter _converter;
-        private readonly LoggerService _logger;
+        private readonly ILogger _logger;
 
-        public YoutubeService(LoggerService logger)
+        public YoutubeService(ILogger logger)
         {
             _logger = logger;
             _client = new YoutubeClient();

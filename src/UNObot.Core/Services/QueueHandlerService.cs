@@ -2,15 +2,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Discord;
+using UNObot.Plugins;
 
 namespace UNObot.Core.Services
 {
     internal class QueueHandlerService
     {
-        private readonly LoggerService _logger;
+        private readonly ILogger _logger;
         private readonly UNODatabaseService _db;
 
-        public QueueHandlerService(LoggerService logger, UNODatabaseService db)
+        public QueueHandlerService(ILogger logger, UNODatabaseService db)
         {
             _logger = logger;
             _db = db;

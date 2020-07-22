@@ -10,25 +10,26 @@ using DuplicateDetector.Templates;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
-using UNObot;
+using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
 
 namespace DuplicateDetector.Services
 {
     public class IndexerService
     {
-        private readonly LoggerService _logger;
+        private readonly ILogger _logger;
         private readonly DiscordSocketClient _client;
         private readonly IConfiguration _config;
 
         private readonly string _cacheDir;
         private readonly string _imageDir;
         
-        public IndexerService(LoggerService logger, DiscordSocketClient client, IConfiguration config)
+        public IndexerService(ILogger logger, DiscordSocketClient client, IConfiguration config)
         {
             _logger = logger;
             _client = client;
             _config = config;
+            _client.MessageReceived += AddImage;
             
             var pluginDir = Path.Join(PluginHelper.Directory(), "DuplicateDetector");
             _cacheDir = Path.Join(pluginDir, "indexes");
@@ -38,7 +39,28 @@ namespace DuplicateDetector.Services
             Directory.CreateDirectory(_cacheDir);
             Directory.CreateDirectory(_imageDir);
         }
-        
+
+        private async Task AddImage(SocketMessage message)
+        {
+            await using var db = new MySqlConnection(_config.GetConnectionString());
+            foreach (var attachment in message.Attachments)
+            {
+#pragma warning disable 4014
+                db.ExecuteAsync(
+                    "INSERT INTO DuplicateDetector.Images (author, channel, message, url, proxy_url, spoiler, posted) VALUES (@author, @message, @url, @proxy_url, @spoiler, @posted)",
+                    new 
+                    {
+                        author = message.Author.Id,
+                        message = message.GetJumpUrl(),
+                        url = attachment.Url,
+                        proxy_url = attachment.ProxyUrl,
+                        spoiler = attachment.IsSpoiler(),
+                        posted = message.Timestamp.UtcDateTime
+                    });
+#pragma warning restore 4014
+            }
+        }
+
         public async Task Index(ISocketMessageChannel channel)
         {
             try
@@ -72,7 +94,7 @@ namespace DuplicateDetector.Services
                             
     #pragma warning disable 4014
                             db.ExecuteAsync(
-                                "INSERT INTO UNObot.DuplicateDetector (author, channel, message, url, proxy_url, spoiler, posted) VALUES (@author, @message, @url, @proxy_url, @spoiler, @posted)",
+                                "INSERT INTO DuplicateDetector.Images (author, channel, message, url, proxy_url, spoiler, posted) VALUES (@author, @message, @url, @proxy_url, @spoiler, @posted)",
                                 new 
                                 {
                                     author = tempMessage.Author,
@@ -108,7 +130,7 @@ namespace DuplicateDetector.Services
 
         public async Task Download()
         {
-            const string command = "SELECT id, url, proxy_url FROM UNObot.DuplicateDetector";
+            const string command = "SELECT id, url, proxy_url FROM DuplicateDetector.Images";
             await using var connection = new MySqlConnection(_config.GetConnectionString());
             try
             {

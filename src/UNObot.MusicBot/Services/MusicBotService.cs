@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Audio;
 using Discord.WebSocket;
+using UNObot.Plugins;
 using UNObot.Plugins.TerminalCore;
 using Timer = System.Timers.Timer;
 
@@ -37,7 +38,7 @@ namespace UNObot.MusicBot.Services
         internal string Duration { get; }
         internal string ThumbnailUrl { get; }
 
-        internal async Task Cache(YoutubeService youtube, LoggerService logger)
+        internal async Task Cache(YoutubeService youtube, ILogger logger)
         {
             if (string.IsNullOrEmpty(PathCached) || !File.Exists(PathCached))
             {
@@ -83,11 +84,11 @@ namespace UNObot.MusicBot.Services
         private bool _skip;
         private CancellationTokenSource _stopAsync;
 
-        private readonly LoggerService _logger;
+        private readonly ILogger _logger;
         private readonly YoutubeService _youtube;
         private readonly EmbedService _embed;
         
-        internal Player(LoggerService logger, YoutubeService youtube, EmbedService embed, ulong guild, IVoiceChannel audioChannel, IAudioClient audioClient,
+        internal Player(ILogger logger, YoutubeService youtube, EmbedService embed, ulong guild, IVoiceChannel audioChannel, IAudioClient audioClient,
             ISocketMessageChannel messageChannel)
         {
             _logger = logger;
@@ -544,12 +545,12 @@ namespace UNObot.MusicBot.Services
     internal class MusicBotService
     {
         private readonly List<Player> _musicPlayers = new List<Player>();
-        private readonly LoggerService _logger;
+        private readonly ILogger _logger;
         private readonly YoutubeService _youtube;
         private readonly DiscordSocketClient _client;
         private readonly EmbedService _embed;
 
-        public MusicBotService(LoggerService logger, YoutubeService youtube, DiscordSocketClient client, EmbedService embed)
+        public MusicBotService(ILogger logger, YoutubeService youtube, DiscordSocketClient client, EmbedService embed)
         {
             _logger = logger;
             _youtube = youtube;

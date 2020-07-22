@@ -51,10 +51,10 @@ namespace UNObot.Services
         private readonly List<PluginInfo> _plugins;
 
         internal IReadOnlyList<PluginInfo> Plugins => _plugins;
-        private readonly LoggerService _logger;
+        private readonly ILogger _logger;
         private readonly CommandHandlingService _commands;
 
-        public PluginLoaderService(LoggerService logger, CommandHandlingService commands)
+        public PluginLoaderService(ILogger logger, CommandHandlingService commands)
         {
             _logger = logger;
             _commands = commands;

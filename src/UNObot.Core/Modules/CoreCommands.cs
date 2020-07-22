@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Microsoft.Extensions.Configuration;
+using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
 using UNObot.Plugins.TerminalCore;
 
@@ -10,10 +11,10 @@ namespace UNObot.Core.Modules
 {
     public class CoreCommands : ModuleBase<SocketCommandContext>
     {
-        private readonly LoggerService _logger;
+        private readonly ILogger _logger;
         private readonly IConfiguration _config;
         
-        public CoreCommands(LoggerService logger, IConfiguration config)
+        public CoreCommands(ILogger logger, IConfiguration config)
         {
             _logger = logger;
             _config = config;

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Timers;
 using Discord;
 using Newtonsoft.Json;
+using UNObot.Plugins;
 
 namespace UNObot.ServerQuery.Services
 {
@@ -22,10 +23,10 @@ namespace UNObot.ServerQuery.Services
         private readonly Timer _logTimer;
         private ServerLog _logs;
 
-        private readonly LoggerService _logger;
+        private readonly ILogger _logger;
         private readonly QueryHandlerService _query;
 
-        public UBOWServerLoggerService(LoggerService logger, QueryHandlerService query)
+        public UBOWServerLoggerService(ILogger logger, QueryHandlerService query)
         {
             _logger = logger;
             _query = query;
@@ -166,9 +167,9 @@ namespace UNObot.ServerQuery.Services
 
     internal class ServerLog
     {
-        private readonly LoggerService _logger;
+        private readonly ILogger _logger;
         
-        internal ServerLog(LoggerService logger)
+        internal ServerLog(ILogger logger)
         {
             _logger = logger;
         }

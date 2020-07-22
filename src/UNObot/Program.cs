@@ -8,6 +8,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
+using UNObot.Plugins;
 using UNObot.Services;
 
 namespace UNObot
@@ -18,7 +19,7 @@ namespace UNObot
         private DiscordSocketClient _client;
         private readonly ManualResetEvent _exitEvent = new ManualResetEvent(false);
         private IConfiguration _config;
-        private LoggerService _logger;
+        private ILogger _logger;
         private string _version;
 
         private static async Task Main()
@@ -38,7 +39,9 @@ namespace UNObot
                 }
             );
             
-            _logger = new LoggerService();
+            var logger = new LoggerService();
+            
+            _logger = logger;
             
             _config = BuildConfig();
             
@@ -46,12 +49,11 @@ namespace UNObot
 
             _logger.Log(LogSeverity.Info, "UNObot Launcher 3.0");
 
-            _client.Log += _logger.LogDiscord;
+            _client.Log += logger.LogDiscord;
 
             await _client.LoginAsync(TokenType.Bot, _config["token"]);
             await _client.StartAsync();
-            //_client.ReactionAdded += _services.GetRequiredService<InputHandler>().ReactionAdded;
-            await _services.GetRequiredService<CommandHandlingService>().InitializeAsync(_services);
+            await _services.GetRequiredService<CommandHandlingService>().InitializeAsync(_services, logger);
 
             await _client.SetGameAsync($"UNObot {_version}");
             Console.Title = $"UNObot {_version}";

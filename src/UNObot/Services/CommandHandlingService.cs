@@ -10,6 +10,7 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
 using UNObot.Templates;
 
@@ -20,18 +21,17 @@ namespace UNObot.Services
         private readonly CommandService _commands;
         private readonly DiscordSocketClient _discord;
         private IServiceProvider _provider;
-        private readonly LoggerService _logger;
+        private readonly ILogger _logger;
         private readonly DatabaseService _db;
         private static List<Command> _loaded;
 
         public IEnumerable<Command> Commands => _loaded;
 
-        public CommandHandlingService(IServiceProvider provider, LoggerService logger, DatabaseService db, DiscordSocketClient discord, CommandService commands)
+        public CommandHandlingService(IServiceProvider provider, ILogger logger, DatabaseService db, DiscordSocketClient discord, CommandService commands)
         {
             _logger = logger;
             _discord = discord;
             _commands = commands;
-            _commands.Log += logger.LogCommand;
             _db = db;
             _provider = provider;
             _commands.CommandExecuted += CommandExecuted;
@@ -39,8 +39,9 @@ namespace UNObot.Services
             _loaded = new List<Command>();
         }
 
-        internal async Task InitializeAsync(IServiceProvider provider)
+        internal async Task InitializeAsync(IServiceProvider provider, LoggerService logger)
         {
+            _commands.Log += logger.LogCommand;
             _provider = provider;
             await AddModulesAsync(Assembly.GetEntryAssembly());
         }

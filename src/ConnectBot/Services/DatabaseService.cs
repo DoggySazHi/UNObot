@@ -6,7 +6,7 @@ using Discord;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
-using UNObot;
+using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
 using Game = ConnectBot.Templates.Game;
 
@@ -14,7 +14,7 @@ namespace ConnectBot.Services
 {
     public class DatabaseService
     {
-        private readonly LoggerService _logger;
+        private readonly ILogger _logger;
         private static readonly JsonSerializerSettings JsonSettings;
         private static readonly string DefaultBoard;
         private static readonly string DefaultQueue;
@@ -31,7 +31,7 @@ namespace ConnectBot.Services
             DefaultQueue = JsonConvert.SerializeObject(new GameQueue(), JsonSettings);
         }
 
-        public DatabaseService(IConfiguration config, LoggerService logger)
+        public DatabaseService(IConfiguration config, ILogger logger)
         {
             _logger = logger;
             ConnString = config.GetConnectionString();

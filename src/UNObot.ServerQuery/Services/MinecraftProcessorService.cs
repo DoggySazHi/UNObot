@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using Discord;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using UNObot.Plugins;
 using static UNObot.ServerQuery.Services.IRCON;
 
 namespace UNObot.ServerQuery.Services
@@ -23,10 +24,10 @@ namespace UNObot.ServerQuery.Services
 
     public class MinecraftProcessorService
     {
-        private readonly LoggerService _logger;
+        private readonly ILogger _logger;
         private readonly QueryHandlerService _query;
         
-        public MinecraftProcessorService(LoggerService logger, QueryHandlerService query)
+        public MinecraftProcessorService(ILogger logger, QueryHandlerService query)
         {
             _logger = logger;
             _query = query;

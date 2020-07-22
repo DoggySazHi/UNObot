@@ -4,6 +4,7 @@ using System.Timers;
 using System.Xml;
 using Discord;
 using Discord.WebSocket;
+using UNObot.Plugins;
 
 namespace UNObot.ServerQuery.Services
 {
@@ -12,9 +13,9 @@ namespace UNObot.ServerQuery.Services
         private readonly Timer _checkInterval;
         private string _lastLink;
         private readonly DiscordSocketClient _client;
-        private readonly LoggerService _logger;
+        private readonly ILogger _logger;
 
-        internal UnturnedReleaseNotes(DiscordSocketClient client, LoggerService logger)
+        internal UnturnedReleaseNotes(DiscordSocketClient client, ILogger logger)
         {
             _logger = logger;
             _client = client;

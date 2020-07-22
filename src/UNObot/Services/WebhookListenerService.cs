@@ -12,6 +12,7 @@ using Discord;
 using Discord.WebSocket;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using UNObot.Plugins;
 
 namespace UNObot.Services
 {
@@ -28,12 +29,12 @@ namespace UNObot.Services
         private readonly HttpListener _server;
         private bool _disposed;
         private bool _stop;
-        private readonly LoggerService _logger;
+        private readonly ILogger _logger;
         private readonly EmbedDisplayService _embed;
         private readonly DatabaseService _db;
         private readonly DiscordSocketClient _client;
 
-        public WebhookListenerService(LoggerService logger, EmbedDisplayService embed, DatabaseService db, DiscordSocketClient client)
+        public WebhookListenerService(ILogger logger, EmbedDisplayService embed, DatabaseService db, DiscordSocketClient client)
         {
             _logger = logger;
             _embed = embed;

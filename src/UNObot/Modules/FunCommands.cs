@@ -3,15 +3,16 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
 
 namespace UNObot.Modules
 {
     public class FunCommands : ModuleBase<SocketCommandContext>
     {
-        private readonly LoggerService _logger;
+        private readonly ILogger _logger;
         
-        internal FunCommands(LoggerService logger)
+        internal FunCommands(ILogger logger)
         {
             _logger = logger;
         }

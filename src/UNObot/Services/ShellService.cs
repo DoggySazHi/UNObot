@@ -3,13 +3,14 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
+using UNObot.Plugins;
 
 namespace UNObot.Services
 {
     internal class ShellService
     {
-        private LoggerService _logger;
-        public ShellService(LoggerService logger)
+        private readonly ILogger _logger;
+        public ShellService(ILogger logger)
         {
             _logger = logger;
         }

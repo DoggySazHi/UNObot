@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Timers;
 using Discord;
 using Discord.WebSocket;
+using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
 using Timer = System.Timers.Timer;
 
@@ -12,12 +13,12 @@ namespace UNObot.Core.Services
     internal class AFKTimerService
     {
         private static readonly Dictionary<ulong, Timer> PlayTimers = new Dictionary<ulong, Timer>();
-        private readonly LoggerService _logger;
+        private readonly ILogger _logger;
         private readonly UNODatabaseService _db;
         private readonly QueueHandlerService _queue;
         private readonly DiscordSocketClient _client;
 
-        public AFKTimerService(LoggerService logger, UNODatabaseService db, QueueHandlerService queue, DiscordSocketClient client)
+        public AFKTimerService(ILogger logger, UNODatabaseService db, QueueHandlerService queue, DiscordSocketClient client)
         {
             _logger = logger;
             _db = db;

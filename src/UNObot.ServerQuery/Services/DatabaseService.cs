@@ -3,17 +3,18 @@ using System.Threading.Tasks;
 using Discord;
 using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
+using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
 
 namespace UNObot.ServerQuery.Services
 {
     public class DatabaseService
     {
-        private readonly LoggerService _logger;
+        private readonly ILogger _logger;
 
         internal string ConnString { get; }
         
-        public DatabaseService(LoggerService logger, IConfiguration config)
+        public DatabaseService(ILogger logger, IConfiguration config)
         {
             _logger = logger;
             ConnString = config.GetConnectionString();

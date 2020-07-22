@@ -20,6 +20,6 @@
             <Plugin Include="$(ProjectDir)$(OutDir)*.dll" />
         </ItemGroup>
         <Copy SourceFiles="$(Plugin)" DestinationFolder="$(SolutionDir)src\UNObot\bin\Debug\netcoreapp3.1\plugins" SkipUnchangedFiles="false" ContinueOnError="true" Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'" />
-        <Copy SourceFiles="$(Plugin)" DestinationFolder="$(SolutionDir)src\UNObot\bin\Release\netcoreapp3.1\plugins" SkipUnchangedFiles="false" ContinueOnError="true" Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'"/>
+        <Copy SourceFiles="$(Plugin)" DestinationFolder="$(SolutionDir)src\UNObot\bin\Release\netcoreapp3.1\plugins" SkipUnchangedFiles="false" ContinueOnError="true" Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'" />
     </Target>
 </Project>

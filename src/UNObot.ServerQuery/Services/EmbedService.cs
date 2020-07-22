@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Discord;
 using Microsoft.Extensions.Configuration;
+using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
 using UNObot.Plugins.TerminalCore;
 
@@ -12,13 +13,13 @@ namespace UNObot.ServerQuery.Services
     {
         private const int Attempts = 3;
 
-        private readonly LoggerService _logger;
+        private readonly ILogger _logger;
         private readonly IConfiguration _config;
         private readonly DatabaseService _db;
         private readonly QueryHandlerService _query;
         private readonly MinecraftProcessorService _minecraft;
 
-        public EmbedService(LoggerService logger, IConfiguration config, DatabaseService db, QueryHandlerService query,
+        public EmbedService(ILogger logger, IConfiguration config, DatabaseService db, QueryHandlerService query,
             MinecraftProcessorService minecraft)
         {
             _logger = logger;

@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
 using UNObot.Services;
 
@@ -8,11 +9,11 @@ namespace UNObot.Modules
 {
     public class DebugCommands : ModuleBase<SocketCommandContext>
     {
-        private readonly LoggerService _logger;
+        private readonly ILogger _logger;
         private readonly GoogleTranslateService _gts;
         private readonly ShellService _shell;
         
-        internal DebugCommands(LoggerService logger, GoogleTranslateService gts, ShellService shell)
+        internal DebugCommands(ILogger logger, GoogleTranslateService gts, ShellService shell)
         {
             _logger = logger;
             _gts = gts;

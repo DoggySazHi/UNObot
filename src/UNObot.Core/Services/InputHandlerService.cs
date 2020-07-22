@@ -2,14 +2,15 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
+using UNObot.Plugins;
 
 namespace UNObot.Core.Services
 {
     public class InputHandlerService
     {
-        private readonly LoggerService _logger;
+        private readonly ILogger _logger;
         private readonly DiscordSocketClient _client;
-        public InputHandlerService(LoggerService logger, DiscordSocketClient client)
+        public InputHandlerService(ILogger logger, DiscordSocketClient client)
         {
             _logger = logger;
             _client = client;

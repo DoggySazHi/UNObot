@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using UNObot.Core.UNOCore;
+using UNObot.Plugins;
 using UNObot.Plugins.TerminalCore;
 using static UNObot.Plugins.Helpers.DatabaseExtensions;
 
@@ -12,11 +13,11 @@ namespace UNObot.Core.Services
 {
     public class UNODatabaseService
     {
-        private readonly LoggerService _logger;
+        private readonly ILogger _logger;
         
         internal string ConnString { get; }
 
-        public UNODatabaseService(IConfiguration config, LoggerService logger)
+        public UNODatabaseService(IConfiguration config, ILogger logger)
         {
             _logger = logger;
             ConnString = config.GetConnectionString();

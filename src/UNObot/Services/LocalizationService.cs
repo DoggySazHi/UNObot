@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Discord;
 using Newtonsoft.Json;
+using UNObot.Plugins;
 
 namespace UNObot.Services
 {
@@ -10,9 +11,9 @@ namespace UNObot.Services
     {
         private static readonly string LocalizationFile = "translations_en.json";
         private Dictionary<string, string> _localizations;
-        private LoggerService _logger;
+        private readonly ILogger _logger;
 
-        internal LocalizationService(LoggerService logger)
+        internal LocalizationService(ILogger logger)
         {
             _logger = logger;
             

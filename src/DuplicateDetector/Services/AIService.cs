@@ -4,20 +4,20 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
-using UNObot;
+using UNObot.Plugins;
 
 namespace DuplicateDetector.Services
 {
     public class AIService : IDisposable
     {
         private const int Port = 8492;
-        private readonly LoggerService _logger;
+        private readonly ILogger _logger;
         private readonly Connector _connector;
 
-        public AIService(LoggerService logger)
+        public AIService(ILogger logger)
         {
             _logger = logger;
-            _connector = new Connector (Port) {Logger = _logger};
+            _connector = new Connector (Port, logger);
             _connector.Message += OnMessage;
             _connector.Start();
         }
@@ -42,21 +42,21 @@ namespace DuplicateDetector.Services
         private byte[] _buffer;
         private bool _active;
         private readonly ManualResetEvent _shutdown;
+        private readonly ILogger _logger;
         
         public delegate void MessageEventHandler(Connector sender, string message);
         public event MessageEventHandler Message;
+        
+        public Connector(ILogger logger) : this(27285, logger) {}
 
-        public LoggerService Logger { private get; set; }
-
-        public Connector() : this(27285) {}
-
-        public Connector(int port)
+        public Connector(int port, ILogger logger)
         {
             _port = port;
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             _buffer = new byte[BufferSize];
             _socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.ReuseAddress, true);
             _shutdown = new ManualResetEvent(false);
+            _logger = logger;
         }
 
         /*
@@ -74,14 +74,14 @@ namespace DuplicateDetector.Services
 
         private void Run()
         {
-            Logger.Log(LogSeverity.Info, $"Connecting to {_port}...");
+            _logger.Log(LogSeverity.Info, $"Connecting to {_port}...");
             try
             {
                 _socket.Connect("127.0.0.1", _port);
             }
             catch (SocketException e)
             {
-                Logger.Log(LogSeverity.Error, "Failed to connect to server! Is it up and running?", e);
+                _logger.Log(LogSeverity.Error, "Failed to connect to server! Is it up and running?", e);
                 _shutdown.Set();
                 return;
             }
@@ -90,7 +90,7 @@ namespace DuplicateDetector.Services
 
             var byteData = Encoding.UTF8.GetBytes("HI");
             _socket.Send(byteData);
-            Logger.Log(LogSeverity.Info, "Connected!");
+            _logger.Log(LogSeverity.Info, "Connected!");
 
             try
             {
@@ -109,7 +109,7 @@ namespace DuplicateDetector.Services
 
                     if (!_socket.Poll(1 * 1000 * 1000, SelectMode.SelectWrite))
                     {
-                        Logger.Log(LogSeverity.Warning, "Connection failed!");
+                        _logger.Log(LogSeverity.Warning, "Connection failed!");
                         break;
                     }
                 }
@@ -118,7 +118,7 @@ namespace DuplicateDetector.Services
             }
             catch (SocketException e)
             {
-                Logger.Log(LogSeverity.Critical, "Socket failed!", e);
+                _logger.Log(LogSeverity.Critical, "Socket failed!", e);
             }
 
             _active = false;
@@ -157,7 +157,7 @@ namespace DuplicateDetector.Services
             _shutdown.WaitOne();
             _socket.Dispose();
             _shutdown.Dispose();
-            Logger?.Log(LogSeverity.Info, "Shut down!");
+            _logger?.Log(LogSeverity.Info, "Shut down!");
         }
     }
 }
