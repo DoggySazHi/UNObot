@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
 using UNObot.Plugins.TerminalCore;
+using static UNObot.ServerQuery.Services.MinecraftProcessorService;
 
 namespace UNObot.ServerQuery.Services
 {
@@ -167,7 +168,7 @@ namespace UNObot.ServerQuery.Services
                         var userInfo = mcUserInfo.Find(o => o.Username == extendedStatus.Players[i]);
                         if (userInfo != null)
                             playersOnline +=
-                                $"\n- **Ouchies:** {userInfo.Ouchies} | **Health:** {userInfo.Health} | **Food:** {userInfo.Food}\n- **Experience:** {userInfo.Experience}";
+                                $"\n- **Ouchies:** {userInfo.Ouchies} | **Health:** {userInfo.Health} | **Food:** {userInfo.Food}\n- **Experience:** {userInfo.Experience} ({userInfo.ExperienceLevels} levels)";
                         else
                             playersOnline += "\n Unknown stats.";
                     }
@@ -389,12 +390,30 @@ namespace UNObot.ServerQuery.Services
                         var sourceUser = users.Find(o => o.Online && o.Username == sourceMCUsername);
                         var targetUser = users.Find(o => o.Online && o.Username == target);
 
-                        var textAmount = amountIn.ToLower().Trim();
-                        var numAmount = int.TryParse(amountIn, out var amount);
-                        if (textAmount == "all" || textAmount == "max")
+                        var textOriginal = amountIn.ToLower().Trim();
+                        var textAmount = textOriginal.Replace('l', ' ').Replace('t', ' ');
+                        var numAmount = int.TryParse(textAmount, out var amount);
+                        var fullTransfer = textOriginal.Contains("all") || textOriginal.Contains("max");
+                        if (fullTransfer)
                         {
                             amount = 1;
                             numAmount = true;
+                        }
+                        else
+                        {
+                            var option = (textOriginal.Contains('l') ? 1 : 0) + (textOriginal.Contains('t') ? 2 : 0);
+                            switch (option)
+                            {
+                                case 1 when sourceUser != null:
+                                    amount = (int) (Exp(sourceUser.ExperienceLevels, 0) - Exp(sourceUser.ExperienceLevels - amount, 0));
+                                    break;
+                                case 2 when targetUser != null:
+                                    amount -= targetUser.Experience;
+                                    break;
+                                case 3 when targetUser != null:
+                                    amount = (int) Exp(amount, 0) - targetUser.Experience;
+                                    break;
+                            }
                         }
 
                         if (sourceMCUsername == null)
@@ -419,7 +438,7 @@ namespace UNObot.ServerQuery.Services
                         }
                         else
                         {
-                            if (textAmount == "all" || textAmount == "max")
+                            if (fullTransfer)
                                 amount = sourceUser.Experience;
                             client.Execute($"xp add {sourceUser.Username} -{amount} points", true);
                             client.Execute($"xp add {targetUser.Username} {amount} points");

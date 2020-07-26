@@ -20,6 +20,7 @@ namespace UNObot.ServerQuery.Services
         internal string Health { get; set; }
         internal string Food { get; set; }
         internal int Experience { get; set; }
+        internal int ExperienceLevels { get; set; }
     }
 
     public class MinecraftProcessorService
@@ -194,6 +195,7 @@ namespace UNObot.ServerQuery.Services
                         correctUser.Food = food;
                         correctUser.Online = true;
                         correctUser.Experience = experience;
+                        correctUser.ExperienceLevels = xpLevels;
                     }
                 }
                 catch (Exception ex)
@@ -267,12 +269,13 @@ namespace UNObot.ServerQuery.Services
             var pointData = client.Data;
             client.ExecuteSingle($"execute as {name} at @s run experience query @s levels", true);
             var experience = 0;
+            var experienceLevels = 0;
             if (client.Status == RCONStatus.Success)
                 try
                 {
                     var points = int.Parse(pointData.Split(' ')[2]);
-                    var levels = int.Parse(client.Data.Split(' ')[2]);
-                    experience = (int) Exp(levels, points);
+                    experienceLevels = int.Parse(client.Data.Split(' ')[2]);
+                    experience = (int) Exp(experienceLevels, points);
                 }
                 catch (FormatException)
                 {
@@ -286,10 +289,11 @@ namespace UNObot.ServerQuery.Services
                 correctUser.Food = food;
                 correctUser.Online = true;
                 correctUser.Experience = experience;
+                correctUser.ExperienceLevels = experienceLevels;
             }
         }
 
-        private static double Exp(int levels, int points)
+        public static double Exp(int levels, int points)
         {
             if (levels <= 16)
                 return Math.Pow(levels, 2) + 6 * levels + points;

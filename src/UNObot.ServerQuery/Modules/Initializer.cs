@@ -17,7 +17,7 @@ namespace UNObot.ServerQuery.Modules
             Name = "UNObot-ServerQuery";
             Description = "Utilities for probing game servers.";
             Author = "DoggySazHi";
-            Version = "1.0.0 (4.2.0)";
+            Version = "1.1.0 (4.2.0)";
 
             Services = new ServiceCollection()
                 .AddSingleton<QueryHandlerService>()
