@@ -53,6 +53,7 @@ namespace UNObot.Services
                 provider = services.AddSingleton(_discord)
                     .AddSingleton(_logger)
                     .AddSingleton(_provider.GetRequiredService<IConfiguration>())
+                    .AddSingleton(this) // Required for .help, which seeks duplicates.
                     .BuildServiceProvider();
             await LoadHelp(assembly, provider);
             return await _commands.AddModulesAsync(assembly, provider);
@@ -135,6 +136,7 @@ namespace UNObot.Services
                         "This command cannot be run in DMs. Please try again in a server.");
                     return;
                 }
+
                 await _commands.ExecuteAsync(context, argPos, provider);
             }
             catch (Exception e)
