@@ -54,6 +54,7 @@ namespace UNObot
             await _client.LoginAsync(TokenType.Bot, _config["token"]);
             await _client.StartAsync();
             await _services.GetRequiredService<CommandHandlingService>().InitializeAsync(_services, logger);
+            _services.GetRequiredService<WebhookListenerService>();
 
             await _client.SetGameAsync($"UNObot {_version}");
             Console.Title = $"UNObot {_version}";

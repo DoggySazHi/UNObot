@@ -69,9 +69,17 @@ namespace UNObot.Services
             _plugins =
                 Directory.EnumerateFiles("plugins").Select(path =>
                 {
-                    var pluginAssembly = LoadPlugin(path);
-                    var (plugin, loaded) = CreatePlugin(pluginAssembly);
-                    return new PluginInfo(path, pluginAssembly, plugin, loaded);
+                    try
+                    {
+                        var pluginAssembly = LoadPlugin(path);
+                        var (plugin, loaded) = CreatePlugin(pluginAssembly);
+                        return new PluginInfo(path, pluginAssembly, plugin, loaded);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.Log(LogSeverity.Critical, $"Could not load {path}!", e);
+                        return new PluginInfo(path, null, null, false);
+                    }
                 }).ToList();
             _plugins.RemoveAll(o => !o.Loaded);
             _logger.Log(LogSeverity.Info, $"Loaded {Plugins.Count} plugins!");
