@@ -2,8 +2,10 @@
 #include <string>
 #include <iostream>
 #ifndef SIGPIPE
-    #include <sys/signal.h>
+    #include <csignal>
 #endif
+#include <chrono>
+#include <thread>
 
 RCONSocket* CreateObjectB(IPEndpoint& server, std::string &password)
 {
@@ -45,25 +47,17 @@ int main()
     signal(SIGPIPE, SIG_IGN);
 
     IPEndpoint server;
-    server.ip = "192.168.2.42";
+    server.ip = "192.168.2.11";
     server.port = 29293;
     std::string password = "mukyumukyu";
     auto rcon = CreateObjectB(server, password);
-    rcon->ExecuteSingle("list");
-    std::cout << rcon->status << '\n';
-    std::cout << rcon->data << '\n';
-    rcon->Execute("data get entity DoggySazHi");
-    std::cout << rcon->status << '\n';
-    std::cout << rcon->data << '\n';
-    rcon->Execute("data get entity PuppySazHi");
-    std::cout << rcon->status << '\n';
-    std::cout << rcon->data << '\n';
-    rcon->Execute("data get entity MyonSazHi");
-    std::cout << rcon->status << '\n';
-    std::cout << rcon->data << '\n';
-    rcon->Execute("data get entity d3kuu");
-    std::cout << rcon->status << '\n';
-    std::cout << rcon->data << '\n';
+    for(int i = 0; i < 230; i++) {
+        rcon->ExecuteSingle("execute as DoggySazHi at @s run tp @s ~-9 ~ ~");
+        rcon->ExecuteSingle("clear DoggySazHi minecraft:redstone_torch 1");
+        rcon->ExecuteSingle("execute as DoggySazHi at @s run setblock ~ ~ ~-1 minecraft:redstone_torch");
+        //std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_until(std::chrono::system_clock::now() + std::chrono::milliseconds(50));
+    }
     delete rcon;
     return 0;
 }
