@@ -82,6 +82,7 @@ namespace UNObot.ServerQuery.Services
 
             _logs = new ServerLog(_logger);
             await _logs.ReadFromFile(FileName);
+            RecalculateValues();
             _logTimer.Enabled = true;
             _logger.Log(LogSeverity.Info, "UBOWS Logger initialized!");
             Ready = true;
