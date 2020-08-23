@@ -51,15 +51,19 @@ int main()
     server.port = 29293;
     std::string password = "mukyumukyu";
     auto rcon = CreateObjectB(server, password);
-    for(int i = 0; i < 209; i++) {
-        for(int j = 0; j < 8; j++)
-        {
-            rcon->ExecuteSingle("execute as DoggySazHi at @s run tp @s ~ ~ ~-1");
+    for(int i = 0; i < 500; i++) {
+        for(int j = 0; j < 8; j++) {
             rcon->ExecuteSingle("clear DoggySazHi minecraft:rail 1");
-            rcon->ExecuteSingle("execute as DoggySazHi at @s run setblock ~ ~ ~ rail keep");
-            std::this_thread::sleep_until(std::chrono::system_clock::now() + std::chrono::milliseconds(30));
+            if (rcon->data.find("No items") != std::string::npos) {
+                std::cerr << "Ran out of items!\a" << std::endl;
+                delete rcon;
+                return 1;
+            }
+            rcon->ExecuteSingle("execute as DoggySazHi at @s run tp @s ~-1 ~ ~");
+            rcon->ExecuteSingle("execute as DoggySazHi at @s run setblock ~ ~ ~ minecraft:rail");
+            std::this_thread::sleep_until(std::chrono::system_clock::now() + std::chrono::milliseconds(20));
         }
-        rcon->ExecuteSingle("execute as DoggySazHi at @s run tp @s ~ ~ ~-1");
+        rcon->ExecuteSingle("execute as DoggySazHi at @s run tp @s ~-1 ~ ~");
     }
     delete rcon;
     return 0;

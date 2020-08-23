@@ -19,10 +19,10 @@ namespace UNObot.ServerQuery.Services
     //Mukyu... but I implemented the Minecraft RCON (Valve RCON) protocol by hand, as well as the query.
     public class QueryHandlerService
     {
-        internal IReadOnlyList<string> OutsideServers;
+        internal readonly IReadOnlyList<string> OutsideServers;
         internal readonly IReadOnlyDictionary<ushort, RCONServer> SpecialServers;
 
-        private RCONManager _manager;
+        private readonly RCONManager _manager;
 
         public QueryHandlerService(RCONManager manager)
         {
@@ -30,6 +30,9 @@ namespace UNObot.ServerQuery.Services
             
             var external = new List<string>();
             external.Add("williamle.com");
+            external.Add("HakureiShrine");
+            external.Add("Hakugyokurou");
+            external.Add("Chitei");
             OutsideServers = external;
             var servers = new Dictionary<ushort, RCONServer>();
             // Stored in plain-text anyways, plus is server-side. You could easily read this from a file on the same server.

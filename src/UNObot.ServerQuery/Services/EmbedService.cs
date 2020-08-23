@@ -125,6 +125,7 @@ namespace UNObot.ServerQuery.Services
                 string.IsNullOrWhiteSpace(playersOnline) ? "Nobody's online!" : playersOnline, true);
             if (averages != null)
                 builder.AddField("Server Averages",
+                    averages.Ready ? "" : "**Warning**: UNObot is still loading stats..." + 
                     $"Last hour: {averages.AverageLastHour:N2} players\n" +
                     $"Last 24 hours: {averages.AverageLast24H:N2} players\n" +
                     $"Last week: {averages.AverageLastWeek:N2} players\n" +

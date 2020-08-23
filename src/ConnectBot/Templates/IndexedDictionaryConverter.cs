@@ -19,7 +19,7 @@ namespace ConnectBot.Templates
                                                 "Serialize with the default converter!");
         }
 
-        public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
+        public override object ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
         {
             var json = JObject.Load(reader);
             // You can easily tell that if the database is messed up, or someone attacked it, this thing will die. Too bad!

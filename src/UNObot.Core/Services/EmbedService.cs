@@ -36,7 +36,7 @@ namespace UNObot.Core.Services
 
             uint cardColor = card.Color switch
             {
-                "Red" => (uint) 0xFF0000,
+                "Red" => 0xFF0000,
                 "Blue" => 0x0000FF,
                 "Yellow" => 0xFFFF00,
                 _ => 0x00FF00
