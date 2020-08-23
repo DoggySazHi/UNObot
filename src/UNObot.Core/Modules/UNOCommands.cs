@@ -453,7 +453,7 @@ namespace UNObot.Core.Modules
             true, "UNObot 2.4")]
         internal async Task QuickPlay()
         {
-            async Task Skip()
+            async Task SkipQP()
             {
                 await _queue.NextPlayer(Context.Guild.Id);
                 await ReplyAsync(
@@ -487,7 +487,7 @@ namespace UNObot.Core.Modules
                                 var cardsAlreadyDrawn = await _db.GetCardsDrawn(Context.Guild.Id);
                                 if (cardsAlreadyDrawn > 0)
                                 {
-                                    await Skip();
+                                    await SkipQP();
                                     return;
                                 }
                             }
@@ -528,7 +528,7 @@ namespace UNObot.Core.Modules
                                 {
                                     await ReplyAsync("You have drawn a card and skipped.");
                                     await Context.Message.Author.SendMessageAsync($"You have drawn a {rngCard}.");
-                                    await Skip();
+                                    await SkipQP();
                                     break;
                                 }
                             }

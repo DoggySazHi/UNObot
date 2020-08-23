@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
+using UNObot.Plugins.Helpers;
 using UNObot.Templates;
 
 namespace UNObot.Services
@@ -44,6 +45,8 @@ namespace UNObot.Services
             _commands.Log += logger.LogCommand;
             _provider = provider;
             await AddModulesAsync(Assembly.GetEntryAssembly());
+            _discord.ReactionAdded += async (message, channel, emote) => 
+                await PluginHelper.DeleteReact(_discord, await message.GetOrDownloadAsync(), emote);
         }
         
         internal async Task<IEnumerable<ModuleInfo>> AddModulesAsync(Assembly assembly, IServiceCollection services = null)
@@ -152,16 +155,16 @@ namespace UNObot.Services
                 switch (result.Error.Value)
                 {
                     case CommandError.BadArgCount:
-                        await context.Channel.SendMessageAsync(
-                            $"Hmm, that's not how it works. Type '<@{context.Client.CurrentUser.Id}> help' for the parameters of your command.");
+                        (await context.Channel.SendMessageAsync(
+                            $"Hmm, that's not how it works. Type '<@{context.Client.CurrentUser.Id}> help' for the parameters of your command.")).MakeDeletable();
                         break;
                     case CommandError.ParseFailed:
-                        await context.Channel.SendMessageAsync(
-                            "You dun goof. If it asks for numbers, type an actual number. If it asks for words, make sure to double quote around it.");
+                        (await context.Channel.SendMessageAsync(
+                            "You dun goof. If it asks for numbers, type an actual number. If it asks for words, make sure to double quote around it.")).MakeDeletable();
                         break;
                     case CommandError.MultipleMatches:
-                        await context.Channel.SendMessageAsync(
-                            $"There are multiple commands with the same name. Type '<@{context.Client.CurrentUser.Id}> help' to see which one you need.");
+                        (await context.Channel.SendMessageAsync(
+                            $"There are multiple commands with the same name. Type '<@{context.Client.CurrentUser.Id}> help' to see which one you need.")).MakeDeletable();
                         break;
                     case CommandError.UnmetPrecondition:
                     case CommandError.UnknownCommand:

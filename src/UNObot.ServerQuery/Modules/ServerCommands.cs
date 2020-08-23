@@ -4,6 +4,7 @@ using Discord;
 using Discord.Commands;
 using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
+using UNObot.Plugins.Helpers;
 using UNObot.ServerQuery.Services;
 using static UNObot.ServerQuery.Services.IRCON;
 
@@ -99,7 +100,7 @@ namespace UNObot.ServerQuery.Modules
             "UNObot 2.4")]
         internal async Task PSurvival()
         {
-            await CheckMCNew("williamle.com", 27285);
+            await CheckMCNew("williamle.com", 29292);
         }
 
         [Command("ouchies", RunMode = RunMode.Async)]
@@ -109,7 +110,7 @@ namespace UNObot.ServerQuery.Modules
             var message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
             {
-                var success = _embed.OuchiesEmbed("williamle.com", 27285, out var embed);
+                var success = _embed.OuchiesEmbed("williamle.com", 29292, out var embed);
                 if (!success || embed == null)
                 {
                     await message.ModifyAsync(o =>
@@ -167,7 +168,7 @@ namespace UNObot.ServerQuery.Modules
             var message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
             {
-                var success = _embed.LocationsEmbed("williamle.com", 27285, out var embed);
+                var success = _embed.LocationsEmbed("williamle.com", 29292, out var embed);
                 if (!success || embed == null)
                 {
                     await message.ModifyAsync(o =>
@@ -225,7 +226,7 @@ namespace UNObot.ServerQuery.Modules
             var message = await ReplyAsync("I am now contacting the server, please wait warmly...");
             try
             {
-                var success = _embed.TransferEmbed("williamle.com", 27285, Context.User.Id, target, amount,
+                var success = _embed.TransferEmbed("williamle.com", 29292, Context.User.Id, target, amount,
                     out var embed);
                 if (!success || embed == null)
                 {
@@ -282,7 +283,7 @@ namespace UNObot.ServerQuery.Modules
         [Help(new[] {".mctime"}, "SLEEP GUYS", true, "UNObot 4.0.16")]
         internal async Task GetMCTime()
         {
-            var server = _query.SpecialServers[27285];
+            var server = _query.SpecialServers[29292];
             await RunRCON(server.Server, server.RCONPort, server.Password, "time query daytime");
         }
 
@@ -410,7 +411,7 @@ namespace UNObot.ServerQuery.Modules
                     RCONStatus.Success => "An existing RCON connection exists for your user. Please close it first.",
                     _ => "I don't know what happened here."
                 };
-                await message.ModifyAsync(o => o.Content = error).ConfigureAwait(false);
+                await message.MakeDeletable().ModifyAsync(o => o.Content = error).ConfigureAwait(false);
             }
             else
             {
@@ -446,7 +447,7 @@ namespace UNObot.ServerQuery.Modules
             var message = await ReplyAsync("Searching...");
             var success = _query.CloseRCON(Context.User.Id);
             if (!success)
-                await message.ModifyAsync(o => o.Content = "Could not find an open connection owned by you.");
+                await message.MakeDeletable().ModifyAsync(o => o.Content = "Could not find an open connection owned by you.");
             else
                 await message.ModifyAsync(o => o.Content = "Successfully closed your connection.");
         }
@@ -456,7 +457,7 @@ namespace UNObot.ServerQuery.Modules
             var message = await ReplyAsync("Searching...");
             var success = _query.ExecuteRCON(Context.User.Id, "", out var output);
             if (!success)
-                await message.ModifyAsync(o => o.Content = "Could not find an open connection owned by you.");
+                await message.MakeDeletable().ModifyAsync(o => o.Content = "Could not find an open connection owned by you.");
             else
                 await message.ModifyAsync(o =>
                     o.Content = $"Connected to {output.Server.Address} on {output.Server.Port}.");
@@ -472,6 +473,7 @@ namespace UNObot.ServerQuery.Modules
                 {
                     await message.ModifyAsync(o =>
                         o.Content = "Error: Apparently we couldn't get any information about this server.");
+                    message.MakeDeletable();
                     return;
                 }
 

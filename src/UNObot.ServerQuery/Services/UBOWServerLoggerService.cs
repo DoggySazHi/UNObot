@@ -25,6 +25,8 @@ namespace UNObot.ServerQuery.Services
 
         private readonly ILogger _logger;
         private readonly QueryHandlerService _query;
+        
+        public bool Ready { get; private set; }
 
         public UBOWServerLoggerService(ILogger logger, QueryHandlerService query)
         {
@@ -82,6 +84,7 @@ namespace UNObot.ServerQuery.Services
             await _logs.ReadFromFile(FileName);
             _logTimer.Enabled = true;
             _logger.Log(LogSeverity.Info, "UBOWS Logger initialized!");
+            Ready = true;
         }
 
         private void LogMinute(object sender, ElapsedEventArgs e)
@@ -144,7 +147,8 @@ namespace UNObot.ServerQuery.Services
                 AverageLast24H = _logs.AverageLast24H,
                 AverageLastWeek = _logs.AverageLastWeek,
                 AverageLastMonth = _logs.AverageLastMonth,
-                AverageLastYear = _logs.AverageLastYear
+                AverageLastYear = _logs.AverageLastYear,
+                Ready = true
             };
         }
     }
@@ -163,6 +167,7 @@ namespace UNObot.ServerQuery.Services
         internal float AverageLastWeek { get; set; }
         internal float AverageLastMonth { get; set; }
         internal float AverageLastYear { get; set; }
+        internal bool Ready { get; set; }
     }
 
     internal class ServerLog

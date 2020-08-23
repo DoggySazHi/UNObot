@@ -176,7 +176,7 @@ namespace DuplicateDetector.Services
             }
         }
         
-        private volatile int _tasks = 100;
+        private int _tasks = 100;
 
         private async Task DownloadImage(string url, int name, bool overwrite = false)
         {
