@@ -26,7 +26,7 @@ namespace UNObot.Modules
         {
             var output =
                 $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {_config["version"]}\nCurrent Time (PST): {DateTime.Now.ToString(CultureInfo.InvariantCulture)}" +
-                $"\n\nCommit {_config["commit"]}\nBuild #{_config["build"]}";
+                $"\n\nCommit {_config["commit"]?[..Math.Min(_config["commit"].Length, 7)] ?? "???"}\nBuild #{_config["build"] ?? "???"}";
             await ReplyAsync(output);
         }
         

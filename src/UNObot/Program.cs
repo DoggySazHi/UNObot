@@ -17,7 +17,7 @@ namespace UNObot
     {
         private ServiceProvider _services;
         private DiscordSocketClient _client;
-        private readonly ManualResetEvent _exitEvent = new ManualResetEvent(false);
+        private static readonly ManualResetEvent ExitEvent = new ManualResetEvent(false);
         private IConfiguration _config;
         private ILogger _logger;
         private string _version;
@@ -55,12 +55,13 @@ namespace UNObot
             await _client.StartAsync();
             await _services.GetRequiredService<CommandHandlingService>().InitializeAsync(_services, logger);
             _services.GetRequiredService<WebhookListenerService>();
+            _services.GetRequiredService<WatchdogService>().InitializeAsync(logger);
 
             await _client.SetGameAsync($"UNObot {_version}");
             Console.Title = $"UNObot {_version}";
             SafeExitHandler();
-            _exitEvent.WaitOne();
-            _exitEvent.Dispose();
+            ExitEvent.WaitOne();
+            ExitEvent.Dispose();
             OnExit();
         }
         
@@ -80,6 +81,7 @@ namespace UNObot
                 .AddSingleton<GoogleTranslateService>()
 #if DEBUG
                 .AddSingleton<DebugService>()
+                .AddSingleton<WatchdogService>()
 #endif
                 .BuildServiceProvider();
         }
@@ -90,7 +92,7 @@ namespace UNObot
             {
                 try
                 {
-                    _exitEvent.Set();
+                    ExitEvent.Set();
                 }
                 catch (Exception)
                 {
@@ -103,7 +105,7 @@ namespace UNObot
                 eventArgs.Cancel = true;
                 try
                 {
-                    _exitEvent.Set();
+                    ExitEvent.Set();
                 }
                 catch (Exception)
                 {
@@ -112,11 +114,11 @@ namespace UNObot
             };
         }
 
-        internal void Exit()
+        internal static void Exit()
         {
             try
             {
-                _exitEvent.Set();
+                ExitEvent.Set();
             }
             catch (Exception)
             {
@@ -127,6 +129,18 @@ namespace UNObot
         private void OnExit()
         {
             _logger.Log(LogSeverity.Info, "Quitting...");
+            foreach (var service in _services.GetServices<object>())
+            {
+                switch (service)
+                {
+                    case IAsyncDisposable objDisposableAsync:
+                        objDisposableAsync.DisposeAsync().GetAwaiter().GetResult();
+                        break;
+                    case IDisposable objDisposable:
+                        objDisposable.Dispose();
+                        break;
+                }
+            }
             _services.Dispose();
             Environment.Exit(0);
         }
