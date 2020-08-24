@@ -17,7 +17,7 @@ using UNObot.Templates;
 
 namespace UNObot.Services
 {
-    internal class CommandHandlingService
+    internal class CommandHandlingService : IDisposable
     {
         private readonly CommandService _commands;
         private readonly DiscordSocketClient _discord;
@@ -274,6 +274,12 @@ namespace UNObot.Services
 
                 _logger.Log(LogSeverity.Info, $"Loaded {_loaded.Count} commands including from help.json!");
             }
+        }
+
+        public void Dispose()
+        {
+            ((IDisposable) _commands)?.Dispose();
+            _discord?.Dispose();
         }
     }
 }
