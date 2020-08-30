@@ -800,7 +800,7 @@ namespace UNObot.Core.Modules
                             if (color.ToLower()[0] == 'w')
                             {
                                 await ReplyAsync(
-                                    "You need to rerun the command, but also add what color should it represent.\nEx. play Wild Color Green");
+                                    "You need to rerun the command, but also add what color should it represent.\nEx. .play Wild Color Green or .play Wild +4 Green");
                             }
                             else
                             {
