@@ -83,7 +83,7 @@ namespace UNObot.Core.Services
                     default:
                         return $"<@{player}>, that's not a color for your wild card!";
                 }
-
+            
             //Great, filtering active.
             var playCard = new Card(color, value);
             var existing = false;

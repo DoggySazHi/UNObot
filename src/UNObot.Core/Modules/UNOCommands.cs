@@ -797,7 +797,7 @@ namespace UNObot.Core.Modules
                     {
                         if (Context.User.Id == await _queue.GetCurrentPlayer(Context.Guild.Id))
                         {
-                            if (color.ToLower() == "wild")
+                            if (color.ToLower()[0] == 'w')
                             {
                                 await ReplyAsync(
                                     "You need to rerun the command, but also add what color should it represent.\nEx. play Wild Color Green");
