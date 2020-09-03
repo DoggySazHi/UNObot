@@ -140,7 +140,7 @@ namespace UNObot.MusicBot.Services
                 return path;
             }
 
-            return await Download(guild, video.Id.Value, mediaStreams.Streams.WithHighestBitrate());
+            return await Download(guild, video.Id.Value, mediaStreams.GetAudioOnly().WithHighestBitrate());
         }
 
         private async Task<string> Download(ulong guild, string id, IStreamInfo audioStream)
