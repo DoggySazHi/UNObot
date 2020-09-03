@@ -492,7 +492,7 @@ namespace UNObot.MusicBot.Services
             _ffmpegProcess = Process.Start(new ProcessStartInfo
             {
                 FileName = fileName,
-                Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le pipe:1",
+                Arguments = $"-hide_banner -re -loglevel panic -i \"{path}\" -ac 2 -b:a ${_audioChannel.Bitrate} -f s16le pipe:1",
                 UseShellExecute = false,
                 RedirectStandardOutput = true
             });
