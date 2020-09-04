@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Discord;
 using UNObot.Plugins;
@@ -31,8 +33,12 @@ namespace UNObot.MusicBot.Services
         public YoutubeService(ILogger logger)
         {
             _logger = logger;
-            _client = new YoutubeClient();
-            _converter = new YoutubeConverter(_client, "/usr/local/bin/ffmpeg");
+            var httpClient = new HttpClient();
+            _client = new YoutubeClient(httpClient);
+            var fileName = "/usr/local/bin/ffmpeg";
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                fileName = @"C:\Users\William Le\Documents\Programming Projects\YTDownloader\ffmpeg.exe";
+            _converter = new YoutubeConverter(_client, fileName);
             if (Directory.Exists(DownloadPath))
                 Directory.Delete(DownloadPath, true);
             Directory.CreateDirectory(DownloadPath);
@@ -50,15 +56,14 @@ namespace UNObot.MusicBot.Services
         internal async Task<Tuple<Tuple<string, string, string>, string>> SearchVideo(string query)
         {
             _logger.Log(LogSeverity.Verbose, "Searching videos...");
-            var data = await _client.Search.GetVideosAsync(query).ToListAsync();
-            if (data.Count == 0)
+            var data = await _client.Search.GetVideosAsync(query).FirstOrDefaultAsync();
+            if (data == null)
                 throw new Exception("No results found!");
-            var videoData = data[0];
-            var duration = TimeString(videoData.Duration);
+            var duration = TimeString(data.Duration);
             _logger.Log(LogSeverity.Verbose, "Found video.");
             return new Tuple<Tuple<string, string, string>, string>(
-                new Tuple<string, string, string>(videoData.Title, duration, videoData.Thumbnails.MediumResUrl),
-                videoData.Url);
+                new Tuple<string, string, string>(data.Title, duration, data.Thumbnails.MediumResUrl),
+                data.Url);
         }
 
         internal async Task<Playlist> GetPlaylist(string url)

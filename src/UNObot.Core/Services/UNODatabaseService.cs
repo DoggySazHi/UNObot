@@ -21,7 +21,9 @@ namespace UNObot.Core.Services
         {
             _logger = logger;
             ConnString = config.GetConnectionString();
+#if !DEBUG
             Reset();
+#endif
         }
 
         private void Reset()
