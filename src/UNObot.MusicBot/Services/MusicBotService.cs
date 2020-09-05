@@ -8,7 +8,7 @@ using UNObot.Plugins;
 
 namespace UNObot.MusicBot.Services
 {
-    internal class MusicBotService
+    internal class MusicBotService : IAsyncDisposable
     {
         private readonly List<Player> _musicPlayers = new List<Player>();
         private readonly ILogger _logger;
@@ -35,7 +35,7 @@ namespace UNObot.MusicBot.Services
                     await player.CheckOnJoin().ConfigureAwait(false);
         }
 
-        internal async ValueTask DisposeAsync()
+        public async ValueTask DisposeAsync()
         {
             foreach (var musicPlayer in _musicPlayers)
                 await musicPlayer.DisposeAsync();
@@ -49,9 +49,6 @@ namespace UNObot.MusicBot.Services
             {
                 var newPlayer = new Player(_logger, _youtube, _embed, guild, audioChannel, await audioChannel.ConnectAsync(), messageChannel);
                 _musicPlayers.Add(newPlayer);
-#pragma warning disable 4014
-                // Task.Run(newPlayer.RunPlayer);
-#pragma warning restore 4014
                 _logger.Log(LogSeverity.Debug, "Generated new player.");
                 return new Tuple<Player, string>(newPlayer, null);
             }
@@ -62,9 +59,6 @@ namespace UNObot.MusicBot.Services
                 _musicPlayers.RemoveAt(player);
                 var newPlayer = new Player(_logger, _youtube, _embed, guild, audioChannel, await audioChannel.ConnectAsync(), messageChannel);
                 _musicPlayers.Add(newPlayer);
-#pragma warning disable 4014
-                // Task.Run(newPlayer.RunPlayer);
-#pragma warning restore 4014
                 return new Tuple<Player, string>(newPlayer, null);
             }
 

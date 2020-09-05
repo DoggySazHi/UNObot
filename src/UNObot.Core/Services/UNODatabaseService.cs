@@ -26,6 +26,7 @@ namespace UNObot.Core.Services
 #endif
         }
 
+#if !DEBUG
         private void Reset()
         {
             var parameters = new List<MySqlParameter>();
@@ -56,7 +57,8 @@ namespace UNObot.Core.Services
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
-
+#endif
+        
         internal async Task<bool> IsServerInGame(ulong server)
         {
             var inGame = false;

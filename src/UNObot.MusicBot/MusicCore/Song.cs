@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Discord;
 using UNObot.MusicBot.Services;
 using UNObot.Plugins;
-using YoutubeExplode.Exceptions;
 
 namespace UNObot.MusicBot.MusicCore
 {

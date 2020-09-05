@@ -139,7 +139,6 @@ namespace UNObot.MusicBot.MusicCore
                         await _messageChannel
                             .SendMessageAsync(message, false, _embed.DisplayNowPlaying(NowPlaying, null))
                             .ConfigureAwait(false);
-                        (var duration, var bitrate) = GetInfo(NowPlaying.PathCached);
                         // Runs a forever loop to quit when the quit boolean is true (if FFMPEG decides not to quit)
                         await SendAudio(CreateStream(NowPlaying.PathCached), _stopAsync.Token, _audioChannel.Bitrate);
                     } while (LoopingSong);
@@ -211,8 +210,8 @@ namespace UNObot.MusicBot.MusicCore
                         s.PathCached = null;
                     }
                 }
-
-                // TODO fix.
+                if (NowPlaying != null)
+                    filesCached.Add(NowPlaying.PathCached);
                 _youtube.DeleteGuildFolder(Guild, filesCached.ToArray());
                 _caching = false;
             }
@@ -243,12 +242,7 @@ namespace UNObot.MusicBot.MusicCore
         {
             if (Songs.Count == 0 && NowPlaying == null)
                 return "There is no song playing.";
-            if (Paused || !_pauseEvent.WaitOne(0))
-            {
-                Paused = true;
-                return "Player is already paused.";
-            }
-
+            
             Paused = true;
             _pauseEvent.Reset();
             return null;
@@ -389,7 +383,7 @@ namespace UNObot.MusicBot.MusicCore
                             failToWrite = true;
                             _logger.Log(LogSeverity.Error,
                                 "Failed to write! Attempting to repair Discord service.");
-                            discordStream = _audioClient.CreatePCMStream(AudioApplication.Music, _audioChannel.Bitrate);
+                            discordStream = _audioClient.CreatePCMStream(AudioApplication.Mixed, _audioChannel.Bitrate);
                         }
                     }
 
@@ -467,74 +461,19 @@ namespace UNObot.MusicBot.MusicCore
             var fileName = "/usr/local/bin/ffmpeg";
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 fileName = @"C:\Users\William Le\Documents\Programming Projects\YTDownloader\ffmpeg.exe";
-            _logger.Log(LogSeverity.Verbose, $"-hide_banner -re -loglevel panic -i \"{path}\" -b:a {_audioChannel.Bitrate} -ac 2 -f s16le pipe:1");
+            // $"-hide_banner -re -loglevel panic -i \"{path}\" -ac 2 -b:a {_audioChannel.Bitrate} -f s16le pipe:1"
+            var args = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1";
+            _logger.Log(LogSeverity.Verbose, args);
             _ffmpegProcess = Process.Start(new ProcessStartInfo
             {
                 FileName = fileName,
-                Arguments = $"-hide_banner -re -loglevel panic -i \"{path}\" -ac 2 -b:a {_audioChannel.Bitrate} -f s16le pipe:1",
+                Arguments = args,
                 UseShellExecute = false,
                 RedirectStandardOutput = true
             });
             return _ffmpegProcess?.StandardOutput.BaseStream;
         }
         
-        private (float duration, int bitrate) GetInfo(string path)
-        {
-            var fileName = "/usr/local/bin/ffprobe";
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                fileName = @"C:\Users\William Le\Documents\Programming Projects\YTDownloader\ffprobe.exe";
-
-            var result = new TaskCompletionSource<string>();
-
-            new Thread(() =>
-            {
-                var process = new Process
-                {
-                    StartInfo = new ProcessStartInfo
-                    {
-                        FileName = fileName,
-                        Arguments = $"-v error -hide_banner -show_format \"{path}\"",
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true
-                    }
-                };
-                process.Start();
-                result.SetResult(process.StandardOutput.ReadToEnd());
-                process.WaitForExit();
-            }).Start();
-            var awaited = result.Task.GetAwaiter().GetResult();
-            if (awaited == null)
-                throw new Exception("Shell failed!");
-            float duration = 0;
-            int bitrate = 0;
-            try
-            {
-                using (var reader = new StringReader(awaited))
-                {
-                    string line;
-                    do
-                    {
-                        line = reader.ReadLine();
-                        if (line != null)
-                        {
-                            if (line.StartsWith("duration"))
-                                duration = float.Parse(line.Split("=")[1]);
-                            else if (line.StartsWith("bit_rate"))
-                                bitrate = int.Parse(line.Split("=")[1]);
-                        }
-
-                    } while (line != null);
-                }
-            }
-            catch (FormatException e)
-            {
-                _logger.Log(LogSeverity.Verbose, "Couldn't read metadata!", e);
-            }
-
-            _logger.Log(LogSeverity.Verbose, $"{duration} {bitrate}");
-            return (duration, bitrate);
-        }
-
         public async ValueTask DisposeAsync()
         {
             try
