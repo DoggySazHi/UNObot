@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Audio;
 using Discord.WebSocket;
-using Google.Protobuf.WellKnownTypes;
 using UNObot.MusicBot.Services;
 using UNObot.Plugins;
 using UNObot.Plugins.TerminalCore;
@@ -19,9 +18,10 @@ namespace UNObot.MusicBot.MusicCore
 {
     internal class Player : IAsyncDisposable
     {
+        private const int CacheLength = 5;
+
         private readonly IVoiceChannel _audioChannel;
         private readonly ManualResetEvent _cacheEvent;
-        private readonly int _cacheLength = 5;
         private readonly ISocketMessageChannel _messageChannel;
         private readonly ManualResetEvent _pauseEvent;
         private readonly Stopwatch _playPos;
@@ -35,6 +35,7 @@ namespace UNObot.MusicBot.MusicCore
         private bool _handlingError;
         private bool _isPlaying;
         private bool _quit;
+        private bool _hasInitialized;
 
         private bool _skip;
         private CancellationTokenSource _stopAsync;
@@ -196,10 +197,10 @@ namespace UNObot.MusicBot.MusicCore
                     return;
                 _caching = true;
                 var filesCached = new List<string>();
-                for (var i = 0; i < Math.Min(Songs.Count, _cacheLength); i++)
+                for (var i = 0; i < Math.Min(Songs.Count, CacheLength); i++)
                 {
                     var s = Songs[i];
-                    if (i < Math.Min(Songs.Count, _cacheLength))
+                    if (i < Math.Min(Songs.Count, CacheLength))
                     {
                         if (string.IsNullOrWhiteSpace(s.PathCached))
                             await s.Cache(_youtube, _logger).ConfigureAwait(true);
@@ -224,8 +225,12 @@ namespace UNObot.MusicBot.MusicCore
         internal void Add(string url, Tuple<string, string, string> data, ulong user, ulong guildFrom,
             bool insertAtTop = false)
         {
-            if (_stopAsync == null)
+            if (!_hasInitialized)
+            {
                 Task.Run(RunPlayer);
+                _hasInitialized = true;
+            }
+            
             var s = new Song(url, data, user, guildFrom);
             if (insertAtTop)
                 Songs.Insert(0, s);

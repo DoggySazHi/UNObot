@@ -17,7 +17,7 @@ namespace UNObot.MusicBot.Modules
             Name = "UNObot-MusicBot";
             Description = "The music bot add-on for UNObot. Probably doesn't work.";
             Author = "DoggySazHi";
-            Version = "1.0.0 (4.2.0)";
+            Version = "1.1.0 (4.2.5)";
             
             Services = new ServiceCollection()
                 .AddSingleton<EmbedService>()
