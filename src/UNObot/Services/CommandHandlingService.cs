@@ -26,7 +26,7 @@ namespace UNObot.Services
         private readonly DatabaseService _db;
         private static List<Command> _loaded;
 
-        public IEnumerable<Command> Commands => _loaded;
+        public static IEnumerable<Command> Commands => _loaded;
 
         public CommandHandlingService(IServiceProvider provider, ILogger logger, DatabaseService db, DiscordSocketClient discord, CommandService commands)
         {
@@ -44,12 +44,12 @@ namespace UNObot.Services
         {
             _commands.Log += logger.LogCommand;
             _provider = provider;
-            await AddModulesAsync(Assembly.GetEntryAssembly());
+            await AddModulesAsync(Assembly.GetEntryAssembly(), original: true);
             _discord.ReactionAdded += async (message, channel, emote) => 
                 await PluginHelper.DeleteReact(_discord, await message.GetOrDownloadAsync(), emote);
         }
         
-        internal async Task<IEnumerable<ModuleInfo>> AddModulesAsync(Assembly assembly, IServiceCollection services = null)
+        internal async Task<IEnumerable<ModuleInfo>> AddModulesAsync(Assembly assembly, IServiceCollection services = null, bool original = false)
         {
             var provider = _provider;
             if (services != null)
@@ -58,7 +58,7 @@ namespace UNObot.Services
                     .AddSingleton(_provider.GetRequiredService<IConfiguration>())
                     .AddSingleton(this) // Required for .help, which seeks duplicates.
                     .BuildServiceProvider();
-            await LoadHelp(assembly, provider);
+            await LoadHelp(assembly, provider, original);
             return await _commands.AddModulesAsync(assembly, provider);
         }
         
@@ -118,34 +118,43 @@ namespace UNObot.Services
             await _db.AddUser(context.User.Id, context.User.Username);
             try
             {
-                var messageString = message.ToString();
-                var endOfCommand = messageString.IndexOf(' ', argPos);
-                var attemptCommandExecute =
-                    messageString.Substring(argPos,
-                        (endOfCommand == -1 ? messageString.Length : endOfCommand) - argPos);
-                var provider = _provider;
-                foreach (var command in _loaded)
-                {
-                    var sameCommand =
-                        command.CommandName.Equals(attemptCommandExecute,
-                            StringComparison.CurrentCultureIgnoreCase) ||
-                        command.Aliases.Any(o =>
-                            o.Equals(attemptCommandExecute, StringComparison.CurrentCultureIgnoreCase));
-                    if (!sameCommand) continue;
-                    if (command.Services != null)
-                        provider = command.Services;
-                    if (!context.IsPrivate || !command.DisableDMs) continue;
+                var success = GetProvider(context, argPos, out var provider);
+                if(!success)
                     await context.Channel.SendMessageAsync(
                         "This command cannot be run in DMs. Please try again in a server.");
-                    return;
-                }
-
-                await _commands.ExecuteAsync(context, argPos, provider);
+                else
+                    await _commands.ExecuteAsync(context, argPos, provider);
             }
             catch (Exception e)
             {
                 _logger.Log(LogSeverity.Error, "While attempting to execute a command, we got an error!", e);
             }
+        }
+
+        private bool GetProvider(SocketCommandContext context, int argPos, out IServiceProvider provider)
+        {
+            provider = _provider;
+
+            var message = context.Message;
+            var messageString = message.ToString();
+            var endOfCommand = messageString.IndexOf(' ', argPos);
+            var attemptCommandExecute =
+                messageString.Substring(argPos,
+                    (endOfCommand == -1 ? messageString.Length : endOfCommand) - argPos);
+            foreach (var command in _loaded)
+            {
+                var sameCommand =
+                    command.CommandName.Equals(attemptCommandExecute,
+                        StringComparison.CurrentCultureIgnoreCase) ||
+                    command.Aliases.Any(o =>
+                        o.Equals(attemptCommandExecute, StringComparison.CurrentCultureIgnoreCase));
+                if (!sameCommand) continue;
+                if (command.Services != null)
+                    provider = command.Services;
+                if (context.IsPrivate && command.DisableDMs)
+                    return false;
+            }
+            return true;
         }
         
         private async Task CommandExecuted(Optional<CommandInfo> arg1, ICommandContext context, IResult result)
@@ -188,7 +197,19 @@ namespace UNObot.Services
             return cmd;
         }
 
-        private async Task LoadHelp(Assembly asm, IServiceProvider provider)
+        internal async Task LoadHelp(Assembly asm, IServiceCollection services)
+        {
+            var provider = _provider;
+            if (services != null)
+                 provider = services.AddSingleton(_discord)
+                    .AddSingleton(_logger)
+                    .AddSingleton(_provider.GetRequiredService<IConfiguration>())
+                    .AddSingleton(this) // Required for .help, which seeks duplicates.
+                    .BuildServiceProvider();
+            await LoadHelp(asm, provider);
+        }
+        
+        private async Task LoadHelp(Assembly asm, IServiceProvider provider, bool original = false)
         {
             var types = from c in asm.GetTypes()
                 where c.IsClass
@@ -208,7 +229,7 @@ namespace UNObot.Services
                 // var foundHelp = helpAtt == null ? "Missing help." : "Found help.";
                 var disabledForDMs = disableDmsAtt != null;
                 // _logger.Log(LogSeverity.Verbose, $"Loaded \"{nameAtt.Text}\". {foundHelp}");
-                var positionCmd = _loaded.FindIndex(o => o.CommandName == nameAtt.Text);
+                var positionCmd = _loaded.FindIndex(o => o.CommandName == nameAtt.Text && !o.Original);
                 if (aliasAtt?.Aliases != null)
                     aliases = aliasAtt.Aliases.ToList();
                 if (positionCmd < 0)
@@ -219,6 +240,8 @@ namespace UNObot.Services
                         : new Command(nameAtt.Text, aliases, new List<string> {$".{nameAtt.Text}"},
                             "No help is given for this command.", ownerOnlyAtt == null, "Unknown Version",
                             disabledForDMs);
+                    if (original)
+                        cmd.Original = true;
                     cmd.Services = provider;
                     _loaded.Add(cmd);
                 }
@@ -274,6 +297,12 @@ namespace UNObot.Services
 
                 _logger.Log(LogSeverity.Info, $"Loaded {_loaded.Count} commands including from help.json!");
             }
+        }
+
+        internal async Task ClearHelp()
+        {
+            _loaded.Clear();
+            await LoadHelp(Assembly.GetEntryAssembly(), _provider, true);
         }
 
         public void Dispose()

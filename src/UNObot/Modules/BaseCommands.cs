@@ -37,7 +37,7 @@ namespace UNObot.Modules
             if (!Context.IsPrivate)
                 await ReplyAsync("Help has been sent. Or, I think it has.");
             var response = $"```Commands: @{Context.Client.CurrentUser.Username}#{Context.Client.CurrentUser.Discriminator} command/ .command\n (Required) {{May be required}} [Optional]\n \n";
-            foreach (var cmd in _commands.Commands)
+            foreach (var cmd in CommandHandlingService.Commands)
             {
                 var oldResponse = response;
                 if (cmd.Active)

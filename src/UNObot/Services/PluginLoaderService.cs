@@ -199,11 +199,19 @@ namespace UNObot.Services
             }
             plugin.Loaded = false;
             _plugins.Remove(plugin);
+            await ReloadHelp();
             if (unloadStatus == 0)
                 return PluginStatus.Success;
             _logger.Log(LogSeverity.Error,
                 $"Plugin {plugin.Plugin.Name} failed to unload with error code {unloadStatus}.", ex);
             return PluginStatus.Failed;
+        }
+
+        private async Task ReloadHelp()
+        {
+            await _commands.ClearHelp();
+            foreach (var plugin in _plugins)
+                await _commands.LoadHelp(plugin.PluginAssembly, plugin.Plugin?.Services);
         }
     }
 }
