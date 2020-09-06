@@ -33,6 +33,6 @@ namespace UNObot.Templates
         internal string Version { get; set; }
         internal bool DisableDMs { get; set; }
         internal IServiceProvider Services { get; set; }
-        internal bool Overridden { get; set; }
+        internal bool Original { get; set; }
     }
 }

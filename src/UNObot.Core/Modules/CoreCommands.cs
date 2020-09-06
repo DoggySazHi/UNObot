@@ -20,7 +20,7 @@ namespace UNObot.Core.Modules
             _config = config;
         }
         
-                [Command("help", RunMode = RunMode.Async), Priority(100)]
+        [Command("help", RunMode = RunMode.Async), Priority(100)]
         [Alias("ahh", "ahhh", "ahhhh", "commands", "command")]
         internal async Task Help()
         {
