@@ -130,8 +130,7 @@ namespace UNObot.MusicBot.MusicCore
                     if (!File.Exists(NowPlaying.PathCached))
                         await _messageChannel.SendMessageAsync("Sorry, but I had a problem downloading this song...")
                             .ConfigureAwait(false);
-                    
-                    do
+                    else do
                     {
                         _playPos.Restart();
                         var message = _skip ? "Skipped song." : "";
@@ -462,7 +461,7 @@ namespace UNObot.MusicBot.MusicCore
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 fileName = @"C:\Users\William Le\Documents\Programming Projects\YTDownloader\ffmpeg.exe";
             // $"-hide_banner -re -loglevel panic -i \"{path}\" -ac 2 -b:a {_audioChannel.Bitrate} -f s16le pipe:1"
-            var args = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1";
+            var args = $"-hide_banner -loglevel panic -i \"{path}\" -b:a {_audioChannel.Bitrate} -ac 2 -f s16le -ar 48000 pipe:1";
             _logger.Log(LogSeverity.Verbose, args);
             _ffmpegProcess = Process.Start(new ProcessStartInfo
             {

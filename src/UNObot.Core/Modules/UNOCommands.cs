@@ -740,9 +740,9 @@ namespace UNObot.Core.Modules
                         i++)
                         await _queue.NextPlayer(Context.Guild.Id);
 
-                    response += "\n\nGame has started. All information about your cards will be PMed.\n" +
-                                "You have been given 7 cards; run \".deck\" to view them.\n" +
-                                "Remember; you have 1 minute and 30 seconds to place a card.\n" +
+                    response += "\n\nThe game has started. All information about your cards will be DMed.\n" +
+                                "You have been given 7 cards; run \".hand\" to view them.\n" +
+                                "Remember, you have 1 minute and 30 seconds to place a card.\n" +
                                 $"The first player is <@{await _queue.GetCurrentPlayer(Context.Guild.Id)}>.\n";
                     var currentCard = Card.RandomCard();
                     while (currentCard.Color == "Wild")

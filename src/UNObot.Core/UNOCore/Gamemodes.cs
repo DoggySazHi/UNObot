@@ -25,6 +25,26 @@ namespace UNObot.Core.UNOCore
         /// <summary>
         ///     .uno can be used by a person without UNO to call out if someone else does have an UNO.
         /// </summary>
-        UNOCallout = 8
+        UNOCallout = 8,
+        
+        /// <summary>
+        ///     Allows function cards to be stacked upon each other.
+        /// </summary>
+        Stack = 16,
+        
+        /// <summary>
+        ///     Allows for the swapping of cards between players in special conditions.
+        /// </summary>
+        SevenZero = 32,
+        
+        /// <summary>
+        ///     Allows for the challenging of Wild +4 cards.
+        /// </summary>
+        ChallengeWild = 64,
+        
+        /// <summary>
+        ///     Use the full 108 card deck in UNO, rather than RNG.
+        /// </summary>
+        UseFullDeck = 128
     }
 }
