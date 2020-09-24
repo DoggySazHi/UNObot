@@ -17,7 +17,7 @@ namespace UNObot.Core.Modules
             Name = "UNObot-Core";
             Description = "The core UNO commands the bot is not known for.";
             Author = "DoggySazHi";
-            Version = "1.0.1 (4.2.3)";
+            Version = "1.0.3 (4.2.9)";
             
             Services = new ServiceCollection()
                 .AddSingleton<AFKTimerService>()
