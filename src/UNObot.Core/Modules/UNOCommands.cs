@@ -614,7 +614,7 @@ namespace UNObot.Core.Modules
         [Alias("u")]
         [DisableDMs]
         [Help(new[] {".uno"}, "Quickly use this when you have one card left.", true, "UNObot 0.2")]
-        internal async Task UnOcmd()
+        internal async Task CallUNO()
         {
             await _db.AddGame(Context.Guild.Id);
             await _db.AddUser(Context.User.Id, Context.User.Username);
@@ -781,7 +781,7 @@ namespace UNObot.Core.Modules
         }
 
         [Command("play", RunMode = RunMode.Async)]
-        [Priority(2)]
+        [Priority(3)]
         [Alias("put", "place", "p")]
         [DisableDMs]
         [Help(new[] {".play (color) (value)"},
@@ -830,13 +830,38 @@ namespace UNObot.Core.Modules
         }
 
         [Command("play", RunMode = RunMode.Async)]
+        [Priority(2)]
+        [Alias("put", "place", "p")]
+        [DisableDMs]
+        [Help(new[] {".play (color) (value) (new color/uno)"},
+            "Play a card that is of the same color or value. Exceptions include all Wild cards, which you can play on any card.",
+            true, "UNObot 0.2")]
+        internal async Task Play(string color, string value, string option)
+        {
+            if (color.ToLower()[0] == 'w')
+                await PlayWild(color, value, option);
+            else if (option.ToLower()[0] == 'u')
+            {
+                await Play(color, value);
+                await CallUNO();
+            }
+        }
+        
+        [Command("play", RunMode = RunMode.Async)]
         [Priority(1)]
         [Alias("put", "place", "p")]
         [DisableDMs]
-        [Help(new[] {".play (color) (value) (new color)"},
+        [Help(new[] {".play (color) (value) (new color) (uno)"},
             "Play a card that is of the same color or value. Exceptions include all Wild cards, which you can play on any card.",
             true, "UNObot 0.2")]
-        internal async Task PlayWild(string color, string value, string wild)
+        internal async Task Play(string color, string value, string wild, string option)
+        {
+            await PlayWild(color, value, wild);
+            if (option.ToLower()[0] == 'u')
+                await CallUNO();
+        }
+        
+        private async Task PlayWild(string color, string value, string wild)
         {
             if (await _db.IsPlayerInGame(Context.User.Id))
             {

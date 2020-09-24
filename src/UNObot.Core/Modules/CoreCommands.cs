@@ -54,6 +54,7 @@ namespace UNObot.Core.Modules
                 .AddField(".game", "See everything about the current game.\nThis also shows the current card.", true)
                 .AddField(".draw", "Draw a card. Duh. Can be used indefinitely.", true)
                 .AddField(".quickplay", "Auto-magically draw and play the first valid card that comes out.", true)
+                .AddField(".uno", "You got to call UNO right after placing your second-to-last card!", true)
                 .AddField(".fullhelp", "See an extended listing of commands.\nNice!", true);
             var embed = builder.Build();
             await Context.Channel.SendMessageAsync(
