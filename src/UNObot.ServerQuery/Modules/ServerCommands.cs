@@ -62,18 +62,48 @@ namespace UNObot.ServerQuery.Modules
             "UNObot 2.4")]
         internal async Task PCreative()
         {
-            await CheckMCNew("williamle.com", 25432);
+            await CheckMC("williamle.com", 25432);
         }
 
         [Command("checkmc", RunMode = RunMode.Async)]
         [Help(new[] {".checkmc (ip) (port)"}, "Get basic server information about any Minecraft server.", true,
             "UNObot 2.4, UNObot 4.0.11")]
-        internal async Task CheckMCNew(string ip, ushort port = 25565)
+        internal async Task CheckMC(string ip, ushort port = 25565)
         {
             var message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
             {
                 var success = _embed.MinecraftQueryEmbed(ip, port, out var embed);
+                if (!success || embed == null)
+                {
+                    await message.ModifyAsync(o =>
+                        o.Content = "Error: Apparently we couldn't get any information about this server.");
+                    return;
+                }
+
+                await message.ModifyAsync(o =>
+                {
+                    o.Content = "";
+                    o.Embed = embed;
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
+                await message.ModifyAsync(o =>
+                    o.Content = "We had some difficulties displaying the status. Please try again?");
+            }
+        }
+        
+        [Command("checkmcpe", RunMode = RunMode.Async)]
+        [Help(new[] {".checkmcpe (ip) (port)"}, "Get basic server information about any Minecraft PE server.", true,
+            "UNObot 4.2.10")]
+        internal async Task CheckMCPE(string ip, ushort port = 19132)
+        {
+            var message = await ReplyAsync("I am now querying the server, please wait warmly...");
+            try
+            {
+                var success = _embed.MinecraftPEQueryEmbed(ip, port, out var embed);
                 if (!success || embed == null)
                 {
                     await message.ModifyAsync(o =>
@@ -100,7 +130,7 @@ namespace UNObot.ServerQuery.Modules
             "UNObot 2.4")]
         internal async Task PSurvival()
         {
-            await CheckMCNew("williamle.com", 29292);
+            await CheckMC("williamle.com", 29292);
         }
 
         [Command("ouchies", RunMode = RunMode.Async)]
