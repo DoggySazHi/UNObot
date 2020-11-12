@@ -350,11 +350,13 @@ namespace UNObot.ServerQuery.Modules
         }
 
         [Command("rcon", RunMode = RunMode.Async)]
-        [RequireOwner]
         [Help(new[] {".rcon (ip) (port) (password) (command)"},
             "Run a command on a remote server. Limited to DoggySazHi ATM.", true, "UNObot 4.0.12")]
         internal async Task RunRCON(string ip, ushort port, string password, [Remainder] string command)
         {
+            if (Context.User.Id != 191397590946807809 && Context.User.Id != 338824307834880000)
+                return;
+                
             var message = await ReplyAsync("Executing...");
             var success = _query.SendRCON(ip, port, command, password, out var output);
             if (!success)
