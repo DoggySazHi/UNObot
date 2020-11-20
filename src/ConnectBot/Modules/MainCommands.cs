@@ -8,46 +8,62 @@ namespace ConnectBot.Modules
 {
     public class MainCommands : ModuleBase<SocketCommandContext>
     {
-        private readonly EmbedService _embed;
+        private readonly GameService _game;
+        private readonly ConfigService _cs;
+        private readonly DatabaseService _db;
 
-        public MainCommands(EmbedService embed, ButtonHandler button)
+        public MainCommands(GameService game, ConfigService cs, ButtonHandler button, DatabaseService db)
         {
-            _embed = embed;
+            _game = game;
+            _cs = cs;
+            _db = db;
             // Required to set up the handler, since modules are always pre-loaded.
-            button.Callback = embed.DropPiece;
+            button.Callback = game.DropPiece;
         }
         
         [Command("cbot", RunMode = RunMode.Async)]
         public async Task ConnectBot()
         {
-            await _embed.DisplayHelp(new FakeContext(Context));
+            await _db.AddUser(Context.User.Id);
+            await _cs.DisplayHelp(new FakeContext(Context));
         }
         
         [DisableDMs]
         [Command("cbot", RunMode = RunMode.Async)]
         public async Task ConnectBot([Remainder] string input)
         {
+            await _db.AddUser(Context.User.Id);
             var args = input.Trim().ToLower().Split(' ');
             switch (args[0])
             {
                 case "join":
-                    await _embed.JoinGame(new FakeContext(Context));
+                    await _game.JoinGame(new FakeContext(Context));
                     break;
                 case "leave":
-                    await _embed.LeaveGame(new FakeContext(Context));
+                    await _game.LeaveGame(new FakeContext(Context));
                     break;
                 case "start":
-                    await _embed.StartGame(new FakeContext(Context));
+                    await _game.StartGame(new FakeContext(Context), args);
                     break;
                 case "game":
-                    await _embed.DisplayGame(new FakeContext(Context));
+                    await _game.DisplayGame(new FakeContext(Context));
                     break;
                 case "drop":
-                    await _embed.DropPiece(new FakeContext(Context), args);
+                    await _game.DropPiece(new FakeContext(Context), args);
+                    break;
+                case "board":
+                    await _cs.SetUserBoardDefaults(new FakeContext(Context), args);
+                    break;
+                case "queue":
+                    await _game.GetQueue(new FakeContext(Context));
+                    break;
+                case "userinfo":
+                case "stats":
+                    await _cs.GetStats(new FakeContext(Context));
                     break;
                 case "help":
                 case "":
-                    await _embed.DisplayHelp(new FakeContext(Context));
+                    await _cs.DisplayHelp(new FakeContext(Context));
                     break;
             }
         }

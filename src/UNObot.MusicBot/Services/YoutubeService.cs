@@ -27,7 +27,7 @@ namespace UNObot.MusicBot.Services
         private static readonly string DownloadPath = Path.Combine(Directory.GetCurrentDirectory(), "Music");
 
         private readonly YoutubeClient _client;
-        private readonly YoutubeConverter _converter;
+        private readonly string _ffmpegPath;
         private readonly ILogger _logger;
 
         public YoutubeService(ILogger logger)
@@ -35,10 +35,9 @@ namespace UNObot.MusicBot.Services
             _logger = logger;
             var httpClient = new HttpClient();
             _client = new YoutubeClient(httpClient);
-            var fileName = "/usr/local/bin/ffmpeg";
+            _ffmpegPath = "/usr/local/bin/ffmpeg";
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                fileName = @"C:\Users\William Le\Documents\Programming Projects\YTDownloader\ffmpeg.exe";
-            _converter = new YoutubeConverter(_client, fileName);
+                _ffmpegPath = @"C:\Users\William Le\Documents\Programming Projects\YTDownloader\ffmpeg.exe";
             if (Directory.Exists(DownloadPath))
                 Directory.Delete(DownloadPath, true);
             Directory.CreateDirectory(DownloadPath);
@@ -133,7 +132,11 @@ namespace UNObot.MusicBot.Services
                     return path;
                 try
                 {
-                    await _converter.DownloadVideoAsync(url, path).ConfigureAwait(false);
+                    await _client.Videos.DownloadAsync(url, path, o =>
+                    {
+                        o.SetFormat("mp3");
+                        o.SetFFmpegPath(_ffmpegPath);
+                    }).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {

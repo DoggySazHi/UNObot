@@ -6,6 +6,7 @@ namespace ConnectBot.Templates
     {
         [Key]
         public ulong Server { get; set; }
+        public GameMode GameMode { get; set; }
         public Board Board { get; set; }
         public GameQueue Queue { get; set; }
         public string Description { get; set; }
