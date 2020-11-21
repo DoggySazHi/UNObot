@@ -230,6 +230,8 @@ namespace ConnectBot.Services
                 var (defaultWidth, defaultHeight, defaultConnect) = await _db.GetDefaultBoardDimensions(context.User.Id);
                 game.Board = new Board(defaultWidth, defaultHeight, defaultConnect);
             }
+            else
+                game.Board = new Board();
 
             await NextGame(context, game, true);
         }

@@ -57,6 +57,12 @@ namespace ConnectBot.Services
                 return;
             }
 
+            if (width > 8 || height > 8)
+            {
+                (await ErrorEmbed(fakeContext, "The width and height of the board is too large (max 8x8, due to embed restrictions)!")).MakeDeletable();
+                return;
+            }
+            
             if (connect > width || connect > height || connect > Math.Sqrt(Math.Pow(width, 2) + Math.Pow(height, 2)))
             {
                 (await ErrorEmbed(fakeContext, "The connect length is too long, and cannot fit in the board!")).MakeDeletable();
