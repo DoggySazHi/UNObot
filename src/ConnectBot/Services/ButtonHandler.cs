@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ConnectBot.Templates;
 using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
 
 namespace ConnectBot.Services
@@ -63,17 +64,31 @@ namespace ConnectBot.Services
         {
             if (range.End.Value > _numbers.Length)
                 range = new Range(range.Start, new Index(0, true));
-            await message.AddReactionsAsync(_numbers[range]);
+            try
+            {
+                await message.AddReactionsAsync(_numbers[range]);
+            }
+            catch (CommandException)
+            {
+                 /* well, crap! */
+            }
         }
 
         public async Task ClearReactions(IUserMessage message, IUser user)
         {
-            foreach (var emoji in _numbers)
+            try
             {
-                var users = await message.GetReactionUsersAsync(emoji, 50).FlattenAsync();
-                var react = users.FirstOrDefault(o => o.Id == user.Id);
-                if (react != null)
-                    await message.RemoveReactionAsync(emoji, user);
+                foreach (var emoji in _numbers)
+                {
+                    var users = await message.GetReactionUsersAsync(emoji, 50).FlattenAsync();
+                    var react = users.FirstOrDefault(o => o.Id == user.Id);
+                    if (react != null)
+                        await message.RemoveReactionAsync(emoji, user);
+                }
+            }
+            catch (CommandException)
+            {
+                // No permissions to delete!
             }
         }
     }

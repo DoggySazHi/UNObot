@@ -21,44 +21,8 @@ namespace UNObot.Core.Services
         {
             _logger = logger;
             ConnString = config.GetConnectionString();
-#if !DEBUG
-            Reset();
-#endif
         }
 
-#if !DEBUG
-        private void Reset()
-        {
-            var parameters = new List<MySqlParameter>();
-
-            const string commandText =
-                "SET SQL_SAFE_UPDATES = 0; UPDATE UNObot.Players SET cards = ?, inGame = 0, server = null, gameName = null; UPDATE Games SET inGame = 0, currentCard = ?, `order` = 1, oneCardLeft = 0, queue = ?, description = null; SET SQL_SAFE_UPDATES = 1;";
-            var p1 = new MySqlParameter
-            {
-                Value = "[]"
-            };
-            parameters.Add(p1);
-            var p2 = new MySqlParameter
-            {
-                Value = "[]"
-            };
-            parameters.Add(p2);
-            var p3 = new MySqlParameter
-            {
-                Value = "[]"
-            };
-            parameters.Add(p3);
-            try
-            {
-                MySqlHelper.ExecuteNonQuery(ConnString, commandText, parameters.ToArray());
-            }
-            catch (MySqlException ex)
-            {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
-            }
-        }
-#endif
-        
         internal async Task<bool> IsServerInGame(ulong server)
         {
             var inGame = false;

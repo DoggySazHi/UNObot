@@ -11,20 +11,26 @@ namespace UNObot.Services
             bgColor = bgColor.Trim().ToLower();
 
             var colors = (ConsoleColor[]) Enum.GetValues(typeof(ConsoleColor));
+#if DEBUG
             var colorFound = false;
             var bgColorFound = false;
+#endif
             foreach (var color in colors)
             {
                 if (color.ToString().ToLower() == colorText)
                 {
                     Console.ForegroundColor = color;
+#if DEBUG
                     colorFound = true;
+#endif
                 }
 
                 if (color.ToString().ToLower() == bgColor)
                 {
                     Console.BackgroundColor = color;
+#if DEBUG
                     bgColorFound = true;
+#endif
                 }
             }
 

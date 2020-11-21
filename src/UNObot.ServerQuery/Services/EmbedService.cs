@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Discord;
 using Microsoft.Extensions.Configuration;
@@ -201,6 +202,74 @@ namespace UNObot.ServerQuery.Services
                 .AddField("Version", $"{defaultStatus.Version}", true)
                 .AddField("Ping", $"{defaultStatus.Delay} ms", true)
                 .AddField($"Players: {defaultStatus.CurrentPlayers}/{defaultStatus.MaximumPlayers}",
+                    string.IsNullOrWhiteSpace(playersOnline) ? "Nobody's online!" : playersOnline, true);
+            result = builder.Build();
+            return true;
+        }
+        
+        internal bool MinecraftPEQueryEmbed(string ip, ushort port, out Embed result)
+        {
+            var ping = new Stopwatch();
+            ping.Start();
+            var extendedGet = _query.GetInfoMCNew(ip, port, out var extendedStatus);
+            ping.Stop();
+
+            if (!extendedGet)
+            {
+                result = null;
+                return false;
+            }
+
+            List<MCUser> mcUserInfo = null;
+            if (_query.OutsideServers.Contains(ip) && _query.SpecialServers.ContainsKey(port))
+            {
+                var server = _query.SpecialServers[port];
+                mcUserInfo = _minecraft.GetMCUsers(server.Server, server.RCONPort, server.Password, out _);
+            }
+
+            var random = ThreadSafeRandom.ThisThreadsRandom;
+            var serverDescription = extendedStatus.Motd;
+            
+            var playersOnline = "";
+            for (var i = 0; i < extendedStatus.Players.Length; i++)
+            {
+                playersOnline += $"{extendedStatus.Players[i]}";
+                if (mcUserInfo != null)
+                {
+                    var userInfo = mcUserInfo.Find(o => o.Username == extendedStatus.Players[i]);
+                    if (userInfo != null)
+                        playersOnline +=
+                            $"\n- **Ouchies:** {userInfo.Ouchies} | **Health:** {userInfo.Health} | **Food:** {userInfo.Food}\n- **Experience:** {userInfo.Experience} ({userInfo.ExperienceLevels} levels)";
+                    else
+                        playersOnline += "\n Unknown stats.";
+                }
+
+                if (i != extendedStatus.Players.Length - 1)
+                    playersOnline += "\n";
+            }
+
+            var builder = new EmbedBuilder()
+                .WithTitle("MOTD")
+                .WithDescription(serverDescription)
+                .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
+                .WithTimestamp(DateTimeOffset.Now)
+                .WithFooter(footer =>
+                {
+                    footer
+                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
+                })
+                .WithAuthor(author =>
+                {
+                    author
+                        .WithName($"Minecraft Server Query of {ip}")
+                        .WithIconUrl("https://williamle.com/unobot/unobot.png");
+                })
+                .AddField("IP", ip, true)
+                .AddField("Port", port, true)
+                .AddField("Version", $"{extendedStatus.Version}", true)
+                .AddField("Ping", $"{ping.ElapsedMilliseconds} ms", true)
+                .AddField($"Players: {extendedStatus.Players.Length}/{extendedStatus.MaxPlayers}",
                     string.IsNullOrWhiteSpace(playersOnline) ? "Nobody's online!" : playersOnline, true);
             result = builder.Build();
             return true;

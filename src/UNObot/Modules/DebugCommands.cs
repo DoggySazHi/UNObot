@@ -64,7 +64,7 @@ namespace UNObot.Modules
             }
             else if (Context.User.Id == 191397590946807809)
             {
-                await ReplyAsync("Error: You deprecated this command. Nice job.");
+                Program.Exit();
             }
         }
 

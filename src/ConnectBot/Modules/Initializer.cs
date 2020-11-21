@@ -17,12 +17,13 @@ namespace ConnectBot.Modules
             Name = "ConnectBot";
             Description = "Forgotten since 2018‑07‑22. UNObot was born on 2018‑03‑04.";
             Author = "DoggySazHi";
-            Version = "1.1.0 (4.2.0)";
+            Version = "1.2.2 (4.2.10)";
 
             Services = new ServiceCollection()
                 .AddSingleton<AFKTimerService>()
                 .AddSingleton<DatabaseService>()
-                .AddSingleton<EmbedService>()
+                .AddSingleton<GameService>()
+                .AddSingleton<ConfigService>()
                 .AddSingleton<ButtonHandler>();
 
             return 0;

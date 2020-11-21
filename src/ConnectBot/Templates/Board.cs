@@ -28,12 +28,13 @@ namespace ConnectBot.Templates
 
         public Board(int width = 7, int height = 6, int connect = 4)
         {
+            // We only keep zero because of stupid Newtonsoft's default initialization.
             if (width < 0)
-                throw new ArgumentOutOfRangeException(nameof(width), "Parameters cannot be negative!");
+                throw new ArgumentOutOfRangeException(nameof(width), "The width must be greater than 0!");
             if (height < 0)
-                throw new ArgumentOutOfRangeException(nameof(height), "Parameters cannot be negative!");
+                throw new ArgumentOutOfRangeException(nameof(height), "The height must be greater than 0!");
             if (connect < 0)
-                throw new ArgumentOutOfRangeException(nameof(connect), "Parameters cannot be negative!");
+                throw new ArgumentOutOfRangeException(nameof(connect), "The connect length must be greater than 0!");
             if (connect > width || connect > height || connect > Math.Sqrt(Math.Pow(width, 2) + Math.Pow(height, 2)))
                 throw new ArgumentOutOfRangeException(nameof(connect), "Connect length must fit in board!");
             
@@ -90,7 +91,7 @@ namespace ConnectBot.Templates
             ":keycap_ten: "
         };
 
-        private static readonly string Unknown = ":question: ";
+        private const string Unknown = ":question: ";
 
         public string GenerateField()
         {
