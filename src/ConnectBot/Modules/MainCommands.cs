@@ -59,7 +59,7 @@ namespace ConnectBot.Modules
                     break;
                 case "userinfo":
                 case "stats":
-                    await _cs.GetStats(new FakeContext(Context));
+                    await _cs.GetStats(new FakeContext(Context), args);
                     break;
                 case "help":
                 case "":

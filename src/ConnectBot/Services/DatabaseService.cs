@@ -124,7 +124,7 @@ namespace ConnectBot.Services
         internal async Task AddUser(ulong user)
         {
             const string commandText =
-                "INSERT IGNORE INTO Players (userid) VALUES(@User)";
+                "INSERT IGNORE INTO ConnectBot_Players (userid) VALUES(@User)";
             
             await using var db = new MySqlConnection(ConnString);
             try
@@ -164,7 +164,7 @@ namespace ConnectBot.Services
             var enumStr = stat.ToString();
             var column = enumStr.Substring(0, 1).ToLower() + enumStr.Substring(1);
             var commandText =
-                $"UPDATE ConnectBot_Players SET {column} = {column} + 1 WHERE userid = @User";
+                $"UPDATE UNObot.ConnectBot_Players SET {column} = {column} + 1 WHERE userid = @User";
             
             await using var db = new MySqlConnection(ConnString);
             try
@@ -187,7 +187,7 @@ namespace ConnectBot.Services
             {
                 var results = await db.QueryFirstOrDefaultAsync(commandText, new { User = user });
                 if (!ReferenceEquals(null, results))
-                    return (results.gamesJoined, results.gamesPlayed, results.gamesWon);
+                    return (results.defaultWidth, results.defaultHeight, results.defaultConnect);
             }
             catch (MySqlException ex)
             {

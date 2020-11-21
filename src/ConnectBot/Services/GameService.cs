@@ -224,7 +224,13 @@ namespace ConnectBot.Services
                         await ErrorEmbed(context, $"\"{mode}\" is not a valid mode!");
                         return;
                 }
-            
+
+            if (game.GameMode.HasFlag(GameMode.Custom))
+            {
+                var (defaultWidth, defaultHeight, defaultConnect) = await _db.GetDefaultBoardDimensions(context.User.Id);
+                game.Board = new Board(defaultWidth, defaultHeight, defaultConnect);
+            }
+
             await NextGame(context, game, true);
         }
 
