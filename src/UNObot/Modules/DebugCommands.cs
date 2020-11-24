@@ -64,6 +64,7 @@ namespace UNObot.Modules
             }
             else if (Context.User.Id == 191397590946807809)
             {
+                await ReplyAsync("Shutting down!");
                 Program.Exit();
             }
         }
