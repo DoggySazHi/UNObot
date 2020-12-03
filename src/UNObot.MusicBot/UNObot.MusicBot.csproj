@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <TargetFramework>net5.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
@@ -10,7 +10,7 @@
       <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="5.0.0" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="5.0.0" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.0" />
-      <PackageReference Include="YoutubeExplode" Version="5.1.8" />
+      <PackageReference Include="YoutubeExplode" Version="5.1.9" />
       <PackageReference Include="YoutubeExplode.Converter" Version="2.0.0" />
     </ItemGroup>
 
