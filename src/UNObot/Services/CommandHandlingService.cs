@@ -45,7 +45,7 @@ namespace UNObot.Services
             _commands.Log += logger.LogCommand;
             _provider = provider;
             await AddModulesAsync(Assembly.GetEntryAssembly(), original: true);
-            _discord.ReactionAdded += async (message, channel, emote) => 
+            _discord.ReactionAdded += async (message, _, emote) => 
                 await PluginHelper.DeleteReact(_discord, await message.GetOrDownloadAsync(), emote);
         }
         

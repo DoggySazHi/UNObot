@@ -88,7 +88,7 @@ namespace UNObot
 
         private void SafeExitHandler()
         {
-            AppDomain.CurrentDomain.ProcessExit += (o, a) =>
+            AppDomain.CurrentDomain.ProcessExit += (_, _) =>
             {
                 try
                 {
@@ -100,7 +100,7 @@ namespace UNObot
                 }
             };
 
-            Console.CancelKeyPress += (sender, eventArgs) =>
+            Console.CancelKeyPress += (_, eventArgs) =>
             {
                 eventArgs.Cancel = true;
                 try
