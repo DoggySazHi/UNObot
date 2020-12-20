@@ -50,20 +50,20 @@
   
   <Target Name="CopyPlugins" AfterTargets="PostBuildEvent">
     <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-      <CorePlugin Include="$(SolutionDir)src\UNObot.Core\bin\Release\netcoreapp3.1\*.dll" />
-      <QueryPlugin Include="$(SolutionDir)src\UNObot.ServerQuery\bin\Release\netcoreapp3.1\*.dll" />
-      <MusicBotPlugin Include="$(SolutionDir)src\UNObot.MusicBot\bin\Release\netcoreapp3.1\*.dll" />
-      <DuplicateDetectorPlugin Include="$(SolutionDir)src\DuplicateDetector\bin\Release\netcoreapp3.1\*.dll" />
-      <ConnectBotPlugin Include="$(SolutionDir)src\ConnectBot\bin\Release\netcoreapp3.1\*.dll" />
+      <CorePlugin Include="$(SolutionDir)src\UNObot.Core\bin\Release\net5.0\*.dll" />
+      <QueryPlugin Include="$(SolutionDir)src\UNObot.ServerQuery\bin\Release\net5.0\*.dll" />
+      <MusicBotPlugin Include="$(SolutionDir)src\UNObot.MusicBot\bin\Release\net5.0\*.dll" />
+      <DuplicateDetectorPlugin Include="$(SolutionDir)src\DuplicateDetector\bin\Release\net5.0\*.dll" />
+      <ConnectBotPlugin Include="$(SolutionDir)src\ConnectBot\bin\Release\net5.0\*.dll" />
       <Config Include="$(SolutionDir)src\UNObot\config.json" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-      <CorePlugin Include="$(SolutionDir)src\UNObot.Core\bin\Debug\netcoreapp3.1\*.dll" />
-      <QueryPlugin Include="$(SolutionDir)src\UNObot.ServerQuery\bin\Debug\netcoreapp3.1\*.dll" />
-      <MusicBotPlugin Include="$(SolutionDir)src\UNObot.MusicBot\bin\Debug\netcoreapp3.1\*.dll" />
-      <DuplicateDetectorPlugin Include="$(SolutionDir)src\DuplicateDetector\bin\Debug\netcoreapp3.1\*.dll" />
-      <ConnectBotPlugin Include="$(SolutionDir)src\ConnectBot\bin\Debug\netcoreapp3.1\*.dll" />
+      <CorePlugin Include="$(SolutionDir)src\UNObot.Core\bin\Debug\net5.0\*.dll" />
+      <QueryPlugin Include="$(SolutionDir)src\UNObot.ServerQuery\bin\Debug\net5.0\*.dll" />
+      <MusicBotPlugin Include="$(SolutionDir)src\UNObot.MusicBot\bin\Debug\net5.0\*.dll" />
+      <DuplicateDetectorPlugin Include="$(SolutionDir)src\DuplicateDetector\bin\Debug\net5.0\*.dll" />
+      <ConnectBotPlugin Include="$(SolutionDir)src\ConnectBot\bin\Debug\net5.0\*.dll" />
       <Config Include="$(SolutionDir)src\UNObot\config.json" />
     </ItemGroup>
     

@@ -170,7 +170,7 @@ namespace UNObot.ServerQuery.Services
                         var userInfo = mcUserInfo.Find(o => o.Username == extendedStatus.Players[i]);
                         if (userInfo != null)
                             playersOnline +=
-                                $"\n- **Ouchies:** {userInfo.Ouchies} | **Health:** {userInfo.Health} | **Food:** {userInfo.Food}\n- **Experience:** {userInfo.Experience} ({userInfo.ExperienceLevels} levels)";
+                                $"\n- {(userInfo.Ouchies != null ? $"**Ouchies:** {userInfo.Ouchies} | " : "" )}**Health:** {userInfo.Health} | **Food:** {userInfo.Food}\n- **Experience:** {userInfo.Experience} ({userInfo.ExperienceLevels} levels)";
                         else
                             playersOnline += "\n Unknown stats.";
                     }

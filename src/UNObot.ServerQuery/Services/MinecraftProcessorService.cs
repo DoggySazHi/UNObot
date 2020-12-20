@@ -56,14 +56,17 @@ namespace UNObot.ServerQuery.Services
 
             client.ExecuteSingle("scoreboard players list", true);
             var playerListTotal = client.Data.Substring(client.Data.IndexOf(':') + 1).Split(',').ToList();
+            
+            client.ExecuteSingle("scoreboard objectives list", true);
+            var hasOuchiesScoreboard = client.Data.Substring(client.Data.IndexOf(':') + 1).Split(',').ToList().Any(o => o.Contains("ouchies", StringComparison.CurrentCultureIgnoreCase));
 
-            foreach (var player in playerListTotal)
+            foreach (var player in playerListTotal.Union(playerListOnline))
             {
                 var name = player.Replace((char) 0, ' ').Trim();
                 client.ExecuteSingle($"scoreboard players get {name} Ouchies", true);
                 if (client.Status == RCONStatus.Success)
                 {
-                    var ouchies = client.Data.Contains("has") ? client.Data.Split(' ')[2] : "0";
+                    var ouchies = hasOuchiesScoreboard ? client.Data.Contains("has") ? client.Data.Split(' ')[2] : "0" : null;
                     output.Add(new MCUser
                     {
                         Username = name,
