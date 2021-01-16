@@ -1,11 +1,6 @@
 ﻿#include "RCONHelper.h"
 #include <string>
 #include <iostream>
-#ifndef SIGPIPE
-    #include <csignal>
-#endif
-#include <chrono>
-#include <thread>
 
 RCONSocket* CreateObjectB(IPEndpoint& server, std::string &password)
 {
@@ -17,7 +12,7 @@ RCONSocket* CreateObjectA(IPEndpoint& server, std::string& password, std::string
     return new RCONSocket(server, password, command);
 }
 
-RCONSocket* CreateObjectA(char* ip, ushort port, char* password, char* command)
+inline RCONSocket* CreateObjectA(const char* ip, const unsigned short port, const char* password, const char* command)
 {
     IPEndpoint server;
     server.ip = std::string(ip);
@@ -30,7 +25,7 @@ RCONSocket* CreateObjectA(char* ip, ushort port, char* password, char* command)
     return CreateObjectA(server, str_pwd, str_cmd);
 }
 
-RCONSocket* CreateObjectB(char* ip, ushort port, char* password)
+inline RCONSocket* CreateObjectB(const char* ip, const unsigned short port, const char* password)
 {
     IPEndpoint server;
     server.ip = std::string(ip);
@@ -42,29 +37,25 @@ RCONSocket* CreateObjectB(char* ip, ushort port, char* password)
     return CreateObjectB(server, str_pwd);
 }
 
-int main()
-{
-    signal(SIGPIPE, SIG_IGN);
-
+RCONSocket *RCONHelper::CreateObjectA(const char *ip, const unsigned short port, const char *password, const char *command) {
     IPEndpoint server;
-    server.ip = "192.168.2.11";
-    server.port = 29293;
-    std::string password = "mukyumukyu";
-    auto rcon = CreateObjectB(server, password);
-    for(int i = 0; i < 500; i++) {
-        for(int j = 0; j < 8; j++) {
-            rcon->ExecuteSingle("clear DoggySazHi minecraft:rail 1");
-            if (rcon->data.find("No items") != std::string::npos) {
-                std::cerr << "Ran out of items!\a" << std::endl;
-                delete rcon;
-                return 1;
-            }
-            rcon->ExecuteSingle("execute as DoggySazHi at @s run tp @s ~-1 ~ ~");
-            rcon->ExecuteSingle("execute as DoggySazHi at @s run setblock ~ ~ ~ minecraft:rail");
-            std::this_thread::sleep_until(std::chrono::system_clock::now() + std::chrono::milliseconds(20));
-        }
-        rcon->ExecuteSingle("execute as DoggySazHi at @s run tp @s ~-1 ~ ~");
-    }
-    delete rcon;
-    return 0;
+    server.ip = std::string(ip);
+    server.port = port;
+#ifndef NDEBUG
+    std::cout << "Server input: " << ip << " Stringified: " << server.ip << '\n';
+#endif
+    std::string str_pwd(password);
+    std::string str_cmd(command);
+    return new RCONSocket(server, str_pwd, str_cmd);
+}
+
+RCONSocket *RCONHelper::CreateObjectB(const char *ip, const unsigned short port, const char *password) {
+    IPEndpoint server;
+    server.ip = std::string(ip);
+    server.port = port;
+#ifndef NDEBUG
+    std::cout << "Server input: " << ip << " Stringified: " << server.ip << '\n';
+#endif
+    std::string str_pwd(password);
+    return new RCONSocket(server, str_pwd);
 }

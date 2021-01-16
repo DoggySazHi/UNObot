@@ -168,6 +168,29 @@ void RCONSocket::ExecuteSingle(const std::string& command)
     status = SUCCESS;
 }
 
+void RCONSocket::ExecuteFast(const std::vector<uint8_t>& payload)
+{
+    if(status == AUTH_FAIL)
+        Authenticate();
+    if(status == AUTH_FAIL)
+    {
+        std::cerr << "Failed to re-authenticate!" << '\n';
+        return;
+    }
+
+    send(socket_descriptor, payload.data(), payload.size(), MSG_NOSIGNAL);
+    int count = read(socket_descriptor, rx_data->data(), BUFFER_SIZE);
+    auto id = LittleEndianReader(rx_data, 4);
+    auto type = LittleEndianReader(rx_data, 8);
+    if(id == -1 || type != SERVERDATA_RESPONSE_VALUE || count <= 12)
+    {
+        std::cerr << "Fast execute failed!" << '\n';
+        status = INT_FAIL;
+        return;
+    }
+    status = SUCCESS;
+}
+
 void RCONSocket::Execute(const std::string& command)
 {
     if(status == AUTH_FAIL)
