@@ -37,8 +37,8 @@ int main()
     auto startTime = std::chrono::steady_clock::now();
     float fps = 0.0;
     while (true) {
-        std::chrono::duration<float> timeDiff = (std::chrono::steady_clock::now() - startTime);
-        auto targetFrames = (int) (timeDiff.count() * frameRate);
+        auto timeDiff = std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(std::chrono::steady_clock::now() - startTime);
+        auto targetFrames = (int) (timeDiff.count() / 1000.0f * (float) frameRate);
 
         if (framesElapsed < targetFrames) {
             // If running too slow
@@ -48,13 +48,16 @@ int main()
             }
         } else {
             // If running too fast
-            std::this_thread::sleep_for(std::chrono::milliseconds((int) ((float) (framesElapsed - targetFrames) / frameRate * 1000.0f)));
+            auto ms = (int) ((float) (framesElapsed - targetFrames) / frameRate * 1000.0f);
+            //if (ms < 1000) // to prevent infinite sleeping
+                std::this_thread::sleep_for(std::chrono::milliseconds(ms));
         }
 
         cap >> video;
         if (video.empty())
             break;
         cv::resize(video, frame, cv::Size(), 0.25, 0.25);
+        cv::putText(video, std::to_string(frame.cols) + " x " + std::to_string(frame.rows), cv::Point(video.cols - 50, video.rows - 20), cv::FONT_HERSHEY_DUPLEX, 0.4, cv::Scalar(0, 0, 255), 1);
         cv::putText(video, "FPS: " + std::to_string(fps), cv::Point(video.cols - 75, video.rows - 5), cv::FONT_HERSHEY_DUPLEX, 0.4, cv::Scalar(0, 0, 255), 1);
         cv::imshow("RCON Video Preview", video);
         if (cv::waitKey(1) == 27) // esc
@@ -67,6 +70,7 @@ int main()
                 threads.push_back(temp);
             }
             std::cout << "Spawned " << THREAD_COUNT << " processing threads!\n";
+            startTime = std::chrono::steady_clock::now(); // Set time correctly!
         }
 
         for(auto &thread : threads)
@@ -76,10 +80,10 @@ int main()
         frameCount++;
         framesElapsed++;
 
-        std::chrono::duration<float> fpsDiffDuration = (std::chrono::steady_clock::now() - lastTime);
+        auto fpsDiffDuration = std::chrono::duration_cast<std::chrono::duration<float, std::milli>>(std::chrono::steady_clock::now() - lastTime);
         auto fpsDiff = fpsDiffDuration.count();
-        if (fpsDiff >= 1.0) {
-            fps = (float) frameCount / fpsDiff;
+        if (fpsDiff >= 1000) {
+            fps = (float) frameCount / fpsDiff * 1000.0f;
             lastTime = std::chrono::steady_clock::now();
             frameCount = 0;
         }

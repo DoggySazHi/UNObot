@@ -22,8 +22,7 @@ else()
 endif()
 
 include_directories(${OpenCV_INCLUDE_DIRS})
-# include_directories(/home/doggysazhi/fmt-7.1.2/include)
-# add_subdirectory(/home/doggysazhi/fmt-7.1.2 /home/doggysazhi/fmt-7.1.2/build)
+include_directories(/home/doggysazhi/midifile/include)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -46,7 +45,7 @@ else()
 endif()
 
 target_link_libraries(RCONHelper_Test ${OpenCV_LIBS})
-# target_link_libraries(RCONHelper_Test fmt::fmt)
+target_link_libraries(RCONHelper_Test /home/doggysazhi/midifile/lib/libmidifile.a)
 
 set_property(TARGET RCONHelper PROPERTY CXX_STANDARD 20)
 set_property(TARGET RCONHelper PROPERTY CXX_STANDARD_REQUIRED 20)

@@ -314,7 +314,7 @@ namespace UNObot.ServerQuery.Modules
         internal async Task GetMCTime()
         {
             var server = _query.SpecialServers[29292];
-            await RunRCON(server.Server, server.RCONPort, server.Password, "time query daytime");
+            await RunRCON(server.Server, server.RCONPort, server.Password, "time query daytime", false);
         }
 
         [Command("mctime", RunMode = RunMode.Async)]
@@ -328,7 +328,7 @@ namespace UNObot.ServerQuery.Modules
             }
 
             var server = _query.SpecialServers[port];
-            await RunRCON(server.Server, server.RCONPort, server.Password, "time query daytime");
+            await RunRCON(server.Server, server.RCONPort, server.Password, "time query daytime", false);
         }
 
         [Command("unofficialwiki", RunMode = RunMode.Async)]
@@ -353,8 +353,11 @@ namespace UNObot.ServerQuery.Modules
         [Help(new[] {".rcon (ip) (port) (password) (command)"},
             "Run a command on a remote server. Limited to DoggySazHi ATM.", true, "UNObot 4.0.12")]
         internal async Task RunRCON(string ip, ushort port, string password, [Remainder] string command)
+            => await RunRCON(ip, port, password, command, true);
+        
+        private async Task RunRCON(string ip, ushort port, string password, string command, bool checkOrigin)
         {
-            if (Context.User.Id != 191397590946807809 && Context.User.Id != 338824307834880000)
+            if (checkOrigin && Context.User.Id != 191397590946807809 && Context.User.Id != 338824307834880000)
                 return;
                 
             var message = await ReplyAsync("Executing...");
