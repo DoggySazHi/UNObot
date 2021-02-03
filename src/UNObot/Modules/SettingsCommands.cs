@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Microsoft.Extensions.Configuration;
 using UNObot.Plugins.Attributes;
 using UNObot.Plugins.Helpers;
 using UNObot.Services;
@@ -12,10 +13,12 @@ namespace UNObot.Modules
     public class SettingsCommands : ModuleBase<SocketCommandContext>
     {
         private readonly DatabaseService _db;
+        private readonly IConfiguration _config;
         
-        internal SettingsCommands(DatabaseService db)
+        internal SettingsCommands(IConfiguration config, DatabaseService db)
         {
             _db = db;
+            _config = config;
         }
         
         [Command("setdefaultchannel", RunMode = RunMode.Async)]
@@ -201,6 +204,16 @@ namespace UNObot.Modules
             {
                 await ReplyAsync("This channel was never an allowed channel.");
             }
+        }
+
+        [Command("settings", RunMode = RunMode.Async)]
+        [RequireUserPermission(GuildPermission.ManageChannels)]
+        [DisableDMs]
+        [Help(new[] {".settings"},
+            "Access configurable settings for UNObot.", true, "UNObot 4.3")]
+        internal async Task ViewSettings()
+        {
+            
         }
     }
 }

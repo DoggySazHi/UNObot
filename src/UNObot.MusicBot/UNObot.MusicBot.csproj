@@ -5,13 +5,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Discord.Net" Version="2.2.0" />
+      <PackageReference Include="Discord.Net" Version="2.3.0" />
       <PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0" />
       <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="5.0.0" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="5.0.0" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
       <PackageReference Include="YoutubeExplode" Version="5.1.9" />
-      <PackageReference Include="YoutubeExplode.Converter" Version="2.0.0" />
+      <PackageReference Include="YoutubeExplode.Converter" Version="2.0.2" />
     </ItemGroup>
 
     <ItemGroup>

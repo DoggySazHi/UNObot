@@ -17,7 +17,7 @@ namespace UNObot
     {
         private ServiceProvider _services;
         private DiscordSocketClient _client;
-        private static readonly ManualResetEvent ExitEvent = new ManualResetEvent(false);
+        private static readonly ManualResetEvent ExitEvent = new(false);
         private IConfiguration _config;
         private ILogger _logger;
         private string _version;

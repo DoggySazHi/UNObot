@@ -10,15 +10,15 @@ using Timer = System.Timers.Timer;
 
 namespace UNObot.Core.Services
 {
-    internal class AFKTimerService
+    public class AFKTimerService
     {
         private static readonly Dictionary<ulong, Timer> PlayTimers = new Dictionary<ulong, Timer>();
         private readonly ILogger _logger;
-        private readonly UNODatabaseService _db;
+        private readonly DatabaseService _db;
         private readonly QueueHandlerService _queue;
         private readonly DiscordSocketClient _client;
 
-        public AFKTimerService(ILogger logger, UNODatabaseService db, QueueHandlerService queue, DiscordSocketClient client)
+        public AFKTimerService(ILogger logger, DatabaseService db, QueueHandlerService queue, DiscordSocketClient client)
         {
             _logger = logger;
             _db = db;

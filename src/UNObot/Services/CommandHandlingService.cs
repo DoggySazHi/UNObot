@@ -110,8 +110,9 @@ namespace UNObot.Services
                 }
             }
 
-            if (!message.HasCharPrefix('.', ref argPos) &&
-                !message.HasMentionPrefix(_discord.CurrentUser, ref argPos)) return;
+            if (!(context.IsPrivate && message.HasCharPrefix('.', ref argPos)) && // If it's in a DM, forcibly use '.' prefix
+                !(!context.IsPrivate && message.HasStringPrefix(await _db.GetPrefix(context.Guild.Id), ref argPos)) && // If it's in a server, query DB.
+                !message.HasMentionPrefix(_discord.CurrentUser, ref argPos)) return; // Look for mentions.
 
             if (!context.IsPrivate)
                 await _db.AddGame(context.Guild.Id);
@@ -236,7 +237,7 @@ namespace UNObot.Services
                 {
                     var cmd = helpAtt != null
                         ? new Command(nameAtt.Text, aliases, helpAtt.Usages.ToList(), helpAtt.HelpMsg,
-                            helpAtt.Active, helpAtt.Version)
+                            helpAtt.Active, helpAtt.Version, disabledForDMs)
                         : new Command(nameAtt.Text, aliases, new List<string> {$".{nameAtt.Text}"},
                             "No help is given for this command.", ownerOnlyAtt == null, "Unknown Version",
                             disabledForDMs);

@@ -30,23 +30,23 @@ void MatrixHelper::threadMain(const std::stop_token& cancellationToken) {
     unsigned short port = 25575;
     const char* password = "mukyumukyu";
     auto rcon = RCONHelper::CreateObjectB(ip, port, password);
-
     while (!cancellationToken.stop_requested()){
         signalToThread.wait(cancellationToken);
         if (cancellationToken.stop_requested())
             break;
         if(deltaFrame.rows != end - start || deltaFrame.cols != frame.cols)
-            deltaFrame = cv::Mat(end - start, frame.cols, CV_8UC1, 0.0);
+            deltaFrame = cv::Mat(end - start, frame.cols, CV_8UC1, 69);
+
         for(int r = start; r < end; r++) {
+            const unsigned char* row = frame.ptr<unsigned char>(r);
             for (int c = 0; c < frame.cols; c++) {
-                size_t pos = c * frame.cols * 3 + r * 3;
-                size_t posDelta = deltaFrame.step1() * (r - start) + c;
-                auto colorR = frame.data[pos + 2]; // OpenCV is BGR, thanks Python
-                auto colorG = frame.data[pos + 1];
-                auto colorB = frame.data[pos];
-                auto colorSheep = WoolData::getClosestColor(colorR, colorG, colorB);
-                if (deltaFrame.data[posDelta] != colorSheep) {
-                    deltaFrame.data[posDelta] = colorSheep;
+                auto posDelta = deltaFrame.step1() * (r - start) + c;
+                auto colorR = row[c * 3 + 2]; // OpenCV is BGR, thanks Python
+                auto colorG = row[c * 3 + 1];
+                auto colorB = row[c * 3];
+                auto colorSheep = WoolData::getClosestColor((int) colorR, (int) colorG, (int) colorB);
+                if (deltaFrame.data[posDelta] != colorSheep->id) {
+                    deltaFrame.data[posDelta] = colorSheep->id;
                     auto command = woolData.getPayload(r, c, colorSheep);
                     rcon->ExecuteFast(command);
                 }
@@ -55,6 +55,8 @@ void MatrixHelper::threadMain(const std::stop_token& cancellationToken) {
         signalToMain.notify();
     }
 
+    signalToThread.dispose();
+    signalToMain.dispose();
     RCONHelper::SayDelete(reinterpret_cast<const char *>(rcon));
     std::cout << "Ended thread #" << id << "!\n";
 }

@@ -53,5 +53,8 @@ namespace UNObot.Plugins.Helpers
                 logger.Log(LogSeverity.Error, $"Exception raised in async method {method}.", t.Exception);
             }, TaskContinuationOptions.OnlyOnFaulted);
         }
+
+        public static EmbedBuilder AddBlankField(this EmbedBuilder builder)
+            => builder.AddField("\u200b", "\u200b");
     }
 }

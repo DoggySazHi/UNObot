@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UNObot.ServerQuery", "src\U
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UNObot.Google", "src\UNObot.Google\UNObot.Google.csproj", "{5018B69E-5A4D-4312-AA41-49C703552B92}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UNObot.Misc", "src\UNObot.Misc\UNObot.Misc.csproj", "{A1020229-F70E-4E56-BF85-7745D9E234DD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -129,6 +131,18 @@ Global
 		{5018B69E-5A4D-4312-AA41-49C703552B92}.Release|x64.Build.0 = Release|Any CPU
 		{5018B69E-5A4D-4312-AA41-49C703552B92}.Release|x86.ActiveCfg = Release|Any CPU
 		{5018B69E-5A4D-4312-AA41-49C703552B92}.Release|x86.Build.0 = Release|Any CPU
+		{A1020229-F70E-4E56-BF85-7745D9E234DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1020229-F70E-4E56-BF85-7745D9E234DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1020229-F70E-4E56-BF85-7745D9E234DD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A1020229-F70E-4E56-BF85-7745D9E234DD}.Debug|x64.Build.0 = Debug|Any CPU
+		{A1020229-F70E-4E56-BF85-7745D9E234DD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A1020229-F70E-4E56-BF85-7745D9E234DD}.Debug|x86.Build.0 = Debug|Any CPU
+		{A1020229-F70E-4E56-BF85-7745D9E234DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1020229-F70E-4E56-BF85-7745D9E234DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1020229-F70E-4E56-BF85-7745D9E234DD}.Release|x64.ActiveCfg = Release|Any CPU
+		{A1020229-F70E-4E56-BF85-7745D9E234DD}.Release|x64.Build.0 = Release|Any CPU
+		{A1020229-F70E-4E56-BF85-7745D9E234DD}.Release|x86.ActiveCfg = Release|Any CPU
+		{A1020229-F70E-4E56-BF85-7745D9E234DD}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

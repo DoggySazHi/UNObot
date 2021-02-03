@@ -105,47 +105,50 @@ namespace UNObot.Services
                     _logger.Log(LogSeverity.Debug, headers);
 #endif
 
-                    var sections = url.Split("/");
-
-                    if (sections.Length >= 3)
+                    if (url != null)
                     {
-                        var channelParse = ulong.TryParse(sections[1], out var channel);
-                        if (channelParse)
+                        var sections = url.Split("/");
+
+                        if (sections.Length >= 3)
                         {
-                            var key = sections[2];
-                            var (guild, type) = _db.GetWebhook(channel, key).GetAwaiter().GetResult();
-                            if (guild != 0)
+                            var channelParse = ulong.TryParse(sections[1], out var channel);
+                            if (channelParse)
                             {
-#if DEBUG
-                                _logger.Log(LogSeverity.Debug,
-                                    $"Found server, points to {guild}, {channel} of type {(WebhookType) type}.");
-#endif
-                                using var data = request.InputStream;
-                                using var reader = new StreamReader(data);
-                                var text = reader.ReadToEnd();
-#if DEBUG
-                                _logger.Log(LogSeverity.Verbose, $"Data received: {text}");
-#endif
-                                try
+                                var key = sections[2];
+                                var (guild, type) = _db.GetWebhook(channel, key).GetAwaiter().GetResult();
+                                if (guild != 0)
                                 {
-                                    ProcessMessage(text, request.Headers, guild, channel, (WebhookType) type);
+#if DEBUG
+                                    _logger.Log(LogSeverity.Debug,
+                                        $"Found server, points to {guild}, {channel} of type {(WebhookType) type}.");
+#endif
+                                    using var data = request.InputStream;
+                                    using var reader = new StreamReader(data);
+                                    var text = reader.ReadToEnd();
+#if DEBUG
+                                    _logger.Log(LogSeverity.Verbose, $"Data received: {text}");
+#endif
+                                    try
+                                    {
+                                        ProcessMessage(text, request.Headers, guild, channel, (WebhookType) type);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        _logger.Log(LogSeverity.Critical, "Webhook Parser failed!", e);
+                                        _logger.Log(LogSeverity.Critical, $"URL: {url}");
+                                        _logger.Log(LogSeverity.Critical, text);
+                                    }
                                 }
-                                catch (Exception e)
+                                else
                                 {
-                                    _logger.Log(LogSeverity.Critical, "Webhook Parser failed!", e);
-                                    _logger.Log(LogSeverity.Critical, $"URL: {url}");
-                                    _logger.Log(LogSeverity.Critical, text);
+                                    _logger.Log(LogSeverity.Warning,
+                                        $"Does not seem to point to a server. URL: {url}");
                                 }
                             }
                             else
                             {
-                                _logger.Log(LogSeverity.Warning,
-                                    $"Does not seem to point to a server. URL: {url}");
+                                _logger.Log(LogSeverity.Debug, $"Given an invalid channel! URL: {url}");
                             }
-                        }
-                        else
-                        {
-                            _logger.Log(LogSeverity.Debug, $"Given an invalid channel! URL: {url}");
                         }
                     }
 

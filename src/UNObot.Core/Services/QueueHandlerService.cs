@@ -6,12 +6,12 @@ using UNObot.Plugins;
 
 namespace UNObot.Core.Services
 {
-    internal class QueueHandlerService
+    public class QueueHandlerService
     {
         private readonly ILogger _logger;
-        private readonly UNODatabaseService _db;
+        private readonly DatabaseService _db;
 
-        public QueueHandlerService(ILogger logger, UNODatabaseService db)
+        public QueueHandlerService(ILogger logger, DatabaseService db)
         {
             _logger = logger;
             _db = db;

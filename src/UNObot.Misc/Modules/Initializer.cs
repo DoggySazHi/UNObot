@@ -1,8 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using UNObot.Google.Services;
 using UNObot.Plugins;
 
-namespace UNObot.Google.Modules
+namespace UNObot.Misc.Modules
 {
     public class Initializer : IPlugin
     {
@@ -14,13 +13,12 @@ namespace UNObot.Google.Modules
 
         public int OnLoad()
         {
-            Name = "UNObot-Google";
-            Description = "Thanks Benzo, very cool!";
+            Name = "UNObot-Misc";
+            Description = "Random utilities for testing.";
             Author = "DoggySazHi";
-            Version = "0.0.5 (4.2.10)";
+            Version = "N/A";
 
-            Services = new ServiceCollection()
-                .AddSingleton<GoogleSearchService>();
+            Services = new ServiceCollection();
             
             return 0;
         }

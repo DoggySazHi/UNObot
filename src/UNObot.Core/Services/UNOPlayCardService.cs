@@ -4,18 +4,18 @@ using UNObot.Core.UNOCore;
 
 namespace UNObot.Core.Services
 {
-    internal class UNOPlayCardService
+    public class UNOPlayCardService
     {
-        private readonly UNODatabaseService _db;
+        private readonly DatabaseService _db;
         private readonly QueueHandlerService _queue;
         
-        public UNOPlayCardService(UNODatabaseService db, QueueHandlerService queue)
+        public UNOPlayCardService(DatabaseService db, QueueHandlerService queue)
         {
             _db = db;
             _queue = queue;
         }
         
-        internal async Task<string> Play(string color, string value, string wild, SocketCommandContext context)
+        public async Task<string> Play(string color, string value, string wild, SocketCommandContext context)
         {
             var player = context.User.Id;
             var server = context.Guild.Id;

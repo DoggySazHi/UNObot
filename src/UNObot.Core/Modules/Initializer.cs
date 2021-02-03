@@ -24,7 +24,7 @@ namespace UNObot.Core.Modules
                 .AddSingleton<EmbedService>()
                 .AddSingleton<InputHandlerService>()
                 .AddSingleton<QueueHandlerService>()
-                .AddSingleton<UNODatabaseService>()
+                .AddSingleton<DatabaseService>()
                 .AddSingleton<UNOPlayCardService>();
             
             return 0;

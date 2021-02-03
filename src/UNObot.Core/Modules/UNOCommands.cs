@@ -12,12 +12,12 @@ namespace UNObot.Core.Modules
     public class UNOCommands : ModuleBase<SocketCommandContext>
     {
         private readonly UNOPlayCardService _playCard;
-        private readonly UNODatabaseService _db;
+        private readonly DatabaseService _db;
         private readonly QueueHandlerService _queue;
         private readonly AFKTimerService _afk;
         private readonly EmbedService _embed;
 
-        internal UNOCommands(UNOPlayCardService playCard, UNODatabaseService db, QueueHandlerService queue, AFKTimerService afk, EmbedService embed)
+        public UNOCommands(UNOPlayCardService playCard, DatabaseService db, QueueHandlerService queue, AFKTimerService afk, EmbedService embed)
         {
             _playCard = playCard;
             _db = db;

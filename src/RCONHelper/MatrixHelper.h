@@ -1,13 +1,12 @@
 #include <opencv2/core.hpp>
 #include <thread>
 #include "Semaphore.h"
+#include "Threadable.h"
 
-class MatrixHelper {
+class MatrixHelper : public Threadable {
 public:
-    Semaphore signalToThread;
-    Semaphore signalToMain;
     MatrixHelper(cv::Mat& matrix, int start, int end);
-    ~MatrixHelper();
+    ~MatrixHelper() override;
     cv::Mat &frame;
 
     void startThread();

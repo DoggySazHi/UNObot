@@ -2,6 +2,8 @@
 #include <string>
 #include <iostream>
 
+#define NDEBUG
+
 RCONSocket* CreateObjectB(IPEndpoint& server, std::string &password)
 {
     return new RCONSocket(server, password);

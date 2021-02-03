@@ -2,6 +2,34 @@
 
     <PropertyGroup>
         <TargetFramework>net5.0</TargetFramework>
+        <RootNamespace>UNObot.Misc</RootNamespace>
     </PropertyGroup>
 
+    <ItemGroup>
+        <PackageReference Include="Dapper" Version="2.0.78" />
+        <PackageReference Include="Dapper.Contrib" Version="2.0.78" />
+        <PackageReference Include="Discord.Net" Version="2.3.0" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
+        <PackageReference Include="MySql.Data" Version="8.0.23" />
+        <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\UNObot.Plugins\UNObot.Plugins.csproj">
+            <Private>false</Private>
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </ProjectReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Services" />
+    </ItemGroup>
+
+    <Target Name="CopyPlugins" AfterTargets="PostBuildEvent">
+        <ItemGroup>
+            <Plugin Include="$(ProjectDir)$(OutDir)*.dll" />
+        </ItemGroup>
+        <Copy SourceFiles="$(Plugin)" DestinationFolder="$(SolutionDir)src\UNObot\bin\Debug\netcoreapp3.1\plugins" SkipUnchangedFiles="false" ContinueOnError="true" />
+        <Copy SourceFiles="$(Plugin)" DestinationFolder="$(SolutionDir)src\UNObot\bin\Release\netcoreapp3.1\plugins" SkipUnchangedFiles="false" ContinueOnError="true" />
+    </Target>
 </Project>

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Text;
 using Discord;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Linq;
@@ -78,6 +80,44 @@ namespace UNObot.Services
             if (bytesPrinted != null && bytesPrinted.Type != JTokenType.Null)
                 builder.AddField("Bytes Printed", (bytesPrinted.ToObject<float>() / 1000000.0).ToString("N2") + " MB",
                     true);
+            return builder.Build();
+        }
+
+        internal Embed SettingsEmbed(string title, params Setting[] settings)
+        {
+            var random = ThreadSafeRandom.ThisThreadsRandom;
+
+            var builder = new EmbedBuilder()
+                .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
+                .WithTimestamp(DateTimeOffset.Now)
+                .WithFooter(footer =>
+                {
+                    footer
+                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
+                })
+                .WithAuthor(author =>
+                {
+                    author
+                        .WithName($"UNObot Settings")
+                        .WithIconUrl("https://williamle.com/unobot/unobot.png");
+                });
+            foreach (var group in settings)
+            {
+                var titleLength = group.KeyValuePairs.Keys.Max(o => o.Length) + 1;
+                var sb = new StringBuilder();
+                foreach (var key in group.KeyValuePairs.Keys)
+                {
+                    sb.Append($"`{key.PadRight(titleLength)}| `");
+                    var obj = group.KeyValuePairs[key];
+                    if (obj == null)
+                        sb.Append("*None set*\n");
+                    else
+                        sb.Append(obj).Append('\n');
+                }
+                builder.AddField(group.Category, sb.ToString());
+            }
+
             return builder.Build();
         }
     }

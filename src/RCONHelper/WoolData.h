@@ -3,15 +3,16 @@
 
 struct Wool {
     unsigned char id;
-    unsigned char color[3]; // put in RGB, not BGR
+    int color[3]; // put in RGB, not BGR
+    std::string blockName;
 };
 
 class WoolData {
 public:
     WoolData();
-    static unsigned char getClosestColor(unsigned char r, unsigned char g, unsigned char b);
-    std::vector<uint8_t> &getPayload(int x, int y, unsigned char sheep);
+    static Wool* getClosestColor(int r, int g, int b);
+    std::vector<uint8_t> getPayload(int x, int y, Wool* sheep);
 private:
     static std::vector<Wool> colors; // static to avoid excess dictionaries
-    std::vector<uint8_t> templatePayload;
+    std::string command;
 };

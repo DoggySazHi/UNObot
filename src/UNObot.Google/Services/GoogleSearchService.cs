@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 
 namespace UNObot.Google.Services
 {
-    public class SearchResult
+    internal class SearchResult
     {
         public string Preview { get; }
         public string URL { get; }
@@ -18,7 +18,7 @@ namespace UNObot.Google.Services
         }
     }
     
-    public class GoogleSearchService
+    internal class GoogleSearchService
     {
         private const string SearchPrefix = "https://www.googleapis.com/customsearch/v1?key=AIzaSyDteTSAAAWYlVdHEuq-RGhO-_tdWUsmCPo&cx=95f69753b34f1c16a&q=";
 
