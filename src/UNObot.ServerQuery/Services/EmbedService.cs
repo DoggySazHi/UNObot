@@ -31,7 +31,7 @@ namespace UNObot.ServerQuery.Services
             _minecraft = minecraft;
         }
         
-        internal bool UnturnedQueryEmbed(string ip, ushort port, out Embed result, ServerAverages averages = null)
+        public bool UnturnedQueryEmbed(string ip, ushort port, out Embed result, ServerAverages averages = null)
         {
             A2SInfo information = null;
             var informationGet = false;
@@ -136,7 +136,7 @@ namespace UNObot.ServerQuery.Services
             return true;
         }
 
-        internal bool MinecraftQueryEmbed(string ip, ushort port, out Embed result)
+        public bool MinecraftQueryEmbed(string ip, ushort port, out Embed result)
         {
             //TODO with the new option to disable status, it might be that queries work but not simple statuses.
             var defaultStatus = new MCStatus(ip, port);
@@ -207,7 +207,7 @@ namespace UNObot.ServerQuery.Services
             return true;
         }
         
-        internal bool MinecraftPEQueryEmbed(string ip, ushort port, out Embed result)
+        public bool MinecraftPEQueryEmbed(string ip, ushort port, out Embed result)
         {
             var ping = new Stopwatch();
             ping.Start();
@@ -275,7 +275,7 @@ namespace UNObot.ServerQuery.Services
             return true;
         }
 
-        internal bool OuchiesEmbed(string ip, ushort port, out Embed result)
+        public bool OuchiesEmbed(string ip, ushort port, out Embed result)
         {
             var random = ThreadSafeRandom.ThisThreadsRandom;
 
@@ -346,7 +346,7 @@ namespace UNObot.ServerQuery.Services
             return true;
         }
 
-        internal bool LocationsEmbed(string ip, ushort port, out Embed result)
+        public bool LocationsEmbed(string ip, ushort port, out Embed result)
         {
             var random = ThreadSafeRandom.ThisThreadsRandom;
 
@@ -431,7 +431,7 @@ namespace UNObot.ServerQuery.Services
             return true;
         }
 
-        internal bool TransferEmbed(string ip, ushort port, ulong source, string target, string amountIn,
+        public bool TransferEmbed(string ip, ushort port, ulong source, string target, string amountIn,
             out Embed result)
         {
             var messageTitle = "Mukyu~";

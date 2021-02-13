@@ -9,11 +9,11 @@ using UNObot.Plugins;
 namespace UNObot.MusicBot.MusicCore
 {
     // Can't use Struct, needs passing by reference.
-    internal class Song
+    public class Song
     {
         private ManualResetEvent _endCache;
 
-        internal Song(string url, Tuple<string, string, string> data, ulong user, ulong guild)
+        public Song(string url, Tuple<string, string, string> data, ulong user, ulong guild)
         {
             Url = url;
             Name = data.Item1;
@@ -23,15 +23,15 @@ namespace UNObot.MusicBot.MusicCore
             RequestedGuild = guild;
         }
 
-        internal string Url { get; }
-        internal string PathCached { get; set; }
-        internal ulong RequestedBy { get; }
-        internal ulong RequestedGuild { get; }
-        internal string Name { get; }
-        internal string Duration { get; }
-        internal string ThumbnailUrl { get; }
+        public string Url { get; }
+        public string PathCached { get; set; }
+        public ulong RequestedBy { get; }
+        public ulong RequestedGuild { get; }
+        public string Name { get; }
+        public string Duration { get; }
+        public string ThumbnailUrl { get; }
 
-        internal async Task Cache(YoutubeService youtube, ILogger logger)
+        public async Task Cache(YoutubeService youtube, ILogger logger)
         {
             if (string.IsNullOrEmpty(PathCached) || !File.Exists(PathCached))
             {
@@ -50,7 +50,7 @@ namespace UNObot.MusicBot.MusicCore
             }
         }
 
-        internal void SetCacheEvent(ManualResetEvent cacheFinished)
+        public void SetCacheEvent(ManualResetEvent cacheFinished)
         {
             if (!string.IsNullOrEmpty(PathCached) && PathCached != "Caching...")
             {

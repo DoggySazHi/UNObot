@@ -18,7 +18,7 @@ namespace ConnectBot.Services
         private static readonly string DefaultBoard;
         private static readonly string DefaultQueue;
 
-        internal string ConnString { get; }
+        public string ConnString { get; }
 
         static DatabaseService()
         {
@@ -37,7 +37,7 @@ namespace ConnectBot.Services
             DefaultTypeMap.MatchNamesWithUnderscores = true;
         }
 
-        internal async Task ResetGame(ulong server)
+        public async Task ResetGame(ulong server)
         {
             const string commandText =
                 "UPDATE UNObot.ConnectBot_Games SET board = @Board, queue = @Queue, description = null WHERE server = @Server";
@@ -53,7 +53,7 @@ namespace ConnectBot.Services
             }
         }
         
-        internal async Task<Game> GetGame(ulong server)
+        public async Task<Game> GetGame(ulong server)
         {
             const string commandText = "SELECT * FROM UNObot.ConnectBot_Games WHERE server = @Server";
             await using var db = new MySqlConnection(ConnString);
@@ -80,7 +80,7 @@ namespace ConnectBot.Services
             return new Game(server);
         }
 
-        internal async Task UpdateGame(Game game)
+        public async Task UpdateGame(Game game)
         {
             const string commandText = "UPDATE UNObot.ConnectBot_Games SET gameMode = @GameMode, board = @Board, `description` = @Description, queue = @Queue, lastChannel = @LastChannel, lastMessage = @LastMessage WHERE server = @Server";
             await using var db = new MySqlConnection(ConnString);
@@ -121,7 +121,7 @@ namespace ConnectBot.Services
             }
         }
         
-        internal async Task AddUser(ulong user)
+        public async Task AddUser(ulong user)
         {
             const string commandText =
                 "INSERT IGNORE INTO ConnectBot_Players (userid) VALUES(@User)";
@@ -137,9 +137,9 @@ namespace ConnectBot.Services
             }
         }
         
-        internal enum ConnectBotStat { GamesJoined, GamesPlayed, GamesWon }
+        public enum ConnectBotStat { GamesJoined, GamesPlayed, GamesWon }
 
-        internal async Task<(int GamesJoined, int GamesPlayed, int GamesWon)> GetStats(ulong user)
+        public async Task<(int GamesJoined, int GamesPlayed, int GamesWon)> GetStats(ulong user)
         {
             const string commandText =
                 "SELECT gamesJoined, gamesPlayed, gamesWon FROM ConnectBot_Players WHERE userid = @User";
@@ -159,7 +159,7 @@ namespace ConnectBot.Services
             return (0, 0, 0);
         }
         
-        internal async Task UpdateStats(ulong user, ConnectBotStat stat)
+        public async Task UpdateStats(ulong user, ConnectBotStat stat)
         {
             var enumStr = stat.ToString();
             var column = enumStr.Substring(0, 1).ToLower() + enumStr.Substring(1);
@@ -177,7 +177,7 @@ namespace ConnectBot.Services
             }
         }
         
-        internal async Task<(int DefaultWidth, int DefaultHeight, int DefaultConnect)> GetDefaultBoardDimensions(ulong user)
+        public async Task<(int DefaultWidth, int DefaultHeight, int DefaultConnect)> GetDefaultBoardDimensions(ulong user)
         {
             const string commandText =
                 "SELECT defaultWidth, defaultHeight, defaultConnect FROM ConnectBot_Players WHERE userid = @User";
@@ -197,7 +197,7 @@ namespace ConnectBot.Services
             return (7, 6, 4);
         }
         
-        internal async Task SetDefaultBoardDimensions(ulong user, int width, int height, int connect)
+        public async Task SetDefaultBoardDimensions(ulong user, int width, int height, int connect)
         {
             const string commandText = "UPDATE ConnectBot_Players SET defaultWidth = @Width, defaultHeight = @Height, defaultConnect = @Connect WHERE userid = @User";
             

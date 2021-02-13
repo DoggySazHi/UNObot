@@ -29,7 +29,7 @@ namespace UNObot.Core.Modules
         [Command("join", RunMode = RunMode.Async)]
         [Help(new[] {".join"}, "Join the queue in the current server.", true, "UNObot 0.1")]
         [DisableDMs]
-        internal async Task Join()
+        public async Task Join()
         {
             await _db.AddGame(Context.Guild.Id);
             await _db.AddUser(Context.User.Id, Context.User.Username);
@@ -52,7 +52,7 @@ namespace UNObot.Core.Modules
         [Command("leave", RunMode = RunMode.Async)]
         [DisableDMs]
         [Help(new[] {".leave"}, "Leave the queue (or game) in the current server.", true, "UNObot 0.2")]
-        internal async Task Leave()
+        public async Task Leave()
         {
             await _db.AddGame(Context.Guild.Id);
             await _db.AddUser(Context.User.Id, Context.User.Username);
@@ -88,24 +88,25 @@ namespace UNObot.Core.Modules
         [Help(new[] {".stats"},
             "Get the statistics of you or another player to see if they are a noob, pro, or cheater.", true,
             "UNObot 1.4")]
-        internal async Task Stats()
+        public async Task Stats()
         {
             var stats = await _db.GetStats(Context.User.Id);
             var note = await _db.GetNote(Context.User.Id);
             if (!await _db.UserExists(Context.User.Id))
                 await ReplyAsync("You do not currently exist in the database. Maybe you should play a game.");
-            if (note != null) await ReplyAsync($"NOTE: {note}");
-            await ReplyAsync($"{Context.User.Username}'s stats:\n"
-                             + $"Games joined: {stats[0]}\n"
-                             + $"Games fully played: {stats[1]}\n"
-                             + $"Games won: {stats[2]}");
+            if (note != null) await ReplyAsync();
+            await ReplyAsync(note != null ? $"NOTE: {note}\n" : "" 
+                + $"{Context.User.Username}'s stats:\n"
+                + $"Games joined: {stats.GamesJoined}\n"
+                + $"Games fully played: {stats.GamesPlayed}\n"
+                + $"Games won: {stats.GamesWon}");
         }
 
         [Command("stats", RunMode = RunMode.Async)]
         [Help(new[] {".stats (ping another player, or their ID)"},
             "Get the statistics of you or another player to see if they are a noob, pro, or cheater.", true,
             "UNObot 1.4")]
-        internal async Task Stats2([Remainder] string user)
+        public async Task Stats2([Remainder] string user)
         {
             user = user.Trim();
             //Style of Username#XXXX or Username XXXX
@@ -134,17 +135,17 @@ namespace UNObot.Core.Modules
 
             var stats = await _db.GetStats(userid);
             var note = await _db.GetNote(userid);
-            if (note != null) await ReplyAsync($"NOTE: {note}");
-            await ReplyAsync($"{Context.Client.GetUser(userid).Username}'s stats:\n"
-                             + $"Games joined: {stats[0]}\n"
-                             + $"Games fully played: {stats[1]}\n"
-                             + $"Games won: {stats[2]}");
+            await ReplyAsync(note != null ? $"NOTE: {note}\n" : "" 
+                + $"{Context.Client.GetUser(userid).Username}'s stats:\n"
+                + $"Games joined: {stats.GamesJoined}\n"
+                + $"Games fully played: {stats.GamesPlayed}\n"
+                + $"Games won: {stats.GamesWon}");
         }
 
         [Command("setnote", RunMode = RunMode.Async)]
         [Help(new[] {".setnote"}, "Set a note about yourself. Write nothing to delete your message", true,
             "UNObot 2.1")]
-        internal async Task SetNote()
+        public async Task SetNote()
         {
             await _db.RemoveNote(Context.User.Id);
             await ReplyAsync("Successfully removed note!");
@@ -153,7 +154,7 @@ namespace UNObot.Core.Modules
         [Command("setnote", RunMode = RunMode.Async)]
         [Help(new[] {".setnote"}, "Set a note about yourself. Write nothing to delete your message", true,
             "UNObot 2.1")]
-        internal async Task SetNote([Remainder] string text)
+        public async Task SetNote([Remainder] string text)
         {
             text = text.Trim().Normalize();
             if (text == "")
@@ -174,7 +175,7 @@ namespace UNObot.Core.Modules
         [RequireOwner]
         [Help(new[] {".setusernote"}, "Set a note about others. This command can only be ran by DoggySazHi.", false,
             "UNObot 2.1")]
-        internal async Task SetNote(string user, [Remainder] string text)
+        public async Task SetNote(string user, [Remainder] string text)
         {
             user = user.Trim(' ', '<', '>', '!', '@');
             if (!ulong.TryParse(user, out var userid))
@@ -198,7 +199,7 @@ namespace UNObot.Core.Modules
 
         [Command("removenote", RunMode = RunMode.Async)]
         [Help(new[] {".removenote"}, "Remove your current note.", true, "UNObot 2.1")]
-        internal async Task RemoveNote()
+        public async Task RemoveNote()
         {
             await _db.RemoveNote(Context.User.Id);
             await ReplyAsync("Successfully removed note!");
@@ -209,7 +210,7 @@ namespace UNObot.Core.Modules
         [DisableDMs]
         [Help(new[] {".draw"}, "Draw a randomized card, which is based off probabilities instead of the real deck.",
             true, "UNObot 0.2")]
-        internal async Task Draw()
+        public async Task Draw()
         {
             await _db.AddGame(Context.Guild.Id);
             await _db.AddUser(Context.User.Id, Context.User.Username);
@@ -261,7 +262,7 @@ namespace UNObot.Core.Modules
         [Alias("hand", "cards", "d", "h")]
         [DisableDMs]
         [Help(new[] {".deck"}, "View all of the cards you possess.", true, "UNObot 0.2")]
-        internal async Task Deck()
+        public async Task Deck()
         {
             await _db.AddGame(Context.Guild.Id);
             await _db.AddUser(Context.User.Id, Context.User.Username);
@@ -275,6 +276,7 @@ namespace UNObot.Core.Modules
                         await Context.Message.Author.SendMessageAsync(
                             $"You have {num} {(num == 1 ? "card" : "cards")} left.", false,
                             await _embed.DisplayCards(Context.User.Id, Context.Guild.Id));
+                        _afk.ResetTimer(Context.Guild.Id);
                     }
                     else
                     {
@@ -315,7 +317,7 @@ namespace UNObot.Core.Modules
         [DisableDMs]
         [Help(new[] {".skip"}, "Skip your turn if the game is in fast mode. However, you are forced to draw two cards.",
             true, "UNObot 2.7")]
-        internal async Task Skip()
+        public async Task Skip()
         {
             if (await _db.IsPlayerInGame(Context.User.Id))
             {
@@ -416,7 +418,7 @@ namespace UNObot.Core.Modules
         [Alias("top", "c")]
         [DisableDMs]
         [Help(new[] {".card"}, "See the most recently placed card.", true, "UNObot 0.2")]
-        internal async Task CardCmd()
+        public async Task CardCmd()
         {
             await _db.AddGame(Context.Guild.Id);
             await _db.AddUser(Context.User.Id, Context.User.Username);
@@ -451,7 +453,7 @@ namespace UNObot.Core.Modules
         [Help(new[] {".quickplay"},
             "Autodraw/play the first card possible. This is very inefficient, and should only be used if you are saving a wild card, or you don't have usable cards left.",
             true, "UNObot 2.4")]
-        internal async Task QuickPlay()
+        public async Task QuickPlay()
         {
             async Task SkipQP()
             {
@@ -562,7 +564,7 @@ namespace UNObot.Core.Modules
         [Help(new[] {".players"},
             "See all players in the game, as well as the amount of cards they have. Note however that if the server is running in private mode, it will not show the exact amount of cards that they have.",
             false, "UNObot 1.0")]
-        internal async Task Players()
+        public async Task Players()
         {
             await ReplyAsync(".players has been deprecated and has been replaced with .game.");
             await Game();
@@ -571,7 +573,7 @@ namespace UNObot.Core.Modules
         [Command("game", RunMode = RunMode.Async)]
         [Help(new[] {".game"}, "Display all information about the current game.", true, "UNObot 3.0")]
         [DisableDMs]
-        internal async Task Game()
+        public async Task Game()
         {
             await _db.AddGame(Context.Guild.Id);
             await _db.AddUser(Context.User.Id, Context.User.Username);
@@ -586,7 +588,7 @@ namespace UNObot.Core.Modules
         [Alias("q")]
         [DisableDMs]
         [Help(new[] {".queue"}, "See which players are currently waiting to play a game.", true, "UNObot 2.4")]
-        internal async Task Queue()
+        public async Task Queue()
         {
             await _db.AddGame(Context.Guild.Id);
             await _db.AddUser(Context.User.Id, Context.User.Username);
@@ -614,7 +616,7 @@ namespace UNObot.Core.Modules
         [Alias("u")]
         [DisableDMs]
         [Help(new[] {".uno"}, "Quickly use this when you have one card left.", true, "UNObot 0.2")]
-        internal async Task CallUNO()
+        public async Task CallUNO()
         {
             await _db.AddGame(Context.Guild.Id);
             await _db.AddUser(Context.User.Id, Context.User.Username);
@@ -674,7 +676,7 @@ namespace UNObot.Core.Modules
         [Help(new[] {".start"},
             "Start the game you have joined in the current server. Now, you can also add an option to it, which currently include \"fast\", which allows the skip command, \"retro\", which like fast, allows skipping but limits draws, \"unocallout\", allowing .uno to be used to penalize a person who forgot to call out UNO, and \"private\", preventing others to see the exact amount of cards you have.",
             true, "UNObot 0.2")]
-        internal async Task Start()
+        public async Task Start()
         {
             await Start("normal");
         }
@@ -684,7 +686,7 @@ namespace UNObot.Core.Modules
         [Help(new[] {".start (gamemode)"},
             "Start the game you have joined in the current server. Now, you can also add an option to it, which currently include \"fast\", which allows the skip command, \"retro\", which like fast, allows skipping but limits draws, \"unocallout\", allowing .uno to be used to penalize a person who forgot to call out UNO, and \"private\", preventing others to see the exact amount of cards you have.",
             true, "UNObot 0.2")]
-        internal async Task Start(params string[] modes)
+        public async Task Start(params string[] modes)
         {
             if (await _db.IsPlayerInGame(Context.User.Id))
             {
@@ -787,7 +789,7 @@ namespace UNObot.Core.Modules
         [Help(new[] {".play (color) (value)"},
             "Play a card that is of the same color or value. Exceptions include all Wild cards, which you can play on any card.",
             true, "UNObot 0.2")]
-        internal async Task Play(string color, string value)
+        public async Task Play(string color, string value)
         {
             if (await _db.IsPlayerInGame(Context.User.Id))
             {
@@ -836,7 +838,7 @@ namespace UNObot.Core.Modules
         [Help(new[] {".play (color) (value) (new color/uno)"},
             "Play a card that is of the same color or value. Exceptions include all Wild cards, which you can play on any card.",
             true, "UNObot 0.2")]
-        internal async Task Play(string color, string value, string option)
+        public async Task Play(string color, string value, string option)
         {
             if (color.ToLower()[0] == 'w')
                 await PlayWild(color, value, option);
@@ -854,7 +856,7 @@ namespace UNObot.Core.Modules
         [Help(new[] {".play (color) (value) (new color) (uno)"},
             "Play a card that is of the same color or value. Exceptions include all Wild cards, which you can play on any card.",
             true, "UNObot 0.2")]
-        internal async Task Play(string color, string value, string wild, string option)
+        public async Task Play(string color, string value, string wild, string option)
         {
             await PlayWild(color, value, wild);
             if (option.ToLower()[0] == 'u')

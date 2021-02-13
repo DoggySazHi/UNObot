@@ -5,7 +5,7 @@ using UNObot.Plugins;
 
 namespace UNObot.Services
 {
-    internal class DebugService
+    public class DebugService
     {
         public DebugService(IConfiguration config, ILogger logger)
         {

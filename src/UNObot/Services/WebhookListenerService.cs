@@ -16,13 +16,13 @@ using UNObot.Plugins;
 
 namespace UNObot.Services
 {
-    internal enum WebhookType : byte
+    public enum WebhookType : byte
     {
         Bitbucket = 0,
         OctoPrint = 1
     }
 
-    internal class WebhookListenerService : IDisposable
+    public class WebhookListenerService : IDisposable
     {
         private readonly byte[] _defaultResponse;
         private readonly ManualResetEvent _exited;
@@ -328,28 +328,28 @@ namespace UNObot.Services
             }
         }
 
-        internal struct CommitInfo
+        public struct CommitInfo
         {
-            internal string RepoName { get; set; }
-            internal string RepoAvatar { get; set; }
+            public string RepoName { get; set; }
+            public string RepoAvatar { get; set; }
 
-            internal string CommitHash { get; set; }
-            internal string CommitMessage { get; set; }
-            internal DateTime CommitDate { get; set; }
+            public string CommitHash { get; set; }
+            public string CommitMessage { get; set; }
+            public DateTime CommitDate { get; set; }
 
-            internal string UserName { get; set; }
-            internal string UserAvatar { get; set; }
+            public string UserName { get; set; }
+            public string UserAvatar { get; set; }
         }
 
-        internal struct OctoprintInfo
+        public struct OctoprintInfo
         {
-            internal string Topic { get; set; }
-            internal JObject Extra { get; set; }
-            internal string Message { get; set; }
-            internal JObject Progress { get; set; }
-            internal JObject State { get; set; }
-            internal JObject Job { get; set; }
-            internal DateTimeOffset Timestamp { get; set; }
+            public string Topic { get; set; }
+            public JObject Extra { get; set; }
+            public string Message { get; set; }
+            public JObject Progress { get; set; }
+            public JObject State { get; set; }
+            public JObject Job { get; set; }
+            public DateTimeOffset Timestamp { get; set; }
         }
     }
 }

@@ -159,7 +159,7 @@ namespace DuplicateDetector.Services
                 await using var reader = await mySQLCmd.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {
-                    var url = reader.GetString(1) ?? reader.GetString(2);
+                    var url = reader.GetString(1);
 #pragma warning disable 4014
                     DownloadImage(url, reader.GetInt32(0));
 #pragma warning restore 4014

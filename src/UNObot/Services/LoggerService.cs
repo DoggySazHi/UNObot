@@ -9,7 +9,7 @@ using UNObot.Plugins;
 
 namespace UNObot.Services
 {
-    internal struct Log
+    public struct Log
     {
         public LogSeverity Severity { get; set; }
         public string Message { get; set; }

@@ -11,16 +11,16 @@ using static UNObot.ServerQuery.Services.IRCON;
 
 namespace UNObot.ServerQuery.Services
 {
-    internal class MCUser
+    public class MCUser
     {
-        internal string Username { get; set; }
-        internal string Ouchies { get; set; }
-        internal bool Online { get; set; }
-        internal double[] Coordinates { get; set; }
-        internal string Health { get; set; }
-        internal string Food { get; set; }
-        internal int Experience { get; set; }
-        internal int ExperienceLevels { get; set; }
+        public string Username { get; set; }
+        public string Ouchies { get; set; }
+        public bool Online { get; set; }
+        public double[] Coordinates { get; set; }
+        public string Health { get; set; }
+        public string Food { get; set; }
+        public int Experience { get; set; }
+        public int ExperienceLevels { get; set; }
     }
 
     public class MinecraftProcessorService
@@ -35,7 +35,7 @@ namespace UNObot.ServerQuery.Services
         }
         
         // NOTE: It's the query port!
-        internal List<MCUser> GetMCUsers(string ip, ushort port, string password, out IRCON client,
+        public List<MCUser> GetMCUsers(string ip, ushort port, string password, out IRCON client,
             bool dispose = true)
         {
             var output = new List<MCUser>();

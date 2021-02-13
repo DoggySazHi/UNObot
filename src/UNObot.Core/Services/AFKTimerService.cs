@@ -26,7 +26,7 @@ namespace UNObot.Core.Services
             _client = client;
         }
 
-        internal void ResetTimer(ulong server)
+        public void ResetTimer(ulong server)
         {
             if (!PlayTimers.ContainsKey(server))
             {
@@ -39,7 +39,7 @@ namespace UNObot.Core.Services
             }
         }
 
-        internal void StartTimer(ulong server)
+        public void StartTimer(ulong server)
         {
             _logger.Log(LogSeverity.Debug, "Starting timer!");
             if (PlayTimers.ContainsKey(server))

@@ -16,7 +16,7 @@ namespace UNObot.Core.Services
     {
         private readonly ILogger _logger;
 
-        internal string ConnString { get; }
+        public string ConnString { get; }
 
         public DatabaseService(IConfiguration config, ILogger logger)
         {
@@ -24,7 +24,7 @@ namespace UNObot.Core.Services
             ConnString = config.GetConnectionString();
         }
 
-        internal async Task<bool> IsServerInGame(ulong server)
+        public async Task<bool> IsServerInGame(ulong server)
         {
             var inGame = false;
 
@@ -43,7 +43,7 @@ namespace UNObot.Core.Services
             return inGame;
         }
 
-        internal async Task AddGame(ulong server)
+        public async Task AddGame(ulong server)
         {
             const string commandText = "INSERT IGNORE INTO Games (server) VALUES(@Server)";
 
@@ -58,7 +58,7 @@ namespace UNObot.Core.Services
             }
         }
 
-        internal async Task UpdateDescription(ulong server, string text)
+        public async Task UpdateDescription(ulong server, string text)
         {
             const string commandText = "UPDATE Games SET description = @Description WHERE server = @Server";
 
@@ -73,7 +73,7 @@ namespace UNObot.Core.Services
             }
         }
 
-        internal async Task<string> GetDescription(ulong server)
+        public async Task<string> GetDescription(ulong server)
         {
             const string commandText = "SELECT description FROM UNObot.Games WHERE server = @Server";
             var description = "";
@@ -91,7 +91,7 @@ namespace UNObot.Core.Services
             return description;
         }
 
-        internal async Task ResetGame(ulong server)
+        public async Task ResetGame(ulong server)
         {
             const string commandText =
                 "UPDATE Games SET inGame = 0, currentCard = '[]', `order` = 1, oneCardLeft = 0, queue = '[]', description = null WHERE server = @Server";
@@ -107,7 +107,7 @@ namespace UNObot.Core.Services
             }
         }
 
-        internal async Task AddUser(ulong id, string username, ulong server)
+        public async Task AddUser(ulong id, string username, ulong server)
         {
             const string commandText =
                 "INSERT INTO Players (userid, username, inGame, cards, server) VALUES(@UserID, @Username, 1, '[]', @Server) ON DUPLICATE KEY UPDATE username = @Username, inGame = 1, cards = '[]', server = @Server";
@@ -123,7 +123,7 @@ namespace UNObot.Core.Services
             }
         }
 
-        internal async Task AddUser(ulong id, string username)
+        public async Task AddUser(ulong id, string username)
         {
             const string commandText =
                 "INSERT INTO Players (userid, username) VALUES(@UserID, @Username) ON DUPLICATE KEY UPDATE username = @Username";
@@ -139,7 +139,7 @@ namespace UNObot.Core.Services
             }
         }
 
-        internal async Task RemoveUser(ulong id)
+        public async Task RemoveUser(ulong id)
         {
             const string commandText =
                 "INSERT INTO Players (userid, inGame, cards, server) VALUES(@UserID, 0, '[]', null) ON DUPLICATE KEY UPDATE inGame = 0, cards = '[]', server = null";
@@ -155,12 +155,12 @@ namespace UNObot.Core.Services
             }
         }
 
-        internal async Task AddGuild(ulong guild, ushort inGame)
+        public async Task AddGuild(ulong guild, ushort inGame)
         {
             await AddGuild(guild, inGame, 1);
         }
 
-        internal async Task AddGuild(ulong guild, ushort inGame, ushort gameMode)
+        public async Task AddGuild(ulong guild, ushort inGame, ushort gameMode)
         {
             const string commandText =
                 "INSERT INTO Games (server, inGame, gameMode) VALUES(@Server, @InGame, @GameMode) ON DUPLICATE KEY UPDATE inGame = @InGame, gameMode = @GameMode";
@@ -176,7 +176,7 @@ namespace UNObot.Core.Services
             }
         }
 
-        internal async Task<GameMode> GetGameMode(ulong server)
+        public async Task<GameMode> GetGameMode(ulong server)
         {
             var gamemode = GameMode.Normal;
 
@@ -196,7 +196,7 @@ namespace UNObot.Core.Services
         }
 
         //NOTE THAT THIS GETS DIRECTLY FROM SERVER; YOU MUST AddPlayersToServer
-        internal async Task<Queue<ulong>> GetPlayers(ulong server)
+        public async Task<Queue<ulong>> GetPlayers(ulong server)
         {
             const string commandText = "SELECT queue FROM Games WHERE inGame = 1 AND server = @Server";
 
@@ -215,7 +215,7 @@ namespace UNObot.Core.Services
             return players;
         }
 
-        internal async Task<ulong> GetUserServer(ulong player)
+        public async Task<ulong> GetUserServer(ulong player)
         {
             ulong server = 0;
 
@@ -234,7 +234,7 @@ namespace UNObot.Core.Services
             return server;
         }
 
-        internal async Task SetPlayers(ulong server, Queue<ulong> players)
+        public async Task SetPlayers(ulong server, Queue<ulong> players)
         {
             const string commandText = "UPDATE Games SET queue = @Queue WHERE inGame = 1 AND server = @Server";
             var json = JsonConvert.SerializeObject(players);
@@ -250,7 +250,7 @@ namespace UNObot.Core.Services
             }
         }
 
-        internal async Task<Queue<ulong>> GetUsersWithServer(ulong server)
+        public async Task<Queue<ulong>> GetUsersWithServer(ulong server)
         {
             const string commandText = "SELECT userid FROM Players WHERE inGame = 1 AND server = @Server";
             var players = new Queue<ulong>();
@@ -268,7 +268,7 @@ namespace UNObot.Core.Services
             return players;
         }
 
-        internal async Task<ulong> GetUNOPlayer(ulong server)
+        public async Task<ulong> GetUNOPlayer(ulong server)
         {
             ulong player = 0;
 
@@ -287,7 +287,7 @@ namespace UNObot.Core.Services
             return player;
         }
 
-        internal async Task SetUNOPlayer(ulong server, ulong player)
+        public async Task SetUNOPlayer(ulong server, ulong player)
         {
             const string commandText = "UPDATE Games SET oneCardLeft = @UserID WHERE inGame = 1 AND server = @Server";
 
@@ -302,7 +302,7 @@ namespace UNObot.Core.Services
             }
         }
 
-        internal async Task<Card> GetCurrentCard(ulong server)
+        public async Task<Card> GetCurrentCard(ulong server)
         {
             const string commandText = "SELECT currentCard FROM Games WHERE inGame = 1 AND server = @Server";
 
@@ -323,7 +323,7 @@ namespace UNObot.Core.Services
             return card;
         }
 
-        internal async Task SetCurrentCard(ulong server, Card card)
+        public async Task SetCurrentCard(ulong server, Card card)
         {
             const string commandText = "UPDATE Games SET currentCard = @Card WHERE inGame = 1 AND server = @Server";
             var cardJson = JsonConvert.SerializeObject(card);
@@ -339,7 +339,7 @@ namespace UNObot.Core.Services
             }
         }
 
-        internal async Task<bool> IsPlayerInGame(ulong player)
+        public async Task<bool> IsPlayerInGame(ulong player)
         {
             var result = false;
 
@@ -358,7 +358,7 @@ namespace UNObot.Core.Services
             return result;
         }
 
-        internal async Task<bool> IsPlayerInServerGame(ulong player, ulong server)
+        public async Task<bool> IsPlayerInServerGame(ulong player, ulong server)
         {
             const string commandText = "SELECT queue FROM UNObot.Games WHERE server = @Server";
 
@@ -378,7 +378,7 @@ namespace UNObot.Core.Services
             return players.Contains(player);
         }
 
-        internal async Task<List<Card>> GetCards(ulong player)
+        public async Task<List<Card>> GetCards(ulong player)
         {
             const string commandText = "SELECT cards FROM UNObot.Players WHERE userid = @UserID";
             var cards = new List<Card>();
@@ -398,7 +398,7 @@ namespace UNObot.Core.Services
             return cards;
         }
 
-        internal async Task<bool> UserExists(ulong player)
+        public async Task<bool> UserExists(ulong player)
         {
             const string commandText = "SELECT EXISTS(SELECT 1 FROM UNObot.Players WHERE userid = @UserID)";
             var exists = false;
@@ -416,7 +416,7 @@ namespace UNObot.Core.Services
             return exists;
         }
 
-        internal async Task GetUsersAndAdd(ulong server)
+        public async Task GetUsersAndAdd(ulong server)
         {
             var players = await GetUsersWithServer(server);
             //slight randomization of order
@@ -439,36 +439,34 @@ namespace UNObot.Core.Services
             }
         }
 
-        internal async Task StarterCard(ulong server)
+        public async Task StarterCard(ulong server)
         {
             var players = await GetPlayers(server);
             foreach (var player in players)
                 await AddCard(player, Card.RandomCard(7));
         }
 
-        internal async Task<int[]> GetStats(ulong player)
+        public async Task<(int GamesJoined, int GamesPlayed, int GamesWon)> GetStats(ulong player)
         {
             const string commandText =
                 "SELECT gamesJoined, gamesPlayed, gamesWon FROM UNObot.Players WHERE userid = @UserID";
-
-            int[] stats = {0, 0, 0};
+            
             await using var db = new MySqlConnection(ConnString);
             try
             {
-                var results = await db.QueryFirstAsync(commandText, new {UserID = player});
-                stats[0] = results[0];
-                stats[1] = results[1];
-                stats[2] = results[2];
+                var results = await db.QueryFirstOrDefaultAsync(commandText, new {UserID = player});
+                if (!ReferenceEquals(null, results))
+                    return (results.gamesJoined, results.gamesPlayed, results.gamesWon);
             }
             catch (MySqlException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
 
-            return stats;
+            return (0, 0, 0);
         }
 
-        internal async Task<string> GetNote(ulong player)
+        public async Task<string> GetNote(ulong player)
         {
             const string commandText = "SELECT note FROM UNObot.Players WHERE userid = @UserID";
 
@@ -486,7 +484,7 @@ namespace UNObot.Core.Services
             return message;
         }
 
-        internal async Task SetNote(ulong player, string note)
+        public async Task SetNote(ulong player, string note)
         {
             const string commandText = "UPDATE UNObot.Players SET note = @Note WHERE userid = @UserID";
 
@@ -501,7 +499,7 @@ namespace UNObot.Core.Services
             }
         }
 
-        internal async Task RemoveNote(ulong player)
+        public async Task RemoveNote(ulong player)
         {
             const string commandText = "UPDATE UNObot.Players SET note = NULL WHERE userid = @UserID";
 
@@ -516,7 +514,7 @@ namespace UNObot.Core.Services
             }
         }
 
-        internal async Task UpdateStats(ulong player, int mode)
+        public async Task UpdateStats(ulong player, int mode)
         {
             //1 is gamesJoined
             //2 is gamesPlayed
@@ -541,7 +539,7 @@ namespace UNObot.Core.Services
             }
         }
 
-        internal async Task AddCard(ulong player, params Card[] cardsAdd)
+        public async Task AddCard(ulong player, params Card[] cardsAdd)
         {
             var cards = await GetCards(player) ?? new List<Card>();
             cards.AddRange(cardsAdd);
@@ -566,7 +564,7 @@ namespace UNObot.Core.Services
             }
         }
 
-        internal async Task<bool> RemoveCard(ulong player, Card card)
+        public async Task<bool> RemoveCard(ulong player, Card card)
         {
             var foundCard = false;
             var cards = await GetCards(player);
@@ -602,7 +600,7 @@ namespace UNObot.Core.Services
             return true;
         }
 
-        internal async Task SetServerCards(ulong server, List<Card> cards)
+        public async Task SetServerCards(ulong server, List<Card> cards)
         {
             const string commandText = "UPDATE Games SET cards = @Cards WHERE server = @Server";
 
@@ -619,7 +617,7 @@ namespace UNObot.Core.Services
             }
         }
 
-        internal async Task<List<Card>> GetServerCards(ulong server)
+        public async Task<List<Card>> GetServerCards(ulong server)
         {
             var cards = new List<Card>();
             const string commandText = "SELECT cards FROM UNObot.Games WHERE server = @Server";
@@ -639,7 +637,7 @@ namespace UNObot.Core.Services
             return cards;
         }
 
-        internal async Task<int> GetCardsDrawn(ulong server)
+        public async Task<int> GetCardsDrawn(ulong server)
         {
             const string commandText = "SELECT cardsDrawn FROM UNObot.Games WHERE server = @Server";
             var cardsDrawn = 0;
@@ -657,7 +655,7 @@ namespace UNObot.Core.Services
             return cardsDrawn;
         }
 
-        internal async Task SetCardsDrawn(ulong server, int count)
+        public async Task SetCardsDrawn(ulong server, int count)
         {
             const string commandText = "UPDATE Games SET cardsDrawn = @CardsDrawn WHERE server = @Server";
 
@@ -673,11 +671,11 @@ namespace UNObot.Core.Services
         }
 
         /*
-        internal class Server
+        public class Server
         {
-            internal bool InGame;
+            public bool InGame;
 
-            internal Server(ulong ID)
+            public Server(ulong ID)
             {
                 this.ID = ID;
                 const string CommandText = "SELECT * FROM UNObot.Games WHERE server = ?";
@@ -721,25 +719,25 @@ namespace UNObot.Core.Services
                 }
             }
 
-            internal ulong ID { get; }
-            internal UNOCoreServices.GameMode Gamemode { get; }
+            public ulong ID { get; }
+            public UNOCoreServices.GameMode Gamemode { get; }
             private string CurrentCardJSON { get; }
-            internal Card CurrentCard { get; private set; }
-            internal ulong UNOUser { get; }
-            internal int CardsDrawn { get; }
+            public Card CurrentCard { get; private set; }
+            public ulong UNOUser { get; }
+            public int CardsDrawn { get; }
             private string QueueJSON { get; }
-            internal Queue<ulong> Queue { get; private set; }
-            internal string Description { get; }
-            internal ulong PlayChannel { get; }
-            internal bool HasDefaultChannel { get; }
-            internal bool EnforceChannel { get; }
+            public Queue<ulong> Queue { get; private set; }
+            public string Description { get; }
+            public ulong PlayChannel { get; }
+            public bool HasDefaultChannel { get; }
+            public bool EnforceChannel { get; }
             private string AllowedChannelsJSON { get; }
-            internal List<ulong> AllowedChannels { get; private set; }
-            internal char CommandPrefix { get; }
+            public List<ulong> AllowedChannels { get; private set; }
+            public char CommandPrefix { get; }
             private string CardsJSON { get; }
-            internal List<Card> Cards { get; private set; }
+            public List<Card> Cards { get; private set; }
 
-            internal void ParseJSON()
+            public void ParseJSON()
             {
                 CurrentCard = JsonConvert.DeserializeObject<Card>(CurrentCardJSON);
                 Queue = JsonConvert.DeserializeObject<Queue<ulong>>(QueueJSON);

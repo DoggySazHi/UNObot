@@ -39,7 +39,7 @@ namespace DuplicateDetector.Templates
                 new JProperty("connStr",
                     "server=127.0.0.1;user=DuplicateDetector;database=DuplicateDetector;port=3306;password=DBPassword")
             );
-            Directory.CreateDirectory(Path.GetDirectoryName(file));
+            Directory.CreateDirectory(Path.GetDirectoryName(file) ?? string.Empty);
             using var sr = File.CreateText(file);
             sr.Write(obj);
         }

@@ -15,7 +15,7 @@ using YoutubeExplode.Videos.Streams;
 
 namespace UNObot.MusicBot.Services
 {
-    internal class YoutubeService
+    public class YoutubeService
     {
         // Seconds.
         private const double DlTimeout = 5.0;
@@ -43,7 +43,7 @@ namespace UNObot.MusicBot.Services
             Directory.CreateDirectory(DownloadPath);
         }
 
-        internal async Task<Tuple<string, string, string>> GetInfo(string url)
+        public async Task<Tuple<string, string, string>> GetInfo(string url)
         {
             url = url.Replace("<", "").Replace(">", "");
             _logger.Log(LogSeverity.Debug, url);
@@ -52,7 +52,7 @@ namespace UNObot.MusicBot.Services
             return new Tuple<string, string, string>(videoData.Title, duration, videoData.Thumbnails.MediumResUrl);
         }
 
-        internal async Task<Tuple<Tuple<string, string, string>, string>> SearchVideo(string query)
+        public async Task<Tuple<Tuple<string, string, string>, string>> SearchVideo(string query)
         {
             _logger.Log(LogSeverity.Verbose, "Searching videos...");
             var data = await _client.Search.GetVideosAsync(query).FirstOrDefaultAsync();
@@ -65,7 +65,7 @@ namespace UNObot.MusicBot.Services
                 data.Url);
         }
 
-        internal async Task<Playlist> GetPlaylist(string url)
+        public async Task<Playlist> GetPlaylist(string url)
         {
             url = url.Replace("<", "").Replace(">", "");
             _logger.Log(LogSeverity.Debug, url);
@@ -73,13 +73,13 @@ namespace UNObot.MusicBot.Services
             return videoData;
         }
 
-        internal async Task<List<Video>> GetPlaylistVideos(PlaylistId id)
+        public async Task<List<Video>> GetPlaylistVideos(PlaylistId id)
         {
             var videos = await _client.Playlists.GetVideosAsync(id).ToListAsync();
             return videos;
         }
 
-        internal async Task<string> GetPlaylistThumbnail(PlaylistId id)
+        public async Task<string> GetPlaylistThumbnail(PlaylistId id)
         {
             var video = await _client.Playlists.GetVideosAsync(id).FirstAsync();
             return video.Thumbnails.MediumResUrl;
@@ -93,7 +93,7 @@ namespace UNObot.MusicBot.Services
             return directoryPath;
         }
 
-        internal void DeleteGuildFolder(ulong guild, params string[] skip)
+        public void DeleteGuildFolder(ulong guild, params string[] skip)
         {
             var musicPath = PathToGuildFolder(guild);
             var files = Directory.GetFiles(musicPath);
@@ -118,7 +118,7 @@ namespace UNObot.MusicBot.Services
                 }
         }
 
-        internal async Task<string> Download(string url, ulong guild)
+        public async Task<string> Download(string url, ulong guild)
         {
             url = url.TrimStart('<', '>').TrimEnd('<', '>');
 
@@ -206,7 +206,7 @@ namespace UNObot.MusicBot.Services
             return fileName;
         }
 
-        internal static string TimeString(TimeSpan ts)
+        public static string TimeString(TimeSpan ts)
         {
             return $"{(ts.Hours > 0 ? $"{ts.Hours}:" : "")}{ts.Minutes:00}:{ts.Seconds:00}";
         }

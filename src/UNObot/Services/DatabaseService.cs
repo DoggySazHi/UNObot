@@ -11,11 +11,11 @@ using UNObot.Plugins.Helpers;
 
 namespace UNObot.Services
 {
-    internal class DatabaseService
+    public class DatabaseService
     {
         private readonly ILogger _logger;
 
-        internal string ConnString { get; }
+        public string ConnString { get; }
 
         public DatabaseService(ILogger logger, IConfiguration config)
         {
@@ -23,14 +23,14 @@ namespace UNObot.Services
             ConnString = config.GetConnectionString();
         }
 
-        internal async Task SetDefaultChannel(ulong server, ulong channel)
+        public async Task SetDefaultChannel(ulong server, ulong channel)
         {
             const string commandText = "UPDATE Games SET playChannel = @Channel WHERE server = @Server";
 
             await using var db = new MySqlConnection(ConnString);
             try
             {
-                await db.ExecuteAsync(commandText, new { });
+                await db.ExecuteAsync(commandText, new { Channel = channel, Server = server });
             }
             catch (MySqlException ex)
             {
@@ -38,7 +38,7 @@ namespace UNObot.Services
             }
         }
 
-        internal async Task SetHasDefaultChannel(ulong server, bool hasDefault)
+        public async Task SetHasDefaultChannel(ulong server, bool hasDefault)
         {
             const string commandText = "UPDATE Games SET hasDefaultChannel = @HasDefaultChannel WHERE server = @Server";
 
@@ -53,7 +53,7 @@ namespace UNObot.Services
             }
         }
 
-        internal async Task<bool> ChannelEnforced(ulong server)
+        public async Task<bool> ChannelEnforced(ulong server)
         {
             const string commandText = "SELECT enforceChannel FROM UNObot.Games WHERE server = @Server";
             var result = false;
@@ -71,7 +71,7 @@ namespace UNObot.Services
             return result;
         }
 
-        internal async Task SetEnforceChannel(ulong server, bool enforce)
+        public async Task SetEnforceChannel(ulong server, bool enforce)
         {
             const string commandText = "UPDATE Games SET enforceChannel = @Enforce WHERE server = @Server";
 
@@ -86,7 +86,7 @@ namespace UNObot.Services
             }
         }
 
-        internal async Task<List<ulong>> GetAllowedChannels(ulong server)
+        public async Task<List<ulong>> GetAllowedChannels(ulong server)
         {
             const string commandText = "SELECT allowedChannels FROM UNObot.Games WHERE server = @Server";
 
@@ -107,7 +107,7 @@ namespace UNObot.Services
             return allowedChannels;
         }
 
-        internal async Task SetAllowedChannels(ulong server, List<ulong> allowedChannels)
+        public async Task SetAllowedChannels(ulong server, List<ulong> allowedChannels)
         {
             const string commandText = "UPDATE Games SET allowedChannels = @AllowedChannels WHERE server = @Server";
             var json = JsonConvert.SerializeObject(allowedChannels);
@@ -123,7 +123,7 @@ namespace UNObot.Services
             }
         }
 
-        internal async Task AddUser(ulong id, string username)
+        public async Task AddUser(ulong id, string username)
         {
             const string commandText =
                 "INSERT INTO Players (userid, username) VALUES(@UserID, @Username) ON DUPLICATE KEY UPDATE username = @Username";
@@ -139,7 +139,7 @@ namespace UNObot.Services
             }
         }
 
-        internal async Task AddGame(ulong server)
+        public async Task AddGame(ulong server)
         {
             const string commandText = "INSERT IGNORE INTO Games (server) VALUES(@Server)";
 
@@ -154,7 +154,7 @@ namespace UNObot.Services
             }
         }
 
-        internal async Task AddWebhook(string key, ulong guild, ulong channel, string type = "bitbucket")
+        public async Task AddWebhook(string key, ulong guild, ulong channel, string type = "bitbucket")
         {
             const string commandText =
                 "INSERT INTO UNObot.Webhooks (webhookKey, channel, guild, type) VALUES (@Key, @Channel, @Guild, @Type)";
@@ -171,7 +171,7 @@ namespace UNObot.Services
             }
         }
 
-        internal async Task DeleteWebhook(string key)
+        public async Task DeleteWebhook(string key)
         {
             const string commandText = "DELETE FROM UNObot.Webhooks WHERE webhookKey = @Key";
 
@@ -186,7 +186,7 @@ namespace UNObot.Services
             }
         }
 
-        internal async Task<(ulong Guild, byte Type)> GetWebhook(ulong channel, string key)
+        public async Task<(ulong Guild, byte Type)> GetWebhook(ulong channel, string key)
         {
             const string commandText =
                 "SELECT guild, type FROM UNObot.Webhooks WHERE channel = @Channel AND webhookKey = @Key";
@@ -209,7 +209,7 @@ namespace UNObot.Services
             return (guild, type);
         }
 
-        internal async Task<string> GetPrefix(ulong server)
+        public async Task<string> GetPrefix(ulong server)
         {
             const string commandText = "SELECT commandPrefix FROM UNObot.Games WHERE server = @Server";
             var prefix = ".";
@@ -227,7 +227,7 @@ namespace UNObot.Services
             return prefix;
         }
 
-        internal async Task SetPrefix(ulong server, string prefix)
+        public async Task SetPrefix(ulong server, string prefix)
         {
             const string commandText = "UPDATE UNObot.Games SET commandPrefix = @Prefix WHERE server = @Server";
 
@@ -235,6 +235,44 @@ namespace UNObot.Services
             try
             {
                 await db.ExecuteAsync(commandText, new {Prefix = prefix, Server = server});
+            }
+            catch (MySqlException ex)
+            {
+                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+            }
+        }
+
+        public async Task<SettingsManager> GetSettings(ulong server)
+        {
+            const string commandText = "SELECT settings FROM UNObot.Games WHERE server = @Server";
+
+            await using var db = new MySqlConnection(ConnString);
+            try
+            {
+                var result = await db.ExecuteScalarAsync<string>(commandText, new {Server = server});
+                if (result.HasDBValue())
+                    return JsonConvert.DeserializeObject<SettingsManager>(result);
+            }
+            catch (MySqlException ex)
+            {
+                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+            }
+            catch (JsonSerializationException)
+            {
+                // ¯\_(ツ)_/¯ Deal with it! (Recreate the settings manager)
+            }
+
+            return new SettingsManager();
+        }
+
+        public async Task SetSettings(ulong server, ulong settings)
+        {
+            const string commandText = "UPDATE UNObot.Games SET settings = @Settings WHERE server = @Server";
+
+            await using var db = new MySqlConnection(ConnString);
+            try
+            {
+                await db.ExecuteAsync(commandText, new { Settings = settings, Server = server});
             }
             catch (MySqlException ex)
             {

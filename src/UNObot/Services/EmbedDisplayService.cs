@@ -9,7 +9,7 @@ using UNObot.Plugins.TerminalCore;
 
 namespace UNObot.Services
 {
-    internal class EmbedDisplayService
+    public class EmbedDisplayService
     {
         private readonly IConfiguration _config;
 
@@ -18,7 +18,7 @@ namespace UNObot.Services
             _config = config;
         }
 
-        internal Embed WebhookEmbed(WebhookListenerService.CommitInfo info)
+        public Embed WebhookEmbed(WebhookListenerService.CommitInfo info)
         {
             var random = ThreadSafeRandom.ThisThreadsRandom;
 
@@ -43,7 +43,7 @@ namespace UNObot.Services
             return builder.Build();
         }
 
-        internal Embed OctoprintEmbed(WebhookListenerService.OctoprintInfo info)
+        public Embed OctoprintEmbed(WebhookListenerService.OctoprintInfo info)
         {
             var random = ThreadSafeRandom.ThisThreadsRandom;
 
@@ -83,7 +83,7 @@ namespace UNObot.Services
             return builder.Build();
         }
 
-        internal Embed SettingsEmbed(string title, params Setting[] settings)
+        public Embed SettingsEmbed(params Setting[] settings)
         {
             var random = ThreadSafeRandom.ThisThreadsRandom;
 
@@ -104,12 +104,12 @@ namespace UNObot.Services
                 });
             foreach (var group in settings)
             {
-                var titleLength = group.KeyValuePairs.Keys.Max(o => o.Length) + 1;
+                var titleLength = group.Relation.Keys.Max(o => o.Length) + 1;
                 var sb = new StringBuilder();
-                foreach (var key in group.KeyValuePairs.Keys)
+                foreach (var key in group.Relation.Keys)
                 {
                     sb.Append($"`{key.PadRight(titleLength)}| `");
-                    var obj = group.KeyValuePairs[key];
+                    var obj = group.GetSetting(key);
                     if (obj == null)
                         sb.Append("*None set*\n");
                     else

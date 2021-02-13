@@ -7,7 +7,7 @@ using UNObot.Plugins;
 
 namespace UNObot.Services
 {
-    internal class ShellService
+    public class ShellService
     {
         private readonly ILogger _logger;
         public ShellService(ILogger logger)
@@ -15,7 +15,7 @@ namespace UNObot.Services
             _logger = logger;
         }
         
-        internal async Task<string> RunYtdl(string cmd)
+        public async Task<string> RunYtdl(string cmd)
         {
             var result = new TaskCompletionSource<string>();
 
@@ -48,7 +48,7 @@ namespace UNObot.Services
         }
 
         // Should be a file path.
-        internal Process GetAudioStream(string path)
+        public Process GetAudioStream(string path)
         {
             var ffmpeg = new ProcessStartInfo
             {
@@ -60,7 +60,7 @@ namespace UNObot.Services
             return Process.Start(ffmpeg);
         }
 
-        internal async Task<string> ConvertToMp3(string path)
+        public async Task<string> ConvertToMp3(string path)
         {
             var result = new TaskCompletionSource<string>();
 
@@ -88,7 +88,7 @@ namespace UNObot.Services
             return awaited;
         }
 
-        internal async Task<string> GitFetch()
+        public async Task<string> GitFetch()
         {
             var result = new TaskCompletionSource<string>();
 
@@ -116,7 +116,7 @@ namespace UNObot.Services
             return awaited;
         }
 
-        internal async Task<string> GitStatus()
+        public async Task<string> GitStatus()
         {
             var result = new TaskCompletionSource<string>();
 

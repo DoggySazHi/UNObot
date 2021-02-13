@@ -13,7 +13,7 @@ using UNObot.Services;
 
 namespace UNObot
 {
-    internal class Program
+    public class Program
     {
         private ServiceProvider _services;
         private DiscordSocketClient _client;
@@ -114,7 +114,7 @@ namespace UNObot
             };
         }
 
-        internal static void Exit()
+        public static void Exit()
         {
             try
             {

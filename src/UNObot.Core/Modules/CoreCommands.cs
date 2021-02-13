@@ -22,7 +22,7 @@ namespace UNObot.Core.Modules
         
         [Command("help", RunMode = RunMode.Async), Priority(100)]
         [Alias("ahh", "ahhh", "ahhhh", "commands", "command")]
-        internal async Task Help()
+        public async Task Help()
         {
             var r = ThreadSafeRandom.ThisThreadsRandom;
             var builder = new EmbedBuilder()
@@ -129,7 +129,7 @@ namespace UNObot.Core.Modules
         public async Task Invite()
         {
             await ReplyAsync("If you want to add this bot to your server, use this link: \n" +
-                             "https://discordapp.com/api/oauth2/authorize?client_id=477616287997231105&permissions=8192&scope=bot");
+                             "<https://discordapp.com/api/oauth2/authorize?client_id=477616287997231105&permissions=8192&scope=bot%20applications.commands>");
         }
     }
 }

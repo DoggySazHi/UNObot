@@ -22,7 +22,6 @@ namespace UNObot.Core.Modules
             Services = new ServiceCollection()
                 .AddSingleton<AFKTimerService>()
                 .AddSingleton<EmbedService>()
-                .AddSingleton<InputHandlerService>()
                 .AddSingleton<QueueHandlerService>()
                 .AddSingleton<DatabaseService>()
                 .AddSingleton<UNOPlayCardService>();

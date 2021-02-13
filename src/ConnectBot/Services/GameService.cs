@@ -109,7 +109,7 @@ namespace ConnectBot.Services
                 {
                     if (winnerColor == -1)
                     {
-                        await context.Channel.SendMessageAsync($"It's a draw... the board is full!");
+                        await context.Channel.SendMessageAsync("It's a draw... the board is full!");
                     }
                     else
                     {
@@ -127,7 +127,7 @@ namespace ConnectBot.Services
             }
             catch (IndexOutOfRangeException)
             {
-                await ErrorEmbed(context, ">:[ There was an internal error with the table scanning algorithm.");
+                await ErrorEmbed(context, ">:[ There was an public error with the table scanning algorithm.");
                 await _db.UpdateGame(game);
                 throw;
             }

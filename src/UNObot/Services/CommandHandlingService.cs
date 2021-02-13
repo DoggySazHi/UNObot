@@ -17,7 +17,7 @@ using UNObot.Templates;
 
 namespace UNObot.Services
 {
-    internal class CommandHandlingService : IDisposable
+    public class CommandHandlingService : IDisposable
     {
         private readonly CommandService _commands;
         private readonly DiscordSocketClient _discord;
@@ -40,7 +40,7 @@ namespace UNObot.Services
             _loaded = new List<Command>();
         }
 
-        internal async Task InitializeAsync(IServiceProvider provider, LoggerService logger)
+        public async Task InitializeAsync(IServiceProvider provider, LoggerService logger)
         {
             _commands.Log += logger.LogCommand;
             _provider = provider;
@@ -49,7 +49,7 @@ namespace UNObot.Services
                 await PluginHelper.DeleteReact(_discord, await message.GetOrDownloadAsync(), emote);
         }
         
-        internal async Task<IEnumerable<ModuleInfo>> AddModulesAsync(Assembly assembly, IServiceCollection services = null, bool original = false)
+        public async Task<IEnumerable<ModuleInfo>> AddModulesAsync(Assembly assembly, IServiceCollection services = null, bool original = false)
         {
             var provider = _provider;
             if (services != null)
@@ -62,12 +62,12 @@ namespace UNObot.Services
             return await _commands.AddModulesAsync(assembly, provider);
         }
         
-        internal async Task<bool> RemoveModulesAsync(Type type)
+        public async Task<bool> RemoveModulesAsync(Type type)
         {
             return await _commands.RemoveModuleAsync(type);
         }
         
-        internal async Task RemoveModulesAsync(Assembly assembly)
+        public async Task RemoveModulesAsync(Assembly assembly)
         {
             foreach(var type in assembly.GetTypes())
                 if(typeof(ModuleBase<SocketCommandContext>).IsAssignableFrom(type))
@@ -186,7 +186,7 @@ namespace UNObot.Services
             }
         }
 
-        internal Command FindCommand(string name)
+        public Command FindCommand(string name)
         {
             var index = _loaded.FindIndex(o => o.CommandName == name);
             var index2 = _loaded.FindIndex(o => o.Aliases.Contains(name));
@@ -198,7 +198,7 @@ namespace UNObot.Services
             return cmd;
         }
 
-        internal async Task LoadHelp(Assembly asm, IServiceCollection services)
+        public async Task LoadHelp(Assembly asm, IServiceCollection services)
         {
             var provider = _provider;
             if (services != null)
@@ -300,7 +300,7 @@ namespace UNObot.Services
             }
         }
 
-        internal async Task ClearHelp()
+        public async Task ClearHelp()
         {
             _loaded.Clear();
             await LoadHelp(Assembly.GetEntryAssembly(), _provider, true);

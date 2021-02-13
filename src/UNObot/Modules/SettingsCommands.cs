@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Microsoft.Extensions.Configuration;
 using UNObot.Plugins.Attributes;
 using UNObot.Plugins.Helpers;
 using UNObot.Services;
@@ -13,12 +12,12 @@ namespace UNObot.Modules
     public class SettingsCommands : ModuleBase<SocketCommandContext>
     {
         private readonly DatabaseService _db;
-        private readonly IConfiguration _config;
+        private readonly EmbedDisplayService _embed;
         
-        internal SettingsCommands(IConfiguration config, DatabaseService db)
+        public SettingsCommands(DatabaseService db, EmbedDisplayService embed)
         {
             _db = db;
-            _config = config;
+            _embed = embed;
         }
         
         [Command("setdefaultchannel", RunMode = RunMode.Async)]
@@ -27,7 +26,7 @@ namespace UNObot.Modules
         [DisableDMs]
         [Help(new[] {".setdefaultchannel"}, "Set the default channel for UNObot to chat in. Managers only.", true,
             "UNObot 2.0")]
-        internal async Task SetDefaultChannel()
+        public async Task SetDefaultChannel()
         {
             await ReplyAsync($":white_check_mark: Set default UNO channel to #{Context.Channel.Name}.");
             await _db.SetDefaultChannel(Context.Guild.Id, Context.Channel.Id);
@@ -45,7 +44,7 @@ namespace UNObot.Modules
         [DisableDMs]
         [Help(new[] {".removedefaultchannel"}, "Remove the default channel for UNObot to chat in. Managers only.", true,
             "UNObot 2.0")]
-        internal async Task RemoveDefaultChannel()
+        public async Task RemoveDefaultChannel()
         {
             await ReplyAsync(":white_check_mark: Removed default UNO channel, assuming there was one.");
             if (!await DatabaseExtensions.HasDefaultChannel(_db.ConnString, Context.Guild.Id))
@@ -68,7 +67,7 @@ namespace UNObot.Modules
         [DisableDMs]
         [Help(new[] {".enforcechannels"},
             "Only allow UNObot to recieve commands from enforced channels. Managers only.", true, "UNObot 2.0")]
-        internal async Task EnforceChannel()
+        public async Task EnforceChannel()
         {
             //start check (make sure all channels exist at time of enforcing)
             var allowedChannels = await _db.GetAllowedChannels(Context.Guild.Id);
@@ -112,7 +111,7 @@ namespace UNObot.Modules
         [DisableDMs]
         [Help(new[] {".addallowedchannel"}, "Allow the current channel to accept commands. Managers only.", true,
             "UNObot 2.0")]
-        internal async Task AddAllowedChannel()
+        public async Task AddAllowedChannel()
         {
             if (!await DatabaseExtensions.HasDefaultChannel(_db.ConnString, Context.Guild.Id))
             {
@@ -142,7 +141,7 @@ namespace UNObot.Modules
         [DisableDMs]
         [Help(new[] {".listallowedchannels"},
             "See all channels that UNObot can accept commands if enforced mode was on.", true, "UNObot 2.0")]
-        internal async Task ListAllowedChannels()
+        public async Task ListAllowedChannels()
         {
             var allowedChannels = await _db.GetAllowedChannels(Context.Guild.Id);
             //start check
@@ -178,7 +177,7 @@ namespace UNObot.Modules
         [DisableDMs]
         [Help(new[] {".removeallowedchannel"},
             "Remove a channel that UNObot previously was allowed to accept commands from.", true, "UNObot 2.0")]
-        internal async Task RemoveAllowedChannel()
+        public async Task RemoveAllowedChannel()
         {
             //start check
             var allowedChannels = await _db.GetAllowedChannels(Context.Guild.Id);
@@ -198,11 +197,11 @@ namespace UNObot.Modules
             {
                 allowedChannels.Remove(Context.Channel.Id);
                 await _db.SetAllowedChannels(Context.Guild.Id, allowedChannels);
-                await ReplyAsync($"Removed <#{Context.Channel.Id}> from the allowed channels!");
+                await ReplyAsync($":white_check_mark: Removed <#{Context.Channel.Id}> from the allowed channels!");
             }
             else
             {
-                await ReplyAsync("This channel was never an allowed channel.");
+                await ReplyAsync(":no_entry: This channel was never an allowed channel.");
             }
         }
 
@@ -211,9 +210,13 @@ namespace UNObot.Modules
         [DisableDMs]
         [Help(new[] {".settings"},
             "Access configurable settings for UNObot.", true, "UNObot 4.3")]
-        internal async Task ViewSettings()
+        public async Task ViewSettings()
         {
-            
+            var settings = new Setting("General Settings");
+            settings.UpdateSetting("Enforce Channels", true);
+            settings.UpdateSetting("Channels Enforced", System.Array.Empty<string>());
+            SettingsManager.RegisterSettings("UNObot", settings);
+            await ReplyAsync("", embed: _embed.SettingsEmbed(null));
         }
     }
 }

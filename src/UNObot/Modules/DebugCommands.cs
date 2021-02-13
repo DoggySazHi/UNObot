@@ -13,7 +13,7 @@ namespace UNObot.Modules
         private readonly GoogleTranslateService _gts;
         private readonly ShellService _shell;
         
-        internal DebugCommands(ILogger logger, GoogleTranslateService gts, ShellService shell)
+        public DebugCommands(ILogger logger, GoogleTranslateService gts, ShellService shell)
         {
             _logger = logger;
             _gts = gts;
@@ -26,7 +26,7 @@ namespace UNObot.Modules
         [DisableDMs]
         [Help(new[] {".purge (number of messages)"},
             "Delete messages via a range. Testing command; do not rely on forever.", false, "UNObot 1.4")]
-        internal async Task Purge(int length)
+        public async Task Purge(int length)
         {
             var messages = await Context.Channel.GetMessagesAsync(length + 1).FlattenAsync();
 
@@ -42,7 +42,7 @@ namespace UNObot.Modules
         [Command("helpmeplz", RunMode = RunMode.Async)]
         [RequireOwner]
         [DisableDMs]
-        internal async Task HelpmePlz(int length)
+        public async Task HelpmePlz(int length)
         {
             var messages = await Context.Channel.GetMessagesAsync(length + 1).FlattenAsync();
 
@@ -56,7 +56,7 @@ namespace UNObot.Modules
         }
 
         [Command("exit", RunMode = RunMode.Async)]
-        internal async Task Exit()
+        public async Task Exit()
         {
             if (Context.User.Id == 278524552462598145)
             {
@@ -71,13 +71,13 @@ namespace UNObot.Modules
 
 #if DEBUG
         [Command("translate", RunMode = RunMode.Async)]
-        internal async Task Translate(string from, string to, [Remainder] string message)
+        public async Task Translate(string from, string to, [Remainder] string message)
         {
             await ReplyAsync(_gts.Translate(message, from, to)).ConfigureAwait(false);
         }
 
         [Command("debugstatus", RunMode = RunMode.Async)]
-        internal async Task DebugStatus()
+        public async Task DebugStatus()
         {
             await _shell.GitFetch().ConfigureAwait(false);
             await ReplyAsync(await _shell.GitStatus().ConfigureAwait(false));
@@ -88,7 +88,7 @@ namespace UNObot.Modules
         /*
         [Command("getbuttons", RunMode = RunMode.Async)]
         [HelpAttribute(new string[] { "yes." }, "", false, "no")]
-        internal async Task AddButtons()
+        public async Task AddButtons()
         {
             var message = await ReplyAsync("Loading buttons...");
             await InputHandler.AddReactions(message);
@@ -101,7 +101,7 @@ namespace UNObot.Modules
         ulong server = 0;
 
         [Command("enablespam")]
-        internal async Task StartSpam()
+        public async Task StartSpam()
         {
             spamTimer = new Timer
             {

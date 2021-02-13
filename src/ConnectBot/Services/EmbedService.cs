@@ -17,7 +17,7 @@ namespace ConnectBot.Services
             _config = config;
         }
         
-        internal async Task<IUserMessage> GhostMessage(ICommandContext context, string text = null, string fallback = null, Embed embed = null, int time = 5000)
+        public async Task<IUserMessage> GhostMessage(ICommandContext context, string text = null, string fallback = null, Embed embed = null, int time = 5000)
         {
             if (text == null && embed == null)
                 return null;
@@ -39,7 +39,7 @@ namespace ConnectBot.Services
             return null;
         }
 
-        internal async Task<IUserMessage> ErrorEmbed(ICommandContextEx context, string message, bool ghost = false)
+        public async Task<IUserMessage> ErrorEmbed(ICommandContextEx context, string message, bool ghost = false)
         {
             var error = new EmbedBuilder()
                 .WithTitle("Error!!")
@@ -54,7 +54,7 @@ namespace ConnectBot.Services
                 embed: embed, ghost ? 5000 : -1);
         }
 
-        internal async Task<IUserMessage> SuccessEmbed(ICommandContextEx context, string message, bool ghost = false)
+        public async Task<IUserMessage> SuccessEmbed(ICommandContextEx context, string message, bool ghost = false)
         {
             var error = new EmbedBuilder()
                 .WithTitle("Success!!")
@@ -69,7 +69,7 @@ namespace ConnectBot.Services
                 embed: embed, ghost ? 5000 : -1);
         }
 
-        internal Embed Build(EmbedBuilder embed, ICommandContextEx context, bool addColor = true)
+        public Embed Build(EmbedBuilder embed, ICommandContextEx context, bool addColor = true)
         {
             var r = ThreadSafeRandom.ThisThreadsRandom;
             if (addColor)

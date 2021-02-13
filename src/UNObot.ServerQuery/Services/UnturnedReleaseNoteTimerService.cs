@@ -8,14 +8,14 @@ using UNObot.Plugins;
 
 namespace UNObot.ServerQuery.Services
 {
-    internal class UnturnedReleaseNotes : IDisposable
+    public class UnturnedReleaseNotes : IDisposable
     {
         private readonly Timer _checkInterval;
         private string _lastLink;
         private readonly DiscordSocketClient _client;
         private readonly ILogger _logger;
 
-        internal UnturnedReleaseNotes(DiscordSocketClient client, ILogger logger)
+        public UnturnedReleaseNotes(DiscordSocketClient client, ILogger logger)
         {
             _logger = logger;
             _client = client;
@@ -51,7 +51,7 @@ namespace UNObot.ServerQuery.Services
             }
         }
 
-        internal static string GetLatestLink()
+        public static string GetLatestLink()
         {
             var url = "https://steamcommunity.com/games/304930/rss/";
             SyndicationFeed feed;

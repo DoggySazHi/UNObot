@@ -11,7 +11,7 @@ using YoutubeExplode.Playlists;
 
 namespace UNObot.MusicBot.Services
 {
-    internal class EmbedService
+    public class EmbedService
     {
         private readonly YoutubeService _youtube;
         private readonly IConfiguration _config;
@@ -24,7 +24,7 @@ namespace UNObot.MusicBot.Services
             _client = client;
         }
         
-        internal Tuple<Embed, Tuple<string, string, string>> DisplayAddSong(ulong userId, ulong serverId,
+        public Tuple<Embed, Tuple<string, string, string>> DisplayAddSong(ulong userId, ulong serverId,
             string songUrl, Tuple<string, string, string> information)
         {
             var server = _client.GetGuild(serverId).Name;
@@ -55,7 +55,7 @@ namespace UNObot.MusicBot.Services
             return new Tuple<Embed, Tuple<string, string, string>>(embed, information);
         }
 
-        internal Embed DisplayNowPlaying(Song song, string currentDuration)
+        public Embed DisplayNowPlaying(Song song, string currentDuration)
         {
             var username = _client.GetUser(song.RequestedBy).Username;
             var servername = _client.GetGuild(song.RequestedGuild).Name;
@@ -85,7 +85,7 @@ namespace UNObot.MusicBot.Services
             return builder.Build();
         }
 
-        internal async Task<Tuple<Embed, Playlist>> DisplayPlaylist(ulong userId, ulong serverId, string songUrl)
+        public async Task<Tuple<Embed, Playlist>> DisplayPlaylist(ulong userId, ulong serverId, string songUrl)
         {
             var username = _client.GetUser(userId).Username;
             var servername = _client.GetGuild(serverId).Name;
@@ -117,7 +117,7 @@ namespace UNObot.MusicBot.Services
             return new Tuple<Embed, Playlist>(builder.Build(), playlist);
         }
 
-        internal Tuple<Embed, int> DisplaySongList(Song nowPlaying, List<Song> songs, int page)
+        public Tuple<Embed, int> DisplaySongList(Song nowPlaying, List<Song> songs, int page)
         {
             var containers = new List<StringBuilder>();
             var r = ThreadSafeRandom.ThisThreadsRandom;

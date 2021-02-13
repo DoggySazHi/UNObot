@@ -12,7 +12,7 @@ namespace UNObot.ServerQuery.Services
     {
         private readonly ILogger _logger;
 
-        internal string ConnString { get; }
+        public string ConnString { get; }
         
         public DatabaseService(ILogger logger, IConfiguration config)
         {
@@ -20,7 +20,7 @@ namespace UNObot.ServerQuery.Services
             ConnString = config.GetConnectionString();
         }
         
-        internal async Task<string> GetMinecraftUser(ulong user)
+        public async Task<string> GetMinecraftUser(ulong user)
         {
             string username = null;
             var parameters = new List<MySqlParameter>();

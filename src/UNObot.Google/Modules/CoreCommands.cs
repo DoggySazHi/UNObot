@@ -14,7 +14,7 @@ namespace UNObot.Google.Modules
         private readonly GoogleSearchService _google;
         private readonly IConfiguration _config;
         
-        internal CoreCommands(GoogleSearchService google, IConfiguration config)
+        public CoreCommands(GoogleSearchService google, IConfiguration config)
         {
             _google = google;
             _config = config;

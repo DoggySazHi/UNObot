@@ -10,11 +10,11 @@ using UNObot.Plugins;
 
 namespace UNObot.Services
 {
-    internal class PluginLoadContext : AssemblyLoadContext
+    public class PluginLoadContext : AssemblyLoadContext
     {
         private readonly AssemblyDependencyResolver _resolver;
 
-        internal PluginLoadContext(string pluginPath)
+        public PluginLoadContext(string pluginPath)
         {
             _resolver = new AssemblyDependencyResolver(pluginPath);
         }
@@ -26,18 +26,18 @@ namespace UNObot.Services
         }
     }
     
-    internal enum PluginStatus { Success = 0, Failed, NotFound, Conflict, AlreadyUnloaded, AlreadyLoaded }
+    public enum PluginStatus { Success = 0, Failed, NotFound, Conflict, AlreadyUnloaded, AlreadyLoaded }
     
-    internal class PluginLoaderService
+    public class PluginLoaderService
     {
         private readonly bool _init;
 
         public class PluginInfo
         {
-            internal string FileName { get; }
-            internal Assembly PluginAssembly { get; }
-            internal IPlugin Plugin { get; }
-            internal bool Loaded { get; set; }
+            public string FileName { get; }
+            public Assembly PluginAssembly { get; }
+            public IPlugin Plugin { get; }
+            public bool Loaded { get; set; }
 
             public PluginInfo(string fileName, Assembly pluginAssembly, IPlugin plugin, bool loaded = true)
             {
@@ -50,7 +50,7 @@ namespace UNObot.Services
 
         private readonly List<PluginInfo> _plugins;
 
-        internal IReadOnlyList<PluginInfo> Plugins => _plugins;
+        public IReadOnlyList<PluginInfo> Plugins => _plugins;
         private readonly ILogger _logger;
         private readonly CommandHandlingService _commands;
 
@@ -158,7 +158,7 @@ namespace UNObot.Services
             return (plugin, loaded);
         }
 
-        internal PluginStatus LoadPluginByName(string name)
+        public PluginStatus LoadPluginByName(string name)
         {
             if (_plugins.Any(o => o.FileName.Contains(name, StringComparison.CurrentCultureIgnoreCase)))
                 return PluginStatus.AlreadyLoaded;
@@ -183,7 +183,7 @@ namespace UNObot.Services
             }
         }
 
-        internal async Task<PluginStatus> UnloadPlugin(PluginInfo plugin)
+        public async Task<PluginStatus> UnloadPlugin(PluginInfo plugin)
         {
             if (!plugin.Loaded) return PluginStatus.AlreadyUnloaded;
             await _commands.RemoveModulesAsync(plugin.PluginAssembly);

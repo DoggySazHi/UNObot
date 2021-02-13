@@ -9,9 +9,9 @@ using UNObot.Plugins.TerminalCore;
 
 namespace UNObot.Core.Services
 {
-    internal static class ImageHandler
+    public static class ImageHandler
     {
-        internal static string GetImage(Card c)
+        public static string GetImage(Card c)
         {
             return $"https://williamle.com/unobot/{c.Color}_{c.Value}.png";
         }
