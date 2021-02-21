@@ -4,6 +4,7 @@ using ConnectBot.Templates;
 using Discord;
 using Discord.Commands;
 using Microsoft.Extensions.Configuration;
+using UNObot.Plugins.Helpers;
 using UNObot.Plugins.TerminalCore;
 
 namespace ConnectBot.Services
@@ -16,28 +17,6 @@ namespace ConnectBot.Services
         {
             _config = config;
         }
-        
-        public async Task<IUserMessage> GhostMessage(ICommandContext context, string text = null, string fallback = null, Embed embed = null, int time = 5000)
-        {
-            if (text == null && embed == null)
-                return null;
-            IUserMessage message;
-            try
-            {
-                message = await context.Channel.SendMessageAsync(text, embed: embed);
-            }
-            catch (CommandException)
-            {
-                fallback ??= text;
-                message = await context.Channel.SendMessageAsync(fallback);
-            }
-
-            if (time <= 0)
-                return message;
-            await Task.Delay(time);
-            await message.DeleteAsync();
-            return null;
-        }
 
         public async Task<IUserMessage> ErrorEmbed(ICommandContextEx context, string message, bool ghost = false)
         {
@@ -46,7 +25,7 @@ namespace ConnectBot.Services
                 .WithDescription(message)
                 .WithColor(Color.Red);
             var embed = Build(error, context, false);
-            return await GhostMessage(context,
+            return await PluginHelper.GhostMessage(context,
                 text: null,
                 fallback:
                 "**Warning: the bot has no embed permissions, and ConnectBot will not display a board without embeds!**\n" +
@@ -61,7 +40,7 @@ namespace ConnectBot.Services
                 .WithDescription(message)
                 .WithColor(Color.Green);
             var embed = Build(error, context, false);
-            return await GhostMessage(context,
+            return await PluginHelper.GhostMessage(context,
                 text: null,
                 fallback:
                 "**Warning: the bot has no embed permissions, and ConnectBot will not display a board without embeds!**\n" +

@@ -78,7 +78,7 @@ namespace ConnectBot.Services
                             //TODO Check if embeds are not enabled...
                             o.Embed = embed;
                         });
-                        GhostMessage(context, text).ContinueWithoutAwait(_logger);
+                        PluginHelper.GhostMessage(context, text).ContinueWithoutAwait(_logger);
                         modSuccess = true;
                         await _button.ClearReactions(message, currentPlayer);
                     }
@@ -96,7 +96,7 @@ namespace ConnectBot.Services
             if (!modSuccess)
             {
                 var newMessage = await context.Channel.SendMessageAsync(embed: embed);
-                GhostMessage(context, text).ContinueWithoutAwait(_logger);
+                PluginHelper.GhostMessage(context, text).ContinueWithoutAwait(_logger);
                 _button.AddNumbers(newMessage, new Range(1, board.Width + 1)).ContinueWithoutAwait(_logger);
                 game.LastChannel = context.Channel.Id;
                 game.LastMessage = newMessage.Id;

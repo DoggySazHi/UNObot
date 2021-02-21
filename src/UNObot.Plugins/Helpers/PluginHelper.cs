@@ -3,6 +3,7 @@ using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
 
 namespace UNObot.Plugins.Helpers
@@ -56,5 +57,27 @@ namespace UNObot.Plugins.Helpers
 
         public static EmbedBuilder AddBlankField(this EmbedBuilder builder)
             => builder.AddField("\u200b", "\u200b");
+        
+        public static async Task<IUserMessage> GhostMessage(ICommandContext context, string text = null, string fallback = null, Embed embed = null, int time = 5000)
+        {
+            if (text == null && embed == null)
+                return null;
+            IUserMessage message;
+            try
+            {
+                message = await context.Channel.SendMessageAsync(text, embed: embed);
+            }
+            catch (CommandException)
+            {
+                fallback ??= text;
+                message = await context.Channel.SendMessageAsync(fallback);
+            }
+
+            if (time <= 0)
+                return message;
+            await Task.Delay(time);
+            await message.DeleteAsync();
+            return null;
+        }
     }
 }

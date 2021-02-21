@@ -1,8 +1,11 @@
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
+using UNObot.Plugins.Helpers;
 using UNObot.Services;
 
 namespace UNObot.Modules
@@ -28,32 +31,30 @@ namespace UNObot.Modules
             "Delete messages via a range. Testing command; do not rely on forever.", false, "UNObot 1.4")]
         public async Task Purge(int length)
         {
-            var messages = await Context.Channel.GetMessagesAsync(length + 1).FlattenAsync();
+            var messages = (await Context.Channel.GetMessagesAsync(length + 1).FlattenAsync()).ToList();
+            var thing = messages.Where(o => DateTimeOffset.Now - o.Timestamp < TimeSpan.FromDays(14)).ToList();
+            messages.RemoveAll(o => thing.Contains(o));
 
-            if (!(Context.Channel is ITextChannel textchannel))
+            if (!(Context.Channel is ITextChannel textChannel))
             {
-                _logger.Log(LogSeverity.Warning, "error cast");
+                _logger.Log(LogSeverity.Warning, "Weird casting error?");
                 return;
             }
 
-            await textchannel.DeleteMessagesAsync(messages);
+            await textChannel.DeleteMessagesAsync(thing);
+            if (messages.Count > 0)
+            {
+                PluginHelper.GhostMessage(Context, "WARNING: Because some messages are older than two weeks, UNObot might take longer to delete them.").ContinueWithoutAwait(_logger);
+                foreach (var message in messages)
+                    await message.DeleteAsync();
+            }
         }
 
         [Command("helpmeplz", RunMode = RunMode.Async)]
         [RequireOwner]
         [DisableDMs]
         public async Task HelpmePlz(int length)
-        {
-            var messages = await Context.Channel.GetMessagesAsync(length + 1).FlattenAsync();
-
-            if (!(Context.Channel is ITextChannel textchannel))
-            {
-                _logger.Log(LogSeverity.Warning, "error cast");
-                return;
-            }
-
-            await textchannel.DeleteMessagesAsync(messages);
-        }
+            => await Purge(length);
 
         [Command("exit", RunMode = RunMode.Async)]
         public async Task Exit()
