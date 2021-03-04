@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Discord;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Linq;
+using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
+using UNObot.Plugins.Settings;
 using UNObot.Plugins.TerminalCore;
 
 namespace UNObot.Services
@@ -83,7 +86,7 @@ namespace UNObot.Services
             return builder.Build();
         }
 
-        public Embed SettingsEmbed(params Setting[] settings)
+        public Embed SettingsEmbed(IEnumerable<Setting> settings)
         {
             var random = ThreadSafeRandom.ThisThreadsRandom;
 
@@ -99,7 +102,7 @@ namespace UNObot.Services
                 .WithAuthor(author =>
                 {
                     author
-                        .WithName($"UNObot Settings")
+                        .WithName("UNObot Settings")
                         .WithIconUrl("https://williamle.com/unobot/unobot.png");
                 });
             foreach (var group in settings)
@@ -108,7 +111,7 @@ namespace UNObot.Services
                 var sb = new StringBuilder();
                 foreach (var key in group.Relation.Keys)
                 {
-                    sb.Append($"`{key.PadRight(titleLength)}| `");
+                    sb.Append($"`{key.PadRight(titleLength)}|` ");
                     var obj = group.GetSetting(key);
                     if (obj == null)
                         sb.Append("*None set*\n");

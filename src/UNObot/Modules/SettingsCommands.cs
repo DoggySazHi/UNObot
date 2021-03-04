@@ -3,8 +3,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
 using UNObot.Plugins.Helpers;
+using UNObot.Plugins.Settings;
 using UNObot.Services;
 
 namespace UNObot.Modules
@@ -18,6 +20,11 @@ namespace UNObot.Modules
         {
             _db = db;
             _embed = embed;
+            var settings = new Setting("General Settings");
+            settings.UpdateSetting("Prefix", new CodeBlock("."));
+            settings.UpdateSetting("Enforce Channels", new Boolean(false));
+            settings.UpdateSetting("Channels Enforced", new ChannelIDList());
+            SettingsManager.RegisterSettings("UNObot", settings);
         }
         
         [Command("setdefaultchannel", RunMode = RunMode.Async)]
@@ -212,11 +219,8 @@ namespace UNObot.Modules
             "Access configurable settings for UNObot.", true, "UNObot 4.3")]
         public async Task ViewSettings()
         {
-            var settings = new Setting("General Settings");
-            settings.UpdateSetting("Enforce Channels", true);
-            settings.UpdateSetting("Channels Enforced", System.Array.Empty<string>());
-            SettingsManager.RegisterSettings("UNObot", settings);
-            await ReplyAsync("", embed: _embed.SettingsEmbed(null));
+            var manager = await _db.GetSettings(Context.Guild.Id);
+            await ReplyAsync("", embed: _embed.SettingsEmbed(manager.CurrentSettings.Values));
         }
     }
 }

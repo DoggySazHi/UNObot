@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using ConnectBot.Templates;
 using Discord;
-using Discord.Commands;
 using Microsoft.Extensions.Configuration;
 using UNObot.Plugins.Helpers;
 using UNObot.Plugins.TerminalCore;

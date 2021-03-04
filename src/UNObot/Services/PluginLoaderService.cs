@@ -176,7 +176,7 @@ namespace UNObot.Services
                 _plugins.Add(new PluginInfo(availablePlugins[0], pluginAssembly, plugin));
                 return PluginStatus.Success;
             }
-            catch (ReflectionTypeLoadException ex)
+            catch (Exception ex)
             {
                 _logger.Log(LogSeverity.Error, "Exception trying to load plugin!", ex);
                 return PluginStatus.Failed;
@@ -186,11 +186,11 @@ namespace UNObot.Services
         public async Task<PluginStatus> UnloadPlugin(PluginInfo plugin)
         {
             if (!plugin.Loaded) return PluginStatus.AlreadyUnloaded;
-            await _commands.RemoveModulesAsync(plugin.PluginAssembly);
             var unloadStatus = -1;
             Exception ex = null;
             try
             {
+                await _commands.RemoveModulesAsync(plugin.PluginAssembly);
                 unloadStatus = plugin.Plugin.OnUnload();
             }
             catch (Exception e)

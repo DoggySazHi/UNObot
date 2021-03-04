@@ -73,7 +73,7 @@ namespace UNObot.MusicBot.Services
             return videoData;
         }
 
-        public async Task<List<PlaylistVideo>> GetPlaylistVideos(PlaylistId id)
+        public async Task<List<Video>> GetPlaylistVideos(PlaylistId id)
         {
             var videos = await _client.Playlists.GetVideosAsync(id).ToListAsync();
             return videos;

@@ -37,7 +37,7 @@ namespace UNObot.Services
         {
             if (_client.ConnectionState == Disconnected || _client.ConnectionState == Disconnecting)
             {
-                _logger.Log(LogSeverity.Critical, $"Watchdog was not fed in the last {Timeout / 1000} seconds! Quitting!");
+                _logger.Log(LogSeverity.Critical, $"Watchdog not fed in the last {Timeout / 1000} seconds! Quitting!");
                 Program.Exit();
             }
         }

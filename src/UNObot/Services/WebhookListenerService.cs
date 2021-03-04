@@ -13,6 +13,8 @@ using Discord.WebSocket;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UNObot.Plugins;
+using UNObot.Plugins.Settings;
+using Boolean = UNObot.Plugins.Settings.Boolean;
 
 namespace UNObot.Services
 {
@@ -57,13 +59,19 @@ namespace UNObot.Services
                 _server.Prefixes.Add("http://localhost:6860/");
 
                 _server.Start();
+                Task.Run(Listener);
             }
             catch (HttpListenerException ex)
             {
-                _logger.Log(LogSeverity.Critical, "Webhook Listener failed!", ex);
+                _logger.Log(LogSeverity.Critical, "Webhook Listener failed to start!", ex);
+                _disposed = true;
             }
-
-            Task.Run(Listener);
+            
+            var settings = new Setting("Webhook Settings");
+            settings.UpdateSetting("Webhooks", new ChannelIDList());
+            settings.UpdateSetting("Enable BitBucket", new Boolean(false));
+            settings.UpdateSetting("Enable OctoPrint", new Boolean(false));
+            SettingsManager.RegisterSettings("UNObot.Webhooks", settings);
         }
 
         public void Dispose()
@@ -306,7 +314,7 @@ namespace UNObot.Services
                         }
                     }
 
-                    foreach (var thing in data) _logger.Log(LogSeverity.Debug, $"{thing.Key} - {thing.Value}");
+                    foreach (var (s, value) in data) _logger.Log(LogSeverity.Debug, $"{s} - {value}");
 
                     var info = new OctoprintInfo
                     {

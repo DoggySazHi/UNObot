@@ -8,6 +8,7 @@ using Discord.Net;
 using Microsoft.Extensions.Configuration;
 using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
+using UNObot.Plugins.Settings;
 using Game = ConnectBot.Templates.Game;
 
 namespace ConnectBot.Services
@@ -25,6 +26,10 @@ namespace ConnectBot.Services
             _afk = afk;
             _button = button;
             _logger = logger;
+            
+            var settings = new Setting("ConnectBot Settings");
+            settings.UpdateSetting("Default Channel", new ChannelID(0));
+            SettingsManager.RegisterSettings("ConnectBot", settings);
         }
 
         public async Task DisplayGame(ICommandContextEx context)

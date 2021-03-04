@@ -1,5 +1,5 @@
-Copyright 2020 DoggySazHi
+Copyright 2021 DoggySazHi
 
-Also known as """""Open Source""""".
+Quack license.
 This is a private project, I don't even need a license. But here we are.
 All code here is written by me, unless attributed. Discord.NET is obviously to their respective developers, libs, etc.

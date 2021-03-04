@@ -8,6 +8,7 @@ using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
+using UNObot.Plugins.Settings;
 
 namespace UNObot.Services
 {
