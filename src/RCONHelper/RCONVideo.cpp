@@ -20,8 +20,8 @@ int main()
 
     WoolData woolData;
     // If you're not using WSL with Xwin redirect, comment this out.
-    setenv("DISPLAY", ":1", true);
-    //setenv("DISPLAY", "localhost:10.0", true);
+    setenv("DISPLAY", "172.29.192.1:0", true);
+    //set:env("DISPLAY", "localhost:10.0", true);
     std::cout << "Reading from " << std::filesystem::current_path() << '\n';
     cv::Mat video;
     cv::Mat frame;
