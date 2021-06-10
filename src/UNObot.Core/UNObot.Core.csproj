@@ -13,14 +13,14 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Dapper" Version="2.0.78" />
+      <PackageReference Include="Dapper" Version="2.0.90" />
       <PackageReference Include="Dapper.Contrib" Version="2.0.78" />
-      <PackageReference Include="Discord.Net" Version="2.3.0" />
+      <PackageReference Include="Discord.Net" Version="2.4.0" />
       <PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0" />
       <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="5.0.0" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="5.0.0" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
-      <PackageReference Include="MySql.Data" Version="8.0.23" />
+      <PackageReference Include="MySql.Data" Version="8.0.25" />
     </ItemGroup>
 
     <Target Name="CopyPlugins" AfterTargets="PostBuildEvent">

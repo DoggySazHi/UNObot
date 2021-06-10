@@ -118,14 +118,14 @@ namespace UNObot.MusicBot.Services
                             var video = resultPlay[i];
                             player.Item1.Add(video.Url,
                                 new Tuple<string, string, string>(video.Title,
-                                    YoutubeService.TimeString(video.Duration), video.Thumbnails.MediumResUrl), user,
+                                    YoutubeService.TimeString(video.Duration.GetValueOrDefault()), YoutubeService.GetThumbnail(video.Thumbnails)), user,
                                 guild, true);
                         }
                     else
                         foreach (var video in resultPlay)
                             player.Item1.Add($"https://www.youtube.com/watch?v={video.Id}",
                                 new Tuple<string, string, string>(video.Title,
-                                    YoutubeService.TimeString(video.Duration), video.Thumbnails.MediumResUrl), user,
+                                    YoutubeService.TimeString(video.Duration.GetValueOrDefault()), YoutubeService.GetThumbnail(video.Thumbnails)), user,
                                 guild);
 
                     message = $"Added {resultPlay.Count} song{(resultPlay.Count == 1 ? "" : "s")}.";

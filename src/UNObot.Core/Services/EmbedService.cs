@@ -3,8 +3,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-using Microsoft.Extensions.Configuration;
 using UNObot.Core.UNOCore;
+using UNObot.Plugins;
 using UNObot.Plugins.TerminalCore;
 
 namespace UNObot.Core.Services
@@ -21,9 +21,9 @@ namespace UNObot.Core.Services
     {
         private readonly DatabaseService _db;
         private readonly DiscordSocketClient _client;
-        private readonly IConfiguration _config;
+        private readonly IConfig _config;
         
-        public EmbedService(DatabaseService db, DiscordSocketClient client, IConfiguration config)
+        public EmbedService(DatabaseService db, DiscordSocketClient client, IConfig config)
         {
             _db = db;
             _client = client;
@@ -76,7 +76,7 @@ namespace UNObot.Core.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithThumbnailUrl(ImageHandler.GetImage(card))
@@ -154,7 +154,7 @@ namespace UNObot.Core.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithThumbnailUrl(ImageHandler.GetImage(currentCard))

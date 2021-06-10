@@ -27,7 +27,7 @@ namespace UNObot.Plugins.Settings
         public T GetSetting<T>(string key)
             => JsonConvert.DeserializeObject<T>(KeyValuePairs[key].JSON);
         
-        public object GetSetting(string key)
-            => JsonConvert.DeserializeObject(KeyValuePairs[key].JSON);
+        public ISetting GetSetting(string key)
+            => KeyValuePairs[key];
     }
 }

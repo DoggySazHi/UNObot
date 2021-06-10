@@ -52,7 +52,7 @@ namespace UNObot.Plugins.Settings
             return true;
         }
 
-        public void UpdateSetting(string identifier, string key, object value)
+        public void UpdateSetting(string identifier, string key, ISetting value)
             => _currentSettings[identifier].UpdateSetting(key, value);
 
         public T GetSetting<T>(string identifier, string key)

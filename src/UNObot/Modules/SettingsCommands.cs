@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
 using UNObot.Plugins.Helpers;
 using UNObot.Plugins.Settings;

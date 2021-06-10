@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using ConnectBot.Templates;
 using Discord;
 using Discord.Net;
-using Microsoft.Extensions.Configuration;
 using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
 using UNObot.Plugins.Settings;
@@ -20,7 +19,7 @@ namespace ConnectBot.Services
         private readonly ButtonHandler _button;
         private readonly ILogger _logger;
         
-        public GameService(IConfiguration config, DatabaseService db, AFKTimerService afk, ButtonHandler button, ILogger logger) : base(config)
+        public GameService(IConfig config, DatabaseService db, AFKTimerService afk, ButtonHandler button, ILogger logger) : base(config)
         {
             _db = db;
             _afk = afk;

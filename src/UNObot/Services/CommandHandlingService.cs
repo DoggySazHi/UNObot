@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using UNObot.Plugins;
@@ -55,7 +54,7 @@ namespace UNObot.Services
             if (services != null)
                 provider = services.AddSingleton(_discord)
                     .AddSingleton(_logger)
-                    .AddSingleton(_provider.GetRequiredService<IConfiguration>())
+                    .AddSingleton(_provider.GetRequiredService<IConfig>())
                     .AddSingleton(this) // Required for .help, which seeks duplicates.
                     .BuildServiceProvider();
             await LoadHelp(assembly, provider, original);
@@ -204,7 +203,7 @@ namespace UNObot.Services
             if (services != null)
                  provider = services.AddSingleton(_discord)
                     .AddSingleton(_logger)
-                    .AddSingleton(_provider.GetRequiredService<IConfiguration>())
+                    .AddSingleton(_provider.GetRequiredService<IConfig>())
                     .AddSingleton(this) // Required for .help, which seeks duplicates.
                     .BuildServiceProvider();
             await LoadHelp(asm, provider);

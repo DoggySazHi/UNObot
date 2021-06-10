@@ -2,8 +2,8 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Microsoft.Extensions.Configuration;
 using UNObot.Google.Services;
+using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
 using UNObot.Plugins.TerminalCore;
 
@@ -12,9 +12,9 @@ namespace UNObot.Google.Modules
     public class CoreCommands : ModuleBase<SocketCommandContext>
     {
         private readonly GoogleSearchService _google;
-        private readonly IConfiguration _config;
+        private readonly IConfig _config;
         
-        public CoreCommands(GoogleSearchService google, IConfiguration config)
+        public CoreCommands(GoogleSearchService google, IConfig config)
         {
             _google = google;
             _config = config;
@@ -51,7 +51,7 @@ namespace UNObot.Google.Modules
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>

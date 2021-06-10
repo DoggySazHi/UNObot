@@ -4,8 +4,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-using Microsoft.Extensions.Configuration;
 using UNObot.MusicBot.MusicCore;
+using UNObot.Plugins;
 using UNObot.Plugins.TerminalCore;
 using YoutubeExplode.Playlists;
 
@@ -14,10 +14,10 @@ namespace UNObot.MusicBot.Services
     public class EmbedService
     {
         private readonly YoutubeService _youtube;
-        private readonly IConfiguration _config;
+        private readonly IConfig _config;
         private readonly DiscordSocketClient _client;
         
-        public EmbedService(YoutubeService youtube, IConfiguration config, DiscordSocketClient client)
+        public EmbedService(YoutubeService youtube, IConfig config, DiscordSocketClient client)
         {
             _youtube = youtube;
             _config = config;
@@ -39,7 +39,7 @@ namespace UNObot.MusicBot.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithThumbnailUrl(information.Item3)
@@ -69,7 +69,7 @@ namespace UNObot.MusicBot.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithThumbnailUrl(song.ThumbnailUrl)
@@ -101,7 +101,7 @@ namespace UNObot.MusicBot.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithThumbnailUrl(thumbnail)
@@ -169,7 +169,7 @@ namespace UNObot.MusicBot.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>

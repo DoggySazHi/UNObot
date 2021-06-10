@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Discord;
-using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Linq;
 using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
@@ -14,9 +13,9 @@ namespace UNObot.Services
 {
     public class EmbedDisplayService
     {
-        private readonly IConfiguration _config;
+        private readonly IConfig _config;
 
-        public EmbedDisplayService(IConfiguration config)
+        public EmbedDisplayService(IConfig config)
         {
             _config = config;
         }
@@ -31,7 +30,7 @@ namespace UNObot.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
@@ -56,7 +55,7 @@ namespace UNObot.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
@@ -96,7 +95,7 @@ namespace UNObot.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
@@ -116,7 +115,7 @@ namespace UNObot.Services
                     if (obj == null)
                         sb.Append("*None set*\n");
                     else
-                        sb.Append(obj).Append('\n');
+                        sb.Append(obj.Display).Append('\n');
                 }
                 builder.AddField(group.Category, sb.ToString());
             }

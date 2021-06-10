@@ -2,9 +2,9 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Microsoft.Extensions.Configuration;
 using UNObot.Plugins.Attributes;
 using UNObot.MusicBot.Services;
+using UNObot.Plugins;
 using UNObot.Plugins.TerminalCore;
 
 namespace UNObot.MusicBot.Modules
@@ -12,9 +12,9 @@ namespace UNObot.MusicBot.Modules
     public class MusicBotCommands : ModuleBase<SocketCommandContext>
     {
         private readonly MusicBotService _music;
-        private readonly IConfiguration _config;
+        private readonly IConfig _config;
 
-        public MusicBotCommands(MusicBotService music, IConfiguration config)
+        public MusicBotCommands(MusicBotService music, IConfig config)
         {
             _music = music;
             _config = config;
@@ -32,7 +32,7 @@ namespace UNObot.MusicBot.Modules
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>

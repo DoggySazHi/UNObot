@@ -2,7 +2,6 @@
 using ConnectBot.Templates;
 using Dapper;
 using Discord;
-using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using UNObot.Plugins;
@@ -30,7 +29,7 @@ namespace ConnectBot.Services
             DefaultQueue = JsonConvert.SerializeObject(new GameQueue(), JsonSettings);
         }
 
-        public DatabaseService(IConfiguration config, ILogger logger)
+        public DatabaseService(IConfig config, ILogger logger)
         {
             _logger = logger;
             ConnString = config.GetConnectionString();

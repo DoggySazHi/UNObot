@@ -28,7 +28,7 @@ namespace UNObot.Plugins.Settings
     {
         [JsonIgnore] private ulong Id { get; }
         [JsonProperty]
-        public string Display => Id != 0 ? $"<#{Id}>" : "(none set)";
+        public string Display => Id != 0 ? $"<#{Id}>" : "(no channel set)";
         [JsonProperty] public string JSON => JsonConvert.SerializeObject(Id);
                 
         public ChannelID(ulong id)
@@ -42,7 +42,7 @@ namespace UNObot.Plugins.Settings
         [JsonIgnore] private ulong Id { get; }
         [JsonProperty] public string JSON => JsonConvert.SerializeObject(Id);
         [JsonProperty]
-        public string Display => Id != 0 ? $"<@{Id}>" : "(none set)";
+        public string Display => Id != 0 ? $"<@{Id}>" : "(no user set)";
                 
         public UserID(ulong id)
         {
@@ -85,7 +85,7 @@ namespace UNObot.Plugins.Settings
         [JsonProperty] public string JSON => JsonConvert.SerializeObject(_channelIds);
 
         [JsonProperty]
-        public string Display => string.Join(", ", _channelIds);
+        public string Display => _channelIds.Count == 0 ? "(no channels)" : string.Join(", ", _channelIds);
 
         public ChannelIDList() : this(null) {}
         

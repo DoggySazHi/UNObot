@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Discord.Commands;
 using UNObot.Core.UNOCore;
@@ -42,6 +43,8 @@ namespace UNObot.Core.Services
 
             // Since +2 and +4 are treated as positive numbers, .TryParse turns them into 2 and 4, respectively.
             if (!int.TryParse(value, out var output) || value == "+2" || value == "+4")
+            {
+                Debug.Assert(value != null, nameof(value) + " != null");
                 switch (value.ToLower())
                 {
                     case "skip":
@@ -62,6 +65,7 @@ namespace UNObot.Core.Services
                     default:
                         return $"<@{player}>, that's not a value.";
                 }
+            }
             else
                 value = output.ToString();
 

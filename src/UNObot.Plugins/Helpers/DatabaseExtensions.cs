@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 
 namespace UNObot.Plugins.Helpers
@@ -63,13 +63,19 @@ namespace UNObot.Plugins.Helpers
             return channel;
         }
         
-        public static string GetConnectionString(this IConfiguration config, string parameter = "connStr")
+        public static string GetConnectionString(this IConfig config)
         {
-            var connString = config[parameter];
             //ha, damn the limited encodings.
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             Encoding.GetEncoding("windows-1254");
-            return connString;
+            return config.UseSqlServer ? config.SqlConnection : config.MySqlConnection;
+        }
+
+        public static string ConvertSql(IConfig config, string commandMySql)
+        {
+            var identity = commandMySql.Replace("LAST_INSERT_ID()", "SCOPE_IDENTITY()");
+            var brackets = new Regex(@"`([^`]*)`", RegexOptions.Multiline).Replace(identity, @"[$1]");
+            return brackets;
         }
     }
 }

@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Microsoft.Extensions.Configuration;
+using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
 using UNObot.Services;
 
@@ -11,10 +11,10 @@ namespace UNObot.Modules
 {
     public class BaseCommands : ModuleBase<SocketCommandContext>
     {
-        private readonly IConfiguration _config;
+        private readonly IConfig _config;
         private readonly CommandHandlingService _commands;
         
-        public BaseCommands(IConfiguration config, CommandHandlingService commands)
+        public BaseCommands(IConfig config, CommandHandlingService commands)
         {
             _config = config;
             _commands = commands;
@@ -26,8 +26,8 @@ namespace UNObot.Modules
         {
             Console.WriteLine("Mukyu!");
             var output =
-                $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {_config["version"]}\nCurrent Time (PST): {DateTime.Now.ToString(CultureInfo.InvariantCulture)}" +
-                $"\n\nCommit {_config["commit"]?[..Math.Min(_config["commit"].Length, 7)] ?? "???"}\nBuild #{_config["build"] ?? "???"}";
+                $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {_config.Version}\nCurrent Time (PST): {DateTime.Now.ToString(CultureInfo.InvariantCulture)}" +
+                $"\n\nCommit {_config.Commit?[..Math.Min(_config.Commit.Length, 7)] ?? "???"}\nBuild #{_config.Build ?? "???"}";
             await ReplyAsync(output);
         }
         

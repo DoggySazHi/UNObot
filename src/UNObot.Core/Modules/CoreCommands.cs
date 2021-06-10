@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Microsoft.Extensions.Configuration;
 using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
 using UNObot.Plugins.TerminalCore;
@@ -12,9 +11,9 @@ namespace UNObot.Core.Modules
     public class CoreCommands : ModuleBase<SocketCommandContext>
     {
         private readonly ILogger _logger;
-        private readonly IConfiguration _config;
+        private readonly IConfig _config;
         
-        public CoreCommands(ILogger logger, IConfiguration config)
+        public CoreCommands(ILogger logger, IConfig config)
         {
             _logger = logger;
             _config = config;
@@ -32,7 +31,7 @@ namespace UNObot.Core.Modules
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>

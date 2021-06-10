@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Discord;
-using Microsoft.Extensions.Configuration;
 using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
 using UNObot.Plugins.TerminalCore;
@@ -16,12 +15,12 @@ namespace UNObot.ServerQuery.Services
         private const int Attempts = 3;
 
         private readonly ILogger _logger;
-        private readonly IConfiguration _config;
+        private readonly IConfig _config;
         private readonly DatabaseService _db;
         private readonly QueryHandlerService _query;
         private readonly MinecraftProcessorService _minecraft;
 
-        public EmbedService(ILogger logger, IConfiguration config, DatabaseService db, QueryHandlerService query,
+        public EmbedService(ILogger logger, IConfig config, DatabaseService db, QueryHandlerService query,
             MinecraftProcessorService minecraft)
         {
             _logger = logger;
@@ -103,7 +102,7 @@ namespace UNObot.ServerQuery.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithThumbnailUrl(serverImageUrl)
@@ -188,7 +187,7 @@ namespace UNObot.ServerQuery.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
@@ -256,7 +255,7 @@ namespace UNObot.ServerQuery.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
@@ -287,7 +286,7 @@ namespace UNObot.ServerQuery.Services
                     .WithFooter(footer =>
                     {
                         footer
-                            .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                            .WithText($"UNObot {_config.Version} - By DoggySazHi")
                             .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                     })
                     .WithAuthor(author =>
@@ -329,7 +328,7 @@ namespace UNObot.ServerQuery.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
@@ -358,7 +357,7 @@ namespace UNObot.ServerQuery.Services
                     .WithFooter(footer =>
                     {
                         footer
-                            .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                            .WithText($"UNObot {_config.Version} - By DoggySazHi")
                             .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                     })
                     .WithAuthor(author =>
@@ -414,7 +413,7 @@ namespace UNObot.ServerQuery.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
@@ -534,7 +533,7 @@ namespace UNObot.ServerQuery.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>

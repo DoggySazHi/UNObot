@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Dapper;
 using Discord;
-using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using UNObot.Core.UNOCore;
@@ -18,7 +17,7 @@ namespace UNObot.Core.Services
 
         public string ConnString { get; }
 
-        public DatabaseService(IConfiguration config, ILogger logger)
+        public DatabaseService(IConfig config, ILogger logger)
         {
             _logger = logger;
             ConnString = config.GetConnectionString();
@@ -368,7 +367,11 @@ namespace UNObot.Core.Services
             {
                 var result = await db.ExecuteScalarAsync<string>(commandText, new {Server = server});
                 if (result.HasDBValue())
-                    players = JsonConvert.DeserializeObject<Queue<ulong>>(result);
+                {
+                    var temp = JsonConvert.DeserializeObject<Queue<ulong>>(result);
+                    if (temp != null)
+                        players = temp;
+                }
             }
             catch (MySqlException ex)
             {

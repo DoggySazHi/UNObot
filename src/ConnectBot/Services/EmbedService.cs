@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using ConnectBot.Templates;
 using Discord;
-using Microsoft.Extensions.Configuration;
+using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
 using UNObot.Plugins.TerminalCore;
 
@@ -10,9 +10,9 @@ namespace ConnectBot.Services
 {
     public abstract class EmbedService
     {
-        private readonly IConfiguration _config;
+        private readonly IConfig _config;
 
-        public EmbedService(IConfiguration config)
+        public EmbedService(IConfig config)
         {
             _config = config;
         }
@@ -58,7 +58,7 @@ namespace ConnectBot.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"ConnectBot {_config["version"]} - By DoggySazHi")
+                        .WithText($"ConnectBot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>

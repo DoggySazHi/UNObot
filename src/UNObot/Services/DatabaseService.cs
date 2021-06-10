@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Dapper;
 using Discord;
-using Microsoft.Extensions.Configuration;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using UNObot.Plugins;
@@ -18,7 +17,7 @@ namespace UNObot.Services
 
         public string ConnString { get; }
 
-        public DatabaseService(ILogger logger, IConfiguration config)
+        public DatabaseService(ILogger logger, IConfig config)
         {
             _logger = logger;
             ConnString = config.GetConnectionString();
