@@ -24,7 +24,6 @@ namespace UNObot.Modules
         [Help(new[] {".info"}, "Get the current version of UNObot.", true, "UNObot 1.0")]
         public async Task Info()
         {
-            Console.WriteLine("Mukyu!");
             var output =
                 $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {_config.Version}\nCurrent Time (PST): {DateTime.Now.ToString(CultureInfo.InvariantCulture)}" +
                 $"\n\nCommit {_config.Commit?[..Math.Min(_config.Commit.Length, 7)] ?? "???"}\nBuild #{_config.Build ?? "???"}";

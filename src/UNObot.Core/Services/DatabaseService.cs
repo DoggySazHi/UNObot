@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.Data.Common;
 using System.Threading.Tasks;
 using Dapper;
 using Discord;
-using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using UNObot.Core.UNOCore;
 using UNObot.Plugins;
@@ -13,14 +13,13 @@ namespace UNObot.Core.Services
 {
     public class DatabaseService
     {
+        private readonly IConfig _config;
         private readonly ILogger _logger;
-
-        public string ConnString { get; }
 
         public DatabaseService(IConfig config, ILogger logger)
         {
+            _config = config;
             _logger = logger;
-            ConnString = config.GetConnectionString();
         }
 
         public async Task<bool> IsServerInGame(ulong server)
@@ -29,12 +28,12 @@ namespace UNObot.Core.Services
 
             const string commandText = "SELECT inGame FROM UNObot.Games WHERE server = @Server";
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 inGame = await db.ExecuteScalarAsync<bool>(commandText, new {Server = server});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -46,12 +45,12 @@ namespace UNObot.Core.Services
         {
             const string commandText = "INSERT IGNORE INTO Games (server) VALUES(@Server)";
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 await db.ExecuteAsync(commandText, new {Server = server});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -61,12 +60,12 @@ namespace UNObot.Core.Services
         {
             const string commandText = "UPDATE Games SET description = @Description WHERE server = @Server";
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 await db.ExecuteAsync(commandText, new {Server = server, Description = text});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -77,12 +76,12 @@ namespace UNObot.Core.Services
             const string commandText = "SELECT description FROM UNObot.Games WHERE server = @Server";
             var description = "";
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 description = await db.ExecuteScalarAsync<string>(commandText, new {server});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -95,12 +94,12 @@ namespace UNObot.Core.Services
             const string commandText =
                 "UPDATE Games SET inGame = 0, currentCard = '[]', `order` = 1, oneCardLeft = 0, queue = '[]', description = null WHERE server = @Server";
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 await db.ExecuteAsync(commandText, new {Server = server});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -111,12 +110,12 @@ namespace UNObot.Core.Services
             const string commandText =
                 "INSERT INTO Players (userid, username, inGame, cards, server) VALUES(@UserID, @Username, 1, '[]', @Server) ON DUPLICATE KEY UPDATE username = @Username, inGame = 1, cards = '[]', server = @Server";
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 await db.ExecuteAsync(commandText, new {UserID = id, Username = username, Server = server});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -127,12 +126,12 @@ namespace UNObot.Core.Services
             const string commandText =
                 "INSERT INTO Players (userid, username) VALUES(@UserID, @Username) ON DUPLICATE KEY UPDATE username = @Username";
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 await db.ExecuteAsync(commandText, new {UserID = id, Username = username});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -143,12 +142,12 @@ namespace UNObot.Core.Services
             const string commandText =
                 "INSERT INTO Players (userid, inGame, cards, server) VALUES(@UserID, 0, '[]', null) ON DUPLICATE KEY UPDATE inGame = 0, cards = '[]', server = null";
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 await db.ExecuteAsync(commandText, new {UserID = id});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -164,12 +163,12 @@ namespace UNObot.Core.Services
             const string commandText =
                 "INSERT INTO Games (server, inGame, gameMode) VALUES(@Server, @InGame, @GameMode) ON DUPLICATE KEY UPDATE inGame = @InGame, gameMode = @GameMode";
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 await db.ExecuteAsync(commandText, new {Server = guild, InGame = inGame, GameMode = gameMode});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -181,12 +180,12 @@ namespace UNObot.Core.Services
 
             const string commandText = "SELECT gameMode FROM UNObot.Games WHERE server = @Server";
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 gamemode = await db.ExecuteScalarAsync<GameMode>(commandText, new {Server = server});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -200,13 +199,13 @@ namespace UNObot.Core.Services
             const string commandText = "SELECT queue FROM Games WHERE inGame = 1 AND server = @Server";
 
             var players = new Queue<ulong>();
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 var result = await db.ExecuteScalarAsync<string>(commandText, new {Server = server});
                 players = JsonConvert.DeserializeObject<Queue<ulong>>(result);
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -220,12 +219,12 @@ namespace UNObot.Core.Services
 
             const string commandText = "SELECT server FROM Players WHERE inGame = 1 AND userid = @UserID";
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 server = await db.ExecuteScalarAsync<ulong>(commandText, new {UserID = player});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -238,12 +237,12 @@ namespace UNObot.Core.Services
             const string commandText = "UPDATE Games SET queue = @Queue WHERE inGame = 1 AND server = @Server";
             var json = JsonConvert.SerializeObject(players);
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 await db.ExecuteAsync(commandText, new {Queue = json, Server = server});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -254,12 +253,12 @@ namespace UNObot.Core.Services
             const string commandText = "SELECT userid FROM Players WHERE inGame = 1 AND server = @Server";
             var players = new Queue<ulong>();
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 players = new Queue<ulong>(await db.QueryAsync<ulong>(commandText, new {Server = server}));
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -273,12 +272,12 @@ namespace UNObot.Core.Services
 
             const string commandText = "SELECT oneCardLeft FROM Games WHERE inGame = 1 AND server = @Server";
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 player = await db.ExecuteScalarAsync<ulong>(commandText, new {Server = server});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -290,12 +289,12 @@ namespace UNObot.Core.Services
         {
             const string commandText = "UPDATE Games SET oneCardLeft = @UserID WHERE inGame = 1 AND server = @Server";
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 await db.ExecuteAsync(commandText, new {UserID = player, Server = server});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -307,14 +306,14 @@ namespace UNObot.Core.Services
 
             // If parsing fails, we can throw an NRE.
             Card card = null;
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 var result = await db.ExecuteScalarAsync<string>(commandText, new {Server = server});
                 if (result.HasDBValue())
                     card = JsonConvert.DeserializeObject<Card>(result);
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -327,12 +326,12 @@ namespace UNObot.Core.Services
             const string commandText = "UPDATE Games SET currentCard = @Card WHERE inGame = 1 AND server = @Server";
             var cardJson = JsonConvert.SerializeObject(card);
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 await db.ExecuteAsync(commandText, new {Card = cardJson, Server = server});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -344,12 +343,12 @@ namespace UNObot.Core.Services
 
             const string commandText = "SELECT inGame FROM UNObot.Players WHERE userid = @UserID";
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 result = await db.ExecuteScalarAsync<bool>(commandText, new {UserID = player});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -362,7 +361,7 @@ namespace UNObot.Core.Services
             const string commandText = "SELECT queue FROM UNObot.Games WHERE server = @Server";
 
             var players = new Queue<ulong>();
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 var result = await db.ExecuteScalarAsync<string>(commandText, new {Server = server});
@@ -373,7 +372,7 @@ namespace UNObot.Core.Services
                         players = temp;
                 }
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -386,14 +385,14 @@ namespace UNObot.Core.Services
             const string commandText = "SELECT cards FROM UNObot.Players WHERE userid = @UserID";
             var cards = new List<Card>();
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 var result = await db.ExecuteScalarAsync<string>(commandText, new {UserID = player});
                 if (result.HasDBValue())
                     cards = JsonConvert.DeserializeObject<List<Card>>(result);
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -406,12 +405,12 @@ namespace UNObot.Core.Services
             const string commandText = "SELECT EXISTS(SELECT 1 FROM UNObot.Players WHERE userid = @UserID)";
             var exists = false;
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 exists = await db.ExecuteScalarAsync<bool>(commandText, new {UserID = player});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -431,12 +430,12 @@ namespace UNObot.Core.Services
 
             const string commandText = "UPDATE UNObot.Games SET queue = @Queue WHERE server = @Server AND inGame = 1";
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 await db.ExecuteAsync(commandText, new {Queue = json, Server = server});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -454,14 +453,14 @@ namespace UNObot.Core.Services
             const string commandText =
                 "SELECT gamesJoined, gamesPlayed, gamesWon FROM UNObot.Players WHERE userid = @UserID";
             
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 var results = await db.QueryFirstOrDefaultAsync(commandText, new {UserID = player});
                 if (!ReferenceEquals(null, results))
                     return (results.gamesJoined, results.gamesPlayed, results.gamesWon);
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -474,12 +473,12 @@ namespace UNObot.Core.Services
             const string commandText = "SELECT note FROM UNObot.Players WHERE userid = @UserID";
 
             string message = null;
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 message = await db.ExecuteScalarAsync<string>(commandText, new {UserID = player});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -491,12 +490,12 @@ namespace UNObot.Core.Services
         {
             const string commandText = "UPDATE UNObot.Players SET note = @Note WHERE userid = @UserID";
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 await db.ExecuteAsync(commandText, new {Note = note, UserID = player});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -506,12 +505,12 @@ namespace UNObot.Core.Services
         {
             const string commandText = "UPDATE UNObot.Players SET note = NULL WHERE userid = @UserID";
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 await db.ExecuteAsync(commandText, new {UserID = player});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -531,12 +530,12 @@ namespace UNObot.Core.Services
                 _ => ""
             };
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 await db.ExecuteAsync(commandText, new {UserID = player});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -556,12 +555,12 @@ namespace UNObot.Core.Services
             cards ??= new List<Card>();
             var json = JsonConvert.SerializeObject(cards);
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 await db.ExecuteAsync(commandText, new {Cards = json, UserID = player});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -590,12 +589,12 @@ namespace UNObot.Core.Services
 
             const string commandText = "UPDATE UNObot.Players SET cards = @Cards WHERE userid = @UserID";
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 await db.ExecuteAsync(commandText, new {Cards = json, UserID = player});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -609,12 +608,12 @@ namespace UNObot.Core.Services
 
             var json = JsonConvert.SerializeObject(cards);
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 await db.ExecuteAsync(commandText, new {Cards = json, Server = server});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -625,14 +624,14 @@ namespace UNObot.Core.Services
             var cards = new List<Card>();
             const string commandText = "SELECT cards FROM UNObot.Games WHERE server = @Server";
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 var result = await db.ExecuteScalarAsync<string>(commandText, new {Server = server});
                 if (result.HasDBValue())
                     cards = JsonConvert.DeserializeObject<List<Card>>(result);
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -645,12 +644,12 @@ namespace UNObot.Core.Services
             const string commandText = "SELECT cardsDrawn FROM UNObot.Games WHERE server = @Server";
             var cardsDrawn = 0;
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 cardsDrawn = await db.ExecuteScalarAsync<int>(commandText, new {Server = server});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -662,12 +661,12 @@ namespace UNObot.Core.Services
         {
             const string commandText = "UPDATE Games SET cardsDrawn = @CardsDrawn WHERE server = @Server";
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 await db.ExecuteAsync(commandText, new {CardsDrawn = count, Server = server});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -690,7 +689,7 @@ namespace UNObot.Core.Services
                 Parameters.Add(p1);
 
                 using var dr = db.ExecuteReader(CommandText, new {  });
-                await using var db = new MySqlConnection(ConnString); try
+                await using var db = _config.GetConnection(); try
                 {
                     if (dr.Read())
                     {
@@ -716,7 +715,7 @@ namespace UNObot.Core.Services
                         throw new InvalidOperationException($"Could not find record for server ${ID}!");
                     }
                 }
-                catch (MySqlException ex)
+                catch (DbException ex)
                 {
                     _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
                 }

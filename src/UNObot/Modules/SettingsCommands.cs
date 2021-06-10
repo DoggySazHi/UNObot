@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
 using UNObot.Plugins.Helpers;
 using UNObot.Plugins.Settings;
@@ -12,13 +13,16 @@ namespace UNObot.Modules
 {
     public class SettingsCommands : ModuleBase<SocketCommandContext>
     {
+        private readonly IConfig _config;
         private readonly DatabaseService _db;
         private readonly EmbedDisplayService _embed;
         
-        public SettingsCommands(DatabaseService db, EmbedDisplayService embed)
+        public SettingsCommands(IConfig config, DatabaseService db, EmbedDisplayService embed)
         {
+            _config = config;
             _db = db;
             _embed = embed;
+            
             var settings = new Setting("General Settings");
             settings.UpdateSetting("Prefix", new CodeBlock("."));
             settings.UpdateSetting("Enforce Channels", new Boolean(false));
@@ -53,9 +57,9 @@ namespace UNObot.Modules
         public async Task RemoveDefaultChannel()
         {
             await ReplyAsync(":white_check_mark: Removed default UNO channel, assuming there was one.");
-            if (!await DatabaseExtensions.HasDefaultChannel(_db.ConnString, Context.Guild.Id))
+            if (!await DatabaseExtensions.HasDefaultChannel(_config, Context.Guild.Id))
             {
-                var channel = await DatabaseExtensions.GetDefaultChannel(_db.ConnString, Context.Guild.Id);
+                var channel = await DatabaseExtensions.GetDefaultChannel(_config, Context.Guild.Id);
                 //remove default channel
                 var currentChannels = await _db.GetAllowedChannels(Context.Guild.Id);
                 currentChannels.Remove(channel);
@@ -96,7 +100,7 @@ namespace UNObot.Modules
                 return;
             }
 
-            if (!await DatabaseExtensions.HasDefaultChannel(_db.ConnString, Context.Guild.Id))
+            if (!await DatabaseExtensions.HasDefaultChannel(_config, Context.Guild.Id))
             {
                 await Context.Channel.SendMessageAsync(
                     "Error: Cannot enable enforcechannels if there is no default channel!");
@@ -119,11 +123,11 @@ namespace UNObot.Modules
             "UNObot 2.0")]
         public async Task AddAllowedChannel()
         {
-            if (!await DatabaseExtensions.HasDefaultChannel(_db.ConnString, Context.Guild.Id))
+            if (!await DatabaseExtensions.HasDefaultChannel(_config, Context.Guild.Id))
             {
                 await ReplyAsync("Error: You need to set a default channel first.");
             }
-            else if (await DatabaseExtensions.GetDefaultChannel(_db.ConnString, Context.Guild.Id) == Context.Channel.Id)
+            else if (await DatabaseExtensions.GetDefaultChannel(_config, Context.Guild.Id) == Context.Channel.Id)
             {
                 await ReplyAsync(
                     "The default UNO channel has been set to this already; there is no need to add this as a default channel.");

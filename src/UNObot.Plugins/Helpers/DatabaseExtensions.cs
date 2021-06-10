@@ -1,8 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Data.Common;
+using System.Data.SqlClient;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Dapper;
 using MySql.Data.MySqlClient;
 
 namespace UNObot.Plugins.Helpers
@@ -11,56 +13,36 @@ namespace UNObot.Plugins.Helpers
     {
         public static bool HasDBValue(this object item) => !DBNull.Value.Equals(item) && item != null;
         
-        public static async Task<bool> HasDefaultChannel(string connString, ulong server)
+        public static async Task<bool> HasDefaultChannel(IConfig config, ulong server)
         {
-            var yesOrNo = false;
-            var parameters = new List<MySqlParameter>();
+            await using var connection = config.GetConnection();
 
-            const string commandText = "SELECT hasDefaultChannel FROM UNObot.Games WHERE server = ?";
-
-            var p1 = new MySqlParameter
-            {
-                Value = server
-            };
-            parameters.Add(p1);
+            const string commandText = "SELECT hasDefaultChannel FROM UNObot.Games WHERE server = @Server";
+            
             try
             {
-                var result = await MySqlHelper.ExecuteScalarAsync(connString, commandText, parameters.ToArray());
-                if (result.HasDBValue())
-                    yesOrNo = (byte) result == 1;
+                return await connection.ExecuteScalarAsync<bool>(commandText, new { Server = server });
             }
-            catch (MySqlException)
+            catch (DbException)
             {
-                yesOrNo = false;
+                return false;
             }
-
-            return yesOrNo;
         }
         
-        public static async Task<ulong> GetDefaultChannel(string connString, ulong server)
+        public static async Task<ulong> GetDefaultChannel(IConfig config, ulong server)
         {
-            ulong channel = 0;
-            var parameters = new List<MySqlParameter>();
+            await using var connection = config.GetConnection();
 
-            const string commandText = "SELECT playChannel FROM UNObot.Games WHERE server = ?";
-
-            var p1 = new MySqlParameter
-            {
-                Value = server
-            };
-            parameters.Add(p1);
+            const string commandText = "SELECT playChannel FROM UNObot.Games WHERE server = @Server";
+            
             try
             {
-                var result = await MySqlHelper.ExecuteScalarAsync(connString, commandText, parameters.ToArray());
-                if (result.HasDBValue())
-                    channel = (ulong) result;
+                return await connection.ExecuteScalarAsync<ulong>(commandText, new { Server = server });
             }
-            catch (MySqlException)
+            catch (DbException)
             {
-                
+                return 0;
             }
-
-            return channel;
         }
         
         public static string GetConnectionString(this IConfig config)
@@ -69,6 +51,13 @@ namespace UNObot.Plugins.Helpers
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             Encoding.GetEncoding("windows-1254");
             return config.UseSqlServer ? config.SqlConnection : config.MySqlConnection;
+        }
+        
+        public static DbConnection GetConnection(this IConfig config)
+        {
+            if (config.UseSqlServer)
+                return new SqlConnection(GetConnectionString(config));
+            return new MySqlConnection(GetConnectionString(config));
         }
 
         public static string ConvertSql(IConfig config, string commandMySql)

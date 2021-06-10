@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Data.Common;
 using System.Threading.Tasks;
 using Discord;
 using MySql.Data.MySqlClient;
@@ -37,7 +38,7 @@ namespace UNObot.ServerQuery.Services
                 if (result.HasDBValue())
                     username = (string) result;
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }

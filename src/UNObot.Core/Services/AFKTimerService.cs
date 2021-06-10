@@ -12,14 +12,16 @@ namespace UNObot.Core.Services
 {
     public class AFKTimerService
     {
-        private static readonly Dictionary<ulong, Timer> PlayTimers = new Dictionary<ulong, Timer>();
+        private static readonly Dictionary<ulong, Timer> PlayTimers = new();
+        private readonly IConfig _config;
         private readonly ILogger _logger;
         private readonly DatabaseService _db;
         private readonly QueueHandlerService _queue;
         private readonly DiscordSocketClient _client;
 
-        public AFKTimerService(ILogger logger, DatabaseService db, QueueHandlerService queue, DiscordSocketClient client)
+        public AFKTimerService(IConfig config, ILogger logger, DatabaseService db, QueueHandlerService queue, DiscordSocketClient client)
         {
+            _config = config;
             _logger = logger;
             _db = db;
             _queue = queue;
@@ -117,8 +119,8 @@ namespace UNObot.Core.Services
         {
             var channel = _client.GetGuild(server).DefaultChannel.Id;
             _logger.Log(LogSeverity.Info, $"Channel: {channel}");
-            if (await DatabaseExtensions.HasDefaultChannel(_db.ConnString, server))
-                channel = await DatabaseExtensions.GetDefaultChannel(_db.ConnString, server);
+            if (await DatabaseExtensions.HasDefaultChannel(_config, server))
+                channel = await DatabaseExtensions.GetDefaultChannel(_config, server);
             _logger.Log(LogSeverity.Info, $"Channel: {channel}");
 
             try

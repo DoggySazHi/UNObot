@@ -1,8 +1,8 @@
-﻿using System.Threading.Tasks;
+﻿using System.Data.Common;
+using System.Threading.Tasks;
 using ConnectBot.Templates;
 using Dapper;
 using Discord;
-using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
@@ -13,12 +13,11 @@ namespace ConnectBot.Services
     public class DatabaseService
     {
         private readonly ILogger _logger;
+        private readonly IConfig _config;
         private static readonly JsonSerializerSettings JsonSettings;
         private static readonly string DefaultBoard;
         private static readonly string DefaultQueue;
-
-        public string ConnString { get; }
-
+        
         static DatabaseService()
         {
             JsonSettings = new JsonSerializerSettings 
@@ -29,10 +28,10 @@ namespace ConnectBot.Services
             DefaultQueue = JsonConvert.SerializeObject(new GameQueue(), JsonSettings);
         }
 
-        public DatabaseService(IConfig config, ILogger logger)
+        public DatabaseService(ILogger logger, IConfig config)
         {
             _logger = logger;
-            ConnString = config.GetConnectionString();
+            _config = config;
             DefaultTypeMap.MatchNamesWithUnderscores = true;
         }
 
@@ -41,12 +40,12 @@ namespace ConnectBot.Services
             const string commandText =
                 "UPDATE UNObot.ConnectBot_Games SET board = @Board, queue = @Queue, description = null WHERE server = @Server";
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 await db.ExecuteAsync(commandText, new { Board = DefaultBoard, Queue = DefaultQueue, Server = server });
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -55,7 +54,7 @@ namespace ConnectBot.Services
         public async Task<Game> GetGame(ulong server)
         {
             const string commandText = "SELECT * FROM UNObot.ConnectBot_Games WHERE server = @Server";
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 var result = await db.QueryFirstOrDefaultAsync(commandText, new {Server = server});
@@ -70,7 +69,7 @@ namespace ConnectBot.Services
                         LastMessage = result.lastMessage
                     };
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -82,7 +81,7 @@ namespace ConnectBot.Services
         public async Task UpdateGame(Game game)
         {
             const string commandText = "UPDATE UNObot.ConnectBot_Games SET gameMode = @GameMode, board = @Board, `description` = @Description, queue = @Queue, lastChannel = @LastChannel, lastMessage = @LastMessage WHERE server = @Server";
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 lock (game)
@@ -99,7 +98,7 @@ namespace ConnectBot.Services
                     });
                 }
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -109,12 +108,12 @@ namespace ConnectBot.Services
         {
             const string commandText = "INSERT IGNORE UNObot.ConnectBot_Games (server, board, queue) VALUES (@Server, @Board, @Queue)";
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 await db.ExecuteAsync(commandText, new { Server = server, Board = DefaultBoard, Queue = DefaultQueue });
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -125,12 +124,12 @@ namespace ConnectBot.Services
             const string commandText =
                 "INSERT IGNORE INTO ConnectBot_Players (userid) VALUES(@User)";
             
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 await db.ExecuteAsync(commandText, new {User = user});
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -143,14 +142,14 @@ namespace ConnectBot.Services
             const string commandText =
                 "SELECT gamesJoined, gamesPlayed, gamesWon FROM ConnectBot_Players WHERE userid = @User";
             
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 var results = await db.QueryFirstOrDefaultAsync(commandText, new { User = user });
                 if (!ReferenceEquals(null, results))
                     return (results.gamesJoined, results.gamesPlayed, results.gamesWon);
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -165,12 +164,12 @@ namespace ConnectBot.Services
             var commandText =
                 $"UPDATE UNObot.ConnectBot_Players SET {column} = {column} + 1 WHERE userid = @User";
             
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 await db.ExecuteAsync(commandText, new { User = user });
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -181,14 +180,14 @@ namespace ConnectBot.Services
             const string commandText =
                 "SELECT defaultWidth, defaultHeight, defaultConnect FROM ConnectBot_Players WHERE userid = @User";
             
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 var results = await db.QueryFirstOrDefaultAsync(commandText, new { User = user });
                 if (!ReferenceEquals(null, results))
                     return (results.defaultWidth, results.defaultHeight, results.defaultConnect);
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -200,12 +199,12 @@ namespace ConnectBot.Services
         {
             const string commandText = "UPDATE ConnectBot_Players SET defaultWidth = @Width, defaultHeight = @Height, defaultConnect = @Connect WHERE userid = @User";
             
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
                 await db.ExecuteAsync(commandText, new { User = user, Width = width, Height = height, Connect = connect });
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
