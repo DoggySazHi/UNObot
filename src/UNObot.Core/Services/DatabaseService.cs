@@ -36,7 +36,7 @@ namespace UNObot.Core.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
 
             return inGame;
@@ -53,7 +53,7 @@ namespace UNObot.Core.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
         }
 
@@ -68,7 +68,7 @@ namespace UNObot.Core.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
         }
 
@@ -80,11 +80,11 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                description = await db.ExecuteScalarAsync<string>(commandText, new {server});
+                description = await db.ExecuteScalarAsync<string>(commandText, new { Server = Convert.ToDecimal(server) });
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
 
             return description;
@@ -102,7 +102,7 @@ namespace UNObot.Core.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
         }
 
@@ -114,11 +114,11 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new {UserID = id, Username = username, Server = Convert.ToDecimal(server)});
+                await db.ExecuteAsync(commandText, new {UserID = Convert.ToDecimal(id), Username = username, Server = Convert.ToDecimal(server)});
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
         }
 
@@ -130,11 +130,11 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new {UserID = id, Username = username});
+                await db.ExecuteAsync(commandText, new { UserID = Convert.ToDecimal(id), Username = username });
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
         }
 
@@ -146,11 +146,11 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new {UserID = id});
+                await db.ExecuteAsync(commandText, new { UserID = Convert.ToDecimal(id) });
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
         }
 
@@ -167,11 +167,11 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new {Server = guild, InGame = inGame, GameMode = gameMode});
+                await db.ExecuteAsync(commandText, new { Server = Convert.ToDecimal(guild), InGame = inGame, GameMode = gameMode });
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
         }
 
@@ -184,11 +184,11 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                gamemode = await db.ExecuteScalarAsync<GameMode>(commandText, new {Server = Convert.ToDecimal(server)});
+                gamemode = await db.ExecuteScalarAsync<GameMode>(commandText, new { Server = Convert.ToDecimal(server) });
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
 
             return gamemode;
@@ -208,7 +208,7 @@ namespace UNObot.Core.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
 
             return players;
@@ -223,11 +223,11 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                server = await db.ExecuteScalarAsync<ulong>(commandText, new {UserID = player});
+                server = await db.ExecuteScalarAsync<ulong>(commandText, new { UserID = Convert.ToDecimal(player) });
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
 
             return server;
@@ -245,7 +245,7 @@ namespace UNObot.Core.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
         }
 
@@ -257,11 +257,11 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                players = new Queue<ulong>(await db.QueryAsync<ulong>(commandText, new {Server = Convert.ToDecimal(server)}));
+                players = new Queue<ulong>(await db.QueryAsync<ulong>(commandText, new { Server = Convert.ToDecimal(server) }));
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
 
             return players;
@@ -276,11 +276,11 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                player = await db.ExecuteScalarAsync<ulong>(commandText, new {Server = Convert.ToDecimal(server)});
+                player = await db.ExecuteScalarAsync<ulong>(commandText, new { Server = Convert.ToDecimal(server) });
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
 
             return player;
@@ -293,11 +293,11 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new {UserID = player, Server = Convert.ToDecimal(server)});
+                await db.ExecuteAsync(commandText, new {UserID = Convert.ToDecimal(player), Server = Convert.ToDecimal(server)});
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
         }
 
@@ -310,13 +310,13 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                var result = await db.ExecuteScalarAsync<string>(commandText, new {Server = Convert.ToDecimal(server)});
+                var result = await db.ExecuteScalarAsync<string>(commandText, new { Server = Convert.ToDecimal(server) });
                 if (result.HasDBValue())
                     card = JsonConvert.DeserializeObject<Card>(result);
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
 
             return card;
@@ -330,11 +330,11 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new {Card = cardJson, Server = Convert.ToDecimal(server)});
+                await db.ExecuteAsync(commandText, new { Card = cardJson, Server = Convert.ToDecimal(server) });
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
         }
 
@@ -347,11 +347,11 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                result = await db.ExecuteScalarAsync<bool>(commandText, new {UserID = player});
+                result = await db.ExecuteScalarAsync<bool>(commandText, new { UserID = Convert.ToDecimal(player) });
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
 
             return result;
@@ -365,7 +365,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                var result = await db.ExecuteScalarAsync<string>(commandText, new {Server = Convert.ToDecimal(server)});
+                var result = await db.ExecuteScalarAsync<string>(commandText, new { Server = Convert.ToDecimal(server) });
                 if (result.HasDBValue())
                 {
                     var temp = JsonConvert.DeserializeObject<Queue<ulong>>(result);
@@ -375,7 +375,7 @@ namespace UNObot.Core.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
 
             return players.Contains(player);
@@ -389,13 +389,13 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                var result = await db.ExecuteScalarAsync<string>(commandText, new {UserID = player});
+                var result = await db.ExecuteScalarAsync<string>(commandText, new { UserID = Convert.ToDecimal(player) });
                 if (result.HasDBValue())
                     cards = JsonConvert.DeserializeObject<List<Card>>(result);
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
 
             return cards;
@@ -409,11 +409,11 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                exists = await db.ExecuteScalarAsync<bool>(commandText, new {UserID = player});
+                exists = await db.ExecuteScalarAsync<bool>(commandText, new { UserID = Convert.ToDecimal(player) });
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
 
             return exists;
@@ -438,7 +438,7 @@ namespace UNObot.Core.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
         }
 
@@ -457,13 +457,13 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                var results = await db.QueryFirstOrDefaultAsync(commandText, new {UserID = player});
+                var results = await db.QueryFirstOrDefaultAsync(commandText, new { UserID = Convert.ToDecimal(player) });
                 if (!ReferenceEquals(null, results))
                     return (results.gamesJoined, results.gamesPlayed, results.gamesWon);
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
 
             return (0, 0, 0);
@@ -477,11 +477,11 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                message = await db.ExecuteScalarAsync<string>(commandText, new {UserID = player});
+                message = await db.ExecuteScalarAsync<string>(commandText, new { UserID = Convert.ToDecimal(player) });
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
 
             return message;
@@ -494,11 +494,11 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new {Note = note, UserID = player});
+                await db.ExecuteAsync(commandText, new { Note = note, UserID = Convert.ToDecimal(player) });
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
         }
 
@@ -509,11 +509,11 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new {UserID = player});
+                await db.ExecuteAsync(commandText, new { UserID = Convert.ToDecimal(player) });
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
         }
 
@@ -534,11 +534,11 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new {UserID = player});
+                await db.ExecuteAsync(commandText, new { UserID = Convert.ToDecimal(player) });
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
         }
 
@@ -559,11 +559,11 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new {Cards = json, UserID = player});
+                await db.ExecuteAsync(commandText, new { Cards = json, UserID = Convert.ToDecimal(player) });
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
         }
 
@@ -593,11 +593,11 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new {Cards = json, UserID = player});
+                await db.ExecuteAsync(commandText, new { Cards = json, UserID = Convert.ToDecimal(player) });
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
 
             return true;
@@ -612,11 +612,11 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new {Cards = json, Server = Convert.ToDecimal(server)});
+                await db.ExecuteAsync(commandText, new { Cards = json, Server = Convert.ToDecimal(server) });
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
         }
 
@@ -628,13 +628,13 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                var result = await db.ExecuteScalarAsync<string>(commandText, new {Server = Convert.ToDecimal(server)});
+                var result = await db.ExecuteScalarAsync<string>(commandText, new { Server = Convert.ToDecimal(server) });
                 if (result.HasDBValue())
                     cards = JsonConvert.DeserializeObject<List<Card>>(result);
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
 
             return cards;
@@ -648,11 +648,11 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                cardsDrawn = await db.ExecuteScalarAsync<int>(commandText, new {Server = Convert.ToDecimal(server)});
+                cardsDrawn = await db.ExecuteScalarAsync<int>(commandText, new { Server = Convert.ToDecimal(server) });
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
 
             return cardsDrawn;
@@ -665,89 +665,12 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new {CardsDrawn = count, Server = Convert.ToDecimal(server)});
+                await db.ExecuteAsync(commandText, new { CardsDrawn = count, Server = Convert.ToDecimal(server) });
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "An SQL error has occurred.", ex);
             }
         }
-
-        /*
-        public class Server
-        {
-            public bool InGame;
-
-            public Server(ulong ID)
-            {
-                this.ID = ID;
-                const string CommandText = "SELECT * FROM UNObot.Games WHERE server = ?";
-                
-                var p1 = new MySqlParameter
-                {
-                    Value = ID
-                };
-                Parameters.Add(p1);
-
-                using var dr = db.ExecuteReader(CommandText, new {  });
-                await using var db = _config.GetConnection(); try
-                {
-                    if (dr.Read())
-                    {
-                        InGame = dr.GetBoolean("inGame");
-                        Gamemode = (UNOCoreServices.GameMode) dr.GetUInt16("gameMode");
-                        CurrentCardJSON = dr.GetString("currentCard");
-                        if (!dr.IsDBNull(dr.GetOrdinal("oneCardLeft")))
-                            UNOUser = dr.GetUInt64("oneCardLeft");
-                        CardsDrawn = dr.GetInt32("cardsDrawn");
-                        QueueJSON = dr.GetString("queue");
-                        if (!dr.IsDBNull(dr.GetOrdinal("description")))
-                            Description = dr.GetString("description");
-                        if (!dr.IsDBNull(dr.GetOrdinal("playChannel")))
-                            PlayChannel = dr.GetUInt64("playChannel");
-                        HasDefaultChannel = dr.GetBoolean("hasDefaultChannel");
-                        EnforceChannel = dr.GetBoolean("enforceChannel");
-                        AllowedChannelsJSON = dr.GetString("allowedChannels");
-                        CommandPrefix = dr.GetChar("commandPrefix");
-                        CardsJSON = dr.GetString("cards");
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException($"Could not find record for server ${ID}!");
-                    }
-                }
-                catch (DbException ex)
-                {
-                    _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
-                }
-            }
-
-            public ulong ID { get; }
-            public UNOCoreServices.GameMode Gamemode { get; }
-            private string CurrentCardJSON { get; }
-            public Card CurrentCard { get; private set; }
-            public ulong UNOUser { get; }
-            public int CardsDrawn { get; }
-            private string QueueJSON { get; }
-            public Queue<ulong> Queue { get; private set; }
-            public string Description { get; }
-            public ulong PlayChannel { get; }
-            public bool HasDefaultChannel { get; }
-            public bool EnforceChannel { get; }
-            private string AllowedChannelsJSON { get; }
-            public List<ulong> AllowedChannels { get; private set; }
-            public char CommandPrefix { get; }
-            private string CardsJSON { get; }
-            public List<Card> Cards { get; private set; }
-
-            public void ParseJSON()
-            {
-                CurrentCard = JsonConvert.DeserializeObject<Card>(CurrentCardJSON);
-                Queue = JsonConvert.DeserializeObject<Queue<ulong>>(QueueJSON);
-                AllowedChannels = JsonConvert.DeserializeObject<List<ulong>>(AllowedChannelsJSON);
-                Cards = JsonConvert.DeserializeObject<List<Card>>(CardsJSON);
-            }
-        }
-        */
     }
 }
