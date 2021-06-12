@@ -14,7 +14,7 @@ namespace UNObot.ServerQuery.Services
 
         public string ConnString { get; }
         
-        public DatabaseService(ILogger logger, IConfig config)
+        public DatabaseService(ILogger logger, IUNObotConfig config)
         {
             _logger = logger;
             ConnString = config.GetConnectionString();

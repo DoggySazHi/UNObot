@@ -1,6 +1,6 @@
 ﻿namespace UNObot.Plugins
 {
-    public interface IConfig
+    public interface IUNObotConfig
     {
         public string Token { get; }
         public string Version { get; }

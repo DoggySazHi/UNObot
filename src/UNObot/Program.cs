@@ -6,7 +6,6 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
 using UNObot.Plugins;
 using UNObot.Services;
 using UNObot.Templates;
@@ -18,7 +17,7 @@ namespace UNObot
         private ServiceProvider _services;
         private DiscordSocketClient _client;
         private static readonly ManualResetEvent ExitEvent = new(false);
-        private IConfig _config;
+        private IUNObotConfig _config;
         private ILogger _logger;
 
         private static async Task Main()
@@ -144,15 +143,14 @@ namespace UNObot
             Environment.Exit(0);
         }
 
-        private IConfig BuildConfig()
+        private IUNObotConfig BuildConfig()
         {
             _logger.Log(LogSeverity.Info, $"Reading files in {Directory.GetCurrentDirectory()}");
             if (!File.Exists("config.json"))
             {
                 _logger.Log(LogSeverity.Info,
                     "Config doesn't exist! The file has been created, please edit all fields to be correct. Exiting.");
-                File.WriteAllText("config.json",
-                    JsonConvert.SerializeObject(new UNObotConfig(), Formatting.Indented));
+                new UNObotConfig().Write("config.json");
                 Environment.Exit(1);
                 return null;
             }

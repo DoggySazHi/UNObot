@@ -21,9 +21,9 @@ namespace UNObot.Core.Services
     {
         private readonly DatabaseService _db;
         private readonly DiscordSocketClient _client;
-        private readonly IConfig _config;
+        private readonly IUNObotConfig _config;
         
-        public EmbedService(DatabaseService db, DiscordSocketClient client, IConfig config)
+        public EmbedService(DatabaseService db, DiscordSocketClient client, IUNObotConfig config)
         {
             _db = db;
             _client = client;

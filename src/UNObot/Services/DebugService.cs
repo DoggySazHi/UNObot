@@ -6,7 +6,7 @@ namespace UNObot.Services
 {
     public class DebugService
     {
-        public DebugService(IConfig config, ILogger logger)
+        public DebugService(IUNObotConfig config, ILogger logger)
         {
             if (!config.Version.Contains("Debug", StringComparison.OrdinalIgnoreCase))
                 return;

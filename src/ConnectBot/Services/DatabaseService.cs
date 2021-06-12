@@ -13,7 +13,7 @@ namespace ConnectBot.Services
     public class DatabaseService
     {
         private readonly ILogger _logger;
-        private readonly IConfig _config;
+        private readonly IUNObotConfig _config;
         private static readonly JsonSerializerSettings JsonSettings;
         private static readonly string DefaultBoard;
         private static readonly string DefaultQueue;
@@ -28,7 +28,7 @@ namespace ConnectBot.Services
             DefaultQueue = JsonConvert.SerializeObject(new GameQueue(), JsonSettings);
         }
 
-        public DatabaseService(ILogger logger, IConfig config)
+        public DatabaseService(ILogger logger, IUNObotConfig config)
         {
             _logger = logger;
             _config = config;

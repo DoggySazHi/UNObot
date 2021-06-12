@@ -54,7 +54,7 @@ namespace UNObot.Services
             if (services != null)
                 provider = services.AddSingleton(_discord)
                     .AddSingleton(_logger)
-                    .AddSingleton(_provider.GetRequiredService<IConfig>())
+                    .AddSingleton(_provider.GetRequiredService<IUNObotConfig>())
                     .AddSingleton(this) // Required for .help, which seeks duplicates.
                     .BuildServiceProvider();
             await LoadHelp(assembly, provider, original);
@@ -203,7 +203,7 @@ namespace UNObot.Services
             if (services != null)
                  provider = services.AddSingleton(_discord)
                     .AddSingleton(_logger)
-                    .AddSingleton(_provider.GetRequiredService<IConfig>())
+                    .AddSingleton(_provider.GetRequiredService<IUNObotConfig>())
                     .AddSingleton(this) // Required for .help, which seeks duplicates.
                     .BuildServiceProvider();
             await LoadHelp(asm, provider);

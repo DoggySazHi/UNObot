@@ -12,9 +12,9 @@ namespace UNObot.MusicBot.Modules
     public class MusicBotCommands : ModuleBase<SocketCommandContext>
     {
         private readonly MusicBotService _music;
-        private readonly IConfig _config;
+        private readonly IUNObotConfig _config;
 
-        public MusicBotCommands(MusicBotService music, IConfig config)
+        public MusicBotCommands(MusicBotService music, IUNObotConfig config)
         {
             _music = music;
             _config = config;

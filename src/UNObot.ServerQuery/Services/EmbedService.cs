@@ -15,12 +15,12 @@ namespace UNObot.ServerQuery.Services
         private const int Attempts = 3;
 
         private readonly ILogger _logger;
-        private readonly IConfig _config;
+        private readonly IUNObotConfig _config;
         private readonly DatabaseService _db;
         private readonly QueryHandlerService _query;
         private readonly MinecraftProcessorService _minecraft;
 
-        public EmbedService(ILogger logger, IConfig config, DatabaseService db, QueryHandlerService query,
+        public EmbedService(ILogger logger, IUNObotConfig config, DatabaseService db, QueryHandlerService query,
             MinecraftProcessorService minecraft)
         {
             _logger = logger;

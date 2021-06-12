@@ -19,7 +19,7 @@ namespace ConnectBot.Services
         private readonly ButtonHandler _button;
         private readonly ILogger _logger;
         
-        public GameService(IConfig config, DatabaseService db, AFKTimerService afk, ButtonHandler button, ILogger logger) : base(config)
+        public GameService(IUNObotConfig config, DatabaseService db, AFKTimerService afk, ButtonHandler button, ILogger logger) : base(config)
         {
             _db = db;
             _afk = afk;

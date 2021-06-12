@@ -13,11 +13,11 @@ namespace UNObot.Modules
 {
     public class SettingsCommands : ModuleBase<SocketCommandContext>
     {
-        private readonly IConfig _config;
+        private readonly IUNObotConfig _config;
         private readonly DatabaseService _db;
         private readonly EmbedDisplayService _embed;
         
-        public SettingsCommands(IConfig config, DatabaseService db, EmbedDisplayService embed)
+        public SettingsCommands(IUNObotConfig config, DatabaseService db, EmbedDisplayService embed)
         {
             _config = config;
             _db = db;

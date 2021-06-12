@@ -12,9 +12,9 @@ namespace UNObot.Google.Modules
     public class CoreCommands : ModuleBase<SocketCommandContext>
     {
         private readonly GoogleSearchService _google;
-        private readonly IConfig _config;
+        private readonly IUNObotConfig _config;
         
-        public CoreCommands(GoogleSearchService google, IConfig config)
+        public CoreCommands(GoogleSearchService google, IUNObotConfig config)
         {
             _google = google;
             _config = config;

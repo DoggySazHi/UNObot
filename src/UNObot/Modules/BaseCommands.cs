@@ -11,10 +11,10 @@ namespace UNObot.Modules
 {
     public class BaseCommands : ModuleBase<SocketCommandContext>
     {
-        private readonly IConfig _config;
+        private readonly IUNObotConfig _config;
         private readonly CommandHandlingService _commands;
         
-        public BaseCommands(IConfig config, CommandHandlingService commands)
+        public BaseCommands(IUNObotConfig config, CommandHandlingService commands)
         {
             _config = config;
             _commands = commands;

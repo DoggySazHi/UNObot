@@ -13,9 +13,9 @@ namespace UNObot.Services
 {
     public class EmbedDisplayService
     {
-        private readonly IConfig _config;
+        private readonly IUNObotConfig _config;
 
-        public EmbedDisplayService(IConfig config)
+        public EmbedDisplayService(IUNObotConfig config)
         {
             _config = config;
         }

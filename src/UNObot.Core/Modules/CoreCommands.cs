@@ -11,9 +11,9 @@ namespace UNObot.Core.Modules
     public class CoreCommands : ModuleBase<SocketCommandContext>
     {
         private readonly ILogger _logger;
-        private readonly IConfig _config;
+        private readonly IUNObotConfig _config;
         
-        public CoreCommands(ILogger logger, IConfig config)
+        public CoreCommands(ILogger logger, IUNObotConfig config)
         {
             _logger = logger;
             _config = config;

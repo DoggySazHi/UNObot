@@ -13,7 +13,7 @@ namespace UNObot.Plugins.Helpers
     {
         public static bool HasDBValue(this object item) => !DBNull.Value.Equals(item) && item != null;
         
-        public static async Task<bool> HasDefaultChannel(IConfig config, ulong server)
+        public static async Task<bool> HasDefaultChannel(IUNObotConfig config, ulong server)
         {
             await using var connection = config.GetConnection();
 
@@ -29,7 +29,7 @@ namespace UNObot.Plugins.Helpers
             }
         }
         
-        public static async Task<ulong> GetDefaultChannel(IConfig config, ulong server)
+        public static async Task<ulong> GetDefaultChannel(IUNObotConfig config, ulong server)
         {
             await using var connection = config.GetConnection();
 
@@ -45,7 +45,7 @@ namespace UNObot.Plugins.Helpers
             }
         }
         
-        public static string GetConnectionString(this IConfig config)
+        public static string GetConnectionString(this IUNObotConfig config)
         {
             //ha, damn the limited encodings.
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -53,14 +53,14 @@ namespace UNObot.Plugins.Helpers
             return config.UseSqlServer ? config.SqlConnection : config.MySqlConnection;
         }
         
-        public static DbConnection GetConnection(this IConfig config)
+        public static DbConnection GetConnection(this IUNObotConfig config)
         {
             if (config.UseSqlServer)
                 return new SqlConnection(GetConnectionString(config));
             return new MySqlConnection(GetConnectionString(config));
         }
 
-        public static string ConvertSql(IConfig config, string commandMySql)
+        public static string ConvertSql(IUNObotConfig config, string commandMySql)
         {
             var identity = commandMySql.Replace("LAST_INSERT_ID()", "SCOPE_IDENTITY()");
             var brackets = new Regex(@"`([^`]*)`", RegexOptions.Multiline).Replace(identity, @"[$1]");

@@ -14,10 +14,10 @@ namespace UNObot.MusicBot.Services
     public class EmbedService
     {
         private readonly YoutubeService _youtube;
-        private readonly IConfig _config;
+        private readonly IUNObotConfig _config;
         private readonly DiscordSocketClient _client;
         
-        public EmbedService(YoutubeService youtube, IConfig config, DiscordSocketClient client)
+        public EmbedService(YoutubeService youtube, IUNObotConfig config, DiscordSocketClient client)
         {
             _youtube = youtube;
             _config = config;

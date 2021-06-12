@@ -57,6 +57,8 @@
       <MusicBotPlugin Include="$(SolutionDir)src\UNObot.MusicBot\bin\Release\net5.0\*.dll" />
       <DuplicateDetectorPlugin Include="$(SolutionDir)src\DuplicateDetector\bin\Release\net5.0\*.dll" />
       <ConnectBotPlugin Include="$(SolutionDir)src\ConnectBot\bin\Release\net5.0\*.dll" />
+      <GooglePlugin Include="$(SolutionDir)src\UNObot.Google\bin\Release\net5.0\*.dll" />
+      <MiscPlugin Include="$(SolutionDir)src\UNObot.Misc\bin\Release\net5.0\*.dll" />
       <Config Include="$(SolutionDir)src\UNObot\config.json" />
     </ItemGroup>
 
@@ -66,6 +68,8 @@
       <MusicBotPlugin Include="$(SolutionDir)src\UNObot.MusicBot\bin\Debug\net5.0\*.dll" />
       <DuplicateDetectorPlugin Include="$(SolutionDir)src\DuplicateDetector\bin\Debug\net5.0\*.dll" />
       <ConnectBotPlugin Include="$(SolutionDir)src\ConnectBot\bin\Debug\net5.0\*.dll" />
+      <GooglePlugin Include="$(SolutionDir)src\UNObot.Google\bin\Debug\net5.0\*.dll" />
+      <MiscPlugin Include="$(SolutionDir)src\UNObot.Misc\bin\Debug\net5.0\*.dll" />
       <Config Include="$(SolutionDir)src\UNObot\config.json" />
     </ItemGroup>
     
@@ -75,6 +79,8 @@
     <Copy SourceFiles="@(MusicBotPlugin)" DestinationFolder="$(ProjectDir)$(OutDir)plugins" SkipUnchangedFiles="false" ContinueOnError="true" />
     <Copy SourceFiles="@(DuplicateDetectorPlugin)" DestinationFolder="$(ProjectDir)$(OutDir)plugins" SkipUnchangedFiles="false" ContinueOnError="true" />
     <Copy SourceFiles="@(ConnectBotPlugin)" DestinationFolder="$(ProjectDir)$(OutDir)plugins" SkipUnchangedFiles="false" ContinueOnError="true" />
+    <Copy SourceFiles="@(GooglePlugin)" DestinationFolder="$(ProjectDir)$(OutDir)plugins" SkipUnchangedFiles="false" ContinueOnError="true" />
+    <Copy SourceFiles="@(MiscPlugin)" DestinationFolder="$(ProjectDir)$(OutDir)plugins" SkipUnchangedFiles="false" ContinueOnError="true" />
     <Copy SourceFiles="@(Config)" DestinationFolder="$(ProjectDir)$(OutDir)" SkipUnchangedFiles="false" ContinueOnError="true" />
 
     <MakeDir Directories="$(PublishDir)plugins" ContinueOnError="false" />
@@ -83,6 +89,8 @@
     <Copy SourceFiles="@(MusicBotPlugin)" DestinationFolder="$(PublishDir)plugins" SkipUnchangedFiles="false" ContinueOnError="true" />
     <Copy SourceFiles="@(DuplicateDetectorPlugin)" DestinationFolder="$(PublishDir)plugins" SkipUnchangedFiles="false" ContinueOnError="true" />
     <Copy SourceFiles="@(ConnectBotPlugin)" DestinationFolder="$(PublishDir)plugins" SkipUnchangedFiles="false" ContinueOnError="true" />
+    <Copy SourceFiles="@(GooglePlugin)" DestinationFolder="$(PublishDir)plugins" SkipUnchangedFiles="false" ContinueOnError="true" />
+    <Copy SourceFiles="@(MiscPlugin)" DestinationFolder="$(PublishDir)plugins" SkipUnchangedFiles="false" ContinueOnError="true" />
     <Copy SourceFiles="@(Config)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="false" ContinueOnError="true" />
   </Target>
 </Project>

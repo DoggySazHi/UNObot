@@ -10,9 +10,9 @@ namespace ConnectBot.Services
 {
     public abstract class EmbedService
     {
-        private readonly IConfig _config;
+        private readonly IUNObotConfig _config;
 
-        public EmbedService(IConfig config)
+        public EmbedService(IUNObotConfig config)
         {
             _config = config;
         }

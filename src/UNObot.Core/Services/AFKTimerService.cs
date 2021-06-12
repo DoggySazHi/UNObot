@@ -13,13 +13,13 @@ namespace UNObot.Core.Services
     public class AFKTimerService
     {
         private static readonly Dictionary<ulong, Timer> PlayTimers = new();
-        private readonly IConfig _config;
+        private readonly IUNObotConfig _config;
         private readonly ILogger _logger;
         private readonly DatabaseService _db;
         private readonly QueueHandlerService _queue;
         private readonly DiscordSocketClient _client;
 
-        public AFKTimerService(IConfig config, ILogger logger, DatabaseService db, QueueHandlerService queue, DiscordSocketClient client)
+        public AFKTimerService(IUNObotConfig config, ILogger logger, DatabaseService db, QueueHandlerService queue, DiscordSocketClient client)
         {
             _config = config;
             _logger = logger;

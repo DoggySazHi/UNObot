@@ -13,10 +13,10 @@ namespace UNObot.Services
 {
     public class DatabaseService
     {
-        private readonly IConfig _config;
+        private readonly IUNObotConfig _config;
         private readonly ILogger _logger;
 
-        public DatabaseService(IConfig config, ILogger logger)
+        public DatabaseService(IUNObotConfig config, ILogger logger)
         {
             _config = config;
             _logger = logger;

@@ -11,7 +11,7 @@ namespace ConnectBot.Services
     {
         private readonly DatabaseService _db;
         
-        public ConfigService(IConfig config, DatabaseService db) : base(config)
+        public ConfigService(IUNObotConfig config, DatabaseService db) : base(config)
         {
             _db = db;
         }
