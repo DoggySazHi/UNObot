@@ -8,7 +8,6 @@ using Dapper;
 using Discord;
 using Discord.WebSocket;
 using DuplicateDetector.Templates;
-using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
@@ -19,12 +18,12 @@ namespace DuplicateDetector.Services
     {
         private readonly ILogger _logger;
         private readonly DiscordSocketClient _client;
-        private readonly IAIConfig _config;
+        private readonly DuplicateDetectorConfig _config;
 
         private readonly string _cacheDir;
         private readonly string _imageDir;
         
-        public IndexerService(ILogger logger, DiscordSocketClient client, IAIConfig config)
+        public IndexerService(ILogger logger, DiscordSocketClient client, DuplicateDetectorConfig config)
         {
             _logger = logger;
             _client = client;
@@ -54,7 +53,7 @@ namespace DuplicateDetector.Services
         {
             Task.Run(async () =>
             {
-                await using var db = new MySqlConnection(_config.DBConnStr);
+                await using var db = _config.GetConnection();
 
                 foreach (var attachment in message.Attachments)
                 {
@@ -63,9 +62,9 @@ namespace DuplicateDetector.Services
                         "INSERT INTO DuplicateDetector.Images (channel, message, author, url, proxy_url, spoiler, posted) VALUES (@Channel, @Message, @Author, @URL, @Proxy_URL, @Spoiler, @Posted)",
                         new 
                         {
-                            Channel = message.Channel.Id,
-                            Author = message.Author.Id,
-                            Message = message.Id,
+                            Channel = Convert.ToDecimal(message.Channel.Id),
+                            Author = Convert.ToDecimal(message.Author.Id),
+                            Message = Convert.ToDecimal(message.Id),
                             URL = attachment.Url,
                             Proxy_URL = attachment.ProxyUrl,
                             Spoiler = attachment.IsSpoiler(),
@@ -80,7 +79,7 @@ namespace DuplicateDetector.Services
         {
             try
             {
-                await using var db = new MySqlConnection(_config.DBConnStr);
+                await using var db = _config.GetConnection();
                 
                 var output = await db.QueryAsync<bool>(
                     "SELECT autolog FROM DuplicateDetector.Channels WHERE channel = @Channel",
@@ -102,10 +101,10 @@ namespace DuplicateDetector.Services
                 var counter = 0;
                 var path = Path.Combine(_cacheDir, $"url_list-{channel.Id}.json");
                 await using var sw = new StreamWriter(path);
-                await using var db = new MySqlConnection(_config.DBConnStr);
+                await using var db = _config.GetConnection();
                 _ = db.ExecuteAsync(
                     "INSERT INTO DuplicateDetector.Channels (channel, server, autolog) VALUES (@Channel, @Server, 1) ON DUPLICATE KEY UPDATE autolog = 1",
-                    new { Channel = channel.Id, Server = channel.Guild.Id });
+                    new { Channel = Convert.ToDecimal(channel.Id), Server = Convert.ToDecimal(channel.Guild.Id) });
                 var writeMessages = new List<ImageMessage>();
                 _logger.Log(LogSeverity.Debug, "Starting indexer.");
                 await foreach (var messages in channel.GetMessagesAsync(100000))
@@ -148,20 +147,32 @@ namespace DuplicateDetector.Services
         public async Task Index(ulong guild, ulong channel)
             => await Index(_client.GetGuild(guild).GetTextChannel(channel));
 
+        private class Image
+        {
+            public Image(int id, string url)
+            {
+                ID = id;
+                URL = url;
+            }
+
+            public int ID { get; }
+            public string URL { get; }
+        }
+        
         public async Task Download()
         {
-            const string command = "SELECT id, url, proxy_url FROM DuplicateDetector.Images";
-            await using var connection = new MySqlConnection(_config.DBConnStr);
+            const string command = "SELECT id, url FROM DuplicateDetector.Images";
+            await using var db = _config.GetConnection();
             try
             {
-                connection.Open();
-                await using var mySQLCmd = new MySqlCommand(command, connection);
-                await using var reader = await mySQLCmd.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
+                await using var query = await db.ExecuteReaderAsync(command);
+                var rowParser = query.GetRowParser<Image>();
+                
+                while (await query.ReadAsync())
                 {
-                    var url = reader.GetString(1);
+                    var data = rowParser(query);
 #pragma warning disable 4014
-                    DownloadImage(url, reader.GetInt32(0));
+                    DownloadImage(data.URL, data.ID);
 #pragma warning restore 4014
                 }
             }
@@ -169,10 +180,6 @@ namespace DuplicateDetector.Services
             {
                 _logger.Log(LogSeverity.Error, "Downloader failed!", e);
                 throw;
-            }
-            finally
-            {
-                await connection.CloseAsync();
             }
         }
         

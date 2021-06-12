@@ -11,7 +11,7 @@ namespace UNObot.Misc.Modules
         public string Version { get; private set; }
         public IServiceCollection Services { get; private set; }
 
-        public int OnLoad()
+        public int OnLoad(ILogger logger)
         {
             Name = "UNObot-Misc";
             Description = "Random utilities for testing.";
@@ -23,7 +23,7 @@ namespace UNObot.Misc.Modules
             return 0;
         }
 
-        public int OnUnload()
+        public int OnUnload(ILogger logger)
         {
             return 0;
         }

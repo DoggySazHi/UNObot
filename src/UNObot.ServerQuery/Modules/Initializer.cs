@@ -12,7 +12,7 @@ namespace UNObot.ServerQuery.Modules
         public string Version { get; private set; }
         public IServiceCollection Services { get; private set; }
 
-        public int OnLoad()
+        public int OnLoad(ILogger logger)
         {
             Name = "UNObot-ServerQuery";
             Description = "Utilities for probing game servers.";
@@ -30,7 +30,7 @@ namespace UNObot.ServerQuery.Modules
             return 0;
         }
 
-        public int OnUnload()
+        public int OnUnload(ILogger logger)
         {
             return 0;
         }

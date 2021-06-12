@@ -1,4 +1,5 @@
-﻿using System.Data.Common;
+﻿using System;
+using System.Data.Common;
 using System.Threading.Tasks;
 using ConnectBot.Templates;
 using Dapper;
@@ -13,7 +14,7 @@ namespace ConnectBot.Services
     public class DatabaseService
     {
         private readonly ILogger _logger;
-        private readonly IUNObotConfig _config;
+        private readonly ConnectBotConfig _config;
         private static readonly JsonSerializerSettings JsonSettings;
         private static readonly string DefaultBoard;
         private static readonly string DefaultQueue;
@@ -28,7 +29,7 @@ namespace ConnectBot.Services
             DefaultQueue = JsonConvert.SerializeObject(new GameQueue(), JsonSettings);
         }
 
-        public DatabaseService(ILogger logger, IUNObotConfig config)
+        public DatabaseService(ILogger logger, ConnectBotConfig config)
         {
             _logger = logger;
             _config = config;
@@ -43,7 +44,7 @@ namespace ConnectBot.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new { Board = DefaultBoard, Queue = DefaultQueue, Server = server });
+                await db.ExecuteAsync(commandText, new { Board = DefaultBoard, Queue = DefaultQueue, Server = Convert.ToDecimal(server) });
             }
             catch (DbException ex)
             {
@@ -57,7 +58,7 @@ namespace ConnectBot.Services
             await using var db = _config.GetConnection();
             try
             {
-                var result = await db.QueryFirstOrDefaultAsync(commandText, new {Server = server});
+                var result = await db.QueryFirstOrDefaultAsync(commandText, new { Server = Convert.ToDecimal(server) });
                 if (!ReferenceEquals(null, result))
                     return new Game(server)
                     {
@@ -88,7 +89,7 @@ namespace ConnectBot.Services
                 {
                     db.Execute(commandText, new
                     {
-                        game.Server,
+                        Server = Convert.ToDecimal(game.Server),
                         GameMode = (ushort) game.GameMode,
                         Board = JsonConvert.SerializeObject(game.Board),
                         game.Description,
@@ -111,7 +112,7 @@ namespace ConnectBot.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new { Server = server, Board = DefaultBoard, Queue = DefaultQueue });
+                await db.ExecuteAsync(commandText, new { Server = Convert.ToDecimal(server), Board = DefaultBoard, Queue = DefaultQueue });
             }
             catch (DbException ex)
             {
@@ -127,7 +128,7 @@ namespace ConnectBot.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new {User = user});
+                await db.ExecuteAsync(commandText, new { User = Convert.ToDecimal(user) });
             }
             catch (DbException ex)
             {
@@ -145,7 +146,7 @@ namespace ConnectBot.Services
             await using var db = _config.GetConnection();
             try
             {
-                var results = await db.QueryFirstOrDefaultAsync(commandText, new { User = user });
+                var results = await db.QueryFirstOrDefaultAsync(commandText, new { User = Convert.ToDecimal(user) });
                 if (!ReferenceEquals(null, results))
                     return (results.gamesJoined, results.gamesPlayed, results.gamesWon);
             }
@@ -160,14 +161,14 @@ namespace ConnectBot.Services
         public async Task UpdateStats(ulong user, ConnectBotStat stat)
         {
             var enumStr = stat.ToString();
-            var column = enumStr.Substring(0, 1).ToLower() + enumStr.Substring(1);
+            var column = enumStr[..1].ToLower() + enumStr[1..];
             var commandText =
                 $"UPDATE UNObot.ConnectBot_Players SET {column} = {column} + 1 WHERE userid = @User";
             
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new { User = user });
+                await db.ExecuteAsync(commandText, new { User = Convert.ToDecimal(user) });
             }
             catch (DbException ex)
             {
@@ -183,7 +184,7 @@ namespace ConnectBot.Services
             await using var db = _config.GetConnection();
             try
             {
-                var results = await db.QueryFirstOrDefaultAsync(commandText, new { User = user });
+                var results = await db.QueryFirstOrDefaultAsync(commandText, new { User = Convert.ToDecimal(user) });
                 if (!ReferenceEquals(null, results))
                     return (results.defaultWidth, results.defaultHeight, results.defaultConnect);
             }
@@ -202,7 +203,7 @@ namespace ConnectBot.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new { User = user, Width = width, Height = height, Connect = connect });
+                await db.ExecuteAsync(commandText, new { User = Convert.ToDecimal(user), Width = width, Height = height, Connect = connect });
             }
             catch (DbException ex)
             {

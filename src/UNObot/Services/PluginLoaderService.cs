@@ -102,14 +102,14 @@ namespace UNObot.Services
             foreach (var type in assembly.GetTypes())
             {
                 if (!typeof(IPlugin).IsAssignableFrom(type)) continue;
-                if (!(Activator.CreateInstance(type) is IPlugin result)) continue;
+                if (Activator.CreateInstance(type) is not IPlugin result) continue;
                 if (plugin != null) throw new InvalidOperationException("Read multiple IPlugins from one assembly!");
                 plugin = result;
                 var status = -1;
                 Exception ex = null;
                 try
                 {
-                    status = plugin.OnLoad();
+                    status = plugin.OnLoad(_logger);
                 }
                 catch (Exception e)
                 {
@@ -122,7 +122,7 @@ namespace UNObot.Services
                     ex = null;
                     try
                     {
-                        status = plugin.OnUnload();
+                        status = plugin.OnUnload(_logger);
                     }
                     catch (Exception e)
                     {
@@ -139,19 +139,20 @@ namespace UNObot.Services
                 }
             }
             
-            Task.Run(async () =>
-            {
-                try
+            if (loaded)
+                Task.Run(async () =>
                 {
-                    var moduleCounter = (await _commands.AddModulesAsync(assembly, plugin?.Services)).Count();
-                    _logger.Log(LogSeverity.Info, $"Found {moduleCounter} module{(moduleCounter == 1 ? "" : "s")} in {assembly.GetName().Name}.");
-                }
-                catch (Exception e)
-                {
-                    _logger.Log(LogSeverity.Critical, $"Could not load {assembly.GetName().Name}!", e);
-                    throw;
-                }
-            });
+                    try
+                    {
+                        var moduleCounter = (await _commands.AddModulesAsync(assembly, plugin?.Services)).Count();
+                        _logger.Log(LogSeverity.Info, $"Found {moduleCounter} module{(moduleCounter == 1 ? "" : "s")} in {assembly.GetName().Name}.");
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.Log(LogSeverity.Critical, $"Could not load {assembly.GetName().Name}!", e);
+                        throw;
+                    }
+                });
             
             if(plugin == null)
                 throw new MissingMemberException("Could not find plugin information!");
@@ -164,7 +165,7 @@ namespace UNObot.Services
                 return PluginStatus.AlreadyLoaded;
             var availablePlugins =
                 Directory.EnumerateFiles("plugins").Where(path =>
-                    path.Trim().Substring(path.LastIndexOf(Path.DirectorySeparatorChar) + 1)
+                    path.Trim()[(path.LastIndexOf(Path.DirectorySeparatorChar) + 1)..]
                         .Equals(name.Trim(), StringComparison.CurrentCultureIgnoreCase)).ToList();
             if (availablePlugins.Count == 0) return PluginStatus.NotFound;
             if (availablePlugins.Count > 1) return PluginStatus.Conflict;
@@ -191,7 +192,7 @@ namespace UNObot.Services
             try
             {
                 await _commands.RemoveModulesAsync(plugin.PluginAssembly);
-                unloadStatus = plugin.Plugin.OnUnload();
+                unloadStatus = plugin.Plugin.OnUnload(_logger);
             }
             catch (Exception e)
             {

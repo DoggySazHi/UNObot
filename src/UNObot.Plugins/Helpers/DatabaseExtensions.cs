@@ -21,7 +21,7 @@ namespace UNObot.Plugins.Helpers
             
             try
             {
-                return await connection.ExecuteScalarAsync<bool>(commandText, new { Server = server });
+                return await connection.ExecuteScalarAsync<bool>(commandText, new { Server = Convert.ToDecimal(server) });
             }
             catch (DbException)
             {
@@ -37,7 +37,7 @@ namespace UNObot.Plugins.Helpers
             
             try
             {
-                return await connection.ExecuteScalarAsync<ulong>(commandText, new { Server = server });
+                return await connection.ExecuteScalarAsync<ulong>(commandText, new { Server = Convert.ToDecimal(server) });
             }
             catch (DbException)
             {
@@ -45,7 +45,7 @@ namespace UNObot.Plugins.Helpers
             }
         }
         
-        public static string GetConnectionString(this IUNObotConfig config)
+        public static string GetConnectionString(this IDBConfig config)
         {
             //ha, damn the limited encodings.
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -53,14 +53,14 @@ namespace UNObot.Plugins.Helpers
             return config.UseSqlServer ? config.SqlConnection : config.MySqlConnection;
         }
         
-        public static DbConnection GetConnection(this IUNObotConfig config)
+        public static DbConnection GetConnection(this IDBConfig config)
         {
             if (config.UseSqlServer)
                 return new SqlConnection(GetConnectionString(config));
             return new MySqlConnection(GetConnectionString(config));
         }
 
-        public static string ConvertSql(IUNObotConfig config, string commandMySql)
+        public static string ConvertSql(IDBConfig config, string commandMySql)
         {
             var identity = commandMySql.Replace("LAST_INSERT_ID()", "SCOPE_IDENTITY()");
             var brackets = new Regex(@"`([^`]*)`", RegexOptions.Multiline).Replace(identity, @"[$1]");

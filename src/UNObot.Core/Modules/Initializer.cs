@@ -12,7 +12,7 @@ namespace UNObot.Core.Modules
         public string Version { get; private set; }
         public IServiceCollection Services { get; private set; }
 
-        public int OnLoad()
+        public int OnLoad(ILogger logger)
         {
             Name = "UNObot-Core";
             Description = "The core UNO commands the bot is not known for.";
@@ -29,7 +29,7 @@ namespace UNObot.Core.Modules
             return 0;
         }
 
-        public int OnUnload()
+        public int OnUnload(ILogger logger)
         {
             return 0;
         }

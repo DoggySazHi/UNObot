@@ -10,8 +10,8 @@ namespace UNObot.Plugins
         string Version { get; }
         IServiceCollection Services { get; }
 
-        int OnLoad();
-        int OnUnload();
+        int OnLoad(ILogger logger);
+        int OnUnload(ILogger logger);
 
         public string GetName()
         {

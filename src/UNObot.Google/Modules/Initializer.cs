@@ -12,7 +12,7 @@ namespace UNObot.Google.Modules
         public string Version { get; private set; }
         public IServiceCollection Services { get; private set; }
 
-        public int OnLoad()
+        public int OnLoad(ILogger logger)
         {
             Name = "UNObot-Google";
             Description = "Thanks Benzo, very cool!";
@@ -25,7 +25,7 @@ namespace UNObot.Google.Modules
             return 0;
         }
 
-        public int OnUnload()
+        public int OnUnload(ILogger logger)
         {
             return 0;
         }

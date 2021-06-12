@@ -9,7 +9,7 @@ using UNObot.Plugins;
 
 namespace DuplicateDetector.Templates
 {
-    public class DuplicateDetectorConfig
+    public class DuplicateDetectorConfig : IDBConfig
     {
         [JsonProperty] public string Version { get; private set; }
         [JsonProperty] public string SqlUser { get; private set; }

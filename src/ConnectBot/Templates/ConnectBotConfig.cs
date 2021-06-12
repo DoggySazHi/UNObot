@@ -9,7 +9,7 @@ using UNObot.Plugins;
 
 namespace ConnectBot.Templates
 {
-    public class ConnectBotConfig
+    public class ConnectBotConfig : IDBConfig
     {
         [JsonProperty] public string Version { get; private set; }
         [JsonProperty] public string SqlUser { get; private set; }
