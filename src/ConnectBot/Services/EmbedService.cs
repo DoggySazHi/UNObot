@@ -2,51 +2,29 @@
 using System.Threading.Tasks;
 using ConnectBot.Templates;
 using Discord;
-using Discord.Commands;
-using Microsoft.Extensions.Configuration;
+using UNObot.Plugins;
+using UNObot.Plugins.Helpers;
 using UNObot.Plugins.TerminalCore;
 
 namespace ConnectBot.Services
 {
     public abstract class EmbedService
     {
-        private readonly IConfiguration _config;
+        private readonly IUNObotConfig _config;
 
-        public EmbedService(IConfiguration config)
+        public EmbedService(IUNObotConfig config)
         {
             _config = config;
         }
-        
-        internal async Task<IUserMessage> GhostMessage(ICommandContext context, string text = null, string fallback = null, Embed embed = null, int time = 5000)
-        {
-            if (text == null && embed == null)
-                return null;
-            IUserMessage message;
-            try
-            {
-                message = await context.Channel.SendMessageAsync(text, embed: embed);
-            }
-            catch (CommandException)
-            {
-                fallback ??= text;
-                message = await context.Channel.SendMessageAsync(fallback);
-            }
 
-            if (time <= 0)
-                return message;
-            await Task.Delay(time);
-            await message.DeleteAsync();
-            return null;
-        }
-
-        internal async Task<IUserMessage> ErrorEmbed(ICommandContextEx context, string message, bool ghost = false)
+        public async Task<IUserMessage> ErrorEmbed(ICommandContextEx context, string message, bool ghost = false)
         {
             var error = new EmbedBuilder()
                 .WithTitle("Error!!")
                 .WithDescription(message)
                 .WithColor(Color.Red);
             var embed = Build(error, context, false);
-            return await GhostMessage(context,
+            return await PluginHelper.GhostMessage(context,
                 text: null,
                 fallback:
                 "**Warning: the bot has no embed permissions, and ConnectBot will not display a board without embeds!**\n" +
@@ -54,14 +32,14 @@ namespace ConnectBot.Services
                 embed: embed, ghost ? 5000 : -1);
         }
 
-        internal async Task<IUserMessage> SuccessEmbed(ICommandContextEx context, string message, bool ghost = false)
+        public async Task<IUserMessage> SuccessEmbed(ICommandContextEx context, string message, bool ghost = false)
         {
             var error = new EmbedBuilder()
                 .WithTitle("Success!!")
                 .WithDescription(message)
                 .WithColor(Color.Green);
             var embed = Build(error, context, false);
-            return await GhostMessage(context,
+            return await PluginHelper.GhostMessage(context,
                 text: null,
                 fallback:
                 "**Warning: the bot has no embed permissions, and ConnectBot will not display a board without embeds!**\n" +
@@ -69,7 +47,7 @@ namespace ConnectBot.Services
                 embed: embed, ghost ? 5000 : -1);
         }
 
-        internal Embed Build(EmbedBuilder embed, ICommandContextEx context, bool addColor = true)
+        public Embed Build(EmbedBuilder embed, ICommandContextEx context, bool addColor = true)
         {
             var r = ThreadSafeRandom.ThisThreadsRandom;
             if (addColor)
@@ -80,7 +58,7 @@ namespace ConnectBot.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"ConnectBot {_config["version"]} - By DoggySazHi")
+                        .WithText($"ConnectBot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>

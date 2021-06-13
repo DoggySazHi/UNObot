@@ -11,7 +11,7 @@ using UNObot.Plugins;
 
 namespace UNObot.ServerQuery.Services
 {
-    internal class UBOWServerLoggerService
+    public class UBOWServerLoggerService
     {
         private const string JsonFileName = "UBOWLog.json";
         private const string FileName = "UBOWLog.serverlog";
@@ -140,7 +140,7 @@ namespace UNObot.ServerQuery.Services
             _logs.AverageLastYear = 1.0f * lastYear.Sum(o => o.PlayerCount) / lastYear.Count;
         }
 
-        internal ServerAverages GetAverages()
+        public ServerAverages GetAverages()
         {
             return new ServerAverages
             {
@@ -154,40 +154,40 @@ namespace UNObot.ServerQuery.Services
         }
     }
 
-    internal struct Log
+    public struct Log
     {
-        internal long Timestamp { get; set; }
-        internal byte PlayerCount { get; set; }
-        internal bool ServerUp { get; set; }
+        public long Timestamp { get; set; }
+        public byte PlayerCount { get; set; }
+        public bool ServerUp { get; set; }
     }
 
-    internal class ServerAverages
+    public class ServerAverages
     {
-        internal float AverageLastHour { get; set; }
-        internal float AverageLast24H { get; set; }
-        internal float AverageLastWeek { get; set; }
-        internal float AverageLastMonth { get; set; }
-        internal float AverageLastYear { get; set; }
-        internal bool Ready { get; set; }
+        public float AverageLastHour { get; set; }
+        public float AverageLast24H { get; set; }
+        public float AverageLastWeek { get; set; }
+        public float AverageLastMonth { get; set; }
+        public float AverageLastYear { get; set; }
+        public bool Ready { get; set; }
     }
 
-    internal class ServerLog
+    public class ServerLog
     {
         private readonly ILogger _logger;
         
-        internal ServerLog(ILogger logger)
+        public ServerLog(ILogger logger)
         {
             _logger = logger;
         }
 
-        internal float AverageLastHour { get; set; }
-        internal float AverageLast24H { get; set; }
-        internal float AverageLastWeek { get; set; }
-        internal float AverageLastMonth { get; set; }
-        internal float AverageLastYear { get; set; }
-        internal List<Log> ListOLogs { get; set; }
+        public float AverageLastHour { get; set; }
+        public float AverageLast24H { get; set; }
+        public float AverageLastWeek { get; set; }
+        public float AverageLastMonth { get; set; }
+        public float AverageLastYear { get; set; }
+        public List<Log> ListOLogs { get; set; }
 
-        internal async Task WriteToFile(string fileName)
+        public async Task WriteToFile(string fileName)
         {
             await using var sw = new StreamWriter(fileName);
             await sw.WriteLineAsync("LH" + AverageLastHour);
@@ -198,7 +198,7 @@ namespace UNObot.ServerQuery.Services
             foreach (var item in ListOLogs) await AppendToFile(fileName, item, sw);
         }
 
-        internal async Task AppendToFile(string fileName, Log log, StreamWriter sw = null)
+        public async Task AppendToFile(string fileName, Log log, StreamWriter sw = null)
         {
             var selfCreated = false;
             if (sw == null)
@@ -219,7 +219,7 @@ namespace UNObot.ServerQuery.Services
                 await sw.DisposeAsync();
         }
 
-        internal async Task ReadFromFile(string fileName)
+        public async Task ReadFromFile(string fileName)
         {
             if (ListOLogs == null)
                 ListOLogs = new List<Log>();

@@ -6,7 +6,7 @@ using static Discord.ConnectionState;
 
 namespace UNObot.Services
 {
-    internal class WatchdogService : IDisposable
+    public class WatchdogService : IDisposable
     {
         private readonly DiscordSocketClient _client;
         private LoggerService _logger;
@@ -27,7 +27,7 @@ namespace UNObot.Services
             _watchdog.Elapsed += WatchdogCheck;
         }
         
-        internal void InitializeAsync(LoggerService logger)
+        public void InitializeAsync(LoggerService logger)
         {
             _logger = logger;
             _logger.Log(LogSeverity.Info, $"Watchdog woke up! Check delay: {Timeout / 1000} seconds.");
@@ -37,7 +37,7 @@ namespace UNObot.Services
         {
             if (_client.ConnectionState == Disconnected || _client.ConnectionState == Disconnecting)
             {
-                _logger.Log(LogSeverity.Critical, $"Watchdog was not fed in the last {Timeout / 1000} seconds! Quitting!");
+                _logger.Log(LogSeverity.Critical, $"Watchdog not fed in the last {Timeout / 1000} seconds! Quitting!");
                 Program.Exit();
             }
         }

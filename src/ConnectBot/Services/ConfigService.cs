@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using ConnectBot.Templates;
 using Discord;
-using Microsoft.Extensions.Configuration;
+using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
 
 namespace ConnectBot.Services
@@ -11,7 +11,7 @@ namespace ConnectBot.Services
     {
         private readonly DatabaseService _db;
         
-        public ConfigService(IConfiguration config, DatabaseService db) : base(config)
+        public ConfigService(IUNObotConfig config, DatabaseService db) : base(config)
         {
             _db = db;
         }

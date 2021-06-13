@@ -11,16 +11,16 @@ using static UNObot.ServerQuery.Services.IRCON;
 
 namespace UNObot.ServerQuery.Services
 {
-    internal class MCUser
+    public class MCUser
     {
-        internal string Username { get; set; }
-        internal string Ouchies { get; set; }
-        internal bool Online { get; set; }
-        internal double[] Coordinates { get; set; }
-        internal string Health { get; set; }
-        internal string Food { get; set; }
-        internal int Experience { get; set; }
-        internal int ExperienceLevels { get; set; }
+        public string Username { get; set; }
+        public string Ouchies { get; set; }
+        public bool Online { get; set; }
+        public double[] Coordinates { get; set; }
+        public string Health { get; set; }
+        public string Food { get; set; }
+        public int Experience { get; set; }
+        public int ExperienceLevels { get; set; }
     }
 
     public class MinecraftProcessorService
@@ -35,7 +35,7 @@ namespace UNObot.ServerQuery.Services
         }
         
         // NOTE: It's the query port!
-        internal List<MCUser> GetMCUsers(string ip, ushort port, string password, out IRCON client,
+        public List<MCUser> GetMCUsers(string ip, ushort port, string password, out IRCON client,
             bool dispose = true)
         {
             var output = new List<MCUser>();
@@ -56,14 +56,17 @@ namespace UNObot.ServerQuery.Services
 
             client.ExecuteSingle("scoreboard players list", true);
             var playerListTotal = client.Data.Substring(client.Data.IndexOf(':') + 1).Split(',').ToList();
+            
+            client.ExecuteSingle("scoreboard objectives list", true);
+            var hasOuchiesScoreboard = client.Data.Substring(client.Data.IndexOf(':') + 1).Split(',').ToList().Any(o => o.Contains("ouchies", StringComparison.CurrentCultureIgnoreCase));
 
-            foreach (var player in playerListTotal)
+            foreach (var player in playerListTotal.Union(playerListOnline))
             {
                 var name = player.Replace((char) 0, ' ').Trim();
                 client.ExecuteSingle($"scoreboard players get {name} Ouchies", true);
                 if (client.Status == RCONStatus.Success)
                 {
-                    var ouchies = client.Data.Contains("has") ? client.Data.Split(' ')[2] : "0";
+                    var ouchies = hasOuchiesScoreboard ? client.Data.Contains("has") ? client.Data.Split(' ')[2] : "0" : null;
                     output.Add(new MCUser
                     {
                         Username = name,

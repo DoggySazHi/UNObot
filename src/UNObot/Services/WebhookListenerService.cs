@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -13,16 +12,18 @@ using Discord.WebSocket;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UNObot.Plugins;
+using UNObot.Plugins.Settings;
+using Boolean = UNObot.Plugins.Settings.Boolean;
 
 namespace UNObot.Services
 {
-    internal enum WebhookType : byte
+    public enum WebhookType : byte
     {
         Bitbucket = 0,
         OctoPrint = 1
     }
 
-    internal class WebhookListenerService : IDisposable
+    public class WebhookListenerService : IDisposable
     {
         private readonly byte[] _defaultResponse;
         private readonly ManualResetEvent _exited;
@@ -53,17 +54,23 @@ namespace UNObot.Services
             try
             {
                 _server = new HttpListener();
-                _server.Prefixes.Add("http://127.0.0.1:6860/");
+                _server.Prefixes.Add("http://*:6860/");
                 _server.Prefixes.Add("http://localhost:6860/");
 
                 _server.Start();
+                Task.Run(Listener);
             }
             catch (HttpListenerException ex)
             {
-                _logger.Log(LogSeverity.Critical, "Webhook Listener failed!", ex);
+                _logger.Log(LogSeverity.Critical, "Webhook Listener failed to start!", ex);
+                _disposed = true;
             }
-
-            Task.Run(Listener);
+            
+            var settings = new Setting("Webhook Settings");
+            settings.UpdateSetting("Webhooks", new ChannelIDList());
+            settings.UpdateSetting("Enable BitBucket", new Boolean(false));
+            settings.UpdateSetting("Enable OctoPrint", new Boolean(false));
+            SettingsManager.RegisterSettings("UNObot.Webhooks", settings);
         }
 
         public void Dispose()
@@ -99,53 +106,54 @@ namespace UNObot.Services
                     var url = context.Request.RawUrl;
 #if DEBUG
                     _logger.Log(LogSeverity.Debug, $"Received request from {url}.");
-                    var headers = "Headers: ";
-                    foreach (var key in request.Headers.AllKeys)
-                        headers += $"{key}, {request.Headers[key]}\n";
+                    var headers = request.Headers.AllKeys.Aggregate("Headers: ", (current, key) => current + $"{key}, {request.Headers[key]}\n");
                     _logger.Log(LogSeverity.Debug, headers);
 #endif
 
-                    var sections = url.Split("/");
-
-                    if (sections.Length >= 3)
+                    if (url != null)
                     {
-                        var channelParse = ulong.TryParse(sections[1], out var channel);
-                        if (channelParse)
+                        var sections = url.Split("/");
+
+                        if (sections.Length >= 3)
                         {
-                            var key = sections[2];
-                            var (guild, type) = _db.GetWebhook(channel, key).GetAwaiter().GetResult();
-                            if (guild != 0)
+                            var channelParse = ulong.TryParse(sections[1], out var channel);
+                            if (channelParse)
                             {
-#if DEBUG
-                                _logger.Log(LogSeverity.Debug,
-                                    $"Found server, points to {guild}, {channel} of type {(WebhookType) type}.");
-#endif
-                                using var data = request.InputStream;
-                                using var reader = new StreamReader(data);
-                                var text = reader.ReadToEnd();
-#if DEBUG
-                                _logger.Log(LogSeverity.Verbose, $"Data received: {text}");
-#endif
-                                try
+                                var key = sections[2];
+                                var (guild, type) = _db.GetWebhook(channel, key).GetAwaiter().GetResult();
+                                if (guild != 0)
                                 {
-                                    ProcessMessage(text, request.Headers, guild, channel, (WebhookType) type);
+#if DEBUG
+                                    _logger.Log(LogSeverity.Debug,
+                                        $"Found server, points to {guild}, {channel} of type {(WebhookType) type}.");
+#endif
+                                    using var data = request.InputStream;
+                                    using var reader = new StreamReader(data);
+                                    var text = reader.ReadToEnd();
+#if DEBUG
+                                    _logger.Log(LogSeverity.Verbose, $"Data received: {text}");
+#endif
+                                    try
+                                    {
+                                        ProcessMessage(text, request.Headers, guild, channel, (WebhookType) type);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        _logger.Log(LogSeverity.Critical, "Webhook Parser failed!", e);
+                                        _logger.Log(LogSeverity.Critical, $"URL: {url}");
+                                        _logger.Log(LogSeverity.Critical, text);
+                                    }
                                 }
-                                catch (Exception e)
+                                else
                                 {
-                                    _logger.Log(LogSeverity.Critical, "Webhook Parser failed!", e);
-                                    _logger.Log(LogSeverity.Critical, $"URL: {url}");
-                                    _logger.Log(LogSeverity.Critical, text);
+                                    _logger.Log(LogSeverity.Warning,
+                                        $"Does not seem to point to a server. URL: {url}");
                                 }
                             }
                             else
                             {
-                                _logger.Log(LogSeverity.Warning,
-                                    $"Does not seem to point to a server. URL: {url}");
+                                _logger.Log(LogSeverity.Debug, $"Given an invalid channel! URL: {url}");
                             }
-                        }
-                        else
-                        {
-                            _logger.Log(LogSeverity.Debug, $"Given an invalid channel! URL: {url}");
                         }
                     }
 
@@ -194,7 +202,12 @@ namespace UNObot.Services
                         thing = jsonWriter.Token;
                     }
 
-                    Debug.Assert(thing != null, nameof(thing) + " != null");
+                    if (thing == null)
+                    {
+                        _logger.Log(LogSeverity.Error, $"Could not decode message from server!");
+                        return;
+                    }
+                    
                     if (exceptionPath != null)
                     {
                         var badToken = thing.SelectToken(exceptionPath);
@@ -303,7 +316,7 @@ namespace UNObot.Services
                         }
                     }
 
-                    foreach (var thing in data) _logger.Log(LogSeverity.Debug, $"{thing.Key} - {thing.Value}");
+                    foreach (var (s, value) in data) _logger.Log(LogSeverity.Debug, $"{s} - {value}");
 
                     var info = new OctoprintInfo
                     {
@@ -325,28 +338,28 @@ namespace UNObot.Services
             }
         }
 
-        internal struct CommitInfo
+        public struct CommitInfo
         {
-            internal string RepoName { get; set; }
-            internal string RepoAvatar { get; set; }
+            public string RepoName { get; set; }
+            public string RepoAvatar { get; set; }
 
-            internal string CommitHash { get; set; }
-            internal string CommitMessage { get; set; }
-            internal DateTime CommitDate { get; set; }
+            public string CommitHash { get; set; }
+            public string CommitMessage { get; set; }
+            public DateTime CommitDate { get; set; }
 
-            internal string UserName { get; set; }
-            internal string UserAvatar { get; set; }
+            public string UserName { get; set; }
+            public string UserAvatar { get; set; }
         }
 
-        internal struct OctoprintInfo
+        public struct OctoprintInfo
         {
-            internal string Topic { get; set; }
-            internal JObject Extra { get; set; }
-            internal string Message { get; set; }
-            internal JObject Progress { get; set; }
-            internal JObject State { get; set; }
-            internal JObject Job { get; set; }
-            internal DateTimeOffset Timestamp { get; set; }
+            public string Topic { get; set; }
+            public JObject Extra { get; set; }
+            public string Message { get; set; }
+            public JObject Progress { get; set; }
+            public JObject State { get; set; }
+            public JObject Job { get; set; }
+            public DateTimeOffset Timestamp { get; set; }
         }
     }
 }

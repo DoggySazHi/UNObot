@@ -8,7 +8,7 @@ using UNObot.Plugins;
 
 namespace UNObot.MusicBot.Services
 {
-    internal class MusicBotService : IAsyncDisposable
+    public class MusicBotService : IAsyncDisposable
     {
         private readonly List<Player> _musicPlayers = new List<Player>();
         private readonly ILogger _logger;
@@ -66,7 +66,7 @@ namespace UNObot.MusicBot.Services
             return new Tuple<Player, string>(_musicPlayers[player], null);
         }
 
-        internal async Task<Tuple<Embed, string>> Add(ulong user, ulong guild, string url, IVoiceChannel channel,
+        public async Task<Tuple<Embed, string>> Add(ulong user, ulong guild, string url, IVoiceChannel channel,
             ISocketMessageChannel messageChannel, bool insertAtTop = false)
         {
             Embed embedOut;
@@ -93,7 +93,7 @@ namespace UNObot.MusicBot.Services
             return new Tuple<Embed, string>(embedOut, error);
         }
 
-        internal async Task<Tuple<Embed, string>> AddList(ulong user, ulong guild, string url, IVoiceChannel channel,
+        public async Task<Tuple<Embed, string>> AddList(ulong user, ulong guild, string url, IVoiceChannel channel,
             ISocketMessageChannel messageChannel, bool insertAtTop = false)
         {
             Embed display = null;
@@ -118,14 +118,14 @@ namespace UNObot.MusicBot.Services
                             var video = resultPlay[i];
                             player.Item1.Add(video.Url,
                                 new Tuple<string, string, string>(video.Title,
-                                    YoutubeService.TimeString(video.Duration), video.Thumbnails.MediumResUrl), user,
+                                    YoutubeService.TimeString(video.Duration.GetValueOrDefault()), YoutubeService.GetThumbnail(video.Thumbnails)), user,
                                 guild, true);
                         }
                     else
                         foreach (var video in resultPlay)
                             player.Item1.Add($"https://www.youtube.com/watch?v={video.Id}",
                                 new Tuple<string, string, string>(video.Title,
-                                    YoutubeService.TimeString(video.Duration), video.Thumbnails.MediumResUrl), user,
+                                    YoutubeService.TimeString(video.Duration.GetValueOrDefault()), YoutubeService.GetThumbnail(video.Thumbnails)), user,
                                 guild);
 
                     message = $"Added {resultPlay.Count} song{(resultPlay.Count == 1 ? "" : "s")}.";
@@ -139,7 +139,7 @@ namespace UNObot.MusicBot.Services
             return new Tuple<Embed, string>(display, message);
         }
 
-        internal async Task<Tuple<Embed, string>> Search(ulong user, ulong guild, string query, IVoiceChannel channel,
+        public async Task<Tuple<Embed, string>> Search(ulong user, ulong guild, string query, IVoiceChannel channel,
             ISocketMessageChannel messageChannel, bool insertAtTop = false)
         {
             Embed embedOut;
@@ -168,7 +168,7 @@ namespace UNObot.MusicBot.Services
             return new Tuple<Embed, string>(embedOut, error);
         }
 
-        internal async Task<string> Pause(ulong user, ulong guild, IAudioChannel channel)
+        public async Task<string> Pause(ulong user, ulong guild, IAudioChannel channel)
         {
             string message;
             try
@@ -199,7 +199,7 @@ namespace UNObot.MusicBot.Services
             return message;
         }
 
-        internal async Task<string> Play(ulong user, ulong guild, IAudioChannel channel)
+        public async Task<string> Play(ulong user, ulong guild, IAudioChannel channel)
         {
             string message;
             try
@@ -230,7 +230,7 @@ namespace UNObot.MusicBot.Services
             return message;
         }
 
-        internal async Task<string> Shuffle(ulong user, ulong guild, IAudioChannel channel)
+        public async Task<string> Shuffle(ulong user, ulong guild, IAudioChannel channel)
         {
             string message;
             try
@@ -258,7 +258,7 @@ namespace UNObot.MusicBot.Services
             return message;
         }
 
-        internal async Task<string> ToggleLoop(ulong user, ulong guild, IAudioChannel channel)
+        public async Task<string> ToggleLoop(ulong user, ulong guild, IAudioChannel channel)
         {
             string message;
             try
@@ -279,7 +279,7 @@ namespace UNObot.MusicBot.Services
             return message;
         }
 
-        internal async Task<string> ToggleLoopQueue(ulong user, ulong guild, IAudioChannel channel)
+        public async Task<string> ToggleLoopQueue(ulong user, ulong guild, IAudioChannel channel)
         {
             string message;
             try
@@ -300,7 +300,7 @@ namespace UNObot.MusicBot.Services
             return message;
         }
 
-        internal async Task<string> Disconnect(ulong user, ulong guild, IAudioChannel channel)
+        public async Task<string> Disconnect(ulong user, ulong guild, IAudioChannel channel)
         {
             string message;
             try
@@ -328,7 +328,7 @@ namespace UNObot.MusicBot.Services
             return message;
         }
 
-        internal async Task<string> Skip(ulong user, ulong guild, IVoiceChannel channel)
+        public async Task<string> Skip(ulong user, ulong guild, IVoiceChannel channel)
         {
             string error;
             try
@@ -356,7 +356,7 @@ namespace UNObot.MusicBot.Services
             return string.IsNullOrWhiteSpace(error) ? "" : "Error: " + error;
         }
 
-        internal async Task<string> Remove(ulong user, ulong guild, IVoiceChannel channel, int index)
+        public async Task<string> Remove(ulong user, ulong guild, IVoiceChannel channel, int index)
         {
             string error;
             string songName = null;
@@ -391,7 +391,7 @@ namespace UNObot.MusicBot.Services
             return string.IsNullOrWhiteSpace(error) ? $"Removed ``{songName}`` successfully." : "Error: " + error;
         }
 
-        internal Tuple<Embed, string> GetMusicQueue(ulong guild, int page)
+        public Tuple<Embed, string> GetMusicQueue(ulong guild, int page)
         {
             Embed list = null;
             string error = null;
@@ -428,7 +428,7 @@ namespace UNObot.MusicBot.Services
             return new Tuple<Embed, string>(list, error);
         }
 
-        internal Tuple<Embed, string> GetNowPlaying(ulong guild)
+        public Tuple<Embed, string> GetNowPlaying(ulong guild)
         {
             Embed list = null;
             string error = null;

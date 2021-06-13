@@ -6,18 +6,18 @@ using UNObot.Plugins;
 
 namespace UNObot.Core.Services
 {
-    internal class QueueHandlerService
+    public class QueueHandlerService
     {
         private readonly ILogger _logger;
-        private readonly UNODatabaseService _db;
+        private readonly DatabaseService _db;
 
-        public QueueHandlerService(ILogger logger, UNODatabaseService db)
+        public QueueHandlerService(ILogger logger, DatabaseService db)
         {
             _logger = logger;
             _db = db;
         }
         
-        internal async Task NextPlayer(ulong server)
+        public async Task NextPlayer(ulong server)
         {
             var players = await _db.GetPlayers(server);
             var sendToBack = players.Dequeue();
@@ -26,13 +26,13 @@ namespace UNObot.Core.Services
             await _db.SetCardsDrawn(server, 0);
         }
 
-        internal async Task ReversePlayers(ulong server)
+        public async Task ReversePlayers(ulong server)
         {
             var players = await _db.GetPlayers(server);
             await _db.SetPlayers(server, new Queue<ulong>(players.Reverse()));
         }
 
-        internal async Task<ulong> GetCurrentPlayer(ulong server)
+        public async Task<ulong> GetCurrentPlayer(ulong server)
         {
             var players = await _db.GetPlayers(server);
             if (players.TryPeek(out var player))
@@ -41,19 +41,19 @@ namespace UNObot.Core.Services
             return player;
         }
 
-        internal async Task<int> PlayerCount(ulong server)
+        public async Task<int> PlayerCount(ulong server)
         {
             var players = await _db.GetPlayers(server);
             return players.Count;
         }
 
-        internal async Task<ulong[]> PlayerArray(ulong server)
+        public async Task<ulong[]> PlayerArray(ulong server)
         {
             var players = await _db.GetPlayers(server);
             return players.ToArray();
         }
 
-        internal async Task RemovePlayer(ulong player, ulong server)
+        public async Task RemovePlayer(ulong player, ulong server)
         {
             var players = await _db.GetPlayers(server);
             var attemptPeek = players.TryPeek(out var result);
@@ -94,7 +94,7 @@ namespace UNObot.Core.Services
             await _db.SetPlayers(server, players);
         }
 
-        internal async Task DropFrontPlayer(ulong server)
+        public async Task DropFrontPlayer(ulong server)
         {
             var players = await _db.GetPlayers(server);
             players.Dequeue();

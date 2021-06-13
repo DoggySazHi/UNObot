@@ -11,7 +11,7 @@ namespace UNObot.Modules
     {
         private readonly PluginLoaderService _pluginService;
 
-        internal PluginConfigCommands(PluginLoaderService pluginService)
+        public PluginConfigCommands(PluginLoaderService pluginService)
         {
             _pluginService = pluginService;
         }
@@ -19,7 +19,7 @@ namespace UNObot.Modules
         [RequireOwner]
         [Command("plugins", RunMode = RunMode.Async), Alias("pl")]
         [Help(new[] {".plugins"}, "Get all plugins loaded in the bot.", true, "UNObot 4.1.8")]
-        internal async Task Plugin()
+        public async Task Plugin()
         {
             var plugins = _pluginService.Plugins;
             if (plugins.Count > 0)
@@ -39,7 +39,7 @@ namespace UNObot.Modules
         [RequireOwner]
         [Command("plugins", RunMode = RunMode.Async), Alias("pl")]
         [Help(new[] {".plugins (mode)"}, "Get all plugins loaded in the bot.", true, "UNObot 4.1.8")]
-        internal async Task Plugin(string mode, [Remainder] string plugin)
+        public async Task Plugin(string mode, [Remainder] string plugin)
         {
             switch (mode.Trim().ToLower())
             {

@@ -25,19 +25,19 @@ class RCONSocket {
         ~RCONSocket();
         void Mukyu();
         void ExecuteSingle(const std::string& command);
+        void ExecuteFast(const std::vector<uint8_t>& command);
         void Execute(const std::string &command);
         [[nodiscard]] bool IsConnected() const;
+        static std::vector<uint8_t> MakePacketData(const std::string& body, PacketType type, int id);
         void Dispose();
-
-    IPEndpoint server;
-private:
-    std::string& password;
+        IPEndpoint server;
+    private:
+        std::string& password;
         int socket_descriptor;
         std::array<uint8_t, BUFFER_SIZE>* rx_data = new std::array<uint8_t, BUFFER_SIZE>();
         static std::array<uint8_t, 4> LittleEndianConverter(int data);
         void CreateConnection(const std::string& command = "");
         static int LittleEndianReader(std::array<uint8_t, BUFFER_SIZE>* data, int start_index);
-        static std::vector<uint8_t> MakePacketData(const std::string& body, PacketType type, int id);
         void WipeBuffer();
         bool Authenticate();
 };

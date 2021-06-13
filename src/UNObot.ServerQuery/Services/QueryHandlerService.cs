@@ -19,8 +19,8 @@ namespace UNObot.ServerQuery.Services
     //Mukyu... but I implemented the Minecraft RCON (Valve RCON) protocol by hand, as well as the query.
     public class QueryHandlerService
     {
-        internal readonly IReadOnlyList<string> OutsideServers;
-        internal readonly IReadOnlyDictionary<ushort, RCONServer> SpecialServers;
+        public readonly IReadOnlyList<string> OutsideServers;
+        public readonly IReadOnlyDictionary<ushort, RCONServer> SpecialServers;
 
         private readonly RCONManager _manager;
 
@@ -42,7 +42,7 @@ namespace UNObot.ServerQuery.Services
             SpecialServers = servers;
         }
 
-        internal bool GetInfo(string ip, ushort port, out A2SInfo output)
+        public bool GetInfo(string ip, ushort port, out A2SInfo output)
         {
             var success = TryParseServer(ip, port, out var iPEndPoint);
             if (!success)
@@ -55,7 +55,7 @@ namespace UNObot.ServerQuery.Services
             return output.ServerUp;
         }
 
-        internal bool GetPlayers(string ip, ushort port, out A2SPlayer output)
+        public bool GetPlayers(string ip, ushort port, out A2SPlayer output)
         {
             var success = TryParseServer(ip, port, out var iPEndPoint);
             if (!success)
@@ -68,7 +68,7 @@ namespace UNObot.ServerQuery.Services
             return output.ServerUp;
         }
 
-        internal bool GetRules(string ip, ushort port, out A2SRules output)
+        public bool GetRules(string ip, ushort port, out A2SRules output)
         {
             var success = TryParseServer(ip, port, out var iPEndPoint);
             if (!success)
@@ -81,7 +81,7 @@ namespace UNObot.ServerQuery.Services
             return output.ServerUp;
         }
 
-        internal bool GetInfoMCNew(string ip, ushort port, out MinecraftStatus output)
+        public bool GetInfoMCNew(string ip, ushort port, out MinecraftStatus output)
         {
             var success = TryParseServer(ip, port, out var iPEndPoint);
             if (!success)
@@ -93,7 +93,7 @@ namespace UNObot.ServerQuery.Services
             return output.ServerUp;
         }
 
-        internal bool SendRCON(string ip, ushort port, string command, string password, out IRCON output)
+        public bool SendRCON(string ip, ushort port, string command, string password, out IRCON output)
         {
             var success = TryParseServer(ip, port, out var iPEndPoint);
             if (!success)
@@ -106,7 +106,7 @@ namespace UNObot.ServerQuery.Services
             return output.Status == IRCON.RCONStatus.Success;
         }
 
-        internal bool CreateRCON(string ip, ushort port, string password, ulong user, out IRCON output)
+        public bool CreateRCON(string ip, ushort port, string password, ulong user, out IRCON output)
         {
             var possibleRCON = _manager.GetRCON(user);
             if (possibleRCON != null)
@@ -127,7 +127,7 @@ namespace UNObot.ServerQuery.Services
             return output.Status == IRCON.RCONStatus.Success;
         }
 
-        internal bool ExecuteRCON(ulong user, string command, out IRCON output)
+        public bool ExecuteRCON(ulong user, string command, out IRCON output)
         {
             var possibleRCON = _manager.GetRCON(user);
             output = possibleRCON;
@@ -138,7 +138,7 @@ namespace UNObot.ServerQuery.Services
             return output.Status == IRCON.RCONStatus.Success;
         }
 
-        internal bool CloseRCON(ulong user)
+        public bool CloseRCON(ulong user)
         {
             var possibleRCON = _manager.GetRCON(user);
             if (possibleRCON == null)
@@ -184,29 +184,29 @@ namespace UNObot.ServerQuery.Services
             return addresses;
         }
 
-        internal MCStatus GetInfoMC(string ip, ushort port = 25565)
+        public MCStatus GetInfoMC(string ip, ushort port = 25565)
         {
             return new MCStatus(ip, port);
         }
 
-        internal struct RCONServer
+        public struct RCONServer
         {
-            internal string Server { get; set; }
-            internal ushort RCONPort { get; set; }
-            internal string Password { get; set; }
+            public string Server { get; set; }
+            public ushort RCONPort { get; set; }
+            public string Password { get; set; }
         }
     }
 
-    internal class A2SInfo
+    public class A2SInfo
     {
         // \xFF\xFF\xFF\xFFTSource Engine Query\x00 because UTF-8 doesn't like to encode 0xFF
-        internal static readonly byte[] Request =
+        public static readonly byte[] Request =
         {
             0xFF, 0xFF, 0xFF, 0xFF, 0x54, 0x53, 0x6F, 0x75, 0x72, 0x63, 0x65, 0x20, 0x45, 0x6E, 0x67, 0x69, 0x6E, 0x65,
             0x20, 0x51, 0x75, 0x65, 0x72, 0x79, 0x00
         };
 
-        internal A2SInfo(IPEndPoint ep)
+        public A2SInfo(IPEndPoint ep)
         {
             try
             {
@@ -272,27 +272,27 @@ namespace UNObot.ServerQuery.Services
             }
         }
 
-        internal byte Header { get; } // I
-        internal byte Protocol { get; }
-        internal string Name { get; }
-        internal string Map { get; }
-        internal string Folder { get; }
-        internal string Game { get; }
-        internal short Id { get; }
-        internal byte Players { get; }
-        internal byte MaxPlayers { get; }
-        internal byte Bots { get; }
-        internal ServerTypeFlags ServerType { get; }
-        internal EnvironmentFlags Environment { get; }
-        internal VisibilityFlags Visibility { get; }
-        internal VacFlags Vac { get; }
-        internal string Version { get; }
-        internal ExtraDataFlags ExtraDataFlag { get; }
+        public byte Header { get; } // I
+        public byte Protocol { get; }
+        public string Name { get; }
+        public string Map { get; }
+        public string Folder { get; }
+        public string Game { get; }
+        public short Id { get; }
+        public byte Players { get; }
+        public byte MaxPlayers { get; }
+        public byte Bots { get; }
+        public ServerTypeFlags ServerType { get; }
+        public EnvironmentFlags Environment { get; }
+        public VisibilityFlags Visibility { get; }
+        public VacFlags Vac { get; }
+        public string Version { get; }
+        public ExtraDataFlags ExtraDataFlag { get; }
 
         #region Strong Typing Enumerators
 
         [Flags]
-        internal enum ExtraDataFlags : byte
+        public enum ExtraDataFlags : byte
         {
             GameId = 0x01,
             SteamId = 0x10,
@@ -301,19 +301,19 @@ namespace UNObot.ServerQuery.Services
             Port = 0x80
         }
 
-        internal enum VacFlags : byte
+        public enum VacFlags : byte
         {
             Unsecured = 0,
             Secured = 1
         }
 
-        internal enum VisibilityFlags : byte
+        public enum VisibilityFlags : byte
         {
             Public = 0,
             Private = 1
         }
 
-        internal enum EnvironmentFlags : byte
+        public enum EnvironmentFlags : byte
         {
             Linux = 0x6C, //l
             Windows = 0x77, //w
@@ -321,7 +321,7 @@ namespace UNObot.ServerQuery.Services
             MacOsX = 0x6F //o
         }
 
-        internal enum ServerTypeFlags : byte
+        public enum ServerTypeFlags : byte
         {
             Dedicated = 0x64, //d
             Nondedicated = 0x6C, //l
@@ -332,22 +332,22 @@ namespace UNObot.ServerQuery.Services
 
         #region Extra Data Flag Members
 
-        internal ulong GameId { get; } //0x01
-        internal ulong SteamId { get; } //0x10
-        internal string Keywords { get; } //0x20
-        internal string Spectator { get; } //0x40
-        internal short SpectatorPort { get; } //0x40
-        internal short Port { get; } //0x80
-        internal bool ServerUp { get; }
+        public ulong GameId { get; } //0x01
+        public ulong SteamId { get; } //0x10
+        public string Keywords { get; } //0x20
+        public string Spectator { get; } //0x40
+        public short SpectatorPort { get; } //0x40
+        public short Port { get; } //0x80
+        public bool ServerUp { get; }
 
         #endregion
     }
 
-    internal class A2SPlayer
+    public class A2SPlayer
     {
         private static readonly byte[] Handshake = {0xFF, 0xFF, 0xFF, 0xFF, 0x55, 0xFF, 0xFF, 0xFF, 0xFF};
 
-        internal A2SPlayer(IPEndPoint ep)
+        public A2SPlayer(IPEndPoint ep)
         {
             try
             {
@@ -408,26 +408,26 @@ namespace UNObot.ServerQuery.Services
             }
         }
 
-        internal byte Header { get; }
-        internal byte PlayerCount { get; }
+        public byte Header { get; }
+        public byte PlayerCount { get; }
 
-        internal bool ServerUp { get; }
-        internal List<Player> Players { get; }
+        public bool ServerUp { get; }
+        public List<Player> Players { get; }
 
-        internal struct Player
+        public struct Player
         {
-            internal byte Index { get; set; }
-            internal string Name { get; set; }
-            internal long Score { get; set; }
-            internal float Duration { get; set; }
+            public byte Index { get; set; }
+            public string Name { get; set; }
+            public long Score { get; set; }
+            public float Duration { get; set; }
         }
     }
 
-    internal class A2SRules
+    public class A2SRules
     {
         private static readonly byte[] Handshake = {0xFF, 0xFF, 0xFF, 0xFF, 0x56, 0xFF, 0xFF, 0xFF, 0xFF};
 
-        internal A2SRules(IPEndPoint ep)
+        public A2SRules(IPEndPoint ep)
         {
             try
             {
@@ -488,21 +488,21 @@ namespace UNObot.ServerQuery.Services
             }
         }
 
-        internal byte Header { get; }
-        internal short RuleCount { get; }
-        internal List<Rule> Rules { get; }
-        internal bool ServerUp { get; }
+        public byte Header { get; }
+        public short RuleCount { get; }
+        public List<Rule> Rules { get; }
+        public bool ServerUp { get; }
 
-        internal struct Rule
+        public struct Rule
         {
-            internal string Name { get; set; }
-            internal string Value { get; set; }
+            public string Name { get; set; }
+            public string Value { get; set; }
         }
     }
 
-    internal static class A2SShared
+    public static class A2SShared
     {
-        internal static string ReadNullTerminatedString(ref BinaryReader input)
+        public static string ReadNullTerminatedString(ref BinaryReader input)
         {
             var sb = new StringBuilder();
             var read = input.ReadChar();
@@ -516,12 +516,12 @@ namespace UNObot.ServerQuery.Services
         }
     }
 
-    internal class MCStatus
+    public class MCStatus
     {
         private const ushort DataSize = 512; // this will hopefully suffice since the MotD should be <=59 characters
         private const ushort NumFields = 6; // number of values expected from server
 
-        internal MCStatus(string address, ushort port)
+        public MCStatus(string address, ushort port)
         {
             var rawServerData = new byte[DataSize];
 
@@ -575,24 +575,24 @@ namespace UNObot.ServerQuery.Services
             }
         }
 
-        internal string Address { get; set; }
-        internal ushort Port { get; set; }
-        internal string Motd { get; set; }
-        internal string Version { get; set; }
-        internal string CurrentPlayers { get; set; }
-        internal string MaximumPlayers { get; set; }
-        internal bool ServerUp { get; set; }
-        internal long Delay { get; set; }
+        public string Address { get; set; }
+        public ushort Port { get; set; }
+        public string Motd { get; set; }
+        public string Version { get; set; }
+        public string CurrentPlayers { get; set; }
+        public string MaximumPlayers { get; set; }
+        public bool ServerUp { get; set; }
+        public long Delay { get; set; }
     }
 
     /// <summary>
     ///     William's proud of himself for writing this class.
     /// </summary>
-    internal class MinecraftStatus
+    public class MinecraftStatus
     {
         private readonly byte[] _sessionHandshake = {0xFE, 0xFD, 0x09, 0x00, 0x00, 0x00, 0x01};
 
-        internal MinecraftStatus(IPEndPoint server)
+        public MinecraftStatus(IPEndPoint server)
         {
             UdpClient udp = null;
             MemoryStream memoryStream = null;
@@ -698,22 +698,22 @@ namespace UNObot.ServerQuery.Services
             }
         }
 
-        internal bool ServerUp { get; }
-        internal int MaxPlayers { get; }
-        internal string Ip { get; }
-        internal ushort Port { get; }
-        internal string GameId { get; }
-        internal string GameType { get; }
-        internal string Plugins { get; }
-        internal string Version { get; }
-        internal string Map { get; }
-        internal string Motd { get; }
-        internal string[] Players { get; }
+        public bool ServerUp { get; }
+        public int MaxPlayers { get; }
+        public string Ip { get; }
+        public ushort Port { get; }
+        public string GameId { get; }
+        public string GameType { get; }
+        public string Plugins { get; }
+        public string Version { get; }
+        public string Map { get; }
+        public string Motd { get; }
+        public string[] Players { get; }
     }
 
-    internal interface IRCON : IDisposable
+    public interface IRCON : IDisposable
     {
-        internal enum RCONStatus
+        public enum RCONStatus
         {
             ConnFail,
             AuthFail,
@@ -748,7 +748,7 @@ namespace UNObot.ServerQuery.Services
             _reusableRCONSockets = null;
         }
 
-        internal IRCON GetRCON(ulong user)
+        public IRCON GetRCON(ulong user)
         {
             var saved = _reusableRCONSockets.Where(o => o.Owner == user).ToList();
             if (saved.Count == 0) return null;
@@ -758,7 +758,7 @@ namespace UNObot.ServerQuery.Services
             return null;
         }
 
-        internal IRCON CreateRCON(IPEndPoint server, string password, bool reuse = false, string command = null)
+        public IRCON CreateRCON(IPEndPoint server, string password, bool reuse = false, string command = null)
         {
             IRCON rconInstance;
 
@@ -772,7 +772,7 @@ namespace UNObot.ServerQuery.Services
         }
     }
 
-    internal class MinecraftRCON : IRCON
+    public class MinecraftRCON : IRCON
     {
         private const ushort RxSize = 4096;
         private static readonly byte[] EndOfCommandPacket = MakePacketData("", PacketType.Type100, 0);
@@ -885,7 +885,7 @@ namespace UNObot.ServerQuery.Services
             }
         }
 
-        internal void Execute(string command, ref byte[] rxData, bool reuse = false)
+        public void Execute(string command, ref byte[] rxData, bool reuse = false)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 throw new InvalidOperationException("Don't do this, it's going to die either way.");
@@ -1001,7 +1001,7 @@ namespace UNObot.ServerQuery.Services
             }
         }
 
-        internal void ExecuteSingle(string command, ref byte[] rxData, bool reuse = false)
+        public void ExecuteSingle(string command, ref byte[] rxData, bool reuse = false)
         {
             try
             {

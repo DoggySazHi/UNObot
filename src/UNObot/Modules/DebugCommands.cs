@@ -1,8 +1,11 @@
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
+using UNObot.Plugins.Helpers;
 using UNObot.Services;
 
 namespace UNObot.Modules
@@ -13,7 +16,7 @@ namespace UNObot.Modules
         private readonly GoogleTranslateService _gts;
         private readonly ShellService _shell;
         
-        internal DebugCommands(ILogger logger, GoogleTranslateService gts, ShellService shell)
+        public DebugCommands(ILogger logger, GoogleTranslateService gts, ShellService shell)
         {
             _logger = logger;
             _gts = gts;
@@ -26,37 +29,35 @@ namespace UNObot.Modules
         [DisableDMs]
         [Help(new[] {".purge (number of messages)"},
             "Delete messages via a range. Testing command; do not rely on forever.", false, "UNObot 1.4")]
-        internal async Task Purge(int length)
+        public async Task Purge(int length)
         {
-            var messages = await Context.Channel.GetMessagesAsync(length + 1).FlattenAsync();
+            var messages = (await Context.Channel.GetMessagesAsync(length + 1).FlattenAsync()).ToList();
+            var thing = messages.Where(o => DateTimeOffset.Now - o.Timestamp < TimeSpan.FromDays(14)).ToList();
+            messages.RemoveAll(o => thing.Contains(o));
 
-            if (!(Context.Channel is ITextChannel textchannel))
+            if (!(Context.Channel is ITextChannel textChannel))
             {
-                _logger.Log(LogSeverity.Warning, "error cast");
+                _logger.Log(LogSeverity.Warning, "Weird casting error?");
                 return;
             }
 
-            await textchannel.DeleteMessagesAsync(messages);
+            await textChannel.DeleteMessagesAsync(thing);
+            if (messages.Count > 0)
+            {
+                PluginHelper.GhostMessage(Context, "WARNING: Because some messages are older than two weeks, UNObot might take longer to delete them.").ContinueWithoutAwait(_logger);
+                foreach (var message in messages)
+                    await message.DeleteAsync();
+            }
         }
 
         [Command("helpmeplz", RunMode = RunMode.Async)]
         [RequireOwner]
         [DisableDMs]
-        internal async Task HelpmePlz(int length)
-        {
-            var messages = await Context.Channel.GetMessagesAsync(length + 1).FlattenAsync();
-
-            if (!(Context.Channel is ITextChannel textchannel))
-            {
-                _logger.Log(LogSeverity.Warning, "error cast");
-                return;
-            }
-
-            await textchannel.DeleteMessagesAsync(messages);
-        }
+        public async Task HelpmePlz(int length)
+            => await Purge(length);
 
         [Command("exit", RunMode = RunMode.Async)]
-        internal async Task Exit()
+        public async Task Exit()
         {
             if (Context.User.Id == 278524552462598145)
             {
@@ -64,62 +65,24 @@ namespace UNObot.Modules
             }
             else if (Context.User.Id == 191397590946807809)
             {
+                await ReplyAsync("Shutting down!");
                 Program.Exit();
             }
         }
 
 #if DEBUG
         [Command("translate", RunMode = RunMode.Async)]
-        internal async Task Translate(string from, string to, [Remainder] string message)
+        public async Task Translate(string from, string to, [Remainder] string message)
         {
             await ReplyAsync(_gts.Translate(message, from, to)).ConfigureAwait(false);
         }
 
         [Command("debugstatus", RunMode = RunMode.Async)]
-        internal async Task DebugStatus()
+        public async Task DebugStatus()
         {
             await _shell.GitFetch().ConfigureAwait(false);
             await ReplyAsync(await _shell.GitStatus().ConfigureAwait(false));
         }
-        
 #endif
-
-        /*
-        [Command("getbuttons", RunMode = RunMode.Async)]
-        [HelpAttribute(new string[] { "yes." }, "", false, "no")]
-        internal async Task AddButtons()
-        {
-            var message = await ReplyAsync("Loading buttons...");
-            await InputHandler.AddReactions(message);
-            await message.ModifyAsync(o => o.Content = "Finished loading buttons!");
-        }
-        */
-
-        /*
-        Timer spamTimer = new Timer();
-        ulong server = 0;
-
-        [Command("enablespam")]
-        internal async Task StartSpam()
-        {
-            spamTimer = new Timer
-            {
-                Interval = 60000,
-                AutoReset = true,
-            };
-            spamTimer.Elapsed += Spam;
-            spamTimer.Start();
-            server = Context.Guild.Id;
-            await ReplyAsync("Started timer!");
-        }
-
-        async void Spam(object sender, ElapsedEventArgs e)
-        {
-            if (server == 0)
-                spamTimer.Dispose();
-            else
-                await UNObot.Program.SendMessage("AHHHHHHH", server);
-        }
-        */
     }
 }

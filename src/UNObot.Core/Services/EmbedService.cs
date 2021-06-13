@@ -3,15 +3,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.WebSocket;
-using Microsoft.Extensions.Configuration;
 using UNObot.Core.UNOCore;
+using UNObot.Plugins;
 using UNObot.Plugins.TerminalCore;
 
 namespace UNObot.Core.Services
 {
-    internal static class ImageHandler
+    public static class ImageHandler
     {
-        internal static string GetImage(Card c)
+        public static string GetImage(Card c)
         {
             return $"https://williamle.com/unobot/{c.Color}_{c.Value}.png";
         }
@@ -19,11 +19,11 @@ namespace UNObot.Core.Services
     
     public class EmbedService
     {
-        private readonly UNODatabaseService _db;
+        private readonly DatabaseService _db;
         private readonly DiscordSocketClient _client;
-        private readonly IConfiguration _config;
+        private readonly IUNObotConfig _config;
         
-        public EmbedService(UNODatabaseService db, DiscordSocketClient client, IConfiguration config)
+        public EmbedService(DatabaseService db, DiscordSocketClient client, IUNObotConfig config)
         {
             _db = db;
             _client = client;
@@ -76,7 +76,7 @@ namespace UNObot.Core.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithThumbnailUrl(ImageHandler.GetImage(card))
@@ -154,7 +154,7 @@ namespace UNObot.Core.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithThumbnailUrl(ImageHandler.GetImage(currentCard))

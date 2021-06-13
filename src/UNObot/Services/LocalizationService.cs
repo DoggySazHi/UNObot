@@ -7,13 +7,13 @@ using UNObot.Plugins;
 
 namespace UNObot.Services
 {
-    internal class LocalizationService
+    public class LocalizationService
     {
         private static readonly string LocalizationFile = "translations_en.json";
         private Dictionary<string, string> _localizations;
         private readonly ILogger _logger;
 
-        internal LocalizationService(ILogger logger)
+        public LocalizationService(ILogger logger)
         {
             _logger = logger;
             

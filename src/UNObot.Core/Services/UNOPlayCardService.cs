@@ -1,21 +1,22 @@
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Discord.Commands;
 using UNObot.Core.UNOCore;
 
 namespace UNObot.Core.Services
 {
-    internal class UNOPlayCardService
+    public class UNOPlayCardService
     {
-        private readonly UNODatabaseService _db;
+        private readonly DatabaseService _db;
         private readonly QueueHandlerService _queue;
         
-        public UNOPlayCardService(UNODatabaseService db, QueueHandlerService queue)
+        public UNOPlayCardService(DatabaseService db, QueueHandlerService queue)
         {
             _db = db;
             _queue = queue;
         }
         
-        internal async Task<string> Play(string color, string value, string wild, SocketCommandContext context)
+        public async Task<string> Play(string color, string value, string wild, SocketCommandContext context)
         {
             var player = context.User.Id;
             var server = context.Guild.Id;
@@ -42,6 +43,8 @@ namespace UNObot.Core.Services
 
             // Since +2 and +4 are treated as positive numbers, .TryParse turns them into 2 and 4, respectively.
             if (!int.TryParse(value, out var output) || value == "+2" || value == "+4")
+            {
+                Debug.Assert(value != null, nameof(value) + " != null");
                 switch (value.ToLower())
                 {
                     case "skip":
@@ -62,6 +65,7 @@ namespace UNObot.Core.Services
                     default:
                         return $"<@{player}>, that's not a value.";
                 }
+            }
             else
                 value = output.ToString();
 

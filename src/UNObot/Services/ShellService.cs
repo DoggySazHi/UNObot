@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -7,7 +8,7 @@ using UNObot.Plugins;
 
 namespace UNObot.Services
 {
-    internal class ShellService
+    public class ShellService
     {
         private readonly ILogger _logger;
         public ShellService(ILogger logger)
@@ -15,7 +16,7 @@ namespace UNObot.Services
             _logger = logger;
         }
         
-        internal async Task<string> RunYtdl(string cmd)
+        public async Task<string> RunYtdl(string cmd)
         {
             var result = new TaskCompletionSource<string>();
 
@@ -48,11 +49,11 @@ namespace UNObot.Services
         }
 
         // Should be a file path.
-        internal Process GetAudioStream(string path)
+        public Process GetAudioStream(string path)
         {
             var ffmpeg = new ProcessStartInfo
             {
-                FileName = "/usr/local/bin/ffmpeg",
+                FileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "ffmpeg.exe" : "/usr/local/bin/ffmpeg",
                 Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1",
                 UseShellExecute = false,
                 RedirectStandardOutput = true
@@ -60,7 +61,7 @@ namespace UNObot.Services
             return Process.Start(ffmpeg);
         }
 
-        internal async Task<string> ConvertToMp3(string path)
+        public async Task<string> ConvertToMp3(string path)
         {
             var result = new TaskCompletionSource<string>();
 
@@ -70,7 +71,7 @@ namespace UNObot.Services
                 {
                     StartInfo = new ProcessStartInfo
                     {
-                        FileName = "/usr/local/bin/ffmpeg",
+                        FileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "ffmpeg.exe" : "/usr/local/bin/ffmpeg",
                         Arguments = $"-hide_banner -loglevel panic -i ${path} -vn -ab 128k -ar 44100 -y ${path}.mp3",
                         UseShellExecute = false,
                         RedirectStandardOutput = true
@@ -88,7 +89,7 @@ namespace UNObot.Services
             return awaited;
         }
 
-        internal async Task<string> GitFetch()
+        public async Task<string> GitFetch()
         {
             var result = new TaskCompletionSource<string>();
 
@@ -98,7 +99,7 @@ namespace UNObot.Services
                 {
                     StartInfo = new ProcessStartInfo
                     {
-                        FileName = "/usr/bin/git",
+                        FileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"C:\Program Files\Git\cmd\git.exe" : "/usr/bin/git",
                         Arguments = "fetch",
                         UseShellExecute = false,
                         RedirectStandardOutput = true
@@ -116,7 +117,7 @@ namespace UNObot.Services
             return awaited;
         }
 
-        internal async Task<string> GitStatus()
+        public async Task<string> GitStatus()
         {
             var result = new TaskCompletionSource<string>();
 
@@ -126,7 +127,7 @@ namespace UNObot.Services
                 {
                     StartInfo = new ProcessStartInfo
                     {
-                        FileName = "/usr/bin/git",
+                        FileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"C:\Program Files\Git\cmd\git.exe" : "/usr/bin/git",
                         Arguments = "status",
                         UseShellExecute = false,
                         RedirectStandardOutput = true

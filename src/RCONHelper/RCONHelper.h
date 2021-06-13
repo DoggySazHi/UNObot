@@ -1,11 +1,10 @@
 ﻿#include <string>
 #include <iostream>
 #include "RCONSocket.h"
-
+#ifdef RCONLIB
 #ifdef __cplusplus
 extern "C" {
 #endif
-	
 #ifdef _WIN32
 #  ifdef MODULE_API_EXPORTS
 #    define MODULE_API __declspec(dllexport)
@@ -17,8 +16,8 @@ extern "C" {
 #endif
 
 // Start exposing APIs here
-    MODULE_API RCONSocket* CreateObjectA(char* ip, ushort port, char* password, char* command);
-    MODULE_API RCONSocket* CreateObjectB(char* ip, ushort port, char* password);
+    MODULE_API RCONSocket* CreateObjectA(const char* ip, unsigned short port, const char* password, const char* command);
+    MODULE_API RCONSocket* CreateObjectB(const char* ip, unsigned short port, const char* password);
     MODULE_API void DestroyObject(RCONSocket* obj) { delete obj; }
 
     MODULE_API void MukyuN() { std::cout << "Mukyu!" << '\n'; }
@@ -39,4 +38,29 @@ extern "C" {
 	
 #ifdef __cplusplus
 }
+#endif
+#endif
+
+#ifdef __cplusplus
+class RCONHelper {
+public:
+    static RCONSocket* CreateObjectA(const char* ip, unsigned short port, const char* password, const char* command);
+    static RCONSocket* CreateObjectB(const char* ip, unsigned short port, const char* password);
+    static void DestroyObject(RCONSocket* obj) { delete obj; }
+
+    static void MukyuN() { std::cout << "Mukyu!" << '\n'; }
+    static void Mukyu(RCONSocket* obj) { obj->Mukyu(); }
+    static const char* Say(char* thing) { std::cout << thing << '\n'; return new char[5] {'h', 'e', 'w', 'o', '\0'}; }
+    static void SayDelete(const char* thing) { delete thing; }
+
+    static RCONStatus GetStatus(RCONSocket* obj) { return obj->status; }
+    static bool Disposed(RCONSocket* obj) { return obj->disposed; }
+    static const char* GetData(RCONSocket* obj) { return obj->data.c_str(); }
+    static bool Connected(RCONSocket* obj) { return obj->IsConnected(); }
+    static void ExecuteSingle(RCONSocket* obj, char* command) { obj->ExecuteSingle(command); }
+    static void Execute(RCONSocket* obj, char* command) { obj->Execute(command); }
+    static void Dispose(RCONSocket* obj) { obj->Dispose(); }
+    static const char* GetServerIP(RCONSocket* obj) { return obj->server.ip.c_str(); }
+    static unsigned short GetServerPort(RCONSocket* obj) { return obj->server.port; }
+};
 #endif

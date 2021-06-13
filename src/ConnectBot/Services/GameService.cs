@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 using ConnectBot.Templates;
 using Discord;
 using Discord.Net;
-using Microsoft.Extensions.Configuration;
 using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
+using UNObot.Plugins.Settings;
 using Game = ConnectBot.Templates.Game;
 
 namespace ConnectBot.Services
@@ -19,12 +19,16 @@ namespace ConnectBot.Services
         private readonly ButtonHandler _button;
         private readonly ILogger _logger;
         
-        public GameService(IConfiguration config, DatabaseService db, AFKTimerService afk, ButtonHandler button, ILogger logger) : base(config)
+        public GameService(IUNObotConfig config, DatabaseService db, AFKTimerService afk, ButtonHandler button, ILogger logger) : base(config)
         {
             _db = db;
             _afk = afk;
             _button = button;
             _logger = logger;
+            
+            var settings = new Setting("ConnectBot Settings");
+            settings.UpdateSetting("Default Channel", new ChannelID(0));
+            SettingsManager.RegisterSettings("ConnectBot", settings);
         }
 
         public async Task DisplayGame(ICommandContextEx context)
@@ -37,7 +41,7 @@ namespace ConnectBot.Services
                 return;
             }
 
-            await DisplayGame(context, game);
+            await DisplayGame(context, game, force: true);
         }
 
         private static bool _working;
@@ -78,7 +82,7 @@ namespace ConnectBot.Services
                             //TODO Check if embeds are not enabled...
                             o.Embed = embed;
                         });
-                        GhostMessage(context, text).ContinueWithoutAwait(_logger);
+                        PluginHelper.GhostMessage(context, text).ContinueWithoutAwait(_logger);
                         modSuccess = true;
                         await _button.ClearReactions(message, currentPlayer);
                     }
@@ -96,7 +100,7 @@ namespace ConnectBot.Services
             if (!modSuccess)
             {
                 var newMessage = await context.Channel.SendMessageAsync(embed: embed);
-                GhostMessage(context, text).ContinueWithoutAwait(_logger);
+                PluginHelper.GhostMessage(context, text).ContinueWithoutAwait(_logger);
                 _button.AddNumbers(newMessage, new Range(1, board.Width + 1)).ContinueWithoutAwait(_logger);
                 game.LastChannel = context.Channel.Id;
                 game.LastMessage = newMessage.Id;
@@ -109,7 +113,7 @@ namespace ConnectBot.Services
                 {
                     if (winnerColor == -1)
                     {
-                        await context.Channel.SendMessageAsync($"It's a draw... the board is full!");
+                        await context.Channel.SendMessageAsync("It's a draw... the board is full!");
                     }
                     else
                     {
@@ -127,7 +131,7 @@ namespace ConnectBot.Services
             }
             catch (IndexOutOfRangeException)
             {
-                await ErrorEmbed(context, ">:[ There was an internal error with the table scanning algorithm.");
+                await ErrorEmbed(context, ">:[ There was an public error with the table scanning algorithm.");
                 await _db.UpdateGame(game);
                 throw;
             }

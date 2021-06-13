@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Microsoft.Extensions.Configuration;
+using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
 using UNObot.Services;
 
@@ -11,10 +11,10 @@ namespace UNObot.Modules
 {
     public class BaseCommands : ModuleBase<SocketCommandContext>
     {
-        private readonly IConfiguration _config;
+        private readonly IUNObotConfig _config;
         private readonly CommandHandlingService _commands;
         
-        internal BaseCommands(IConfiguration config, CommandHandlingService commands)
+        public BaseCommands(IUNObotConfig config, CommandHandlingService commands)
         {
             _config = config;
             _commands = commands;
@@ -22,17 +22,17 @@ namespace UNObot.Modules
         
         [Command("info", RunMode = RunMode.Async), Alias("version")]
         [Help(new[] {".info"}, "Get the current version of UNObot.", true, "UNObot 1.0")]
-        internal async Task Info()
+        public async Task Info()
         {
             var output =
-                $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {_config["version"]}\nCurrent Time (PST): {DateTime.Now.ToString(CultureInfo.InvariantCulture)}" +
-                $"\n\nCommit {_config["commit"]?[..Math.Min(_config["commit"].Length, 7)] ?? "???"}\nBuild #{_config["build"] ?? "???"}";
+                $"{Context.Client.CurrentUser.Username} - Created by DoggySazHi\nVersion {_config.Version}\nCurrent Time (PST): {DateTime.Now.ToString(CultureInfo.InvariantCulture)}" +
+                $"\n\nCommit {_config.Commit?[..Math.Min(_config.Commit.Length, 7)] ?? "???"}\nBuild #{_config.Build ?? "???"}";
             await ReplyAsync(output);
         }
         
         [Command("fullhelp", RunMode = RunMode.Async), Alias("help")]
         [Help(new[] {".fullhelp"}, "If you need help using help, you're truly lost.", true, "UNObot 1.0")]
-        internal async Task FullHelp()
+        public async Task FullHelp()
         {
             if (!Context.IsPrivate)
                 await ReplyAsync("Help has been sent. Or, I think it has.");
@@ -79,7 +79,7 @@ namespace UNObot.Modules
         [Command("help", RunMode = RunMode.Async)]
         [Alias("ahh", "ahhh", "ahhhh")]
         [Help(new[] {".help (command)"}, "If you need help using help, you're truly lost.", true, "UNObot 1.0")]
-        internal async Task Help(string cmdSearch)
+        public async Task Help(string cmdSearch)
         {
             var response = "";
             var cmd = _commands.FindCommand(cmdSearch);

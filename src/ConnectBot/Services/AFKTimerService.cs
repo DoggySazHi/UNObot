@@ -29,7 +29,7 @@ namespace ConnectBot.Services
         private readonly ILogger _logger;
         private readonly DatabaseService _db;
         private readonly DiscordSocketClient _client;
-        internal delegate Task NextGame(ICommandContextEx context, Game game, bool newGame = false);
+        public delegate Task NextGame(ICommandContextEx context, Game game, bool newGame = false);
 
         private NextGame _callback;
 
@@ -55,7 +55,7 @@ namespace ConnectBot.Services
             }
         }
 
-        internal void StartTimer(ICommandContextEx context, NextGame callback)
+        public void StartTimer(ICommandContextEx context, NextGame callback)
         {
             _callback ??= callback;
             _logger.Log(LogSeverity.Debug, "Starting timer!");

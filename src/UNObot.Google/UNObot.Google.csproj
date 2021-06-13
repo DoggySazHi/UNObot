@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <RootNamespace>UNObot.Google</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\UNObot.Plugins\UNObot.Plugins.csproj">
+            <Private>false</Private>
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </ProjectReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Discord.Net" Version="2.4.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="5.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="5.0.0" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    </ItemGroup>
+
+    <Target Name="CopyPlugins" AfterTargets="PostBuildEvent">
+        <ItemGroup>
+            <Plugin Include="$(ProjectDir)$(OutDir)*.dll" />
+        </ItemGroup>
+        <Copy SourceFiles="$(Plugin)" DestinationFolder="$(SolutionDir)src\UNObot\bin\Debug\netcoreapp3.1\plugins" SkipUnchangedFiles="false" ContinueOnError="true" Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'" />
+        <Copy SourceFiles="$(Plugin)" DestinationFolder="$(SolutionDir)src\UNObot\bin\Release\netcoreapp3.1\plugins" SkipUnchangedFiles="false" ContinueOnError="true" Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'" />
+    </Target>
+
+</Project>

@@ -301,7 +301,6 @@ __pycache__/
 *.xsd.cs
 
 # End of https://www.gitignore.io/api/visualstudio
-src/UNObot/config.json
 src/UNObot/Music
 
 # CMake

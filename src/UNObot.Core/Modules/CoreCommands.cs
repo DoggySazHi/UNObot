@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Microsoft.Extensions.Configuration;
 using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
 using UNObot.Plugins.TerminalCore;
@@ -12,9 +11,9 @@ namespace UNObot.Core.Modules
     public class CoreCommands : ModuleBase<SocketCommandContext>
     {
         private readonly ILogger _logger;
-        private readonly IConfiguration _config;
+        private readonly IUNObotConfig _config;
         
-        public CoreCommands(ILogger logger, IConfiguration config)
+        public CoreCommands(ILogger logger, IUNObotConfig config)
         {
             _logger = logger;
             _config = config;
@@ -22,7 +21,7 @@ namespace UNObot.Core.Modules
         
         [Command("help", RunMode = RunMode.Async), Priority(100)]
         [Alias("ahh", "ahhh", "ahhhh", "commands", "command")]
-        internal async Task Help()
+        public async Task Help()
         {
             var r = ThreadSafeRandom.ThisThreadsRandom;
             var builder = new EmbedBuilder()
@@ -32,7 +31,7 @@ namespace UNObot.Core.Modules
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
@@ -129,7 +128,7 @@ namespace UNObot.Core.Modules
         public async Task Invite()
         {
             await ReplyAsync("If you want to add this bot to your server, use this link: \n" +
-                             "https://discordapp.com/api/oauth2/authorize?client_id=477616287997231105&permissions=8192&scope=bot");
+                             "<https://discordapp.com/api/oauth2/authorize?client_id=477616287997231105&permissions=8192&scope=bot%20applications.commands>");
         }
     }
 }

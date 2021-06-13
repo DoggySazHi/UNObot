@@ -1,9 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Data.Common;
+using System.Threading.Tasks;
 using ConnectBot.Templates;
 using Dapper;
 using Discord;
-using Microsoft.Extensions.Configuration;
-using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
@@ -14,12 +14,11 @@ namespace ConnectBot.Services
     public class DatabaseService
     {
         private readonly ILogger _logger;
+        private readonly ConnectBotConfig _config;
         private static readonly JsonSerializerSettings JsonSettings;
         private static readonly string DefaultBoard;
         private static readonly string DefaultQueue;
-
-        internal string ConnString { get; }
-
+        
         static DatabaseService()
         {
             JsonSettings = new JsonSerializerSettings 
@@ -30,36 +29,36 @@ namespace ConnectBot.Services
             DefaultQueue = JsonConvert.SerializeObject(new GameQueue(), JsonSettings);
         }
 
-        public DatabaseService(IConfiguration config, ILogger logger)
+        public DatabaseService(ILogger logger, ConnectBotConfig config)
         {
             _logger = logger;
-            ConnString = config.GetConnectionString();
+            _config = config;
             DefaultTypeMap.MatchNamesWithUnderscores = true;
         }
 
-        internal async Task ResetGame(ulong server)
+        public async Task ResetGame(ulong server)
         {
             const string commandText =
-                "UPDATE UNObot.ConnectBot_Games SET board = @Board, queue = @Queue, description = null WHERE server = @Server";
+                "UPDATE UNObot.ConnectBot.Games SET board = @Board, queue = @Queue, description = null WHERE server = @Server";
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new { Board = DefaultBoard, Queue = DefaultQueue, Server = server });
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new { Board = DefaultBoard, Queue = DefaultQueue, Server = Convert.ToDecimal(server) });
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         
-        internal async Task<Game> GetGame(ulong server)
+        public async Task<Game> GetGame(ulong server)
         {
-            const string commandText = "SELECT * FROM UNObot.ConnectBot_Games WHERE server = @Server";
-            await using var db = new MySqlConnection(ConnString);
+            const string commandText = "SELECT * FROM UNObot.ConnectBot.Games WHERE server = @Server";
+            await using var db = _config.GetConnection();
             try
             {
-                var result = await db.QueryFirstOrDefaultAsync(commandText, new {Server = server});
+                var result = await db.QueryFirstOrDefaultAsync(_config.ConvertSql(commandText), new { Server = Convert.ToDecimal(server) });
                 if (!ReferenceEquals(null, result))
                     return new Game(server)
                     {
@@ -67,11 +66,11 @@ namespace ConnectBot.Services
                         Board = JsonConvert.DeserializeObject<Board>(result.board),
                         Queue = JsonConvert.DeserializeObject<GameQueue>(result.queue),
                         Description = result.description,
-                        LastChannel = result.lastChannel,
-                        LastMessage = result.lastMessage
+                        LastChannel = Convert.ToUInt64(result.lastChannel),
+                        LastMessage = Convert.ToUInt64(result.lastMessage)
                     };
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -80,27 +79,27 @@ namespace ConnectBot.Services
             return new Game(server);
         }
 
-        internal async Task UpdateGame(Game game)
+        public async Task UpdateGame(Game game)
         {
-            const string commandText = "UPDATE UNObot.ConnectBot_Games SET gameMode = @GameMode, board = @Board, `description` = @Description, queue = @Queue, lastChannel = @LastChannel, lastMessage = @LastMessage WHERE server = @Server";
-            await using var db = new MySqlConnection(ConnString);
+            const string commandText = "UPDATE UNObot.ConnectBot.Games SET gameMode = @GameMode, board = @Board, `description` = @Description, queue = @Queue, lastChannel = @LastChannel, lastMessage = @LastMessage WHERE server = @Server";
+            await using var db = _config.GetConnection();
             try
             {
                 lock (game)
                 {
-                    db.Execute(commandText, new
+                    db.Execute(_config.ConvertSql(commandText), new
                     {
-                        game.Server,
-                        GameMode = (ushort) game.GameMode,
+                        Server = Convert.ToDecimal(game.Server),
+                        GameMode = (byte) game.GameMode,
                         Board = JsonConvert.SerializeObject(game.Board),
                         game.Description,
                         Queue = JsonConvert.SerializeObject(game.Queue, JsonSettings),
-                        game.LastChannel,
-                        game.LastMessage
+                        LastChannel = Convert.ToDecimal(game.LastChannel),
+                        LastMessage = Convert.ToDecimal(game.LastMessage)
                     });
                 }
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -108,50 +107,50 @@ namespace ConnectBot.Services
         
         private async Task AddGame(ulong server)
         {
-            const string commandText = "INSERT IGNORE UNObot.ConnectBot_Games (server, board, queue) VALUES (@Server, @Board, @Queue)";
+            const string commandText = "INSERT IGNORE UNObot.ConnectBot.Games (server, board, queue) VALUES (@Server, @Board, @Queue)";
 
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new { Server = server, Board = DefaultBoard, Queue = DefaultQueue });
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new { Server = Convert.ToDecimal(server), Board = DefaultBoard, Queue = DefaultQueue });
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         
-        internal async Task AddUser(ulong user)
+        public async Task AddUser(ulong user)
         {
             const string commandText =
-                "INSERT IGNORE INTO ConnectBot_Players (userid) VALUES(@User)";
+                "INSERT IGNORE INTO ConnectBot.Players (userid) VALUES(@User)";
             
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new {User = user});
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new { User = Convert.ToDecimal(user) });
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         
-        internal enum ConnectBotStat { GamesJoined, GamesPlayed, GamesWon }
+        public enum ConnectBotStat { GamesJoined, GamesPlayed, GamesWon }
 
-        internal async Task<(int GamesJoined, int GamesPlayed, int GamesWon)> GetStats(ulong user)
+        public async Task<(int GamesJoined, int GamesPlayed, int GamesWon)> GetStats(ulong user)
         {
             const string commandText =
-                "SELECT gamesJoined, gamesPlayed, gamesWon FROM ConnectBot_Players WHERE userid = @User";
+                "SELECT gamesJoined, gamesPlayed, gamesWon FROM ConnectBot.Players WHERE userid = @User";
             
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
-                var results = await db.QueryFirstOrDefaultAsync(commandText, new { User = user });
+                var results = await db.QueryFirstOrDefaultAsync(_config.ConvertSql(commandText), new { User = Convert.ToDecimal(user) });
                 if (!ReferenceEquals(null, results))
                     return (results.gamesJoined, results.gamesPlayed, results.gamesWon);
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -159,37 +158,37 @@ namespace ConnectBot.Services
             return (0, 0, 0);
         }
         
-        internal async Task UpdateStats(ulong user, ConnectBotStat stat)
+        public async Task UpdateStats(ulong user, ConnectBotStat stat)
         {
             var enumStr = stat.ToString();
-            var column = enumStr.Substring(0, 1).ToLower() + enumStr.Substring(1);
+            var column = enumStr[..1].ToLower() + enumStr[1..];
             var commandText =
-                $"UPDATE UNObot.ConnectBot_Players SET {column} = {column} + 1 WHERE userid = @User";
+                $"UPDATE UNObot.ConnectBot.Players SET {column} = {column} + 1 WHERE userid = @User";
             
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new { User = user });
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new { User = Convert.ToDecimal(user) });
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
         }
         
-        internal async Task<(int DefaultWidth, int DefaultHeight, int DefaultConnect)> GetDefaultBoardDimensions(ulong user)
+        public async Task<(int DefaultWidth, int DefaultHeight, int DefaultConnect)> GetDefaultBoardDimensions(ulong user)
         {
             const string commandText =
-                "SELECT defaultWidth, defaultHeight, defaultConnect FROM ConnectBot_Players WHERE userid = @User";
+                "SELECT defaultWidth, defaultHeight, defaultConnect FROM ConnectBot.Players WHERE userid = @User";
             
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
-                var results = await db.QueryFirstOrDefaultAsync(commandText, new { User = user });
+                var results = await db.QueryFirstOrDefaultAsync(_config.ConvertSql(commandText), new { User = Convert.ToDecimal(user) });
                 if (!ReferenceEquals(null, results))
                     return (results.defaultWidth, results.defaultHeight, results.defaultConnect);
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }
@@ -197,16 +196,16 @@ namespace ConnectBot.Services
             return (7, 6, 4);
         }
         
-        internal async Task SetDefaultBoardDimensions(ulong user, int width, int height, int connect)
+        public async Task SetDefaultBoardDimensions(ulong user, int width, int height, int connect)
         {
-            const string commandText = "UPDATE ConnectBot_Players SET defaultWidth = @Width, defaultHeight = @Height, defaultConnect = @Connect WHERE userid = @User";
+            const string commandText = "UPDATE ConnectBot.Players SET defaultWidth = @Width, defaultHeight = @Height, defaultConnect = @Connect WHERE userid = @User";
             
-            await using var db = new MySqlConnection(ConnString);
+            await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new { User = user, Width = width, Height = height, Connect = connect });
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new { User = Convert.ToDecimal(user), Width = width, Height = height, Connect = connect });
             }
-            catch (MySqlException ex)
+            catch (DbException ex)
             {
                 _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
             }

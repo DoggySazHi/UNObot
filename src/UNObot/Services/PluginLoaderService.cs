@@ -10,11 +10,11 @@ using UNObot.Plugins;
 
 namespace UNObot.Services
 {
-    internal class PluginLoadContext : AssemblyLoadContext
+    public class PluginLoadContext : AssemblyLoadContext
     {
         private readonly AssemblyDependencyResolver _resolver;
 
-        internal PluginLoadContext(string pluginPath)
+        public PluginLoadContext(string pluginPath)
         {
             _resolver = new AssemblyDependencyResolver(pluginPath);
         }
@@ -26,18 +26,18 @@ namespace UNObot.Services
         }
     }
     
-    internal enum PluginStatus { Success = 0, Failed, NotFound, Conflict, AlreadyUnloaded, AlreadyLoaded }
+    public enum PluginStatus { Success = 0, Failed, NotFound, Conflict, AlreadyUnloaded, AlreadyLoaded }
     
-    internal class PluginLoaderService
+    public class PluginLoaderService
     {
         private readonly bool _init;
 
         public class PluginInfo
         {
-            internal string FileName { get; }
-            internal Assembly PluginAssembly { get; }
-            internal IPlugin Plugin { get; }
-            internal bool Loaded { get; set; }
+            public string FileName { get; }
+            public Assembly PluginAssembly { get; }
+            public IPlugin Plugin { get; }
+            public bool Loaded { get; set; }
 
             public PluginInfo(string fileName, Assembly pluginAssembly, IPlugin plugin, bool loaded = true)
             {
@@ -50,7 +50,7 @@ namespace UNObot.Services
 
         private readonly List<PluginInfo> _plugins;
 
-        internal IReadOnlyList<PluginInfo> Plugins => _plugins;
+        public IReadOnlyList<PluginInfo> Plugins => _plugins;
         private readonly ILogger _logger;
         private readonly CommandHandlingService _commands;
 
@@ -102,14 +102,14 @@ namespace UNObot.Services
             foreach (var type in assembly.GetTypes())
             {
                 if (!typeof(IPlugin).IsAssignableFrom(type)) continue;
-                if (!(Activator.CreateInstance(type) is IPlugin result)) continue;
+                if (Activator.CreateInstance(type) is not IPlugin result) continue;
                 if (plugin != null) throw new InvalidOperationException("Read multiple IPlugins from one assembly!");
                 plugin = result;
                 var status = -1;
                 Exception ex = null;
                 try
                 {
-                    status = plugin.OnLoad();
+                    status = plugin.OnLoad(_logger);
                 }
                 catch (Exception e)
                 {
@@ -122,7 +122,7 @@ namespace UNObot.Services
                     ex = null;
                     try
                     {
-                        status = plugin.OnUnload();
+                        status = plugin.OnUnload(_logger);
                     }
                     catch (Exception e)
                     {
@@ -139,32 +139,33 @@ namespace UNObot.Services
                 }
             }
             
-            Task.Run(async () =>
-            {
-                try
+            if (loaded)
+                Task.Run(async () =>
                 {
-                    var moduleCounter = (await _commands.AddModulesAsync(assembly, plugin?.Services)).Count();
-                    _logger.Log(LogSeverity.Info, $"Found {moduleCounter} module{(moduleCounter == 1 ? "" : "s")} in {assembly.GetName().Name}.");
-                }
-                catch (Exception e)
-                {
-                    _logger.Log(LogSeverity.Critical, $"Could not load {assembly.GetName().Name}!", e);
-                    throw;
-                }
-            });
+                    try
+                    {
+                        var moduleCounter = (await _commands.AddModulesAsync(assembly, plugin?.Services)).Count();
+                        _logger.Log(LogSeverity.Info, $"Found {moduleCounter} module{(moduleCounter == 1 ? "" : "s")} in {assembly.GetName().Name}.");
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.Log(LogSeverity.Critical, $"Could not load {assembly.GetName().Name}!", e);
+                        throw;
+                    }
+                });
             
             if(plugin == null)
                 throw new MissingMemberException("Could not find plugin information!");
             return (plugin, loaded);
         }
 
-        internal PluginStatus LoadPluginByName(string name)
+        public PluginStatus LoadPluginByName(string name)
         {
             if (_plugins.Any(o => o.FileName.Contains(name, StringComparison.CurrentCultureIgnoreCase)))
                 return PluginStatus.AlreadyLoaded;
             var availablePlugins =
                 Directory.EnumerateFiles("plugins").Where(path =>
-                    path.Trim().Substring(path.LastIndexOf(Path.DirectorySeparatorChar) + 1)
+                    path.Trim()[(path.LastIndexOf(Path.DirectorySeparatorChar) + 1)..]
                         .Equals(name.Trim(), StringComparison.CurrentCultureIgnoreCase)).ToList();
             if (availablePlugins.Count == 0) return PluginStatus.NotFound;
             if (availablePlugins.Count > 1) return PluginStatus.Conflict;
@@ -176,22 +177,22 @@ namespace UNObot.Services
                 _plugins.Add(new PluginInfo(availablePlugins[0], pluginAssembly, plugin));
                 return PluginStatus.Success;
             }
-            catch (ReflectionTypeLoadException ex)
+            catch (Exception ex)
             {
                 _logger.Log(LogSeverity.Error, "Exception trying to load plugin!", ex);
                 return PluginStatus.Failed;
             }
         }
 
-        internal async Task<PluginStatus> UnloadPlugin(PluginInfo plugin)
+        public async Task<PluginStatus> UnloadPlugin(PluginInfo plugin)
         {
             if (!plugin.Loaded) return PluginStatus.AlreadyUnloaded;
-            await _commands.RemoveModulesAsync(plugin.PluginAssembly);
             var unloadStatus = -1;
             Exception ex = null;
             try
             {
-                unloadStatus = plugin.Plugin.OnUnload();
+                await _commands.RemoveModulesAsync(plugin.PluginAssembly);
+                unloadStatus = plugin.Plugin.OnUnload(_logger);
             }
             catch (Exception e)
             {

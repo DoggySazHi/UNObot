@@ -10,23 +10,25 @@ using Timer = System.Timers.Timer;
 
 namespace UNObot.Core.Services
 {
-    internal class AFKTimerService
+    public class AFKTimerService
     {
-        private static readonly Dictionary<ulong, Timer> PlayTimers = new Dictionary<ulong, Timer>();
+        private static readonly Dictionary<ulong, Timer> PlayTimers = new();
+        private readonly IUNObotConfig _config;
         private readonly ILogger _logger;
-        private readonly UNODatabaseService _db;
+        private readonly DatabaseService _db;
         private readonly QueueHandlerService _queue;
         private readonly DiscordSocketClient _client;
 
-        public AFKTimerService(ILogger logger, UNODatabaseService db, QueueHandlerService queue, DiscordSocketClient client)
+        public AFKTimerService(IUNObotConfig config, ILogger logger, DatabaseService db, QueueHandlerService queue, DiscordSocketClient client)
         {
+            _config = config;
             _logger = logger;
             _db = db;
             _queue = queue;
             _client = client;
         }
 
-        internal void ResetTimer(ulong server)
+        public void ResetTimer(ulong server)
         {
             if (!PlayTimers.ContainsKey(server))
             {
@@ -39,7 +41,7 @@ namespace UNObot.Core.Services
             }
         }
 
-        internal void StartTimer(ulong server)
+        public void StartTimer(ulong server)
         {
             _logger.Log(LogSeverity.Debug, "Starting timer!");
             if (PlayTimers.ContainsKey(server))
@@ -117,8 +119,8 @@ namespace UNObot.Core.Services
         {
             var channel = _client.GetGuild(server).DefaultChannel.Id;
             _logger.Log(LogSeverity.Info, $"Channel: {channel}");
-            if (await DatabaseExtensions.HasDefaultChannel(_db.ConnString, server))
-                channel = await DatabaseExtensions.GetDefaultChannel(_db.ConnString, server);
+            if (await DatabaseExtensions.HasDefaultChannel(_config, server))
+                channel = await DatabaseExtensions.GetDefaultChannel(_config, server);
             _logger.Log(LogSeverity.Info, $"Channel: {channel}");
 
             try

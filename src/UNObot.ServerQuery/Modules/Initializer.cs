@@ -12,12 +12,12 @@ namespace UNObot.ServerQuery.Modules
         public string Version { get; private set; }
         public IServiceCollection Services { get; private set; }
 
-        public int OnLoad()
+        public int OnLoad(ILogger logger)
         {
             Name = "UNObot-ServerQuery";
             Description = "Utilities for probing game servers.";
             Author = "DoggySazHi";
-            Version = "1.2.0 (4.2.10)";
+            Version = "1.2.1 (4.2.10)";
 
             Services = new ServiceCollection()
                 .AddSingleton<QueryHandlerService>()
@@ -30,7 +30,7 @@ namespace UNObot.ServerQuery.Modules
             return 0;
         }
 
-        public int OnUnload()
+        public int OnUnload(ILogger logger)
         {
             return 0;
         }

@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using UNObot.Plugins;
@@ -17,7 +16,7 @@ using UNObot.Templates;
 
 namespace UNObot.Services
 {
-    internal class CommandHandlingService : IDisposable
+    public class CommandHandlingService : IDisposable
     {
         private readonly CommandService _commands;
         private readonly DiscordSocketClient _discord;
@@ -40,34 +39,34 @@ namespace UNObot.Services
             _loaded = new List<Command>();
         }
 
-        internal async Task InitializeAsync(IServiceProvider provider, LoggerService logger)
+        public async Task InitializeAsync(IServiceProvider provider, LoggerService logger)
         {
             _commands.Log += logger.LogCommand;
             _provider = provider;
             await AddModulesAsync(Assembly.GetEntryAssembly(), original: true);
-            _discord.ReactionAdded += async (message, channel, emote) => 
+            _discord.ReactionAdded += async (message, _, emote) => 
                 await PluginHelper.DeleteReact(_discord, await message.GetOrDownloadAsync(), emote);
         }
         
-        internal async Task<IEnumerable<ModuleInfo>> AddModulesAsync(Assembly assembly, IServiceCollection services = null, bool original = false)
+        public async Task<IEnumerable<ModuleInfo>> AddModulesAsync(Assembly assembly, IServiceCollection services = null, bool original = false)
         {
             var provider = _provider;
             if (services != null)
                 provider = services.AddSingleton(_discord)
                     .AddSingleton(_logger)
-                    .AddSingleton(_provider.GetRequiredService<IConfiguration>())
+                    .AddSingleton(_provider.GetRequiredService<IUNObotConfig>())
                     .AddSingleton(this) // Required for .help, which seeks duplicates.
                     .BuildServiceProvider();
             await LoadHelp(assembly, provider, original);
             return await _commands.AddModulesAsync(assembly, provider);
         }
         
-        internal async Task<bool> RemoveModulesAsync(Type type)
+        public async Task<bool> RemoveModulesAsync(Type type)
         {
             return await _commands.RemoveModuleAsync(type);
         }
         
-        internal async Task RemoveModulesAsync(Assembly assembly)
+        public async Task RemoveModulesAsync(Assembly assembly)
         {
             foreach(var type in assembly.GetTypes())
                 if(typeof(ModuleBase<SocketCommandContext>).IsAssignableFrom(type))
@@ -110,12 +109,13 @@ namespace UNObot.Services
                 }
             }
 
-            if (!message.HasCharPrefix('.', ref argPos) &&
-                !message.HasMentionPrefix(_discord.CurrentUser, ref argPos)) return;
+            if (!(context.IsPrivate && message.HasCharPrefix('.', ref argPos)) && // If it's in a DM, forcibly use '.' prefix
+                !(!context.IsPrivate && message.HasStringPrefix(await _db.GetPrefix(context.Guild.Id), ref argPos)) && // If it's in a server, query DB.
+                !message.HasMentionPrefix(_discord.CurrentUser, ref argPos)) return; // Look for mentions.
 
             if (!context.IsPrivate)
-                await _db.AddGame(context.Guild.Id);
-            await _db.AddUser(context.User.Id, context.User.Username);
+                await _db.RegisterServer(context.Guild.Id);
+            await _db.RegisterUser(context.User.Id, context.User.Username);
             try
             {
                 var success = GetProvider(context, argPos, out var provider);
@@ -185,7 +185,7 @@ namespace UNObot.Services
             }
         }
 
-        internal Command FindCommand(string name)
+        public Command FindCommand(string name)
         {
             var index = _loaded.FindIndex(o => o.CommandName == name);
             var index2 = _loaded.FindIndex(o => o.Aliases.Contains(name));
@@ -197,13 +197,13 @@ namespace UNObot.Services
             return cmd;
         }
 
-        internal async Task LoadHelp(Assembly asm, IServiceCollection services)
+        public async Task LoadHelp(Assembly asm, IServiceCollection services)
         {
             var provider = _provider;
             if (services != null)
                  provider = services.AddSingleton(_discord)
                     .AddSingleton(_logger)
-                    .AddSingleton(_provider.GetRequiredService<IConfiguration>())
+                    .AddSingleton(_provider.GetRequiredService<IUNObotConfig>())
                     .AddSingleton(this) // Required for .help, which seeks duplicates.
                     .BuildServiceProvider();
             await LoadHelp(asm, provider);
@@ -236,7 +236,7 @@ namespace UNObot.Services
                 {
                     var cmd = helpAtt != null
                         ? new Command(nameAtt.Text, aliases, helpAtt.Usages.ToList(), helpAtt.HelpMsg,
-                            helpAtt.Active, helpAtt.Version)
+                            helpAtt.Active, helpAtt.Version, disabledForDMs)
                         : new Command(nameAtt.Text, aliases, new List<string> {$".{nameAtt.Text}"},
                             "No help is given for this command.", ownerOnlyAtt == null, "Unknown Version",
                             disabledForDMs);
@@ -299,7 +299,7 @@ namespace UNObot.Services
             }
         }
 
-        internal async Task ClearHelp()
+        public async Task ClearHelp()
         {
             _loaded.Clear();
             await LoadHelp(Assembly.GetEntryAssembly(), _provider, true);

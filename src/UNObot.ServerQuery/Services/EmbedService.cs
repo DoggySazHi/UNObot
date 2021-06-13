@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Discord;
-using Microsoft.Extensions.Configuration;
 using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
 using UNObot.Plugins.TerminalCore;
@@ -16,12 +15,12 @@ namespace UNObot.ServerQuery.Services
         private const int Attempts = 3;
 
         private readonly ILogger _logger;
-        private readonly IConfiguration _config;
+        private readonly IUNObotConfig _config;
         private readonly DatabaseService _db;
         private readonly QueryHandlerService _query;
         private readonly MinecraftProcessorService _minecraft;
 
-        public EmbedService(ILogger logger, IConfiguration config, DatabaseService db, QueryHandlerService query,
+        public EmbedService(ILogger logger, IUNObotConfig config, DatabaseService db, QueryHandlerService query,
             MinecraftProcessorService minecraft)
         {
             _logger = logger;
@@ -31,7 +30,7 @@ namespace UNObot.ServerQuery.Services
             _minecraft = minecraft;
         }
         
-        internal bool UnturnedQueryEmbed(string ip, ushort port, out Embed result, ServerAverages averages = null)
+        public bool UnturnedQueryEmbed(string ip, ushort port, out Embed result, ServerAverages averages = null)
         {
             A2SInfo information = null;
             var informationGet = false;
@@ -103,7 +102,7 @@ namespace UNObot.ServerQuery.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithThumbnailUrl(serverImageUrl)
@@ -136,7 +135,7 @@ namespace UNObot.ServerQuery.Services
             return true;
         }
 
-        internal bool MinecraftQueryEmbed(string ip, ushort port, out Embed result)
+        public bool MinecraftQueryEmbed(string ip, ushort port, out Embed result)
         {
             //TODO with the new option to disable status, it might be that queries work but not simple statuses.
             var defaultStatus = new MCStatus(ip, port);
@@ -170,7 +169,7 @@ namespace UNObot.ServerQuery.Services
                         var userInfo = mcUserInfo.Find(o => o.Username == extendedStatus.Players[i]);
                         if (userInfo != null)
                             playersOnline +=
-                                $"\n- **Ouchies:** {userInfo.Ouchies} | **Health:** {userInfo.Health} | **Food:** {userInfo.Food}\n- **Experience:** {userInfo.Experience} ({userInfo.ExperienceLevels} levels)";
+                                $"\n- {(userInfo.Ouchies != null ? $"**Ouchies:** {userInfo.Ouchies} | " : "" )}**Health:** {userInfo.Health} | **Food:** {userInfo.Food}\n- **Experience:** {userInfo.Experience} ({userInfo.ExperienceLevels} levels)";
                         else
                             playersOnline += "\n Unknown stats.";
                     }
@@ -188,7 +187,7 @@ namespace UNObot.ServerQuery.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
@@ -207,7 +206,7 @@ namespace UNObot.ServerQuery.Services
             return true;
         }
         
-        internal bool MinecraftPEQueryEmbed(string ip, ushort port, out Embed result)
+        public bool MinecraftPEQueryEmbed(string ip, ushort port, out Embed result)
         {
             var ping = new Stopwatch();
             ping.Start();
@@ -256,7 +255,7 @@ namespace UNObot.ServerQuery.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
@@ -275,7 +274,7 @@ namespace UNObot.ServerQuery.Services
             return true;
         }
 
-        internal bool OuchiesEmbed(string ip, ushort port, out Embed result)
+        public bool OuchiesEmbed(string ip, ushort port, out Embed result)
         {
             var random = ThreadSafeRandom.ThisThreadsRandom;
 
@@ -287,7 +286,7 @@ namespace UNObot.ServerQuery.Services
                     .WithFooter(footer =>
                     {
                         footer
-                            .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                            .WithText($"UNObot {_config.Version} - By DoggySazHi")
                             .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                     })
                     .WithAuthor(author =>
@@ -329,7 +328,7 @@ namespace UNObot.ServerQuery.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
@@ -346,7 +345,7 @@ namespace UNObot.ServerQuery.Services
             return true;
         }
 
-        internal bool LocationsEmbed(string ip, ushort port, out Embed result)
+        public bool LocationsEmbed(string ip, ushort port, out Embed result)
         {
             var random = ThreadSafeRandom.ThisThreadsRandom;
 
@@ -358,7 +357,7 @@ namespace UNObot.ServerQuery.Services
                     .WithFooter(footer =>
                     {
                         footer
-                            .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                            .WithText($"UNObot {_config.Version} - By DoggySazHi")
                             .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                     })
                     .WithAuthor(author =>
@@ -414,7 +413,7 @@ namespace UNObot.ServerQuery.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>
@@ -431,7 +430,7 @@ namespace UNObot.ServerQuery.Services
             return true;
         }
 
-        internal bool TransferEmbed(string ip, ushort port, ulong source, string target, string amountIn,
+        public bool TransferEmbed(string ip, ushort port, ulong source, string target, string amountIn,
             out Embed result)
         {
             var messageTitle = "Mukyu~";
@@ -534,7 +533,7 @@ namespace UNObot.ServerQuery.Services
                 .WithFooter(footer =>
                 {
                     footer
-                        .WithText($"UNObot {_config["version"]} - By DoggySazHi")
+                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
                         .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
                 })
                 .WithAuthor(author =>

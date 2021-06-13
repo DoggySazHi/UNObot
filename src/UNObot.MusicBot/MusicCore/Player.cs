@@ -16,7 +16,7 @@ using Timer = System.Timers.Timer;
 
 namespace UNObot.MusicBot.MusicCore
 {
-    internal class Player : IAsyncDisposable
+    public class Player : IAsyncDisposable
     {
         private const int CacheLength = 5;
 
@@ -44,7 +44,7 @@ namespace UNObot.MusicBot.MusicCore
         private readonly YoutubeService _youtube;
         private readonly EmbedService _embed;
         
-        internal Player(ILogger logger, YoutubeService youtube, EmbedService embed, ulong guild, IVoiceChannel audioChannel, IAudioClient audioClient,
+        public Player(ILogger logger, YoutubeService youtube, EmbedService embed, ulong guild, IVoiceChannel audioChannel, IAudioClient audioClient,
             ISocketMessageChannel messageChannel)
         {
             _logger = logger;
@@ -63,14 +63,14 @@ namespace UNObot.MusicBot.MusicCore
             _playPos = new Stopwatch();
         }
 
-        internal ulong Guild { get; }
-        internal List<Song> Songs { get; }
-        internal Song NowPlaying { get; private set; }
-        internal bool LoopingQueue { get; private set; }
-        internal bool LoopingSong { get; private set; }
+        public ulong Guild { get; }
+        public List<Song> Songs { get; }
+        public Song NowPlaying { get; private set; }
+        public bool LoopingQueue { get; private set; }
+        public bool LoopingSong { get; private set; }
 
-        internal bool Paused { get; private set; }
-        internal bool Disposed => _disposed || _audioClient.ConnectionState == ConnectionState.Disconnected;
+        public bool Paused { get; private set; }
+        public bool Disposed => _disposed || _audioClient.ConnectionState == ConnectionState.Disconnected;
 
         private async Task FixConnection(Exception arg)
         {
@@ -220,7 +220,7 @@ namespace UNObot.MusicBot.MusicCore
             }
         }
 
-        internal void Add(string url, Tuple<string, string, string> data, ulong user, ulong guildFrom,
+        public void Add(string url, Tuple<string, string, string> data, ulong user, ulong guildFrom,
             bool insertAtTop = false)
         {
             if (!_hasInitialized)
@@ -237,7 +237,7 @@ namespace UNObot.MusicBot.MusicCore
             Task.Run(Cache);
         }
 
-        internal string TryPause()
+        public string TryPause()
         {
             if (Songs.Count == 0 && NowPlaying == null)
                 return "There is no song playing.";
@@ -247,7 +247,7 @@ namespace UNObot.MusicBot.MusicCore
             return null;
         }
 
-        internal string TryPlay()
+        public string TryPlay()
         {
             if (Songs.Count == 0 && NowPlaying == null)
                 return "There is no song playing.";
@@ -262,7 +262,7 @@ namespace UNObot.MusicBot.MusicCore
             return null;
         }
 
-        internal string TrySkip()
+        public string TrySkip()
         {
             if (NowPlaying == null)
                 return "There is no song playing.";
@@ -278,7 +278,7 @@ namespace UNObot.MusicBot.MusicCore
             return null;
         }
 
-        internal string TryRemove(int index, out string songName)
+        public string TryRemove(int index, out string songName)
         {
             if (index < 1 || index > Songs.Count)
             {
@@ -291,7 +291,7 @@ namespace UNObot.MusicBot.MusicCore
             return null;
         }
 
-        internal string ToggleLoopSong()
+        public string ToggleLoopSong()
         {
             if (NowPlaying == null && Songs.Count == 0)
                 return "There is no song playing.";
@@ -301,7 +301,7 @@ namespace UNObot.MusicBot.MusicCore
             return (LoopingSong ? "Enabled" : "Disabled") + " song loop.";
         }
 
-        internal string ToggleLoopPlaylist()
+        public string ToggleLoopPlaylist()
         {
             if (NowPlaying == null && Songs.Count == 0)
                 return "There are no songs in the queue.";
@@ -312,7 +312,7 @@ namespace UNObot.MusicBot.MusicCore
             return (LoopingQueue ? "Enabled" : "Disabled") + " queue loop.";
         }
 
-        internal void Shuffle()
+        public void Shuffle()
         {
             Songs.ForEach(o => o.PathCached = null);
             Songs.Shuffle();
@@ -420,12 +420,12 @@ namespace UNObot.MusicBot.MusicCore
             _logger.Log(LogSeverity.Debug, "Audio stream successfully destroyed.");
         }
 
-        internal string GetPosition()
+        public string GetPosition()
         {
             return YoutubeService.TimeString(_playPos.Elapsed);
         }
 
-        internal async Task CheckOnJoin()
+        public async Task CheckOnJoin()
         {
             _logger.Log(LogSeverity.Debug, "Detected someone joining a channel.");
             var users = (await _audioChannel.GetUsersAsync().FlattenAsync()).ToList();
@@ -438,7 +438,7 @@ namespace UNObot.MusicBot.MusicCore
             }
         }
 
-        internal async Task CheckOnLeave()
+        public async Task CheckOnLeave()
         {
             var users = (await _audioChannel.GetUsersAsync().FlattenAsync()).ToList();
             var isEmpty = users.All(o => o.IsBot) || users.Count <= 1;
@@ -451,7 +451,7 @@ namespace UNObot.MusicBot.MusicCore
                     AutoReset = false,
                     Enabled = true
                 };
-                _autoDcTimer.Elapsed += async (sender, args) => { await DisposeAsync(); };
+                _autoDcTimer.Elapsed += async (_, _) => { await DisposeAsync(); };
             }
         }
 
@@ -459,9 +459,9 @@ namespace UNObot.MusicBot.MusicCore
         {
             var fileName = "/usr/local/bin/ffmpeg";
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                fileName = @"C:\Users\William Le\Documents\Programming Projects\YTDownloader\ffmpeg.exe";
-            // $"-hide_banner -re -loglevel panic -i \"{path}\" -ac 2 -b:a {_audioChannel.Bitrate} -f s16le pipe:1"
-            var args = $"-hide_banner -loglevel panic -i \"{path}\" -b:a {_audioChannel.Bitrate} -ac 2 -f s16le -ar 48000 pipe:1";
+                fileName = "ffmpeg.exe";
+            // var args = $"-hide_banner -re -loglevel panic -i \"{path}\" -ac 2 -b:a {_audioChannel.Bitrate} -f s16le pipe:1";
+            var args = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1";
             _logger.Log(LogSeverity.Verbose, args);
             _ffmpegProcess = Process.Start(new ProcessStartInfo
             {

@@ -12,7 +12,7 @@ namespace UNObot.MusicBot.Modules
         public string Version { get; private set; }
         public IServiceCollection Services { get; private set; }
 
-        public int OnLoad()
+        public int OnLoad(ILogger logger)
         {
             Name = "UNObot-MusicBot";
             Description = "The music bot add-on for UNObot. Probably doesn't work.";
@@ -27,7 +27,7 @@ namespace UNObot.MusicBot.Modules
             return 0;
         }
 
-        public int OnUnload()
+        public int OnUnload(ILogger logger)
         {
             return 0;
         }

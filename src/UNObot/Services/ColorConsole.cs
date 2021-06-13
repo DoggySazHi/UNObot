@@ -2,7 +2,7 @@
 
 namespace UNObot.Services
 {
-    internal static class ColorConsole
+    public static class ColorConsole
     {
         [Obsolete("Use a ConsoleColor instead, it's more reliable.")]
         private static void Write(string text, string colorText, string bgColor)
@@ -58,32 +58,32 @@ namespace UNObot.Services
             Write(text, color, Console.BackgroundColor.ToString());
         }
 
-        internal static void Write(string text, ConsoleColor color)
+        public static void Write(string text, ConsoleColor color)
         {
             Write(text, color, Console.BackgroundColor);
         }
 
         [Obsolete("Use a ConsoleColor instead, it's more reliable.")]
-        internal static void WriteLine(string text, string color)
+        public static void WriteLine(string text, string color)
         {
             Write(text, color);
             Console.WriteLine();
         }
 
-        internal static void WriteLine(string text, ConsoleColor color)
+        public static void WriteLine(string text, ConsoleColor color)
         {
             Write(text, color);
             Console.WriteLine();
         }
 
         [Obsolete("Use a ConsoleColor instead, it's more reliable.")]
-        internal static void WriteLine(string text, string color, string bgColor)
+        public static void WriteLine(string text, string color, string bgColor)
         {
             Write(text, color, bgColor);
             Console.WriteLine();
         }
 
-        internal static void WriteLine(string text, ConsoleColor color, ConsoleColor bgColor)
+        public static void WriteLine(string text, ConsoleColor color, ConsoleColor bgColor)
         {
             Write(text, color, bgColor);
             Console.WriteLine();

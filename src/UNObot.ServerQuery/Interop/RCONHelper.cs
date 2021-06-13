@@ -6,11 +6,11 @@ using UNObot.ServerQuery.Services;
 
 namespace UNObot.ServerQuery.Interop
 {
-    internal class RCONHelper : IRCON
+    public class RCONHelper : IRCON
     {
         private readonly IntPtr _rconInstance;
 
-        internal RCONHelper(IPEndPoint server, [NotNull] string password, string command = null)
+        public RCONHelper(IPEndPoint server, [NotNull] string password, string command = null)
         {
             // Note: It is split into two parts as C++ does not allow null strings.
             _rconInstance = command switch
@@ -20,7 +20,7 @@ namespace UNObot.ServerQuery.Interop
             };
         }
 
-        internal RCONHelper([NotNull] string ip, ushort port, [NotNull] string password, string command = null)
+        public RCONHelper([NotNull] string ip, ushort port, [NotNull] string password, string command = null)
         {
             // Note: It is split into two parts as C++ does not allow null strings.
             _rconInstance = command switch
@@ -45,7 +45,7 @@ namespace UNObot.ServerQuery.Interop
         public IRCON.RCONStatus Status => GetStatus(_rconInstance);
 
         public IPEndPoint Server =>
-            new IPEndPoint(
+            new(
                 IPAddress.Parse(Marshal.PtrToStringAnsi(GetServerIP(_rconInstance)) ??
                                 throw new InvalidOperationException("OH CRAP")), GetServerPort(_rconInstance));
 
@@ -91,13 +91,13 @@ namespace UNObot.ServerQuery.Interop
         private static extern void Mukyu(IntPtr rcon);
 
         [DllImport(@"libRCONHelper.so")]
-        internal static extern void MukyuN();
+        public static extern void MukyuN();
 
         [DllImport(@"libRCONHelper.so")]
-        internal static extern IntPtr Say(string thing);
+        public static extern IntPtr Say(string thing);
 
         [DllImport(@"libRCONHelper.so")]
-        internal static extern void SayDelete(IntPtr thing);
+        public static extern void SayDelete(IntPtr thing);
 
         [DllImport(@"libRCONHelper.so")]
         private static extern IRCON.RCONStatus GetStatus(IntPtr obj);
@@ -120,7 +120,7 @@ namespace UNObot.ServerQuery.Interop
         [DllImport(@"libRCONHelper.so")]
         private static extern void Execute(IntPtr obj, string command);
 
-        internal void Mukyu()
+        public void Mukyu()
         {
             CheckDispose();
             // to mukyu, mukyu (test to check interop)

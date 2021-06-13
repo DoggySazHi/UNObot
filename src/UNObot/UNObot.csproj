@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <ApplicationIcon>uno.ico</ApplicationIcon>
   </PropertyGroup>
 
@@ -24,18 +24,20 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="Dapper" Version="2.0.78" />
+    <PackageReference Include="Dapper" Version="2.0.90" />
+    <PackageReference Include="Dapper.Contrib" Version="2.0.78" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="5.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.0" />
-    <PackageReference Include="MySql.Data" Version="8.0.22" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
+    <PackageReference Include="MySql.Data" Version="8.0.25" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
     <PackageReference Include="System.ServiceModel.Syndication" Version="5.0.0" />
-    <PackageReference Include="Discord.Net" Version="2.2.0" />
-    <PackageReference Include="YoutubeExplode" Version="5.1.8" />
+    <PackageReference Include="Discord.Net" Version="2.4.0" />
+    <PackageReference Include="YoutubeExplode" Version="6.0.2" />
     <PackageReference Include="System.Linq.Async" Version="5.0.0" />
-    <PackageReference Include="YoutubeExplode.Converter" Version="2.0.0" />
+    <PackageReference Include="YoutubeExplode.Converter" Version="2.1.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -50,20 +52,24 @@
   
   <Target Name="CopyPlugins" AfterTargets="PostBuildEvent">
     <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-      <CorePlugin Include="$(SolutionDir)src\UNObot.Core\bin\Release\netcoreapp3.1\*.dll" />
-      <QueryPlugin Include="$(SolutionDir)src\UNObot.ServerQuery\bin\Release\netcoreapp3.1\*.dll" />
-      <MusicBotPlugin Include="$(SolutionDir)src\UNObot.MusicBot\bin\Release\netcoreapp3.1\*.dll" />
-      <DuplicateDetectorPlugin Include="$(SolutionDir)src\DuplicateDetector\bin\Release\netcoreapp3.1\*.dll" />
-      <ConnectBotPlugin Include="$(SolutionDir)src\ConnectBot\bin\Release\netcoreapp3.1\*.dll" />
-      <Config Include="$(SolutionDir)src\UNObot\config.json" />
+      <CorePlugin Include="$(SolutionDir)src\UNObot.Core\bin\Release\net5.0\*.dll" />
+      <QueryPlugin Include="$(SolutionDir)src\UNObot.ServerQuery\bin\Release\net5.0\*.dll" />
+      <MusicBotPlugin Include="$(SolutionDir)src\UNObot.MusicBot\bin\Release\net5.0\*.dll" />
+      <DuplicateDetectorPlugin Include="$(SolutionDir)src\DuplicateDetector\bin\Release\net5.0\*.dll" />
+      <ConnectBotPlugin Include="$(SolutionDir)src\ConnectBot\bin\Release\net5.0\*.dll" />
+      <GooglePlugin Include="$(SolutionDir)src\UNObot.Google\bin\Release\net5.0\*.dll" />
+      <MiscPlugin Include="$(SolutionDir)src\UNObot.Misc\bin\Release\net5.0\*.dll" />
+      <Config Include="$(SolutionDir)src\config.json" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-      <CorePlugin Include="$(SolutionDir)src\UNObot.Core\bin\Debug\netcoreapp3.1\*.dll" />
-      <QueryPlugin Include="$(SolutionDir)src\UNObot.ServerQuery\bin\Debug\netcoreapp3.1\*.dll" />
-      <MusicBotPlugin Include="$(SolutionDir)src\UNObot.MusicBot\bin\Debug\netcoreapp3.1\*.dll" />
-      <DuplicateDetectorPlugin Include="$(SolutionDir)src\DuplicateDetector\bin\Debug\netcoreapp3.1\*.dll" />
-      <ConnectBotPlugin Include="$(SolutionDir)src\ConnectBot\bin\Debug\netcoreapp3.1\*.dll" />
+      <CorePlugin Include="$(SolutionDir)src\UNObot.Core\bin\Debug\net5.0\*.dll" />
+      <QueryPlugin Include="$(SolutionDir)src\UNObot.ServerQuery\bin\Debug\net5.0\*.dll" />
+      <MusicBotPlugin Include="$(SolutionDir)src\UNObot.MusicBot\bin\Debug\net5.0\*.dll" />
+      <DuplicateDetectorPlugin Include="$(SolutionDir)src\DuplicateDetector\bin\Debug\net5.0\*.dll" />
+      <ConnectBotPlugin Include="$(SolutionDir)src\ConnectBot\bin\Debug\net5.0\*.dll" />
+      <GooglePlugin Include="$(SolutionDir)src\UNObot.Google\bin\Debug\net5.0\*.dll" />
+      <MiscPlugin Include="$(SolutionDir)src\UNObot.Misc\bin\Debug\net5.0\*.dll" />
       <Config Include="$(SolutionDir)src\UNObot\config.json" />
     </ItemGroup>
     
@@ -73,6 +79,8 @@
     <Copy SourceFiles="@(MusicBotPlugin)" DestinationFolder="$(ProjectDir)$(OutDir)plugins" SkipUnchangedFiles="false" ContinueOnError="true" />
     <Copy SourceFiles="@(DuplicateDetectorPlugin)" DestinationFolder="$(ProjectDir)$(OutDir)plugins" SkipUnchangedFiles="false" ContinueOnError="true" />
     <Copy SourceFiles="@(ConnectBotPlugin)" DestinationFolder="$(ProjectDir)$(OutDir)plugins" SkipUnchangedFiles="false" ContinueOnError="true" />
+    <Copy SourceFiles="@(GooglePlugin)" DestinationFolder="$(ProjectDir)$(OutDir)plugins" SkipUnchangedFiles="false" ContinueOnError="true" />
+    <Copy SourceFiles="@(MiscPlugin)" DestinationFolder="$(ProjectDir)$(OutDir)plugins" SkipUnchangedFiles="false" ContinueOnError="true" />
     <Copy SourceFiles="@(Config)" DestinationFolder="$(ProjectDir)$(OutDir)" SkipUnchangedFiles="false" ContinueOnError="true" />
 
     <MakeDir Directories="$(PublishDir)plugins" ContinueOnError="false" />
@@ -81,6 +89,8 @@
     <Copy SourceFiles="@(MusicBotPlugin)" DestinationFolder="$(PublishDir)plugins" SkipUnchangedFiles="false" ContinueOnError="true" />
     <Copy SourceFiles="@(DuplicateDetectorPlugin)" DestinationFolder="$(PublishDir)plugins" SkipUnchangedFiles="false" ContinueOnError="true" />
     <Copy SourceFiles="@(ConnectBotPlugin)" DestinationFolder="$(PublishDir)plugins" SkipUnchangedFiles="false" ContinueOnError="true" />
+    <Copy SourceFiles="@(GooglePlugin)" DestinationFolder="$(PublishDir)plugins" SkipUnchangedFiles="false" ContinueOnError="true" />
+    <Copy SourceFiles="@(MiscPlugin)" DestinationFolder="$(PublishDir)plugins" SkipUnchangedFiles="false" ContinueOnError="true" />
     <Copy SourceFiles="@(Config)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="false" ContinueOnError="true" />
   </Target>
 </Project>

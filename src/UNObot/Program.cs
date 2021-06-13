@@ -5,22 +5,20 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json.Linq;
 using UNObot.Plugins;
 using UNObot.Services;
+using UNObot.Templates;
 
 namespace UNObot
 {
-    internal class Program
+    public class Program
     {
         private ServiceProvider _services;
         private DiscordSocketClient _client;
-        private static readonly ManualResetEvent ExitEvent = new ManualResetEvent(false);
-        private IConfiguration _config;
+        private static readonly ManualResetEvent ExitEvent = new(false);
+        private IUNObotConfig _config;
         private ILogger _logger;
-        private string _version;
 
         private static async Task Main()
         {
@@ -51,14 +49,14 @@ namespace UNObot
 
             _client.Log += logger.LogDiscord;
 
-            await _client.LoginAsync(TokenType.Bot, _config["token"]);
+            await _client.LoginAsync(TokenType.Bot, _config.Token);
             await _client.StartAsync();
             await _services.GetRequiredService<CommandHandlingService>().InitializeAsync(_services, logger);
             _services.GetRequiredService<WebhookListenerService>();
             _services.GetRequiredService<WatchdogService>().InitializeAsync(logger);
 
-            await _client.SetGameAsync($"UNObot {_version}");
-            Console.Title = $"UNObot {_version}";
+            await _client.SetGameAsync($"UNObot {_config.Version}");
+            Console.Title = $"UNObot {_config.Version}";
             SafeExitHandler();
             ExitEvent.WaitOne();
             ExitEvent.Dispose();
@@ -88,7 +86,7 @@ namespace UNObot
 
         private void SafeExitHandler()
         {
-            AppDomain.CurrentDomain.ProcessExit += (o, a) =>
+            AppDomain.CurrentDomain.ProcessExit += (_, _) =>
             {
                 try
                 {
@@ -100,7 +98,7 @@ namespace UNObot
                 }
             };
 
-            Console.CancelKeyPress += (sender, eventArgs) =>
+            Console.CancelKeyPress += (_, eventArgs) =>
             {
                 eventArgs.Cancel = true;
                 try
@@ -114,7 +112,7 @@ namespace UNObot
             };
         }
 
-        internal static void Exit()
+        public static void Exit()
         {
             try
             {
@@ -145,66 +143,23 @@ namespace UNObot
             Environment.Exit(0);
         }
 
-        private IConfiguration BuildConfig()
+        private IUNObotConfig BuildConfig()
         {
             _logger.Log(LogSeverity.Info, $"Reading files in {Directory.GetCurrentDirectory()}");
             if (!File.Exists("config.json"))
             {
                 _logger.Log(LogSeverity.Info,
                     "Config doesn't exist! The file has been created, please edit all fields to be correct. Exiting.");
-                var obj = new JObject(
-                    new JProperty("token", ""),
-                    new JProperty("connStr",
-                        "server=127.0.0.1;user=UNObot;database=UNObot;port=3306;password=DBPassword"),
-                    new JProperty("version", "Unknown Version")
-                );
-                using var sr = File.CreateText("config.json");
-                sr.Write(obj);
+                new UNObotConfig().Write("config.json");
                 Environment.Exit(1);
                 return null;
             }
 
-            var config = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("config.json")
-                .AddJsonFile("build.json", true)
-                .Build();
-            
-            var success = true;
-            if (string.IsNullOrWhiteSpace(config["token"]))
-            {
-                _logger.Log(LogSeverity.Error,
-                    "Error: Config is missing Bot Token (token)! Please add the property, or update the property to have a token.");
-                success = false;
-            }
-
-            if (config["connStr"] == null)
-            {
-                _logger.Log(LogSeverity.Error, "Error: Config is missing a Database Connection String (connStr)!");
-                success = false;
-            }
-
-            if (config["version"] == null)
-            {
-                _logger.Log(LogSeverity.Error, "Error: Config is missing version (version)!");
-                success = false;
-            }
-
-            if (!success)
-            {
-                _logger.Log(LogSeverity.Error, "Please fix all of these errors. Exiting.");
+            var config = new UNObotConfig(_logger);
+            if (!config.VerifyConfig())
                 Environment.Exit(1);
-                return null;
-            }
 
-            if (config["commit"] == null || config["build"] == null)
-            {
-                _logger.Log(LogSeverity.Warning,
-                    "The build information seems to be missing. Either this is a debug copy, or has been deleted.");
-            }
-
-            _version = config["version"] ?? "Unknown Version";
-            _logger.Log(LogSeverity.Info, $"Running {config["version"] ?? "an unknown version"}!");
+            _logger.Log(LogSeverity.Info, $"Running {config.Version}!");
 
             return config;
         }

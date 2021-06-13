@@ -5,9 +5,9 @@ using System.Web;
 
 namespace UNObot.Services
 {
-    internal class GoogleTranslateService
+    public class GoogleTranslateService
     {
-        internal string Translate(string text, string fromCulture, string toCulture)
+        public string Translate(string text, string fromCulture, string toCulture)
         {
             fromCulture = fromCulture.ToLower();
             toCulture = toCulture.ToLower();
