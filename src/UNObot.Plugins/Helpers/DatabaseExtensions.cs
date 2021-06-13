@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data.Common;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -21,7 +22,7 @@ namespace UNObot.Plugins.Helpers
             
             try
             {
-                return await connection.ExecuteScalarAsync<bool>(commandText, new { Server = Convert.ToDecimal(server) });
+                return await connection.ExecuteScalarAsync<bool>(config.ConvertSql(commandText), new { Server = Convert.ToDecimal(server) });
             }
             catch (DbException)
             {
@@ -37,7 +38,7 @@ namespace UNObot.Plugins.Helpers
             
             try
             {
-                return await connection.ExecuteScalarAsync<ulong>(commandText, new { Server = Convert.ToDecimal(server) });
+                return await connection.ExecuteScalarAsync<ulong>(config.ConvertSql(commandText), new { Server = Convert.ToDecimal(server) });
             }
             catch (DbException)
             {
@@ -60,16 +61,23 @@ namespace UNObot.Plugins.Helpers
             return new MySqlConnection(GetConnectionString(config));
         }
 
-        public static string ConvertSql(IDBConfig config, string commandMySql)
+        public static string ConvertSql(this IDBConfig config, string commandMySql)
         {
             var identity = commandMySql.Replace("LAST_INSERT_ID()", "SCOPE_IDENTITY()");
             var brackets = new Regex(@"`([^`]*)`", RegexOptions.Multiline).Replace(identity, @"[$1]");
-            var dupKey = new Regex(
-                    @"INSERT INTO (\S*) \(([^,]*),\s([^)]*)\) VALUES \(([^,]*),\s([^)]*)\) ON DUPLICATE KEY UPDATE [^;]*;",
-                    RegexOptions.Multiline)
-                .Replace(brackets, @"MERGE INTO $1 WITH (HOLDLOCK) AS Target USING (Values($5)) AS SOURCE($3) ON Target.$2 = $4 WHEN MATCHED THEN UPDATE SET <> WHEN NOT MATCHED THEN INSERT ($2, $3) VALUES ($4, $5)");
             
-            return brackets;
+            var dupKeyRegex = new Regex(
+                @"INSERT INTO (\S*) \(([^,]*),\s([^)]*)\) VALUES \(([^,]*),\s([^)]*)\) ON DUPLICATE KEY UPDATE [^;]*;",
+                RegexOptions.Multiline);
+            var secondaries = dupKeyRegex.Match(brackets).Groups[3].Value.Split(",");
+            for (var i = 0; i < secondaries.Length; ++i)
+                secondaries[i] = secondaries[i].Trim();
+            var dupKeyParameters = secondaries.Aggregate("", (current, s) => current + $"{s} = SOURCE.{s}");
+            var dupKeyReplace = dupKeyRegex.Replace(brackets, 
+                @"MERGE INTO $1 WITH (HOLDLOCK) AS Target USING (Values($5)) AS SOURCE($3) ON Target.$2 = $4 WHEN MATCHED THEN UPDATE SET <> WHEN NOT MATCHED THEN INSERT ($2, $3) VALUES ($4, $5)");
+            var dupKey = dupKeyReplace.Replace("<>", dupKeyParameters);
+            
+            return dupKey;
         }
     }
 }

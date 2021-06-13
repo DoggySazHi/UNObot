@@ -32,7 +32,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                inGame = await db.ExecuteScalarAsync<bool>(commandText, new {Server = Convert.ToDecimal(server)});
+                inGame = await db.ExecuteScalarAsync<bool>(_config.ConvertSql(commandText), new {Server = Convert.ToDecimal(server)});
             }
             catch (DbException ex)
             {
@@ -49,7 +49,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new {Server = Convert.ToDecimal(server)});
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new {Server = Convert.ToDecimal(server)});
             }
             catch (DbException ex)
             {
@@ -64,7 +64,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new {Server = Convert.ToDecimal(server), Description = text});
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new {Server = Convert.ToDecimal(server), Description = text});
             }
             catch (DbException ex)
             {
@@ -80,7 +80,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                description = await db.ExecuteScalarAsync<string>(commandText, new { Server = Convert.ToDecimal(server) });
+                description = await db.ExecuteScalarAsync<string>(_config.ConvertSql(commandText), new { Server = Convert.ToDecimal(server) });
             }
             catch (DbException ex)
             {
@@ -98,7 +98,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new {Server = Convert.ToDecimal(server)});
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new {Server = Convert.ToDecimal(server)});
             }
             catch (DbException ex)
             {
@@ -114,7 +114,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new {UserID = Convert.ToDecimal(id), Username = username, Server = Convert.ToDecimal(server)});
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new {UserID = Convert.ToDecimal(id), Username = username, Server = Convert.ToDecimal(server)});
             }
             catch (DbException ex)
             {
@@ -130,7 +130,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new { UserID = Convert.ToDecimal(id), Username = username });
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new { UserID = Convert.ToDecimal(id), Username = username });
             }
             catch (DbException ex)
             {
@@ -146,7 +146,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new { UserID = Convert.ToDecimal(id) });
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new { UserID = Convert.ToDecimal(id) });
             }
             catch (DbException ex)
             {
@@ -167,7 +167,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new { Server = Convert.ToDecimal(guild), InGame = inGame, GameMode = gameMode });
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new { Server = Convert.ToDecimal(guild), InGame = inGame, GameMode = gameMode });
             }
             catch (DbException ex)
             {
@@ -184,7 +184,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                gamemode = await db.ExecuteScalarAsync<GameMode>(commandText, new { Server = Convert.ToDecimal(server) });
+                gamemode = await db.ExecuteScalarAsync<GameMode>(_config.ConvertSql(commandText), new { Server = Convert.ToDecimal(server) });
             }
             catch (DbException ex)
             {
@@ -203,7 +203,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                var result = await db.ExecuteScalarAsync<string>(commandText, new {Server = Convert.ToDecimal(server)});
+                var result = await db.ExecuteScalarAsync<string>(_config.ConvertSql(commandText), new {Server = Convert.ToDecimal(server)});
                 players = JsonConvert.DeserializeObject<Queue<ulong>>(result);
             }
             catch (DbException ex)
@@ -223,7 +223,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                server = await db.ExecuteScalarAsync<ulong>(commandText, new { UserID = Convert.ToDecimal(player) });
+                server = await db.ExecuteScalarAsync<ulong>(_config.ConvertSql(commandText), new { UserID = Convert.ToDecimal(player) });
             }
             catch (DbException ex)
             {
@@ -241,7 +241,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new {Queue = json, Server = Convert.ToDecimal(server)});
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new {Queue = json, Server = Convert.ToDecimal(server)});
             }
             catch (DbException ex)
             {
@@ -257,7 +257,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                players = new Queue<ulong>(await db.QueryAsync<ulong>(commandText, new { Server = Convert.ToDecimal(server) }));
+                players = new Queue<ulong>(await db.QueryAsync<ulong>(_config.ConvertSql(commandText), new { Server = Convert.ToDecimal(server) }));
             }
             catch (DbException ex)
             {
@@ -276,7 +276,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                player = await db.ExecuteScalarAsync<ulong>(commandText, new { Server = Convert.ToDecimal(server) });
+                player = await db.ExecuteScalarAsync<ulong>(_config.ConvertSql(commandText), new { Server = Convert.ToDecimal(server) });
             }
             catch (DbException ex)
             {
@@ -293,7 +293,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new {UserID = Convert.ToDecimal(player), Server = Convert.ToDecimal(server)});
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new {UserID = Convert.ToDecimal(player), Server = Convert.ToDecimal(server)});
             }
             catch (DbException ex)
             {
@@ -310,7 +310,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                var result = await db.ExecuteScalarAsync<string>(commandText, new { Server = Convert.ToDecimal(server) });
+                var result = await db.ExecuteScalarAsync<string>(_config.ConvertSql(commandText), new { Server = Convert.ToDecimal(server) });
                 if (result.HasDBValue())
                     card = JsonConvert.DeserializeObject<Card>(result);
             }
@@ -330,7 +330,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new { Card = cardJson, Server = Convert.ToDecimal(server) });
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new { Card = cardJson, Server = Convert.ToDecimal(server) });
             }
             catch (DbException ex)
             {
@@ -347,7 +347,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                result = await db.ExecuteScalarAsync<bool>(commandText, new { UserID = Convert.ToDecimal(player) });
+                result = await db.ExecuteScalarAsync<bool>(_config.ConvertSql(commandText), new { UserID = Convert.ToDecimal(player) });
             }
             catch (DbException ex)
             {
@@ -365,7 +365,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                var result = await db.ExecuteScalarAsync<string>(commandText, new { Server = Convert.ToDecimal(server) });
+                var result = await db.ExecuteScalarAsync<string>(_config.ConvertSql(commandText), new { Server = Convert.ToDecimal(server) });
                 if (result.HasDBValue())
                 {
                     var temp = JsonConvert.DeserializeObject<Queue<ulong>>(result);
@@ -389,7 +389,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                var result = await db.ExecuteScalarAsync<string>(commandText, new { UserID = Convert.ToDecimal(player) });
+                var result = await db.ExecuteScalarAsync<string>(_config.ConvertSql(commandText), new { UserID = Convert.ToDecimal(player) });
                 if (result.HasDBValue())
                     cards = JsonConvert.DeserializeObject<List<Card>>(result);
             }
@@ -409,7 +409,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                exists = await db.ExecuteScalarAsync<bool>(commandText, new { UserID = Convert.ToDecimal(player) });
+                exists = await db.ExecuteScalarAsync<bool>(_config.ConvertSql(commandText), new { UserID = Convert.ToDecimal(player) });
             }
             catch (DbException ex)
             {
@@ -434,7 +434,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new {Queue = json, Server = Convert.ToDecimal(server)});
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new {Queue = json, Server = Convert.ToDecimal(server)});
             }
             catch (DbException ex)
             {
@@ -457,7 +457,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                var results = await db.QueryFirstOrDefaultAsync(commandText, new { UserID = Convert.ToDecimal(player) });
+                var results = await db.QueryFirstOrDefaultAsync(_config.ConvertSql(commandText), new { UserID = Convert.ToDecimal(player) });
                 if (!ReferenceEquals(null, results))
                     return (results.gamesJoined, results.gamesPlayed, results.gamesWon);
             }
@@ -477,7 +477,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                message = await db.ExecuteScalarAsync<string>(commandText, new { UserID = Convert.ToDecimal(player) });
+                message = await db.ExecuteScalarAsync<string>(_config.ConvertSql(commandText), new { UserID = Convert.ToDecimal(player) });
             }
             catch (DbException ex)
             {
@@ -494,7 +494,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new { Note = note, UserID = Convert.ToDecimal(player) });
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new { Note = note, UserID = Convert.ToDecimal(player) });
             }
             catch (DbException ex)
             {
@@ -509,7 +509,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new { UserID = Convert.ToDecimal(player) });
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new { UserID = Convert.ToDecimal(player) });
             }
             catch (DbException ex)
             {
@@ -534,7 +534,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new { UserID = Convert.ToDecimal(player) });
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new { UserID = Convert.ToDecimal(player) });
             }
             catch (DbException ex)
             {
@@ -559,7 +559,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new { Cards = json, UserID = Convert.ToDecimal(player) });
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new { Cards = json, UserID = Convert.ToDecimal(player) });
             }
             catch (DbException ex)
             {
@@ -593,7 +593,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new { Cards = json, UserID = Convert.ToDecimal(player) });
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new { Cards = json, UserID = Convert.ToDecimal(player) });
             }
             catch (DbException ex)
             {
@@ -612,7 +612,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new { Cards = json, Server = Convert.ToDecimal(server) });
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new { Cards = json, Server = Convert.ToDecimal(server) });
             }
             catch (DbException ex)
             {
@@ -628,7 +628,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                var result = await db.ExecuteScalarAsync<string>(commandText, new { Server = Convert.ToDecimal(server) });
+                var result = await db.ExecuteScalarAsync<string>(_config.ConvertSql(commandText), new { Server = Convert.ToDecimal(server) });
                 if (result.HasDBValue())
                     cards = JsonConvert.DeserializeObject<List<Card>>(result);
             }
@@ -648,7 +648,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                cardsDrawn = await db.ExecuteScalarAsync<int>(commandText, new { Server = Convert.ToDecimal(server) });
+                cardsDrawn = await db.ExecuteScalarAsync<int>(_config.ConvertSql(commandText), new { Server = Convert.ToDecimal(server) });
             }
             catch (DbException ex)
             {
@@ -665,7 +665,7 @@ namespace UNObot.Core.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new { CardsDrawn = count, Server = Convert.ToDecimal(server) });
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new { CardsDrawn = count, Server = Convert.ToDecimal(server) });
             }
             catch (DbException ex)
             {

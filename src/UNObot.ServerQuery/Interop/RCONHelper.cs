@@ -45,7 +45,7 @@ namespace UNObot.ServerQuery.Interop
         public IRCON.RCONStatus Status => GetStatus(_rconInstance);
 
         public IPEndPoint Server =>
-            new IPEndPoint(
+            new(
                 IPAddress.Parse(Marshal.PtrToStringAnsi(GetServerIP(_rconInstance)) ??
                                 throw new InvalidOperationException("OH CRAP")), GetServerPort(_rconInstance));
 

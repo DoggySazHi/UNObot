@@ -58,7 +58,7 @@ namespace DuplicateDetector.Services
                 {
 #pragma warning disable 4014
                     db.ExecuteAsync(
-                        "INSERT INTO DuplicateDetector.Images (channel, message, author, url, proxy_url, spoiler, posted) VALUES (@Channel, @Message, @Author, @URL, @Proxy_URL, @Spoiler, @Posted)",
+                        _config.ConvertSql("INSERT INTO DuplicateDetector.Images (channel, message, author, url, proxy_url, spoiler, posted) VALUES (@Channel, @Message, @Author, @URL, @Proxy_URL, @Spoiler, @Posted)"),
                         new 
                         {
                             Channel = Convert.ToDecimal(message.Channel.Id),
@@ -81,7 +81,7 @@ namespace DuplicateDetector.Services
                 await using var db = _config.GetConnection();
                 
                 return await db.ExecuteScalarAsync<bool>(
-                    "SELECT autolog FROM DuplicateDetector.Channels WHERE channel = @Channel",
+                    _config.ConvertSql("SELECT autolog FROM DuplicateDetector.Channels WHERE channel = @Channel"),
                     new { Channel = Convert.ToDecimal(channel) });
             }
             catch (Exception e)
@@ -100,8 +100,9 @@ namespace DuplicateDetector.Services
                 await using var sw = new StreamWriter(path);
                 await using var db = _config.GetConnection();
                 _ = db.ExecuteAsync(
-                    "INSERT INTO DuplicateDetector.Channels (channel, server, autolog) VALUES (@Channel, @Server, 1) ON DUPLICATE KEY UPDATE autolog = 1",
-                    new { Channel = Convert.ToDecimal(channel.Id), Server = Convert.ToDecimal(channel.Guild.Id) });
+                    _config.ConvertSql(
+                        "INSERT INTO DuplicateDetector.Channels (channel, server, autolog) VALUES (@Channel, @Server, 1) ON DUPLICATE KEY UPDATE autolog = 1"
+                        ),new { Channel = Convert.ToDecimal(channel.Id), Server = Convert.ToDecimal(channel.Guild.Id) });
                 var writeMessages = new List<ImageMessage>();
                 _logger.Log(LogSeverity.Debug, "Starting indexer.");
                 await foreach (var messages in channel.GetMessagesAsync(100000))
@@ -162,7 +163,7 @@ namespace DuplicateDetector.Services
             await using var db = _config.GetConnection();
             try
             {
-                await using var query = await db.ExecuteReaderAsync(command);
+                await using var query = await db.ExecuteReaderAsync(_config.ConvertSql(command));
                 var rowParser = query.GetRowParser<Image>();
                 
                 while (await query.ReadAsync())

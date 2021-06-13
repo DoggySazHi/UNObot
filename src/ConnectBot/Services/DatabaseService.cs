@@ -44,7 +44,7 @@ namespace ConnectBot.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new { Board = DefaultBoard, Queue = DefaultQueue, Server = Convert.ToDecimal(server) });
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new { Board = DefaultBoard, Queue = DefaultQueue, Server = Convert.ToDecimal(server) });
             }
             catch (DbException ex)
             {
@@ -58,7 +58,7 @@ namespace ConnectBot.Services
             await using var db = _config.GetConnection();
             try
             {
-                var result = await db.QueryFirstOrDefaultAsync(commandText, new { Server = Convert.ToDecimal(server) });
+                var result = await db.QueryFirstOrDefaultAsync(_config.ConvertSql(commandText), new { Server = Convert.ToDecimal(server) });
                 if (!ReferenceEquals(null, result))
                     return new Game(server)
                     {
@@ -87,7 +87,7 @@ namespace ConnectBot.Services
             {
                 lock (game)
                 {
-                    db.Execute(commandText, new
+                    db.Execute(_config.ConvertSql(commandText), new
                     {
                         Server = Convert.ToDecimal(game.Server),
                         GameMode = (ushort) game.GameMode,
@@ -112,7 +112,7 @@ namespace ConnectBot.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new { Server = Convert.ToDecimal(server), Board = DefaultBoard, Queue = DefaultQueue });
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new { Server = Convert.ToDecimal(server), Board = DefaultBoard, Queue = DefaultQueue });
             }
             catch (DbException ex)
             {
@@ -128,7 +128,7 @@ namespace ConnectBot.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new { User = Convert.ToDecimal(user) });
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new { User = Convert.ToDecimal(user) });
             }
             catch (DbException ex)
             {
@@ -146,7 +146,7 @@ namespace ConnectBot.Services
             await using var db = _config.GetConnection();
             try
             {
-                var results = await db.QueryFirstOrDefaultAsync(commandText, new { User = Convert.ToDecimal(user) });
+                var results = await db.QueryFirstOrDefaultAsync(_config.ConvertSql(commandText), new { User = Convert.ToDecimal(user) });
                 if (!ReferenceEquals(null, results))
                     return (results.gamesJoined, results.gamesPlayed, results.gamesWon);
             }
@@ -168,7 +168,7 @@ namespace ConnectBot.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new { User = Convert.ToDecimal(user) });
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new { User = Convert.ToDecimal(user) });
             }
             catch (DbException ex)
             {
@@ -184,7 +184,7 @@ namespace ConnectBot.Services
             await using var db = _config.GetConnection();
             try
             {
-                var results = await db.QueryFirstOrDefaultAsync(commandText, new { User = Convert.ToDecimal(user) });
+                var results = await db.QueryFirstOrDefaultAsync(_config.ConvertSql(commandText), new { User = Convert.ToDecimal(user) });
                 if (!ReferenceEquals(null, results))
                     return (results.defaultWidth, results.defaultHeight, results.defaultConnect);
             }
@@ -203,7 +203,7 @@ namespace ConnectBot.Services
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(commandText, new { User = Convert.ToDecimal(user), Width = width, Height = height, Connect = connect });
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new { User = Convert.ToDecimal(user), Width = width, Height = height, Connect = connect });
             }
             catch (DbException ex)
             {
