@@ -403,7 +403,7 @@ namespace UNObot.Core.Services
 
         public async Task<bool> UserExists(ulong player)
         {
-            const string commandText = "SELECT EXISTS(SELECT 1 FROM UNObot.Players WHERE userid = @UserID)";
+            const string commandText = "SELECT COUNT(1) FROM UNObot.Players WHERE userid = @UserID";
             var exists = false;
 
             await using var db = _config.GetConnection();

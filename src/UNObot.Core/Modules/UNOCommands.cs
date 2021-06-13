@@ -94,12 +94,12 @@ namespace UNObot.Core.Modules
             var note = await _db.GetNote(Context.User.Id);
             if (!await _db.UserExists(Context.User.Id))
                 await ReplyAsync("You do not currently exist in the database. Maybe you should play a game.");
-            if (note != null) await ReplyAsync();
-            await ReplyAsync(note != null ? $"NOTE: {note}\n" : "" 
-                + $"{Context.User.Username}'s stats:\n"
-                + $"Games joined: {stats.GamesJoined}\n"
-                + $"Games fully played: {stats.GamesPlayed}\n"
-                + $"Games won: {stats.GamesWon}");
+            else
+                await ReplyAsync((note != null ? $"NOTE: {note}\n" : "") 
+                    + $"{Context.User.Username}'s stats:\n"
+                    + $"Games joined: {stats.GamesJoined}\n"
+                    + $"Games fully played: {stats.GamesPlayed}\n"
+                    + $"Games won: {stats.GamesWon}");
         }
 
         [Command("stats", RunMode = RunMode.Async)]
@@ -135,7 +135,7 @@ namespace UNObot.Core.Modules
 
             var stats = await _db.GetStats(userid);
             var note = await _db.GetNote(userid);
-            await ReplyAsync(note != null ? $"NOTE: {note}\n" : "" 
+            await ReplyAsync((note != null ? $"NOTE: {note}\n" : "") 
                 + $"{Context.Client.GetUser(userid).Username}'s stats:\n"
                 + $"Games joined: {stats.GamesJoined}\n"
                 + $"Games fully played: {stats.GamesPlayed}\n"
@@ -173,7 +173,7 @@ namespace UNObot.Core.Modules
 
         [Command("setusernote", RunMode = RunMode.Async)]
         [RequireOwner]
-        [Help(new[] {".setusernote"}, "Set a note about others. This command can only be ran by DoggySazHi.", false,
+        [Help(new[] {".setusernote"}, "Set a note about others. This command can only be run by DoggySazHi.", false,
             "UNObot 2.1")]
         public async Task SetNote(string user, [Remainder] string text)
         {
@@ -293,24 +293,6 @@ namespace UNObot.Core.Modules
                 await ReplyAsync("You are not in any game!");
             }
         }
-        /*
-        if(await UNOdb.IsPlayerInGame(Context.User.Id))
-            {
-                if(await UNOdb.IsPlayerInServerGame(Context.User.Id,Context.Guild.Id))
-                {
-                    if(await UNOdb.IsServerInGame(Context.Guild.Id))
-                    {
-                        //Do something
-                    }
-                    else
-                        await ReplyAsync("The game has not started!");
-                }
-                else
-                    await ReplyAsync("You are in a game, however you are not in the right server!");
-            }
-            else
-                await ReplyAsync("You are not in any game!");
-        */
 
         [Command("skip", RunMode = RunMode.Async)]
         [Alias("s")]
