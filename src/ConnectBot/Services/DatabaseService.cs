@@ -90,7 +90,7 @@ namespace ConnectBot.Services
                     db.Execute(_config.ConvertSql(commandText), new
                     {
                         Server = Convert.ToDecimal(game.Server),
-                        GameMode = (ushort) game.GameMode,
+                        GameMode = (byte) game.GameMode,
                         Board = JsonConvert.SerializeObject(game.Board),
                         game.Description,
                         Queue = JsonConvert.SerializeObject(game.Queue, JsonSettings),
