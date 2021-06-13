@@ -41,7 +41,7 @@ namespace ConnectBot.Services
                 return;
             }
 
-            await DisplayGame(context, game);
+            await DisplayGame(context, game, force: true);
         }
 
         private static bool _working;

@@ -459,9 +459,9 @@ namespace UNObot.MusicBot.MusicCore
         {
             var fileName = "/usr/local/bin/ffmpeg";
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                fileName = @"C:\Users\William Le\Documents\Programming Projects\YTDownloader\ffmpeg.exe";
-            // $"-hide_banner -re -loglevel panic -i \"{path}\" -ac 2 -b:a {_audioChannel.Bitrate} -f s16le pipe:1"
-            var args = $"-hide_banner -loglevel panic -i \"{path}\" -b:a {_audioChannel.Bitrate} -ac 2 -f s16le -ar 48000 pipe:1";
+                fileName = "ffmpeg.exe";
+            // var args = $"-hide_banner -re -loglevel panic -i \"{path}\" -ac 2 -b:a {_audioChannel.Bitrate} -f s16le pipe:1";
+            var args = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1";
             _logger.Log(LogSeverity.Verbose, args);
             _ffmpegProcess = Process.Start(new ProcessStartInfo
             {

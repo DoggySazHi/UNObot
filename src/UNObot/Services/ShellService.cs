@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Discord;
@@ -52,7 +53,7 @@ namespace UNObot.Services
         {
             var ffmpeg = new ProcessStartInfo
             {
-                FileName = "/usr/local/bin/ffmpeg",
+                FileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "ffmpeg.exe" : "/usr/local/bin/ffmpeg",
                 Arguments = $"-hide_banner -loglevel panic -i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1",
                 UseShellExecute = false,
                 RedirectStandardOutput = true
@@ -70,7 +71,7 @@ namespace UNObot.Services
                 {
                     StartInfo = new ProcessStartInfo
                     {
-                        FileName = "/usr/local/bin/ffmpeg",
+                        FileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "ffmpeg.exe" : "/usr/local/bin/ffmpeg",
                         Arguments = $"-hide_banner -loglevel panic -i ${path} -vn -ab 128k -ar 44100 -y ${path}.mp3",
                         UseShellExecute = false,
                         RedirectStandardOutput = true
@@ -98,7 +99,7 @@ namespace UNObot.Services
                 {
                     StartInfo = new ProcessStartInfo
                     {
-                        FileName = "/usr/bin/git",
+                        FileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"C:\Program Files\Git\cmd\git.exe" : "/usr/bin/git",
                         Arguments = "fetch",
                         UseShellExecute = false,
                         RedirectStandardOutput = true
@@ -126,7 +127,7 @@ namespace UNObot.Services
                 {
                     StartInfo = new ProcessStartInfo
                     {
-                        FileName = "/usr/bin/git",
+                        FileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"C:\Program Files\Git\cmd\git.exe" : "/usr/bin/git",
                         Arguments = "status",
                         UseShellExecute = false,
                         RedirectStandardOutput = true
