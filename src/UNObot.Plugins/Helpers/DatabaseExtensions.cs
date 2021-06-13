@@ -63,21 +63,36 @@ namespace UNObot.Plugins.Helpers
 
         public static string ConvertSql(this IDBConfig config, string commandMySql)
         {
+            if (!config.UseSqlServer) return commandMySql;
+            
             var identity = commandMySql.Replace("LAST_INSERT_ID()", "SCOPE_IDENTITY()");
             var brackets = new Regex(@"`([^`]*)`", RegexOptions.Multiline).Replace(identity, @"[$1]");
             
             var dupKeyRegex = new Regex(
-                @"INSERT INTO (\S*) \(([^,]*),\s([^)]*)\) VALUES \(([^,]*),\s([^)]*)\) ON DUPLICATE KEY UPDATE [^;]*;",
+                @"INSERT INTO (\S*) \(([^,]*),\s([^)]*)\) VALUES[ ]?\(([^,]*),\s([^)]*)\) ON DUPLICATE KEY UPDATE [^;]*[;]?",
                 RegexOptions.Multiline);
             var secondaries = dupKeyRegex.Match(brackets).Groups[3].Value.Split(",");
             for (var i = 0; i < secondaries.Length; ++i)
-                secondaries[i] = secondaries[i].Trim();
-            var dupKeyParameters = secondaries.Aggregate("", (current, s) => current + $"{s} = SOURCE.{s}");
-            var dupKeyReplace = dupKeyRegex.Replace(brackets, 
+            {
+                var param = secondaries[i].Trim();
+                secondaries[i] = $"{param} = SOURCE.{param}";
+            }
+            var dupKeyParameters = string.Join(", ", secondaries);
+            var dupKey = dupKeyRegex.Replace(brackets, 
                 @"MERGE INTO $1 WITH (HOLDLOCK) AS Target USING (Values($5)) AS SOURCE($3) ON Target.$2 = $4 WHEN MATCHED THEN UPDATE SET <> WHEN NOT MATCHED THEN INSERT ($2, $3) VALUES ($4, $5)");
-            var dupKey = dupKeyReplace.Replace("<>", dupKeyParameters);
+            if (dupKey.Contains("<>"))
+            {
+                dupKey = dupKey.Replace("<>", dupKeyParameters);
+                if (!dupKey.EndsWith(';'))
+                    dupKey += ";";
+            }
             
-            return dupKey;
+        
+            var insertIgnore = new Regex(
+                    @"INSERT IGNORE INTO (\S*)[\s]*\((([^,)]*),?([^)]*))\) VALUES[ ]*\((([^,)]*),?([^)]*))\)[^;]*[;]?", RegexOptions.Multiline)
+                .Replace(dupKey, @"MERGE INTO $1 WITH (HOLDLOCK) AS Target USING (Values($5)) AS SOURCE($2) ON Target.$3 = $6 WHEN NOT MATCHED THEN INSERT ($2) VALUES ($5);");
+
+            return insertIgnore;
         }
     }
 }

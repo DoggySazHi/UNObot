@@ -730,7 +730,7 @@ namespace UNObot.Core.Modules
                         return;
                     }
 
-                    await _db.AddGuild(Context.Guild.Id, 1, (ushort) flagMode);
+                    await _db.AddGuild(Context.Guild.Id, true, (byte) flagMode);
                     response += $"Playing in modes: {flagMode}!";
                     await _db.GetUsersAndAdd(Context.Guild.Id);
                     foreach (var player in await _db.GetPlayers(Context.Guild.Id))

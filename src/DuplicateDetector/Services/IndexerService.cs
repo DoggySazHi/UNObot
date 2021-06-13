@@ -56,20 +56,30 @@ namespace DuplicateDetector.Services
 
                 foreach (var attachment in message.Attachments)
                 {
+                    Console.WriteLine("Starting write");
+                    try
+                    {
 #pragma warning disable 4014
-                    db.ExecuteAsync(
-                        _config.ConvertSql("INSERT INTO DuplicateDetector.Images (channel, message, author, url, proxy_url, spoiler, posted) VALUES (@Channel, @Message, @Author, @URL, @Proxy_URL, @Spoiler, @Posted)"),
-                        new 
-                        {
-                            Channel = Convert.ToDecimal(message.Channel.Id),
-                            Author = Convert.ToDecimal(message.Author.Id),
-                            Message = Convert.ToDecimal(message.Id),
-                            URL = attachment.Url,
-                            Proxy_URL = attachment.ProxyUrl,
-                            Spoiler = attachment.IsSpoiler(),
-                            Posted = message.Timestamp.UtcDateTime
-                        });
+                        db.ExecuteAsync(
 #pragma warning restore 4014
+                            _config.ConvertSql(
+                                "INSERT INTO DuplicateDetector.Images (channel, message, author, url, proxy_url, spoiler, posted) VALUES (@Channel, @Message, @Author, @URL, @Proxy_URL, @Spoiler, @Posted)"),
+                            new
+                            {
+                                Channel = Convert.ToDecimal(message.Channel.Id),
+                                Author = Convert.ToDecimal(message.Author.Id),
+                                Message = Convert.ToDecimal(message.Id),
+                                URL = attachment.Url,
+                                Proxy_URL = attachment.ProxyUrl,
+                                Spoiler = attachment.IsSpoiler(),
+                                Posted = message.Timestamp.UtcDateTime
+                            });
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex);
+                    }
+
                 }
             });
         }

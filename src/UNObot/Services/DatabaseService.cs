@@ -24,7 +24,7 @@ namespace UNObot.Services
 
         public async Task SetDefaultChannel(ulong server, ulong channel)
         {
-            const string commandText = "UPDATE Games SET playChannel = @Channel WHERE server = @Server";
+            const string commandText = "UPDATE UNObot.Games SET playChannel = @Channel WHERE server = @Server";
 
             await using var db = _config.GetConnection();
             try
@@ -39,7 +39,7 @@ namespace UNObot.Services
 
         public async Task SetHasDefaultChannel(ulong server, bool hasDefault)
         {
-            const string commandText = "UPDATE Games SET hasDefaultChannel = @HasDefaultChannel WHERE server = @Server";
+            const string commandText = "UPDATE UNObot.Games SET hasDefaultChannel = @HasDefaultChannel WHERE server = @Server";
 
             await using var db = _config.GetConnection();
             try
@@ -72,7 +72,7 @@ namespace UNObot.Services
 
         public async Task SetEnforceChannel(ulong server, bool enforce)
         {
-            const string commandText = "UPDATE Games SET enforceChannel = @Enforce WHERE server = @Server";
+            const string commandText = "UPDATE UNObot.Games SET enforceChannel = @Enforce WHERE server = @Server";
 
             await using var db = _config.GetConnection();
             try
@@ -108,7 +108,7 @@ namespace UNObot.Services
 
         public async Task SetAllowedChannels(ulong server, List<ulong> allowedChannels)
         {
-            const string commandText = "UPDATE Games SET allowedChannels = @AllowedChannels WHERE server = @Server";
+            const string commandText = "UPDATE UNObot.Games SET allowedChannels = @AllowedChannels WHERE server = @Server";
             var json = JsonConvert.SerializeObject(allowedChannels);
 
             await using var db = _config.GetConnection();
@@ -125,7 +125,7 @@ namespace UNObot.Services
         public async Task RegisterUser(ulong id, string username)
         {
             const string commandText =
-                "INSERT INTO Players (userid, username) VALUES(@UserID, @Username) ON DUPLICATE KEY UPDATE username = @Username";
+                "INSERT INTO UNObot.Players (userid, username) VALUES(@UserID, @Username) ON DUPLICATE KEY UPDATE username = @Username";
 
             await using var db = _config.GetConnection();
             try
@@ -140,7 +140,7 @@ namespace UNObot.Services
 
         public async Task RegisterServer(ulong server)
         {
-            const string commandText = "INSERT IGNORE INTO Games (server) VALUES(@Server)";
+            const string commandText = "INSERT IGNORE INTO UNObot.Games (server) VALUES(@Server)";
 
             await using var db = _config.GetConnection();
             try
@@ -197,8 +197,8 @@ namespace UNObot.Services
             {
                 var result = await db.QueryFirstOrDefaultAsync(_config.ConvertSql(commandText),
                     new {Channel = Convert.ToDecimal(channel), Key = key[..Math.Min(key.Length, 50)]});
-                guild = result[0];
-                type = result[1];
+                guild = Convert.ToUInt64(result.guild);
+                type = result.type;
             }
             catch (DbException ex)
             {

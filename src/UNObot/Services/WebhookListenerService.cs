@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -203,7 +202,12 @@ namespace UNObot.Services
                         thing = jsonWriter.Token;
                     }
 
-                    Debug.Assert(thing != null, nameof(thing) + " != null");
+                    if (thing == null)
+                    {
+                        _logger.Log(LogSeverity.Error, $"Could not decode message from server!");
+                        return;
+                    }
+                    
                     if (exceptionPath != null)
                     {
                         var badToken = thing.SelectToken(exceptionPath);

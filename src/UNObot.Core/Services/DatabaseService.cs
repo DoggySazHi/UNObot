@@ -44,7 +44,7 @@ namespace UNObot.Core.Services
 
         public async Task AddGame(ulong server)
         {
-            const string commandText = "INSERT IGNORE INTO Games (server) VALUES(@Server)";
+            const string commandText = "INSERT IGNORE INTO UNObot.Games (server) VALUES(@Server)";
 
             await using var db = _config.GetConnection();
             try
@@ -59,7 +59,7 @@ namespace UNObot.Core.Services
 
         public async Task UpdateDescription(ulong server, string text)
         {
-            const string commandText = "UPDATE Games SET description = @Description WHERE server = @Server";
+            const string commandText = "UPDATE UNObot.Games SET description = @Description WHERE server = @Server";
 
             await using var db = _config.GetConnection();
             try
@@ -93,7 +93,7 @@ namespace UNObot.Core.Services
         public async Task ResetGame(ulong server)
         {
             const string commandText =
-                "UPDATE Games SET inGame = 0, currentCard = '[]', `order` = 1, oneCardLeft = 0, queue = '[]', description = null WHERE server = @Server";
+                "UPDATE UNObot.Games SET inGame = 0, currentCard = '[]', `order` = 1, oneCardLeft = 0, queue = '[]', description = null WHERE server = @Server";
 
             await using var db = _config.GetConnection();
             try
@@ -109,7 +109,7 @@ namespace UNObot.Core.Services
         public async Task AddUser(ulong id, string username, ulong server)
         {
             const string commandText =
-                "INSERT INTO Players (userid, username, inGame, cards, server) VALUES(@UserID, @Username, 1, '[]', @Server) ON DUPLICATE KEY UPDATE username = @Username, inGame = 1, cards = '[]', server = @Server";
+                "INSERT INTO UNObot.Players (userid, username, inGame, cards, server) VALUES(@UserID, @Username, 1, '[]', @Server) ON DUPLICATE KEY UPDATE username = @Username, inGame = 1, cards = '[]', server = @Server";
 
             await using var db = _config.GetConnection();
             try
@@ -125,7 +125,7 @@ namespace UNObot.Core.Services
         public async Task AddUser(ulong id, string username)
         {
             const string commandText =
-                "INSERT INTO Players (userid, username) VALUES(@UserID, @Username) ON DUPLICATE KEY UPDATE username = @Username";
+                "INSERT INTO UNObot.Players (userid, username) VALUES(@UserID, @Username) ON DUPLICATE KEY UPDATE username = @Username";
 
             await using var db = _config.GetConnection();
             try
@@ -141,7 +141,7 @@ namespace UNObot.Core.Services
         public async Task RemoveUser(ulong id)
         {
             const string commandText =
-                "INSERT INTO Players (userid, inGame, cards, server) VALUES(@UserID, 0, '[]', null) ON DUPLICATE KEY UPDATE inGame = 0, cards = '[]', server = null";
+                "INSERT INTO UNObot.Players (userid, inGame, cards, server) VALUES(@UserID, 0, '[]', null) ON DUPLICATE KEY UPDATE inGame = 0, cards = '[]', server = null";
 
             await using var db = _config.GetConnection();
             try
@@ -154,15 +154,15 @@ namespace UNObot.Core.Services
             }
         }
 
-        public async Task AddGuild(ulong guild, ushort inGame)
+        public async Task AddGuild(ulong guild, bool inGame)
         {
             await AddGuild(guild, inGame, 1);
         }
 
-        public async Task AddGuild(ulong guild, ushort inGame, ushort gameMode)
+        public async Task AddGuild(ulong guild, bool inGame, byte gameMode)
         {
             const string commandText =
-                "INSERT INTO Games (server, inGame, gameMode) VALUES(@Server, @InGame, @GameMode) ON DUPLICATE KEY UPDATE inGame = @InGame, gameMode = @GameMode";
+                "INSERT INTO UNObot.Games (server, inGame, gameMode) VALUES(@Server, @InGame, @GameMode) ON DUPLICATE KEY UPDATE inGame = @InGame, gameMode = @GameMode";
 
             await using var db = _config.GetConnection();
             try
@@ -197,13 +197,13 @@ namespace UNObot.Core.Services
         //NOTE THAT THIS GETS DIRECTLY FROM SERVER; YOU MUST AddPlayersToServer
         public async Task<Queue<ulong>> GetPlayers(ulong server)
         {
-            const string commandText = "SELECT queue FROM Games WHERE inGame = 1 AND server = @Server";
+            const string commandText = "SELECT queue FROM UNObot.Games WHERE server = @Server";
 
             var players = new Queue<ulong>();
             await using var db = _config.GetConnection();
             try
             {
-                var result = await db.ExecuteScalarAsync<string>(_config.ConvertSql(commandText), new {Server = Convert.ToDecimal(server)});
+                var result = await db.ExecuteScalarAsync<string>(_config.ConvertSql(commandText), new { Server = Convert.ToDecimal(server) });
                 players = JsonConvert.DeserializeObject<Queue<ulong>>(result);
             }
             catch (DbException ex)
@@ -218,7 +218,7 @@ namespace UNObot.Core.Services
         {
             ulong server = 0;
 
-            const string commandText = "SELECT server FROM Players WHERE inGame = 1 AND userid = @UserID";
+            const string commandText = "SELECT server FROM UNObot.Players WHERE inGame = 1 AND userid = @UserID";
 
             await using var db = _config.GetConnection();
             try
@@ -235,7 +235,7 @@ namespace UNObot.Core.Services
 
         public async Task SetPlayers(ulong server, Queue<ulong> players)
         {
-            const string commandText = "UPDATE Games SET queue = @Queue WHERE inGame = 1 AND server = @Server";
+            const string commandText = "UPDATE UNObot.Games SET queue = @Queue WHERE inGame = 1 AND server = @Server";
             var json = JsonConvert.SerializeObject(players);
 
             await using var db = _config.GetConnection();
@@ -251,7 +251,7 @@ namespace UNObot.Core.Services
 
         public async Task<Queue<ulong>> GetUsersWithServer(ulong server)
         {
-            const string commandText = "SELECT userid FROM Players WHERE inGame = 1 AND server = @Server";
+            const string commandText = "SELECT userid FROM UNObot.Players WHERE inGame = 1 AND server = @Server";
             var players = new Queue<ulong>();
 
             await using var db = _config.GetConnection();
@@ -271,7 +271,7 @@ namespace UNObot.Core.Services
         {
             ulong player = 0;
 
-            const string commandText = "SELECT oneCardLeft FROM Games WHERE inGame = 1 AND server = @Server";
+            const string commandText = "SELECT oneCardLeft FROM UNObot.Games WHERE inGame = 1 AND server = @Server";
 
             await using var db = _config.GetConnection();
             try
@@ -288,7 +288,7 @@ namespace UNObot.Core.Services
 
         public async Task SetUNOPlayer(ulong server, ulong player)
         {
-            const string commandText = "UPDATE Games SET oneCardLeft = @UserID WHERE inGame = 1 AND server = @Server";
+            const string commandText = "UPDATE UNObot.Games SET oneCardLeft = @UserID WHERE inGame = 1 AND server = @Server";
 
             await using var db = _config.GetConnection();
             try
@@ -303,7 +303,7 @@ namespace UNObot.Core.Services
 
         public async Task<Card> GetCurrentCard(ulong server)
         {
-            const string commandText = "SELECT currentCard FROM Games WHERE inGame = 1 AND server = @Server";
+            const string commandText = "SELECT currentCard FROM UNObot.Games WHERE inGame = 1 AND server = @Server";
 
             // If parsing fails, we can throw an NRE.
             Card card = null;
@@ -324,7 +324,7 @@ namespace UNObot.Core.Services
 
         public async Task SetCurrentCard(ulong server, Card card)
         {
-            const string commandText = "UPDATE Games SET currentCard = @Card WHERE inGame = 1 AND server = @Server";
+            const string commandText = "UPDATE UNObot.Games SET currentCard = @Card WHERE inGame = 1 AND server = @Server";
             var cardJson = JsonConvert.SerializeObject(card);
 
             await using var db = _config.GetConnection();
@@ -605,7 +605,7 @@ namespace UNObot.Core.Services
 
         public async Task SetServerCards(ulong server, List<Card> cards)
         {
-            const string commandText = "UPDATE Games SET cards = @Cards WHERE server = @Server";
+            const string commandText = "UPDATE UNObot.Games SET cards = @Cards WHERE server = @Server";
 
             var json = JsonConvert.SerializeObject(cards);
 
@@ -660,7 +660,7 @@ namespace UNObot.Core.Services
 
         public async Task SetCardsDrawn(ulong server, int count)
         {
-            const string commandText = "UPDATE Games SET cardsDrawn = @CardsDrawn WHERE server = @Server";
+            const string commandText = "UPDATE UNObot.Games SET cardsDrawn = @CardsDrawn WHERE server = @Server";
 
             await using var db = _config.GetConnection();
             try
