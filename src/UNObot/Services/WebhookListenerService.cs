@@ -55,7 +55,7 @@ namespace UNObot.Services
             try
             {
                 _server = new HttpListener();
-                _server.Prefixes.Add("http://127.0.0.1:6860/");
+                _server.Prefixes.Add("http://*:6860/");
                 _server.Prefixes.Add("http://localhost:6860/");
 
                 _server.Start();
@@ -107,9 +107,7 @@ namespace UNObot.Services
                     var url = context.Request.RawUrl;
 #if DEBUG
                     _logger.Log(LogSeverity.Debug, $"Received request from {url}.");
-                    var headers = "Headers: ";
-                    foreach (var key in request.Headers.AllKeys)
-                        headers += $"{key}, {request.Headers[key]}\n";
+                    var headers = request.Headers.AllKeys.Aggregate("Headers: ", (current, key) => current + $"{key}, {request.Headers[key]}\n");
                     _logger.Log(LogSeverity.Debug, headers);
 #endif
 

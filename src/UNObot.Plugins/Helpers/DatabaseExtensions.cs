@@ -64,6 +64,11 @@ namespace UNObot.Plugins.Helpers
         {
             var identity = commandMySql.Replace("LAST_INSERT_ID()", "SCOPE_IDENTITY()");
             var brackets = new Regex(@"`([^`]*)`", RegexOptions.Multiline).Replace(identity, @"[$1]");
+            var dupKey = new Regex(
+                    @"INSERT INTO (\S*) \(([^,]*),\s([^)]*)\) VALUES \(([^,]*),\s([^)]*)\) ON DUPLICATE KEY UPDATE [^;]*;",
+                    RegexOptions.Multiline)
+                .Replace(brackets, @"MERGE INTO $1 WITH (HOLDLOCK) AS Target USING (Values($5)) AS SOURCE($3) ON Target.$2 = $4 WHEN MATCHED THEN UPDATE SET <> WHEN NOT MATCHED THEN INSERT ($2, $3) VALUES ($4, $5)");
+            
             return brackets;
         }
     }

@@ -122,7 +122,7 @@ namespace UNObot.Services
             }
         }
 
-        public async Task AddUser(ulong id, string username)
+        public async Task RegisterUser(ulong id, string username)
         {
             const string commandText =
                 "INSERT INTO Players (userid, username) VALUES(@UserID, @Username) ON DUPLICATE KEY UPDATE username = @Username";
@@ -138,7 +138,7 @@ namespace UNObot.Services
             }
         }
 
-        public async Task AddGame(ulong server)
+        public async Task RegisterServer(ulong server)
         {
             const string commandText = "INSERT IGNORE INTO Games (server) VALUES(@Server)";
 
@@ -162,7 +162,7 @@ namespace UNObot.Services
             try
             {
                 await db.ExecuteAsync(commandText,
-                    new {Key = key.Substring(0, 50), Channel = Convert.ToDecimal(channel), Guild = Convert.ToDecimal(guild), Type = type});
+                    new {Key = key[..50], Channel = Convert.ToDecimal(channel), Guild = Convert.ToDecimal(guild), Type = type});
             }
             catch (DbException ex)
             {

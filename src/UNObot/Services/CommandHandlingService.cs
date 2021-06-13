@@ -114,8 +114,8 @@ namespace UNObot.Services
                 !message.HasMentionPrefix(_discord.CurrentUser, ref argPos)) return; // Look for mentions.
 
             if (!context.IsPrivate)
-                await _db.AddGame(context.Guild.Id);
-            await _db.AddUser(context.User.Id, context.User.Username);
+                await _db.RegisterServer(context.Guild.Id);
+            await _db.RegisterUser(context.User.Id, context.User.Username);
             try
             {
                 var success = GetProvider(context, argPos, out var provider);

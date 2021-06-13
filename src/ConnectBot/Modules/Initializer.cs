@@ -55,7 +55,7 @@ namespace ConnectBot.Modules
                 return false;
             }
 
-            config = new ConnectBotConfig(logger);
+            config = new ConnectBotConfig(logger, configPath);
             return config.VerifyConfig();
         }
     }

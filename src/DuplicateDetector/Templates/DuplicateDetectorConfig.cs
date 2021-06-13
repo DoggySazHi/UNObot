@@ -42,10 +42,10 @@ namespace DuplicateDetector.Templates
                 var output = new SqlConnectionStringBuilder
                 {
                     DataSource = $"{SqlServer},{SqlPort}",
-                    IntegratedSecurity = true,
                     UserID = SqlUser,
                     Password = SqlPassword,
-                    InitialCatalog = "DuplicateDetector"
+                    InitialCatalog = "UNObot",
+                    IntegratedSecurity = false
                 };
                 return output.ConnectionString;
             }

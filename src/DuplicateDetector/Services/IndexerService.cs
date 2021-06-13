@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Dapper;
@@ -81,11 +80,9 @@ namespace DuplicateDetector.Services
             {
                 await using var db = _config.GetConnection();
                 
-                var output = await db.QueryAsync<bool>(
+                return await db.ExecuteScalarAsync<bool>(
                     "SELECT autolog FROM DuplicateDetector.Channels WHERE channel = @Channel",
-                    new {Channel = channel});
-                
-                return output.SingleOrDefault();
+                    new { Channel = Convert.ToDecimal(channel) });
             }
             catch (Exception e)
             {

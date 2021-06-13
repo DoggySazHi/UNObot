@@ -42,10 +42,10 @@ namespace ConnectBot.Templates
                 var output = new SqlConnectionStringBuilder
                 {
                     DataSource = $"{SqlServer},{SqlPort}",
-                    IntegratedSecurity = true,
                     UserID = SqlUser,
                     Password = SqlPassword,
-                    InitialCatalog = "ConnectBot"
+                    InitialCatalog = "UNObot",
+                    IntegratedSecurity = false
                 };
                 return output.ConnectionString;
             }

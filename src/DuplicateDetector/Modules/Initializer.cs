@@ -53,7 +53,7 @@ namespace DuplicateDetector.Modules
                 return false;
             }
 
-            config = new DuplicateDetectorConfig(logger);
+            config = new DuplicateDetectorConfig(logger, configPath);
             return config.VerifyConfig();
         }
     }
