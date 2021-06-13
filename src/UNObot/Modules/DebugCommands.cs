@@ -83,45 +83,6 @@ namespace UNObot.Modules
             await _shell.GitFetch().ConfigureAwait(false);
             await ReplyAsync(await _shell.GitStatus().ConfigureAwait(false));
         }
-        
 #endif
-
-        /*
-        [Command("getbuttons", RunMode = RunMode.Async)]
-        [HelpAttribute(new string[] { "yes." }, "", false, "no")]
-        public async Task AddButtons()
-        {
-            var message = await ReplyAsync("Loading buttons...");
-            await InputHandler.AddReactions(message);
-            await message.ModifyAsync(o => o.Content = "Finished loading buttons!");
-        }
-        */
-
-        /*
-        Timer spamTimer = new Timer();
-        ulong server = 0;
-
-        [Command("enablespam")]
-        public async Task StartSpam()
-        {
-            spamTimer = new Timer
-            {
-                Interval = 60000,
-                AutoReset = true,
-            };
-            spamTimer.Elapsed += Spam;
-            spamTimer.Start();
-            server = Context.Guild.Id;
-            await ReplyAsync("Started timer!");
-        }
-
-        async void Spam(object sender, ElapsedEventArgs e)
-        {
-            if (server == 0)
-                spamTimer.Dispose();
-            else
-                await UNObot.Program.SendMessage("AHHHHHHH", server);
-        }
-        */
     }
 }

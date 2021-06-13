@@ -59,7 +59,7 @@
       <ConnectBotPlugin Include="$(SolutionDir)src\ConnectBot\bin\Release\net5.0\*.dll" />
       <GooglePlugin Include="$(SolutionDir)src\UNObot.Google\bin\Release\net5.0\*.dll" />
       <MiscPlugin Include="$(SolutionDir)src\UNObot.Misc\bin\Release\net5.0\*.dll" />
-      <Config Include="$(SolutionDir)src\UNObot\config.json" />
+      <Config Include="$(SolutionDir)src\config.json" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
