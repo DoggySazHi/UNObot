@@ -1,4 +1,5 @@
-﻿using System.Data.Common;
+﻿using System;
+using System.Data.Common;
 using System.Threading.Tasks;
 using Dapper;
 using Discord;
@@ -26,7 +27,7 @@ namespace UNObot.ServerQuery.Services
 
             try
             {
-                return await db.ExecuteScalarAsync<string>(_config.ConvertSql(commandText), new { UserID = user } );
+                return await db.ExecuteScalarAsync<string>(_config.ConvertSql(commandText), new { UserID = Convert.ToDecimal(user) } );
             }
             catch (DbException ex)
             {
