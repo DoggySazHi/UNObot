@@ -48,7 +48,7 @@ namespace ConnectBot.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
             }
         }
         
@@ -72,7 +72,7 @@ namespace ConnectBot.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
             }
 
             await AddGame(server);
@@ -101,7 +101,7 @@ namespace ConnectBot.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
             }
         }
         
@@ -116,7 +116,7 @@ namespace ConnectBot.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
             }
         }
         
@@ -132,7 +132,7 @@ namespace ConnectBot.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
             }
         }
         
@@ -152,7 +152,7 @@ namespace ConnectBot.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
             }
 
             return (0, 0, 0);
@@ -172,7 +172,7 @@ namespace ConnectBot.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
             }
         }
         
@@ -190,7 +190,7 @@ namespace ConnectBot.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
             }
 
             return (7, 6, 4);
@@ -207,7 +207,7 @@ namespace ConnectBot.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
             }
         }
     }

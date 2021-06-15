@@ -30,7 +30,7 @@ namespace UNObot.ServerQuery.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
                 return null;
             }
         }

@@ -56,12 +56,9 @@ namespace DuplicateDetector.Services
 
                 foreach (var attachment in message.Attachments)
                 {
-                    Console.WriteLine("Starting write");
                     try
                     {
-#pragma warning disable 4014
-                        db.ExecuteAsync(
-#pragma warning restore 4014
+                        await db.ExecuteAsync(
                             _config.ConvertSql(
                                 "INSERT INTO DuplicateDetector.Images (channel, message, author, url, proxy_url, spoiler, posted) VALUES (@Channel, @Message, @Author, @URL, @Proxy_URL, @Spoiler, @Posted)"),
                             new

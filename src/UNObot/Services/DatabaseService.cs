@@ -33,7 +33,7 @@ namespace UNObot.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
             }
         }
 
@@ -48,7 +48,7 @@ namespace UNObot.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
             }
         }
 
@@ -64,7 +64,7 @@ namespace UNObot.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
             }
 
             return result;
@@ -81,7 +81,7 @@ namespace UNObot.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
             }
         }
 
@@ -100,7 +100,7 @@ namespace UNObot.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
             }
 
             return allowedChannels;
@@ -118,7 +118,7 @@ namespace UNObot.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
             }
         }
 
@@ -134,7 +134,7 @@ namespace UNObot.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
             }
         }
 
@@ -149,7 +149,7 @@ namespace UNObot.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
             }
         }
 
@@ -166,7 +166,7 @@ namespace UNObot.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
             }
         }
 
@@ -181,7 +181,7 @@ namespace UNObot.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
             }
         }
 
@@ -202,7 +202,7 @@ namespace UNObot.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
             }
 
             return (guild, type);
@@ -220,7 +220,7 @@ namespace UNObot.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
             }
 
             return prefix;
@@ -237,7 +237,7 @@ namespace UNObot.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
             }
         }
 
@@ -254,7 +254,7 @@ namespace UNObot.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
             }
             catch (JsonSerializationException)
             {
@@ -275,7 +275,7 @@ namespace UNObot.Services
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
             }
         }
     }
