@@ -17,6 +17,7 @@ namespace UNObot
         private ServiceProvider _services;
         private DiscordSocketClient _client;
         private static readonly ManualResetEvent ExitEvent = new(false);
+        private static int ExitCode;
         private IUNObotConfig _config;
         private ILogger _logger;
 
@@ -112,8 +113,9 @@ namespace UNObot
             };
         }
 
-        public static void Exit()
+        public static void Exit(int code = 0)
         {
+            ExitCode = code;
             try
             {
                 ExitEvent.Set();
@@ -140,7 +142,7 @@ namespace UNObot
                 }
             }
             _services.Dispose();
-            Environment.Exit(0);
+            Environment.Exit(ExitCode);
         }
 
         private IUNObotConfig BuildConfig()
