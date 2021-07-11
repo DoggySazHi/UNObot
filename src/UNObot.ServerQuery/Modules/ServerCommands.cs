@@ -7,7 +7,7 @@ using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
 using UNObot.Plugins.Helpers;
 using UNObot.ServerQuery.Services;
-using static UNObot.ServerQuery.Services.IRCON;
+using static UNObot.ServerQuery.Queries.IRCON;
 
 namespace UNObot.ServerQuery.Modules
 {
@@ -252,20 +252,13 @@ namespace UNObot.ServerQuery.Modules
 
         [Command("expay", RunMode = RunMode.Async)]
         [Help(new[] {".expay (target) (amount)"}, "Where's my experience?", true, "UNObot 4.0.17")]
-        public async Task GetLocations(string target, string amount)
+        public async Task ExPay(string target, string amount)
         {
             var message = await ReplyAsync("I am now contacting the server, please wait warmly...");
             try
             {
-                var success = _embed.TransferEmbed("williamle.com", 29292, Context.User.Id, target, amount,
-                    out var embed);
-                if (!success || embed == null)
-                {
-                    await message.ModifyAsync(o =>
-                        o.Content = "We had some difficulties displaying the status. Please try again?");
-                    return;
-                }
-
+                var embed = await _embed.TransferEmbed("williamle.com", 29292, Context.User.Id, target, amount);
+                
                 await message.ModifyAsync(o =>
                 {
                     o.Content = "";
@@ -282,19 +275,12 @@ namespace UNObot.ServerQuery.Modules
 
         [Command("expay", RunMode = RunMode.Async)]
         [Help(new[] {".expay (port) (target) (amount)"}, "Where's my experience?", true, "UNObot 4.0.17")]
-        public async Task GetLocations(ushort port, string target, string amount)
+        public async Task ExPay(ushort port, string target, string amount)
         {
             var message = await ReplyAsync("I am now contacting the server, please wait warmly...");
             try
             {
-                var success = _embed.TransferEmbed("williamle.com", port, Context.User.Id, target, amount,
-                    out var embed);
-                if (!success || embed == null)
-                {
-                    await message.ModifyAsync(o =>
-                        o.Content = "We had some difficulties displaying the status. Please try again?");
-                    return;
-                }
+                var embed = await _embed.TransferEmbed("williamle.com", port, Context.User.Id, target, amount);
 
                 await message.ModifyAsync(o =>
                 {

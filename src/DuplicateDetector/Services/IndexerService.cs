@@ -10,6 +10,7 @@ using DuplicateDetector.Templates;
 using Newtonsoft.Json;
 using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
+using UNObot.Plugins.Settings;
 
 namespace DuplicateDetector.Services
 {
@@ -35,6 +36,10 @@ namespace DuplicateDetector.Services
             
             Directory.CreateDirectory(_cacheDir);
             Directory.CreateDirectory(_imageDir);
+            
+            var settings = new Setting("DuplicateDetector Settings");
+            settings.UpdateSetting("Watch Channels", new ChannelIDList());
+            SettingsManager.RegisterSettings("DuplicateDetector", settings);
         }
 
         private Task AddImage(SocketMessage message)

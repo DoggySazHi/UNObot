@@ -2,7 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Runtime.InteropServices;
-using UNObot.ServerQuery.Services;
+using UNObot.ServerQuery.Queries;
 
 namespace UNObot.ServerQuery.Interop
 {

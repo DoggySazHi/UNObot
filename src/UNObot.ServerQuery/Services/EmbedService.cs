@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using Discord;
 using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
 using UNObot.Plugins.TerminalCore;
+using UNObot.ServerQuery.Queries;
 using static UNObot.ServerQuery.Services.MinecraftProcessorService;
 
 namespace UNObot.ServerQuery.Services
@@ -430,8 +432,7 @@ namespace UNObot.ServerQuery.Services
             return true;
         }
 
-        public bool TransferEmbed(string ip, ushort port, ulong source, string target, string amountIn,
-            out Embed result)
+        public async Task<Embed> TransferEmbed(string ip, ushort port, ulong source, string target, string amountIn)
         {
             var messageTitle = "Mukyu~";
             var message = "General error; IDK what happened, see UNObot logs.";
@@ -455,7 +456,7 @@ namespace UNObot.ServerQuery.Services
                     {
                         var server = _query.SpecialServers[port];
                         var users = _minecraft.GetMCUsers(server.Server, server.RCONPort, server.Password, out var client, false);
-                        var sourceMCUsername = _db.GetMinecraftUser(source).GetAwaiter().GetResult();
+                        var sourceMCUsername = await _db.GetMinecraftUser(source);
                         var sourceUser = users.Find(o => o.Online && o.Username == sourceMCUsername);
                         var targetUser = users.Find(o => o.Online && o.Username == target);
 
@@ -543,8 +544,7 @@ namespace UNObot.ServerQuery.Services
                         .WithIconUrl("https://williamle.com/unobot/unobot.png");
                 })
                 .AddField(messageTitle, message);
-            result = builder.Build();
-            return true;
+            return builder.Build();
         }
     }
 }

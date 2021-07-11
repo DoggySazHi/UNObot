@@ -7,7 +7,8 @@ using Discord;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UNObot.Plugins;
-using static UNObot.ServerQuery.Services.IRCON;
+using UNObot.ServerQuery.Queries;
+using static UNObot.ServerQuery.Queries.IRCON;
 
 namespace UNObot.ServerQuery.Services
 {
@@ -80,15 +81,6 @@ namespace UNObot.ServerQuery.Services
                 var name = o.Replace((char) 0, ' ').Trim();
                 if (string.IsNullOrWhiteSpace(name)) continue;
 
-                /*
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                {
-                    _logger.Log(LogSeverity.Warning, "Linux platform: safety to use old parser.");
-                    OldUserProcessor(ref Output, Name, Client);
-                    continue;
-                }
-                */
-
                 var command = $"data get entity {name}";
                 var randomKey2 = (ulong) random.Next(0, 10000);
                 var success2 = _query.CreateRCON(ip, port, password, randomKey2, out var client2);
@@ -109,31 +101,16 @@ namespace UNObot.ServerQuery.Services
                 var jsonString = "No string was found.";
                 try
                 {
-                    // Ignore the (PLAYER_NAME) has the following data:
-                    _logger.Log(LogSeverity.Debug, command + " | " + client2.Data);
-                    jsonString = client2.Data.Substring(client2.Data.IndexOf('{'));
-                    // For UUIDs, they start an array with I; to indicate all values are integers; ignore it.
-                    jsonString = jsonString.Replace("I;", "");
+                    jsonString = client2.Data[client2.Data.IndexOf('{')..];
+                    // For UUIDs, they start an array with I to indicate all values are integers; ignore it.
+                    // Also remove the new lines that randomly occur.
+                    jsonString = Regex.Replace(jsonString, @"I;|\n", "");
+                    // Remove the weird naming scheme that Spigot uses in the NBT data, which Newtonsoft hates.
+                    jsonString = Regex.Replace(jsonString, @"([Ss]pigot|[Bb]ukkit)\.", "${1}");
                     // Regex to completely ignore the b, s, l, f, and d patterns. Probably the worst RegEx I ever wrote.
                     jsonString = Regex.Replace(jsonString, @"([:|\[|\,]\s*\-?\d*.?\d+)[s|b|l|f|d|L]", "${1}");
 
                     double[] coordinates = null;
-
-                    /*
-                    JObject JSON;
-                    try
-                    {
-                        JSON = JObject.Parse(JSONString);
-                    }
-                    catch (JsonReaderException ex)
-                    {
-                        _logger.Log(LogSeverity.Error, $@"Error near string: {JSONString.Substring(
-                            Math.Max(0, ex.LinePosition - 10), Math.Min(20, JSONString.Length - ex.LinePosition - 10)
-                        )}", ex);
-                        
-                        throw;
-                    }
-                    */
 
                     JToken json;
                     string exceptionPath = null;
