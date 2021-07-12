@@ -510,8 +510,8 @@ namespace UNObot.ServerQuery.Services
                         {
                             if (fullTransfer)
                                 amount = sourceUser.Experience;
-                            client.Execute($"xp add {sourceUser.Username} -{amount} points", true);
-                            client.Execute($"xp add {targetUser.Username} {amount} points");
+                            client.ExecuteSingle($"xp add {sourceUser.Username} -{amount} points", true);
+                            client.ExecuteSingle($"xp add {targetUser.Username} {amount} points");
                             messageTitle = "Nice.";
 
                             message = $"Transfer successful.{(sourceUser == targetUser ? " But why?" : "")}\n" +
