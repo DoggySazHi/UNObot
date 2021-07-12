@@ -40,7 +40,7 @@ namespace UNObot.ServerQuery.Queries
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 rconInstance = new RCONHelper(server, password, command);
             else
-                rconInstance = new MinecraftRCON(server, password, reuse, command);
+                rconInstance = new RCONHelperWin(server, password, command);
             if (reuse)
                 _reusableRCONSockets.Add(rconInstance);
             return rconInstance;

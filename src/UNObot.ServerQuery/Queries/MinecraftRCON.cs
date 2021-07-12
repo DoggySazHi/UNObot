@@ -12,10 +12,10 @@ namespace UNObot.ServerQuery.Queries
     {
         private const ushort RxSize = 4096;
         private static readonly byte[] EndOfCommandPacket = MakePacketData("", PacketType.Type100, 0);
-        private readonly object _lock = new object();
+        private readonly object _lock = new();
         private byte[] _buffer;
         private Socket _client;
-        private List<byte> _packetCollector = new List<byte>(RxSize);
+        private List<byte> _packetCollector = new(RxSize);
 
 
         public MinecraftRCON(IPEndPoint server, string password, bool reuse = false, string command = null)
