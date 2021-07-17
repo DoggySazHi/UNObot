@@ -37,6 +37,7 @@ namespace UNObot.Misc.Services
         {
             const string fetchChannels = "SELECT server FROM UNObot.Games";
             const string fetchUNObotInfo = "SELECT commandPrefix, hasDefaultChannel, playChannel, enforceChannel, allowedChannels FROM UNObot.Games WHERE server = @Server";
+            const string fetchWebhooks = "SELECT channel FROM UNObot.Webhooks WHERE guild = @Server";
             const string fetchDDInfo = "SELECT channel FROM DuplicateDetector.Channels WHERE server = @Server";
             const string updateSettings = "UPDATE UNObot.Games SET settings = @Settings WHERE server = @Server";
             
@@ -49,7 +50,8 @@ namespace UNObot.Misc.Services
                     var unobot = await db.QueryFirstAsync<UNObotSettings>(_config.ConvertSql(fetchUNObotInfo),
                         new {Server = Convert.ToDecimal(server)});
                     var dd = await db.QueryAsync<ulong>(fetchDDInfo, new {Server = Convert.ToDecimal(server)});
-                    var manager = CreateServerManager(unobot, dd);
+                    var webhooks = await db.QueryAsync<ulong>(fetchWebhooks, new {Server = Convert.ToDecimal(server)});
+                    var manager = CreateServerManager(unobot, dd, webhooks);
                     var json = JsonConvert.SerializeObject(manager,
                         new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.All});
                     await db.ExecuteAsync(_config.ConvertSql(updateSettings),
@@ -62,7 +64,7 @@ namespace UNObot.Misc.Services
             }
         }
 
-        private static SettingsManager CreateServerManager(UNObotSettings unobot, IEnumerable<ulong> dd)
+        private static SettingsManager CreateServerManager(UNObotSettings unobot, IEnumerable<ulong> dd, IEnumerable<ulong> webhooks)
         {
             var manager = new SettingsManager();
             
@@ -75,6 +77,11 @@ namespace UNObot.Misc.Services
 
             var ddSettings = manager.CurrentSettings["DuplicateDetector"];
             ddSettings.UpdateSetting("Watch Channels", new ChannelIDList(dd.Select(o => new ChannelID(o))));
+
+            var webhookSettings = manager.CurrentSettings["UNObot.Webhooks"];
+            webhookSettings.UpdateSetting("Webhooks", new ChannelIDList(webhooks.Select(o => new ChannelID(o))));
+            webhookSettings.UpdateSetting("Enable BitBucket", new Plugins.Settings.Boolean(true));
+            webhookSettings.UpdateSetting("Enable OctoPrint", new Plugins.Settings.Boolean(true));
             
             return manager;
         }
