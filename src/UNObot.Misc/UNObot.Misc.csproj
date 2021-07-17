@@ -21,10 +21,6 @@
         </ProjectReference>
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Services" />
-    </ItemGroup>
-
     <Target Name="CopyPlugins" AfterTargets="PostBuildEvent">
         <ItemGroup>
             <Plugin Include="$(ProjectDir)$(OutDir)*.dll" />

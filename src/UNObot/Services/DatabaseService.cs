@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
 using Discord;
@@ -250,7 +251,7 @@ namespace UNObot.Services
             {
                 var result = await db.ExecuteScalarAsync<string>(_config.ConvertSql(commandText), new {Server = Convert.ToDecimal(server)});
                 if (result.HasDBValue())
-                    return JsonConvert.DeserializeObject<SettingsManager>(result);
+                    return JsonConvert.DeserializeObject<SettingsManager>(result, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All });
             }
             catch (DbException ex)
             {
@@ -263,15 +264,16 @@ namespace UNObot.Services
 
             return new SettingsManager();
         }
-
-        public async Task SetSettings(ulong server, ulong settings)
+        
+        public async Task SetSettings(ulong server, SettingsManager manager)
         {
             const string commandText = "UPDATE UNObot.Games SET settings = @Settings WHERE server = @Server";
 
             await using var db = _config.GetConnection();
             try
             {
-                await db.ExecuteAsync(_config.ConvertSql(commandText), new { Settings = settings, Server = Convert.ToDecimal(server)});
+                var json = JsonConvert.SerializeObject(manager, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.All });
+                await db.ExecuteAsync(_config.ConvertSql(commandText), new { Settings = json, Server = Convert.ToDecimal(server) });
             }
             catch (DbException ex)
             {

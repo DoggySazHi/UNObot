@@ -27,7 +27,7 @@ namespace UNObot.Plugins.Settings
         {
             _currentSettings = data == null ? new Dictionary<string, Setting>(defaultSettings) : new Dictionary<string, Setting>(data);
         }
-        
+
         /// <summary>
         /// Add a default setting to the service. This should be called by all services.
         /// </summary>

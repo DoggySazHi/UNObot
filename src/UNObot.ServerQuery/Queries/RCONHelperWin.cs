@@ -150,7 +150,8 @@ namespace UNObot.ServerQuery.Queries
                 {
                     lifetime = LittleEndianReader(RXData, startOfPacket) - 10;
                     position = startOfPacket + 12;
-                    _data.EnsureCapacity(_data.Length + lifetime);
+                    Console.WriteLine(lifetime);
+                    _data.EnsureCapacity(_data.Length + Math.Min(count - position, lifetime));
                 }
 
                 if (packetCount == 1)
