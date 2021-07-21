@@ -14,6 +14,7 @@ namespace UNObot.Misc.Modules
         }
         
         [Command("migrateall", RunMode = RunMode.Async)]
+        [RequireOwner]
         public async Task MigrateSettings()
         {
             var message = await ReplyAsync("Migrating...");

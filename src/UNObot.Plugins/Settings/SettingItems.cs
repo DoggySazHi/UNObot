@@ -14,71 +14,75 @@ namespace UNObot.Plugins.Settings
     
     public class Boolean : ISetting
     {
-        [JsonIgnore] private readonly bool _value;
         [JsonIgnore]
-        public string Display => _value ? "Yes" : "No";
-        [JsonProperty] public string JSON => JsonConvert.SerializeObject(_value);
+        public bool Value { get; }
+        [JsonIgnore]
+        public string Display => Value ? "Yes" : "No";
+        [JsonProperty] public string JSON => JsonConvert.SerializeObject(Value);
                 
         public Boolean(bool value)
         {
-            _value = value;
+            Value = value;
         }
 
         [JsonConstructor]
         public Boolean(string json)
         {
-            _value = JsonConvert.DeserializeObject<bool>(json);
+            Value = JsonConvert.DeserializeObject<bool>(json);
         }
     }
     
     public class ChannelID : ISetting
     {
-        [JsonIgnore] private readonly ulong _id;
         [JsonIgnore]
-        public string Display => _id != 0 ? $"<#{_id}>" : "(no channel set)";
-        [JsonProperty] public string JSON => JsonConvert.SerializeObject(_id);
+        public ulong ID { get; }
+        [JsonIgnore]
+        public string Display => ID != 0 ? $"<#{ID}>" : "(no channel set)";
+        [JsonProperty] public string JSON => JsonConvert.SerializeObject(ID);
                 
         public ChannelID(ulong id)
         {
-            _id = id;
+            ID = id;
         }
         
         [JsonConstructor]
         public ChannelID(string json)
         {
-            _id = JsonConvert.DeserializeObject<ulong>(json);
+            ID = JsonConvert.DeserializeObject<ulong>(json);
         }
     }
     
     public class UserID : ISetting
     {
-        [JsonIgnore] private readonly ulong _id;
         [JsonIgnore]
-        public string Display => _id != 0 ? $"<@{_id}>" : "(no user set)";
-        [JsonProperty] public string JSON => JsonConvert.SerializeObject(_id);
+        public ulong ID { get; }
+        [JsonIgnore]
+        public string Display => ID != 0 ? $"<@{ID}>" : "(no user set)";
+        [JsonProperty] public string JSON => JsonConvert.SerializeObject(ID);
                 
         public UserID(ulong id)
         {
-            _id = id;
+            ID = id;
         }
         
         [JsonConstructor]
         public UserID(string json)
         {
-            _id = JsonConvert.DeserializeObject<ulong>(json);
+            ID = JsonConvert.DeserializeObject<ulong>(json);
         }
     }
     
     public class CodeBlock : ISetting
     {
-        [JsonIgnore] private readonly string _text;
         [JsonIgnore]
-        public string Display => !string.IsNullOrEmpty(_text) ? $"`{_text}`" : "`(none set)`";
-        [JsonProperty] public string JSON => JsonConvert.SerializeObject(_text);
+        public string Text { get; }
+        [JsonIgnore]
+        public string Display => !string.IsNullOrEmpty(Text) ? $"`{Text}`" : "`(none set)`";
+        [JsonProperty] public string JSON => JsonConvert.SerializeObject(Text);
 
         public CodeBlock(string text)
         {
-            _text = text;
+            Text = text;
         }
         
         /// <summary>
@@ -89,51 +93,51 @@ namespace UNObot.Plugins.Settings
         [JsonConstructor]
         public CodeBlock(string json, string unused)
         {
-            _text = JsonConvert.DeserializeObject<string>(json);
+            Text = JsonConvert.DeserializeObject<string>(json);
         }
     }
 
     public class UserIDList : ISetting
     {
-        [JsonIgnore] private List<UserID> _userIDs;
-        [JsonProperty] public string JSON => JsonConvert.SerializeObject(_userIDs);
+        [JsonIgnore]
+        public List<UserID> UserIDs { get; }
+        [JsonProperty] public string JSON => JsonConvert.SerializeObject(UserIDs);
         [JsonProperty]
-        public string Display => string.Join(", ", _userIDs);
+        public string Display => string.Join(", ", UserIDs);
         
         public UserIDList() : this((IEnumerable<UserID>) null) {}
         
         public UserIDList(IEnumerable<UserID> userIds)
         {
-            _userIDs = userIds == null ? new List<UserID>() : new List<UserID>(userIds);
+            UserIDs = userIds == null ? new List<UserID>() : new List<UserID>(userIds);
         }
         
         [JsonConstructor]
         public UserIDList(string json)
         {
-            _userIDs = JsonConvert.DeserializeObject<List<UserID>>(json);
+            UserIDs = JsonConvert.DeserializeObject<List<UserID>>(json);
         }
     }
     
     public class ChannelIDList : ISetting
     {
-        [JsonIgnore] private readonly List<ChannelID> _channelIds;
-
-        [JsonProperty] public string JSON => JsonConvert.SerializeObject(_channelIds);
-
+        [JsonIgnore]
+        public List<ChannelID> ChannelIDs { get; }
+        [JsonProperty] public string JSON => JsonConvert.SerializeObject(ChannelIDs);
         [JsonProperty]
-        public string Display => _channelIds.Count == 0 ? "(no channels)" : string.Join(", ", _channelIds.Select(o => o.Display));
+        public string Display => ChannelIDs.Count == 0 ? "(no channels)" : string.Join(", ", ChannelIDs.Select(o => o.Display));
 
         public ChannelIDList() : this((IEnumerable<ChannelID>) null) {}
         
         public ChannelIDList(IEnumerable<ChannelID> channelIds)
         {
-            _channelIds = channelIds == null ? new List<ChannelID>() : new List<ChannelID>(channelIds);
+            ChannelIDs = channelIds == null ? new List<ChannelID>() : new List<ChannelID>(channelIds);
         }
         
         [JsonConstructor]
         public ChannelIDList(string json)
         {
-            _channelIds = JsonConvert.DeserializeObject<List<ChannelID>>(json);
+            ChannelIDs = JsonConvert.DeserializeObject<List<ChannelID>>(json);
         }
     }
 }

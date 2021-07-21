@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
 using UNObot.Plugins.Settings;
+using Boolean = UNObot.Plugins.Settings.Boolean;
 
 namespace UNObot.Services
 {
@@ -54,73 +55,23 @@ namespace UNObot.Services
         }
 
         public async Task<bool> ChannelEnforced(ulong server)
-        {
-            const string commandText = "SELECT enforceChannel FROM UNObot.Games WHERE server = @Server";
-            var result = false;
-
-            await using var db = _config.GetConnection();
-            try
-            {
-                result = await db.ExecuteScalarAsync<bool>(_config.ConvertSql(commandText), new {Server = Convert.ToDecimal(server)});
-            }
-            catch (DbException ex)
-            {
-                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
-            }
-
-            return result;
-        }
+            => (await GetSettings(server)).GetSetting<Boolean>("UNObot", "Enforce Channels").Value;
 
         public async Task SetEnforceChannel(ulong server, bool enforce)
         {
-            const string commandText = "UPDATE UNObot.Games SET enforceChannel = @Enforce WHERE server = @Server";
-
-            await using var db = _config.GetConnection();
-            try
-            {
-                await db.ExecuteAsync(_config.ConvertSql(commandText), new {Enforce = enforce, Server = Convert.ToDecimal(server)});
-            }
-            catch (DbException ex)
-            {
-                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
-            }
+            var settings = await GetSettings(server);
+            settings.UpdateSetting("UNObot", "Enforce Channels", new Boolean(enforce));
+            await SetSettings(server, settings);
         }
 
         public async Task<List<ulong>> GetAllowedChannels(ulong server)
+            => (await GetSettings(server)).GetSetting<ChannelIDList>("UNObot", "Channels Enforced").ChannelIDs.Select(o => o.ID).ToList();
+
+        public async Task SetAllowedChannels(ulong server, IEnumerable<ulong> allowedChannels)
         {
-            const string commandText = "SELECT allowedChannels FROM UNObot.Games WHERE server = @Server";
-
-            var allowedChannels = new List<ulong>();
-
-            await using var db = _config.GetConnection();
-            try
-            {
-                var result = await db.ExecuteScalarAsync(_config.ConvertSql(commandText), new {Server = Convert.ToDecimal(server)});
-                if (result.HasDBValue())
-                    allowedChannels = JsonConvert.DeserializeObject<List<ulong>>((string) result);
-            }
-            catch (DbException ex)
-            {
-                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
-            }
-
-            return allowedChannels;
-        }
-
-        public async Task SetAllowedChannels(ulong server, List<ulong> allowedChannels)
-        {
-            const string commandText = "UPDATE UNObot.Games SET allowedChannels = @AllowedChannels WHERE server = @Server";
-            var json = JsonConvert.SerializeObject(allowedChannels);
-
-            await using var db = _config.GetConnection();
-            try
-            {
-                await db.ExecuteAsync(_config.ConvertSql(commandText), new {Server = Convert.ToDecimal(server), AllowedChannels = json});
-            }
-            catch (DbException ex)
-            {
-                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
-            }
+            var settings = await GetSettings(server);
+            settings.UpdateSetting("UNObot", "Channels Enforced", new ChannelIDList(allowedChannels.Select(o => new ChannelID(o))));
+            await SetSettings(server, settings);
         }
 
         public async Task RegisterUser(ulong id, string username)

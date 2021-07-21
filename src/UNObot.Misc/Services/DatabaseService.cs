@@ -25,17 +25,26 @@ namespace UNObot.Misc.Services
 
         private class UNObotSettings
         {
-            public string CommandPrefix { get; set; }
-            public bool HasDefaultChannel { get; set; }
-            public ulong PlayChannel { get; set; }
-            public bool EnforceChannel { get; set; }
-            public string AllowedChannels { get; set; }
+            public UNObotSettings(string commandPrefix, bool hasDefaultChannel, ulong playChannel, bool enforceChannel, string allowedChannels)
+            {
+                CommandPrefix = commandPrefix;
+                HasDefaultChannel = hasDefaultChannel;
+                PlayChannel = playChannel;
+                EnforceChannel = enforceChannel;
+                AllowedChannels = allowedChannels;
+            }
+
+            public string CommandPrefix { get; }
+            public bool HasDefaultChannel { get; }
+            public ulong PlayChannel { get; }
+            public bool EnforceChannel { get; }
+            public string AllowedChannels { get; }
             [JsonIgnore] public IEnumerable<ulong> AllowedChannelsArray => JsonConvert.DeserializeObject<ulong[]>(AllowedChannels);
         }
         
         public async Task Migrate()
         {
-            const string fetchChannels = "SELECT server FROM UNObot.Games";
+            const string fetchChannels = "SELECT server FROM UNObot.Games WHERE settings IS NULL";
             const string fetchUNObotInfo = "SELECT commandPrefix, hasDefaultChannel, playChannel, enforceChannel, allowedChannels FROM UNObot.Games WHERE server = @Server";
             const string fetchWebhooks = "SELECT channel FROM UNObot.Webhooks WHERE guild = @Server";
             const string fetchDDInfo = "SELECT channel FROM DuplicateDetector.Channels WHERE server = @Server";
