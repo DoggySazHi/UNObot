@@ -213,7 +213,7 @@ namespace UNObot.Services
                 // ¯\_(ツ)_/¯ Deal with it! (Recreate the settings manager)
             }
 
-            return new SettingsManager();
+            return new SettingsManager(server);
         }
         
         public async Task SetSettings(ulong server, SettingsManager manager)

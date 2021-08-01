@@ -34,7 +34,7 @@ namespace UNObot.ServerQuery.Services
             // Stored in plain-text anyways, plus is server-side. You could easily read this from a file on the same server.
             servers.Add(25432, new RCONServer {Server = "192.168.2.6", RCONPort = 25433, Password = "mukyumukyu"});
             servers.Add(27285, new RCONServer {Server = "192.168.2.11", RCONPort = 27286, Password = "mukyumukyu"});
-            servers.Add(29292, new RCONServer {Server = "192.168.2.17", RCONPort = 29293, Password = "mukyumukyu"});
+            servers.Add(29292, new RCONServer {Server = "192.168.2.12", RCONPort = 29293, Password = "mukyumukyu"});
             SpecialServers = servers;
         }
 

@@ -25,21 +25,20 @@ namespace UNObot.Misc.Services
 
         private class UNObotSettings
         {
-            public UNObotSettings(string commandPrefix, bool hasDefaultChannel, ulong playChannel, bool enforceChannel, string allowedChannels)
+            public UNObotSettings(string commandPrefix, bool hasDefaultChannel, decimal playChannel, bool enforceChannel, string allowedChannels)
             {
                 CommandPrefix = commandPrefix;
                 HasDefaultChannel = hasDefaultChannel;
-                PlayChannel = playChannel;
+                PlayChannel = Convert.ToUInt64(playChannel);
                 EnforceChannel = enforceChannel;
-                AllowedChannels = allowedChannels;
+                AllowedChannels = JsonConvert.DeserializeObject<ulong[]>(allowedChannels);
             }
 
             public string CommandPrefix { get; }
             public bool HasDefaultChannel { get; }
             public ulong PlayChannel { get; }
             public bool EnforceChannel { get; }
-            public string AllowedChannels { get; }
-            [JsonIgnore] public IEnumerable<ulong> AllowedChannelsArray => JsonConvert.DeserializeObject<ulong[]>(AllowedChannels);
+            public ulong[] AllowedChannels { get; }
         }
         
         public async Task Migrate()
@@ -60,7 +59,7 @@ namespace UNObot.Misc.Services
                         new {Server = Convert.ToDecimal(server)});
                     var dd = await db.QueryAsync<ulong>(fetchDDInfo, new {Server = Convert.ToDecimal(server)});
                     var webhooks = await db.QueryAsync<ulong>(fetchWebhooks, new {Server = Convert.ToDecimal(server)});
-                    var manager = CreateServerManager(unobot, dd, webhooks);
+                    var manager = CreateServerManager(server, unobot, dd, webhooks);
                     var json = JsonConvert.SerializeObject(manager,
                         new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.All});
                     await db.ExecuteAsync(_config.ConvertSql(updateSettings),
@@ -73,14 +72,14 @@ namespace UNObot.Misc.Services
             }
         }
 
-        private static SettingsManager CreateServerManager(UNObotSettings unobot, IEnumerable<ulong> dd, IEnumerable<ulong> webhooks)
+        private static SettingsManager CreateServerManager(ulong server, UNObotSettings unobot, IEnumerable<ulong> dd, IEnumerable<ulong> webhooks)
         {
-            var manager = new SettingsManager();
+            var manager = new SettingsManager(server);
             
             var unobotSettings = manager.CurrentSettings["UNObot"];
             unobotSettings.UpdateSetting("Prefix", new CodeBlock(unobot.CommandPrefix));
             unobotSettings.UpdateSetting("Enforce Channels", new Plugins.Settings.Boolean(unobot.EnforceChannel));
-            unobotSettings.UpdateSetting("Channels Enforced", new ChannelIDList(unobot.AllowedChannelsArray.Select(o => new ChannelID(o))));
+            unobotSettings.UpdateSetting("Channels Enforced", new ChannelIDList(unobot.AllowedChannels.Select(o => new ChannelID(o))));
             if (unobot.HasDefaultChannel)
                 unobotSettings.UpdateSetting("Default Channel", new ChannelID(unobot.PlayChannel));
 

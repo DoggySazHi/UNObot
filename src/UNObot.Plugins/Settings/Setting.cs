@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace UNObot.Plugins.Settings
@@ -25,7 +26,7 @@ namespace UNObot.Plugins.Settings
             => KeyValuePairs[key] = value;
 
         public T GetSetting<T>(string key)
-            => JsonConvert.DeserializeObject<T>(KeyValuePairs[key].JSON);
+            => (T) Convert.ChangeType(KeyValuePairs[key], typeof(T));
         
         public ISetting GetSetting(string key)
             => KeyValuePairs[key];

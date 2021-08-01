@@ -39,7 +39,7 @@ namespace ConnectBot.Services
         public async Task ResetGame(ulong server)
         {
             const string commandText =
-                "UPDATE UNObot.ConnectBot.Games SET board = @Board, queue = @Queue, description = null WHERE server = @Server";
+                "UPDATE ConnectBot.Games SET board = @Board, queue = @Queue, description = null WHERE server = @Server";
 
             await using var db = _config.GetConnection();
             try
@@ -54,7 +54,7 @@ namespace ConnectBot.Services
         
         public async Task<Game> GetGame(ulong server)
         {
-            const string commandText = "SELECT * FROM UNObot.ConnectBot.Games WHERE server = @Server";
+            const string commandText = "SELECT * FROM ConnectBot.Games WHERE server = @Server";
             await using var db = _config.GetConnection();
             try
             {
@@ -81,7 +81,7 @@ namespace ConnectBot.Services
 
         public async Task UpdateGame(Game game)
         {
-            const string commandText = "UPDATE UNObot.ConnectBot.Games SET gameMode = @GameMode, board = @Board, `description` = @Description, queue = @Queue, lastChannel = @LastChannel, lastMessage = @LastMessage WHERE server = @Server";
+            const string commandText = "UPDATE ConnectBot.Games SET gameMode = @GameMode, board = @Board, `description` = @Description, queue = @Queue, lastChannel = @LastChannel, lastMessage = @LastMessage WHERE server = @Server";
             await using var db = _config.GetConnection();
             try
             {
@@ -107,7 +107,7 @@ namespace ConnectBot.Services
         
         private async Task AddGame(ulong server)
         {
-            const string commandText = "INSERT IGNORE UNObot.ConnectBot.Games (server, board, queue) VALUES (@Server, @Board, @Queue)";
+            const string commandText = "INSERT IGNORE ConnectBot.Games (server, board, queue) VALUES (@Server, @Board, @Queue)";
 
             await using var db = _config.GetConnection();
             try
@@ -163,7 +163,7 @@ namespace ConnectBot.Services
             var enumStr = stat.ToString();
             var column = enumStr[..1].ToLower() + enumStr[1..];
             var commandText =
-                $"UPDATE UNObot.ConnectBot.Players SET {column} = {column} + 1 WHERE userid = @User";
+                $"UPDATE ConnectBot.Players SET {column} = {column} + 1 WHERE userid = @User";
             
             await using var db = _config.GetConnection();
             try

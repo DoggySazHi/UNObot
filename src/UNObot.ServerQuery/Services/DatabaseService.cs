@@ -23,7 +23,7 @@ namespace UNObot.ServerQuery.Services
         {
             await using var db = _config.GetConnection();
 
-            const string commandText = "SELECT minecraftUsername FROM UNObot.Players WHERE userid = @UserID";
+            const string commandText = "SELECT minecraftUsername FROM ServerQuery.Player WHERE userid = @UserID";
 
             try
             {
