@@ -56,7 +56,6 @@ namespace UNObot.ServerQuery.Services
                 return false;
             }
 
-            var random = ThreadSafeRandom.ThisThreadsRandom;
             var serverName = information.Name;
             var serverImageUrl = rules.Rules
                 .FirstOrDefault(o => o.Name.Contains("Browser_Icon", StringComparison.OrdinalIgnoreCase)).Value;
@@ -99,7 +98,7 @@ namespace UNObot.ServerQuery.Services
             var builder = new EmbedBuilder()
                 .WithTitle("Description")
                 .WithDescription(serverDescription)
-                .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
+                .WithColor(PluginHelper.RandomColor())
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
@@ -155,7 +154,6 @@ namespace UNObot.ServerQuery.Services
                 mcUserInfo = _minecraft.GetMCUsers(server.Server, server.RCONPort, server.Password, out _);
             }
 
-            var random = ThreadSafeRandom.ThisThreadsRandom;
             var serverDescription = defaultStatus.Motd;
             var playersOnline = defaultStatus.CurrentPlayers == "0" ? "" : "Unknown (server doesn't have query on!)";
 
@@ -183,7 +181,7 @@ namespace UNObot.ServerQuery.Services
             var builder = new EmbedBuilder()
                 .WithTitle("MOTD")
                 .WithDescription(serverDescription)
-                .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
+                .WithColor(PluginHelper.RandomColor())
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
@@ -225,7 +223,6 @@ namespace UNObot.ServerQuery.Services
                 mcUserInfo = _minecraft.GetMCUsers(server.Server, server.RCONPort, server.Password, out _);
             }
 
-            var random = ThreadSafeRandom.ThisThreadsRandom;
             var serverDescription = extendedStatus.Motd;
             
             var playersOnline = "";
@@ -249,7 +246,7 @@ namespace UNObot.ServerQuery.Services
             var builder = new EmbedBuilder()
                 .WithTitle("MOTD")
                 .WithDescription(serverDescription)
-                .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
+                .WithColor(PluginHelper.RandomColor())
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
@@ -274,12 +271,10 @@ namespace UNObot.ServerQuery.Services
 
         public async Task<Embed> OuchiesEmbed(string ip, ushort port)
         {
-            var random = ThreadSafeRandom.ThisThreadsRandom;
-
             if (!await _db.IsInternalHostname(ip) || !_query.SpecialServers.ContainsKey(port))
             {
                 return new EmbedBuilder()
-                    .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
+                    .WithColor(PluginHelper.RandomColor())
                     .WithTimestamp(DateTimeOffset.Now)
                     .WithFooter(footer =>
                     {
@@ -319,7 +314,7 @@ namespace UNObot.ServerQuery.Services
             var builder = new EmbedBuilder()
                 .WithTitle("MOTD")
                 .WithDescription(status.Motd)
-                .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
+                .WithColor(PluginHelper.RandomColor())
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
@@ -342,12 +337,10 @@ namespace UNObot.ServerQuery.Services
 
         public async Task<Embed> LocationsEmbed(string ip, ushort port)
         {
-            var random = ThreadSafeRandom.ThisThreadsRandom;
-
             if (!await _db.IsInternalHostname(ip) || !_query.SpecialServers.ContainsKey(port))
             {
                 return new EmbedBuilder()
-                    .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
+                    .WithColor(PluginHelper.RandomColor())
                     .WithTimestamp(DateTimeOffset.Now)
                     .WithFooter(footer =>
                     {
@@ -401,7 +394,7 @@ namespace UNObot.ServerQuery.Services
             var builder = new EmbedBuilder()
                 .WithTitle("MOTD")
                 .WithDescription(status.Motd)
-                .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
+                .WithColor(PluginHelper.RandomColor())
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
@@ -517,10 +510,8 @@ namespace UNObot.ServerQuery.Services
                 _logger.Log(LogSeverity.Error, message, e);
             }
 
-            var random = ThreadSafeRandom.ThisThreadsRandom;
-
             var builder = new EmbedBuilder()
-                .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
+                .WithColor(PluginHelper.RandomColor())
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
