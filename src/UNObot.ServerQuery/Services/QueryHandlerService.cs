@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using UNObot.ServerQuery.Queries;
@@ -14,20 +13,11 @@ namespace UNObot.ServerQuery.Services
     //Mukyu... but I implemented the Minecraft RCON (Valve RCON) protocol by hand, as well as the query.
     public class QueryHandlerService
     {
-        public readonly IReadOnlyDictionary<ushort, RCONServer> SpecialServers;
-
         private readonly RCONManager _manager;
 
         public QueryHandlerService(RCONManager manager)
         {
             _manager = manager;
-            
-            var servers = new Dictionary<ushort, RCONServer>();
-            // Stored in plain-text anyways, plus is server-side. You could easily read this from a file on the same server.
-            servers.Add(25432, new RCONServer {Server = "192.168.2.6", RCONPort = 25433, Password = "mukyumukyu"});
-            servers.Add(27285, new RCONServer {Server = "192.168.2.11", RCONPort = 27286, Password = "mukyumukyu"});
-            servers.Add(29292, new RCONServer {Server = "192.168.2.12", RCONPort = 29293, Password = "mukyumukyu"});
-            SpecialServers = servers;
         }
 
         public bool GetInfo(string ip, ushort port, out A2SInfo output)
@@ -175,13 +165,6 @@ namespace UNObot.ServerQuery.Services
         public MCStatus GetInfoMC(string ip, ushort port = 25565)
         {
             return new MCStatus(ip, port);
-        }
-
-        public struct RCONServer
-        {
-            public string Server { get; set; }
-            public ushort RCONPort { get; set; }
-            public string Password { get; set; }
         }
     }
 }

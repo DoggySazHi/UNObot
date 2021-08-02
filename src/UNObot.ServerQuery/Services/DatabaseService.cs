@@ -40,7 +40,7 @@ namespace UNObot.ServerQuery.Services
         {
             await using var db = _config.GetConnection();
 
-            const string commandText = "SELECT COUNT(1) FROM UNObot.ServerQuery.InternalHostname WHERE hostname = @Hostname";
+            const string commandText = "SELECT COUNT(1) FROM ServerQuery.InternalHostname WHERE hostname = @Hostname";
 
             try
             {
@@ -50,6 +50,66 @@ namespace UNObot.ServerQuery.Services
             {
                 _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
                 return false;
+            }
+        }
+        
+        public async Task<string> GetMinecraftUsername(ulong user)
+        {
+            await using var db = _config.GetConnection();
+
+            const string commandText = "SELECT minecraft_username FROM ServerQuery.Player WHERE userid = @ID";
+
+            try
+            {
+                return await db.ExecuteScalarAsync<string>(_config.ConvertSql(commandText), new { ID = Convert.ToDecimal(user) } );
+            }
+            catch (DbException ex)
+            {
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
+                return null;
+            }
+        }
+
+        public async Task<bool> HasRCONPrivilege(ulong user)
+        {
+            await using var db = _config.GetConnection();
+
+            const string commandText = "SELECT rcon_privilege FROM ServerQuery.Player WHERE userid = @ID";
+
+            try
+            {
+                return await db.ExecuteScalarAsync<bool>(_config.ConvertSql(commandText), new { ID = Convert.ToDecimal(user) } );
+            }
+            catch (DbException ex)
+            {
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
+                return false;
+            }
+        }
+        
+        public class RCONServer
+        {
+            public string Server { get; init; }
+            public ushort RCONPort { get; init; }
+            public string Password { get; init; }
+        }
+        
+        public async Task<RCONServer> GetRCONServer(ushort port)
+        {
+            await using var db = _config.GetConnection();
+
+            const string commandText = "SELECT ip, port, password FROM ServerQuery.RCONServer WHERE port = @Port";
+
+            try
+            {
+                var data = await db.QueryFirstOrDefaultAsync(_config.ConvertSql(commandText), new { Port = Convert.ToInt32(port) } );
+                return new RCONServer
+                    {Server = data.ip, RCONPort = Convert.ToUInt16(data.port), Password = data.password};
+            }
+            catch (DbException ex)
+            {
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
+                return null;
             }
         }
     }

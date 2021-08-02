@@ -19,12 +19,15 @@ namespace UNObot.ServerQuery.Modules
         private readonly UBOWServerLoggerService _ubowLogger;
         private readonly EmbedService _embed;
         private readonly QueryHandlerService _query;
-        public ServerCommands(ILogger logger, UBOWServerLoggerService ubowLogger, EmbedService embed, QueryHandlerService query)
+        private readonly DatabaseService _db;
+        
+        public ServerCommands(ILogger logger, UBOWServerLoggerService ubowLogger, EmbedService embed, QueryHandlerService query, DatabaseService db)
         {
             _logger = logger;
             _ubowLogger = ubowLogger;
             _embed = embed;
             _query = query;
+            _db = db;
         }
 
         [Command("ubows", RunMode = RunMode.Async)]
@@ -300,7 +303,7 @@ namespace UNObot.ServerQuery.Modules
         [Help(new[] {".mctime"}, "SLEEP GUYS", true, "UNObot 4.0.16")]
         public async Task GetMCTime()
         {
-            var server = _query.SpecialServers[29292];
+            var server = await _db.GetRCONServer(29292);
             await RunRCON(server.Server, server.RCONPort, server.Password, "time query daytime", false);
         }
 
@@ -308,13 +311,14 @@ namespace UNObot.ServerQuery.Modules
         [Help(new[] {".mctime (port)"}, "SLEEP GUYS", true, "UNObot 4.0.16")]
         public async Task GetMCTime(ushort port)
         {
-            if (!_query.SpecialServers.ContainsKey(port))
+            var server = await _db.GetRCONServer(port);
+            
+            if (server == null)
             {
                 await ReplyAsync("This is not a valid server port!");
                 return;
             }
 
-            var server = _query.SpecialServers[port];
             await RunRCON(server.Server, server.RCONPort, server.Password, "time query daytime", false);
         }
 
