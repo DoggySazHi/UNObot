@@ -60,6 +60,7 @@ namespace UNObot.Misc.Services
                     var dd = await db.QueryAsync<ulong>(fetchDDInfo, new {Server = Convert.ToDecimal(server)});
                     var webhooks = await db.QueryAsync<ulong>(fetchWebhooks, new {Server = Convert.ToDecimal(server)});
                     var manager = CreateServerManager(server, unobot, dd, webhooks);
+                    _logger.Log(LogSeverity.Debug, $"Server: {server}, embedded: {manager.Server}");
                     var json = JsonConvert.SerializeObject(manager,
                         new JsonSerializerSettings {TypeNameHandling = TypeNameHandling.All});
                     await db.ExecuteAsync(_config.ConvertSql(updateSettings),

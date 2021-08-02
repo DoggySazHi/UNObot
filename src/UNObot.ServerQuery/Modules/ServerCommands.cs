@@ -74,8 +74,8 @@ namespace UNObot.ServerQuery.Modules
             var message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
             {
-                var success = _embed.MinecraftQueryEmbed(ip, port, out var embed);
-                if (!success || embed == null)
+                var embed = await _embed.MinecraftQueryEmbed(ip, port);
+                if (embed == null)
                 {
                     await message.ModifyAsync(o =>
                         o.Content = "Error: Apparently we couldn't get any information about this server.");
@@ -104,8 +104,8 @@ namespace UNObot.ServerQuery.Modules
             var message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
             {
-                var success = _embed.MinecraftPEQueryEmbed(ip, port, out var embed);
-                if (!success || embed == null)
+                var embed = await _embed.MinecraftPEQueryEmbed(ip, port);
+                if (embed == null)
                 {
                     await message.ModifyAsync(o =>
                         o.Content = "Error: Apparently we couldn't get any information about this server.");
@@ -141,8 +141,8 @@ namespace UNObot.ServerQuery.Modules
             var message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
             {
-                var success = _embed.OuchiesEmbed("williamle.com", 29292, out var embed);
-                if (!success || embed == null)
+                var embed = await _embed.OuchiesEmbed("williamle.com", 29292);
+                if (embed == null)
                 {
                     await message.ModifyAsync(o =>
                         o.Content = "Error: Apparently we couldn't get any information about this server.");
@@ -170,8 +170,8 @@ namespace UNObot.ServerQuery.Modules
             var message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
             {
-                var success = _embed.OuchiesEmbed("williamle.com", port, out var embed);
-                if (!success || embed == null)
+                var embed = await _embed.OuchiesEmbed("williamle.com", port);
+                if (embed == null)
                 {
                     await message.ModifyAsync(o =>
                         o.Content = "Error: Apparently we couldn't get any information about this server.");
@@ -199,8 +199,8 @@ namespace UNObot.ServerQuery.Modules
             var message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
             {
-                var success = _embed.LocationsEmbed("williamle.com", 29292, out var embed);
-                if (!success || embed == null)
+                var embed = await _embed.LocationsEmbed("williamle.com", 29292);
+                if (embed == null)
                 {
                     await message.ModifyAsync(o =>
                         o.Content = "Error: Apparently we couldn't get any information about this server.");
@@ -228,8 +228,8 @@ namespace UNObot.ServerQuery.Modules
             var message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
             {
-                var success = _embed.LocationsEmbed("williamle.com", port, out var embed);
-                if (!success || embed == null)
+                var embed = await _embed.LocationsEmbed("williamle.com", port);
+                if (embed == null)
                 {
                     await message.ModifyAsync(o =>
                         o.Content = "Error: Apparently we couldn't get any information about this server.");

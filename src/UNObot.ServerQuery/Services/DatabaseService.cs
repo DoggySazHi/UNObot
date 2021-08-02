@@ -35,5 +35,22 @@ namespace UNObot.ServerQuery.Services
                 return null;
             }
         }
+
+        public async Task<bool> IsInternalHostname(string hostname)
+        {
+            await using var db = _config.GetConnection();
+
+            const string commandText = "SELECT COUNT(1) FROM UNObot.ServerQuery.InternalHostname WHERE hostname = @Hostname";
+
+            try
+            {
+                return await db.ExecuteScalarAsync<bool>(_config.ConvertSql(commandText), new { Hostname = hostname } );
+            }
+            catch (DbException ex)
+            {
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
+                return false;
+            }
+        }
     }
 }

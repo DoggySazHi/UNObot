@@ -137,7 +137,7 @@ namespace UNObot.ServerQuery.Services
             return true;
         }
 
-        public bool MinecraftQueryEmbed(string ip, ushort port, out Embed result)
+        public async Task<Embed> MinecraftQueryEmbed(string ip, ushort port)
         {
             //TODO with the new option to disable status, it might be that queries work but not simple statuses.
             var defaultStatus = new MCStatus(ip, port);
@@ -145,12 +145,11 @@ namespace UNObot.ServerQuery.Services
 
             if (!defaultStatus.ServerUp && !extendedGet)
             {
-                result = null;
-                return false;
+                return null;
             }
 
             List<MCUser> mcUserInfo = null;
-            if (_query.OutsideServers.Contains(ip) && _query.SpecialServers.ContainsKey(port))
+            if (await _db.IsInternalHostname(ip) && _query.SpecialServers.ContainsKey(port))
             {
                 var server = _query.SpecialServers[port];
                 mcUserInfo = _minecraft.GetMCUsers(server.Server, server.RCONPort, server.Password, out _);
@@ -204,11 +203,10 @@ namespace UNObot.ServerQuery.Services
                 .AddField("Ping", $"{defaultStatus.Delay} ms", true)
                 .AddField($"Players: {defaultStatus.CurrentPlayers}/{defaultStatus.MaximumPlayers}",
                     string.IsNullOrWhiteSpace(playersOnline) ? "Nobody's online!" : playersOnline, true);
-            result = builder.Build();
-            return true;
+            return builder.Build();
         }
         
-        public bool MinecraftPEQueryEmbed(string ip, ushort port, out Embed result)
+        public async Task<Embed> MinecraftPEQueryEmbed(string ip, ushort port)
         {
             var ping = new Stopwatch();
             ping.Start();
@@ -217,12 +215,11 @@ namespace UNObot.ServerQuery.Services
 
             if (!extendedGet)
             {
-                result = null;
-                return false;
+                return null;
             }
 
             List<MCUser> mcUserInfo = null;
-            if (_query.OutsideServers.Contains(ip) && _query.SpecialServers.ContainsKey(port))
+            if (await _db.IsInternalHostname(ip) && _query.SpecialServers.ContainsKey(port))
             {
                 var server = _query.SpecialServers[port];
                 mcUserInfo = _minecraft.GetMCUsers(server.Server, server.RCONPort, server.Password, out _);
@@ -272,17 +269,16 @@ namespace UNObot.ServerQuery.Services
                 .AddField("Ping", $"{ping.ElapsedMilliseconds} ms", true)
                 .AddField($"Players: {extendedStatus.Players.Length}/{extendedStatus.MaxPlayers}",
                     string.IsNullOrWhiteSpace(playersOnline) ? "Nobody's online!" : playersOnline, true);
-            result = builder.Build();
-            return true;
+            return builder.Build();
         }
 
-        public bool OuchiesEmbed(string ip, ushort port, out Embed result)
+        public async Task<Embed> OuchiesEmbed(string ip, ushort port)
         {
             var random = ThreadSafeRandom.ThisThreadsRandom;
 
-            if (!_query.OutsideServers.Contains(ip) || !_query.SpecialServers.ContainsKey(port))
+            if (!await _db.IsInternalHostname(ip) || !_query.SpecialServers.ContainsKey(port))
             {
-                result = new EmbedBuilder()
+                return new EmbedBuilder()
                     .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
                     .WithTimestamp(DateTimeOffset.Now)
                     .WithFooter(footer =>
@@ -298,7 +294,6 @@ namespace UNObot.ServerQuery.Services
                             .WithIconUrl("https://williamle.com/unobot/unobot.png");
                     })
                     .AddField("Mukyu~", "Invalid port for checking ouchies!").Build();
-                return true;
             }
 
             MinecraftStatus status = null;
@@ -309,8 +304,7 @@ namespace UNObot.ServerQuery.Services
 
             if (!extendedGet || status == null)
             {
-                result = null;
-                return false;
+                return null;
             }
 
             var server = _query.SpecialServers[port];
@@ -343,17 +337,16 @@ namespace UNObot.ServerQuery.Services
                 .AddField("Port", port, true)
                 .AddField("Version", $"{status.Version}", true)
                 .AddField("Ouchies Listing", playersOnline, true);
-            result = builder.Build();
-            return true;
+            return builder.Build();
         }
 
-        public bool LocationsEmbed(string ip, ushort port, out Embed result)
+        public async Task<Embed> LocationsEmbed(string ip, ushort port)
         {
             var random = ThreadSafeRandom.ThisThreadsRandom;
 
-            if (!_query.OutsideServers.Contains(ip) || !_query.SpecialServers.ContainsKey(port))
+            if (!await _db.IsInternalHostname(ip) || !_query.SpecialServers.ContainsKey(port))
             {
-                result = new EmbedBuilder()
+                return new EmbedBuilder()
                     .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
                     .WithTimestamp(DateTimeOffset.Now)
                     .WithFooter(footer =>
@@ -369,7 +362,6 @@ namespace UNObot.ServerQuery.Services
                             .WithIconUrl("https://williamle.com/unobot/unobot.png");
                     })
                     .AddField("Mukyu~", "Invalid port for checking ouchies!").Build();
-                return true;
             }
 
             MinecraftStatus status = null;
@@ -380,8 +372,7 @@ namespace UNObot.ServerQuery.Services
 
             if (!extendedGet || status == null)
             {
-                result = null;
-                return false;
+                return null;
             }
 
             var server = _query.SpecialServers[port];
@@ -428,8 +419,8 @@ namespace UNObot.ServerQuery.Services
                 .AddField("Port", port, true)
                 .AddField("Version", $"{status.Version}", true)
                 .AddField("Players", playersOnline, true);
-            result = builder.Build();
-            return true;
+            
+            return builder.Build();
         }
 
         public async Task<Embed> TransferEmbed(string ip, ushort port, ulong source, string target, string amountIn)
@@ -439,7 +430,7 @@ namespace UNObot.ServerQuery.Services
 
             try
             {
-                if (!_query.OutsideServers.Contains(ip) || !_query.SpecialServers.ContainsKey(port))
+                if (!await _db.IsInternalHostname(ip) || !_query.SpecialServers.ContainsKey(port))
                 {
                     message = "This server does not support experience transfer.";
                 }
