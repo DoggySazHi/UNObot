@@ -176,7 +176,7 @@ namespace UNObot.ServerQuery.Services
             return builder.Build();
         }
         
-        public async Task<Embed> MinecraftPEQueryEmbed(string ip, ushort port)
+        public Task<Embed> MinecraftPEQueryEmbed(string ip, ushort port)
         {
             var ping = new Stopwatch();
             ping.Start();
@@ -206,7 +206,7 @@ namespace UNObot.ServerQuery.Services
                 .AddField("Ping", $"{ping.ElapsedMilliseconds} ms", true)
                 .AddField($"Players: {extendedStatus.Players.Length}/{extendedStatus.MaxPlayers}",
                     string.IsNullOrWhiteSpace(playersOnline) ? "Nobody's online!" : playersOnline, true);
-            return builder.Build();
+            return Task.Run(builder.Build); // We do a little bit of tom-foolery.
         }
 
         public async Task<Embed> OuchiesEmbed(string ip, ushort port)
