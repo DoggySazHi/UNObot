@@ -18,23 +18,6 @@ namespace UNObot.ServerQuery.Services
             _logger = logger;
             _config = config;
         }
-        
-        public async Task<string> GetMinecraftUser(ulong user)
-        {
-            await using var db = _config.GetConnection();
-
-            const string commandText = "SELECT minecraftUsername FROM ServerQuery.Player WHERE userid = @UserID";
-
-            try
-            {
-                return await db.ExecuteScalarAsync<string>(_config.ConvertSql(commandText), new { UserID = Convert.ToDecimal(user) } );
-            }
-            catch (DbException ex)
-            {
-                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
-                return null;
-            }
-        }
 
         public async Task<bool> IsInternalHostname(string hostname)
         {
@@ -53,7 +36,7 @@ namespace UNObot.ServerQuery.Services
             }
         }
         
-        public async Task<string> GetMinecraftUsername(ulong user)
+        public async Task<string> GetMinecraftUser(ulong user)
         {
             await using var db = _config.GetConnection();
 
@@ -98,13 +81,15 @@ namespace UNObot.ServerQuery.Services
         {
             await using var db = _config.GetConnection();
 
-            const string commandText = "SELECT ip, port, password FROM ServerQuery.RCONServer WHERE port = @Port";
+            const string commandText = "SELECT ip, rcon_port, password FROM ServerQuery.RCONServer WHERE port = @Port";
 
             try
             {
                 var data = await db.QueryFirstOrDefaultAsync(_config.ConvertSql(commandText), new { Port = Convert.ToInt32(port) } );
+                if (data == null)
+                    return null;
                 return new RCONServer
-                    {Server = data.ip, RCONPort = Convert.ToUInt16(data.port), Password = data.password};
+                    {Server = data.ip, RCONPort = Convert.ToUInt16(data.rcon_port), Password = data.password};
             }
             catch (DbException ex)
             {

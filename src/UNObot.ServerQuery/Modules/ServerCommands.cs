@@ -348,7 +348,7 @@ namespace UNObot.ServerQuery.Modules
         
         private async Task RunRCON(string ip, ushort port, string password, string command, bool checkOrigin)
         {
-            if (checkOrigin && Context.User.Id != 191397590946807809 && Context.User.Id != 338824307834880000)
+            if (checkOrigin && !await _db.HasRCONPrivilege(Context.User.Id))
                 return;
                 
             var message = await ReplyAsync("Executing...");
