@@ -4,7 +4,6 @@ using ConnectBot.Templates;
 using Discord;
 using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
-using UNObot.Plugins.TerminalCore;
 
 namespace ConnectBot.Services
 {
@@ -49,9 +48,8 @@ namespace ConnectBot.Services
 
         public Embed Build(EmbedBuilder embed, ICommandContextEx context, bool addColor = true)
         {
-            var r = ThreadSafeRandom.ThisThreadsRandom;
             if (addColor)
-                embed.WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)));
+                embed.WithColor(PluginHelper.RandomColor());
             
             return embed
                 .WithTimestamp(DateTimeOffset.Now)

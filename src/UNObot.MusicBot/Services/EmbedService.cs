@@ -6,7 +6,7 @@ using Discord;
 using Discord.WebSocket;
 using UNObot.MusicBot.MusicCore;
 using UNObot.Plugins;
-using UNObot.Plugins.TerminalCore;
+using UNObot.Plugins.Helpers;
 using YoutubeExplode.Playlists;
 
 namespace UNObot.MusicBot.Services
@@ -29,12 +29,11 @@ namespace UNObot.MusicBot.Services
         {
             var server = _client.GetGuild(serverId).Name;
             var username = _client.GetUser(userId).Username;
-            var r = ThreadSafeRandom.ThisThreadsRandom;
 
             var builder = new EmbedBuilder()
                 .WithTitle(information.Item1)
                 .WithUrl(songUrl)
-                .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
+                .WithColor(PluginHelper.RandomColor())
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
@@ -59,12 +58,11 @@ namespace UNObot.MusicBot.Services
         {
             var username = _client.GetUser(song.RequestedBy).Username;
             var servername = _client.GetGuild(song.RequestedGuild).Name;
-            var r = ThreadSafeRandom.ThisThreadsRandom;
 
             var builder = new EmbedBuilder()
                 .WithTitle(song.Name)
                 .WithUrl(song.Url)
-                .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
+                .WithColor(PluginHelper.RandomColor())
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
@@ -89,14 +87,13 @@ namespace UNObot.MusicBot.Services
         {
             var username = _client.GetUser(userId).Username;
             var servername = _client.GetGuild(serverId).Name;
-            var r = ThreadSafeRandom.ThisThreadsRandom;
             var playlist = await _youtube.GetPlaylist(songUrl);
             var thumbnail = await _youtube.GetPlaylistThumbnail(playlist.Id);
 
             var builder = new EmbedBuilder()
                 .WithTitle(playlist.Title)
                 .WithUrl(playlist.Url)
-                .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
+                .WithColor(PluginHelper.RandomColor())
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
@@ -120,7 +117,6 @@ namespace UNObot.MusicBot.Services
         public Tuple<Embed, int> DisplaySongList(Song nowPlaying, List<Song> songs, int page)
         {
             var containers = new List<StringBuilder>();
-            var r = ThreadSafeRandom.ThisThreadsRandom;
             var server = _client.GetGuild(nowPlaying.RequestedGuild).Name;
 
             var index = 0;
@@ -154,17 +150,17 @@ namespace UNObot.MusicBot.Services
             if (page <= 0 || page > containers.Count)
                 return new Tuple<Embed, int>(null, containers.Count);
             return new Tuple<Embed, int>(
-                DisplaySongList(server, r, page, containers.Count, containers[page - 1], nowPlaying), containers.Count);
+                DisplaySongList(server, page, containers.Count, containers[page - 1], nowPlaying), containers.Count);
         }
 
-        private Embed DisplaySongList(string server, Random r, int page, int maxPages, StringBuilder list,
+        private Embed DisplaySongList(string server, int page, int maxPages, StringBuilder list,
             Song nowPlaying)
         {
             var builder = new EmbedBuilder()
                 .WithTitle("Now Playing")
                 .WithDescription(
                     $"[{nowPlaying.Name}]({nowPlaying.Url}) |``{nowPlaying.Duration} Requested by: {_client.GetUser(nowPlaying.RequestedBy).Username}``")
-                .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
+                .WithColor(PluginHelper.RandomColor())
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {

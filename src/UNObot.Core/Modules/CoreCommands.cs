@@ -4,7 +4,7 @@ using Discord;
 using Discord.Commands;
 using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
-using UNObot.Plugins.TerminalCore;
+using UNObot.Plugins.Helpers;
 
 namespace UNObot.Core.Modules
 {
@@ -23,10 +23,9 @@ namespace UNObot.Core.Modules
         [Alias("ahh", "ahhh", "ahhhh", "commands", "command")]
         public async Task Help()
         {
-            var r = ThreadSafeRandom.ThisThreadsRandom;
             var builder = new EmbedBuilder()
                 .WithTitle("Quick-start guide to UNObot")
-                .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
+                .WithColor(PluginHelper.RandomColor())
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {

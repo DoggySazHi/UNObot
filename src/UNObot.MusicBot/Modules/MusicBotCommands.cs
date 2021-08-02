@@ -5,7 +5,7 @@ using Discord.Commands;
 using UNObot.Plugins.Attributes;
 using UNObot.MusicBot.Services;
 using UNObot.Plugins;
-using UNObot.Plugins.TerminalCore;
+using UNObot.Plugins.Helpers;
 
 namespace UNObot.MusicBot.Modules
 {
@@ -24,10 +24,9 @@ namespace UNObot.MusicBot.Modules
         [Alias("playercommand", "playercommands", "playercmd", "playercmds")]
         public async Task PlayerHelp()
         {
-            var r = ThreadSafeRandom.ThisThreadsRandom;
             var builder = new EmbedBuilder()
                 .WithTitle("Quick-start guide to UNObot-MusicBot")
-                .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
+                .WithColor(PluginHelper.RandomColor())
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
