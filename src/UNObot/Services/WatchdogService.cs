@@ -27,7 +27,7 @@ namespace UNObot.Services
             _watchdog.Elapsed += WatchdogCheck;
         }
         
-        public void InitializeAsync(LoggerService logger)
+        public void Initialize(LoggerService logger)
         {
             _logger = logger;
             _logger.Log(LogSeverity.Info, $"Watchdog woke up! Check delay: {Timeout / 1000} seconds.");

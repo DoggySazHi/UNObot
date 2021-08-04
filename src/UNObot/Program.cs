@@ -33,8 +33,7 @@ namespace UNObot
                 {
                     AlwaysDownloadUsers = true,
                     DefaultRetryMode = RetryMode.AlwaysRetry,
-                    MessageCacheSize = 50,
-                    ExclusiveBulkDelete = true
+                    MessageCacheSize = 50
                 }
             );
             
@@ -52,9 +51,11 @@ namespace UNObot
 
             await _client.LoginAsync(TokenType.Bot, _config.Token);
             await _client.StartAsync();
+            
             await _services.GetRequiredService<CommandHandlingService>().InitializeAsync(_services, logger);
             _services.GetRequiredService<WebhookListenerService>();
-            _services.GetRequiredService<WatchdogService>().InitializeAsync(logger);
+            _services.GetRequiredService<WatchdogService>().Initialize(logger);
+            _services.GetRequiredService<InteractionHandlingService>();
 
             await _client.SetGameAsync($"UNObot {_config.Version}");
             Console.Title = $"UNObot {_config.Version}";
@@ -72,6 +73,7 @@ namespace UNObot
                 .AddSingleton(_client)
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
+                .AddSingleton<InteractionHandlingService>()
                 .AddSingleton<PluginLoaderService>()
                 .AddSingleton<EmbedDisplayService>()
                 .AddSingleton<DatabaseService>()

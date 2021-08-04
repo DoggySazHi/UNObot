@@ -26,12 +26,12 @@ namespace ConnectBot.Services
             client.ReactionAdded += ReactionAdded;
         }
 
-        private async Task ReactionAdded(Cacheable<IUserMessage, ulong> inMessage, ISocketMessageChannel channel, SocketReaction reaction)
+        private async Task ReactionAdded(Cacheable<IUserMessage, ulong> inMessage, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
         {
             var message = await inMessage.GetOrDownloadAsync();
             if (message.Author.Id != _client.CurrentUser.Id) return;
             if (!reaction.User.IsSpecified) return;
-            if (!(channel is ITextChannel serverChannel)) return;
+            if (channel.Value is not ITextChannel serverChannel) return;
             var context =
                 new FakeContext(_client, reaction.User.Value, serverChannel.Guild, message, false) {IsMessage = false};
             var game = await _db.GetGame(context.Guild.Id);
