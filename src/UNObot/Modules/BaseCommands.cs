@@ -82,7 +82,7 @@ namespace UNObot.Modules
         public async Task Help(string cmdSearch)
         {
             var response = "";
-            var cmd = _commands.FindCommand(cmdSearch);
+            var cmd = CommandHandlingService.FindCommand(cmdSearch);
             if(cmd == null)
             {
                 await ReplyAsync("Command was not found in the help list.");

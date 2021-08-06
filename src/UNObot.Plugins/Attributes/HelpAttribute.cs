@@ -3,11 +3,14 @@ using Newtonsoft.Json;
 
 namespace UNObot.Plugins.Attributes
 {
+    /// <summary>
+    /// Annotate help information upon a command.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
     public class HelpAttribute : Attribute
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="T:UNObot.Services.HelpAttribute" /> class.
+        /// Create a <see cref="HelpAttribute"/> to help aid the user understand the command they're running.
         /// </summary>
         /// <param name="usages">Usages of the command.</param>
         /// <param name="helpMsg">HelpAttribute message.</param>

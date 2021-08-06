@@ -35,17 +35,18 @@ namespace UNObot.Misc.Modules
                 .WithButton("Button D", "d", ButtonStyle.Success, Emote.Parse("<:reimudab:613573307710701608>"))
                 .Build();
             var c2 = new ComponentBuilder()
-                .WithSelectMenu(new SelectMenuBuilder().WithCustomId("bruh")
+                .WithSelectMenu(new SelectMenuBuilder().WithCustomId("character-select")
                 .WithOptions(new List<SelectMenuOptionBuilder>
                 {
                     new SelectMenuOptionBuilder("Reimu", "reimu").WithDescription("poor").WithEmote(Emote.Parse("<:reimuthink:629869106006327303>")),
                     new SelectMenuOptionBuilder("Marisa", "marisa").WithDescription("ordinary magician").WithEmote(Emote.Parse("<:marisapout:806912521503375391>")),
                     new SelectMenuOptionBuilder("Sanae", "sanae").WithDescription("snek").WithEmote(Emote.Parse("<:sanaepout:732061262539915338>")),
                     new SelectMenuOptionBuilder("Sakuya", "succuya").WithDescription("knives and pads").WithEmote(new Emoji("🔪")),
+                    new SelectMenuOptionBuilder("Momiji", "momizi").WithDescription("awoo").WithEmote(Emote.Parse("<:momijithink:584209739978899466>")),
                     new SelectMenuOptionBuilder("Cute", "bruh").WithDescription("It's true").WithEmote(new Emoji("❤️"))
                 })
                 .WithPlaceholder("Pick some characters")
-                .WithMaxValues(5)
+                .WithMaxValues(6)
             );
             await ReplyAsync("Test Message 1", component: c1);
             await ReplyAsync("Test Message 2", component: c2.Build());

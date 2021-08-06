@@ -76,12 +76,37 @@ namespace UNObot.Services
         private async Task MessageReceived(SocketMessage rawMessage)
         {
             // Ignore system messages and messages from bots
-            if (!(rawMessage is SocketUserMessage message)) return;
-            if (message.Source != MessageSource.User) return;
+            if (rawMessage is not SocketUserMessage { Source: MessageSource.User } message) return;
 
-            var argPos = 0;
             var context = new SocketCommandContext(_discord, message);
 
+            if (!await EnforcementPermitsMessage(context)) return;
+            
+            if (!context.IsPrivate)
+                await _db.RegisterServer(context.Guild.Id);
+            await _db.RegisterUser(context.User.Id, context.User.Username);
+            
+            var argPos = await IsUserCommand(context);
+            if (argPos < 0)
+                return;
+
+            try
+            {
+                var success = GetProvider(context, argPos, out var provider);
+                if(!success)
+                    await context.Channel.SendMessageAsync(
+                        "This command cannot be run in DMs. Please try again in a server.");
+                else
+                    await _commands.ExecuteAsync(context, argPos, provider);
+            }
+            catch (Exception e)
+            {
+                _logger.Log(LogSeverity.Error, "While attempting to execute a command, we got an error!", e);
+            }
+        }
+
+        private async Task<bool> EnforcementPermitsMessage(SocketCommandContext context)
+        {
             if (!context.IsPrivate && await _db.ChannelEnforced(context.Guild.Id))
             {
                 //start check
@@ -105,30 +130,28 @@ namespace UNObot.Services
                 }
                 else if (!allowedChannels.Contains(context.Channel.Id))
                 {
-                    return;
+                    return false;
                 }
             }
 
-            if (!(context.IsPrivate && message.HasCharPrefix('.', ref argPos)) && // If it's in a DM, forcibly use '.' prefix
-                !(!context.IsPrivate && message.HasStringPrefix(await _db.GetPrefix(context.Guild.Id), ref argPos)) && // If it's in a server, query DB.
-                !message.HasMentionPrefix(_discord.CurrentUser, ref argPos)) return; // Look for mentions.
+            return true;
+        }
 
-            if (!context.IsPrivate)
-                await _db.RegisterServer(context.Guild.Id);
-            await _db.RegisterUser(context.User.Id, context.User.Username);
-            try
+        private async Task<int> IsUserCommand(SocketCommandContext context)
+        {
+            var argPos = -1;
+
+            if (context.Message.HasMentionPrefix(_discord.CurrentUser, ref argPos))
+                return argPos;
+            
+            if (context.IsPrivate) // If it's in a DM, forcibly use '.' prefix
             {
-                var success = GetProvider(context, argPos, out var provider);
-                if(!success)
-                    await context.Channel.SendMessageAsync(
-                        "This command cannot be run in DMs. Please try again in a server.");
-                else
-                    await _commands.ExecuteAsync(context, argPos, provider);
+                context.Message.HasCharPrefix('.', ref argPos);
+                return argPos;
             }
-            catch (Exception e)
-            {
-                _logger.Log(LogSeverity.Error, "While attempting to execute a command, we got an error!", e);
-            }
+
+            context.Message.HasStringPrefix(await _db.GetPrefix(context.Guild.Id), ref argPos); // If it's in a server, query DB.
+            return argPos;
         }
 
         private bool GetProvider(SocketCommandContext context, int argPos, out IServiceProvider provider)
@@ -185,7 +208,7 @@ namespace UNObot.Services
             }
         }
 
-        public Command FindCommand(string name)
+        public static Command FindCommand(string name)
         {
             var index = _loaded.FindIndex(o => o.CommandName == name);
             var index2 = _loaded.FindIndex(o => o.Aliases.Contains(name));
@@ -309,6 +332,7 @@ namespace UNObot.Services
         {
             ((IDisposable) _commands)?.Dispose();
             _discord?.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }
