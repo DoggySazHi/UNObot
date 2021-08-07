@@ -49,7 +49,7 @@ namespace UNObot.Modules
                     if (response.Length > 1996)
                     {
                         oldResponse += "```";
-                        await Context.Message.Author.SendMessageAsync(oldResponse);
+                        await Context.User.SendMessageAsync(oldResponse);
                         response = "```";
                         response += $"- {cmd.CommandName}: {cmd.Help}\n";
                         if (cmd.Usages.Count > 0)
@@ -65,13 +65,13 @@ namespace UNObot.Modules
                 {
                     response = oldResponse;
                     response += "```";
-                    await Context.Message.Author.SendMessageAsync(response);
+                    await Context.User.SendMessageAsync(response);
                     response = "```\n";
                 }
             }
 
             response += "```";
-            await Context.Message.Author.SendMessageAsync(response);
+            await Context.User.SendMessageAsync(response);
         }
 
         [Command("help", RunMode = RunMode.Async)]

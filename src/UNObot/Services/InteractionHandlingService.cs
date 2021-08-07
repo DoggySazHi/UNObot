@@ -16,9 +16,10 @@ namespace UNObot.Services
             if (arg is SocketSlashCommand command)
             {
                 await command.RespondAsync(
-                    "Interaction received!" +
+                    "Interaction received!\n" +
                     $"Command: {command.Data.Name}\n" +
-                    $"Arguments: {command.Data.Options.Aggregate("", (a, b) => $"{a} ({b.Name}, {b.Value})")}",
+                    $"Arguments: {command.Data.Options.Aggregate("", (a, b) => $"{a} ({b.Name}, {b.Value})")}\n" +
+                    $"Message ID: {(await command.GetOriginalResponseAsync()).Id}",
                     ephemeral: true
                 );
             }

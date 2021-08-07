@@ -107,7 +107,10 @@ namespace UNObot.Services
         
         private async Task InteractionCreated(SocketInteraction arg)
         {
-            
+            if (arg is not SocketSlashCommand command) return;
+            if (command.User.IsBot || command.User.IsWebhook) return;
+
+            var context = new UNObotCommandContext(_discord, arg.User, null, arg.Channel);
         }
 
         private async Task<bool> EnforcementPermitsMessage(UNObotCommandContext context)
