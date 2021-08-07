@@ -52,5 +52,11 @@ namespace UNObot.Misc.Modules
             await ReplyAsync("Test Message 1", component: c1);
             await ReplyAsync("Test Message 2", component: c2.Build());
         }
+
+        [Command("mukyu", RunMode = RunMode.Async)]
+        public async Task Mukyu(bool thing, bool otherThing = false)
+        {
+            await ReplyAsync($"Received command! {thing} {otherThing}");
+        }
     }
 }

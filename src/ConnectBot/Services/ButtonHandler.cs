@@ -33,7 +33,7 @@ namespace ConnectBot.Services
             if (!reaction.User.IsSpecified) return;
             if (channel.Value is not ITextChannel serverChannel) return;
             var context =
-                new UNObotCommandContext(_client, reaction.User.Value as SocketUser, serverChannel.Guild as SocketGuild, message as SocketUserMessage, false);
+                new UNObotCommandContext(_client, reaction.User.Value as SocketUser, serverChannel.Guild as SocketGuild, message as SocketUserMessage, channel.Value as ISocketMessageChannel, false);
             var game = await _db.GetGame(context.Guild.Id);
             if (game.Queue.GameStarted() && game.Queue.CurrentPlayer().Player == reaction.UserId)
             {

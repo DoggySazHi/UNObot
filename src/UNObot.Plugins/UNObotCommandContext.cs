@@ -28,18 +28,18 @@ namespace UNObot.Plugins
         
         public bool IsMessage { get; }
 
-        public UNObotCommandContext(DiscordSocketClient client, SocketUser user, SocketGuild guild, SocketUserMessage message, bool isPrivate)
+        public UNObotCommandContext(DiscordSocketClient client, SocketUser user, SocketGuild guild, SocketUserMessage message, ISocketMessageChannel channel, bool isPrivate)
         {
             Client = client;
             User = user;
             Guild = guild;
-            Channel = message.Channel;
+            Channel = channel;
             Message = message;
             IsPrivate = isPrivate;
         }
         
         public UNObotCommandContext(DiscordSocketClient discord, SocketUser user, SocketUserMessage message, ISocketMessageChannel channel)
-            : this(discord, user, channel is IPrivateChannel ? null : (channel as SocketGuildChannel)?.Guild, message, channel is IPrivateChannel)
+            : this(discord, user, channel is IPrivateChannel ? null : (channel as SocketGuildChannel)?.Guild, message, channel, channel is IPrivateChannel)
         {
             IsMessage = message != null;
         }
