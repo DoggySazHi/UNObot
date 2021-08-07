@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using ConnectBot.Templates;
 using Discord;
 using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
@@ -16,7 +15,7 @@ namespace ConnectBot.Services
             _db = db;
         }
         
-        public async Task DisplayHelp(ICommandContextEx context)
+        public async Task DisplayHelp(IUNObotCommandContext context)
         {
             var help = new EmbedBuilder()
                 .WithTitle("Quick-start guide to ConnectBot")
@@ -31,7 +30,7 @@ namespace ConnectBot.Services
             await context.Channel.SendMessageAsync(embed: Build(help, context));
         }
 
-        public async Task SetUserBoardDefaults(ICommandContextEx fakeContext, string[] args)
+        public async Task SetUserBoardDefaults(IUNObotCommandContext fakeContext, string[] args)
         {
             if (args.Length != 4)
             {
@@ -73,7 +72,7 @@ namespace ConnectBot.Services
             await SuccessEmbed(fakeContext, $"Updated your board dimensions to a {width}x{height} with a required connection of {connect}!");
         }
 
-        public async Task GetStats(ICommandContextEx context, string[] args)
+        public async Task GetStats(IUNObotCommandContext context, string[] args)
         {
             if (args.Length == 1)
             {
@@ -104,7 +103,7 @@ namespace ConnectBot.Services
             await DisplayStats(context, userid);
         }
 
-        private async Task DisplayStats(ICommandContextEx context, ulong user)
+        private async Task DisplayStats(IUNObotCommandContext context, ulong user)
         {
             var (gamesJoined, gamesPlayed, gamesWon) = await _db.GetStats(user);
             var (defaultWidth, defaultHeight, defaultConnect) = await _db.GetDefaultBoardDimensions(user);

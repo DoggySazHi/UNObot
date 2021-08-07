@@ -11,7 +11,7 @@ using UNObot.Services;
 
 namespace UNObot.Modules
 {
-    public class SettingsCommands : ModuleBase<SocketCommandContext>
+    public class SettingsCommands : ModuleBase<UNObotCommandContext>
     {
         private readonly IUNObotConfig _config;
         private readonly DatabaseService _db;

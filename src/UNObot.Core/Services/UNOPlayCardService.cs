@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Discord.Commands;
 using UNObot.Core.UNOCore;
+using UNObot.Plugins;
 
 namespace UNObot.Core.Services
 {
@@ -16,7 +16,7 @@ namespace UNObot.Core.Services
             _queue = queue;
         }
         
-        public async Task<string> Play(string color, string value, string wild, SocketCommandContext context)
+        public async Task<string> Play(string color, string value, string wild, UNObotCommandContext context)
         {
             var player = context.User.Id;
             var server = context.Guild.Id;

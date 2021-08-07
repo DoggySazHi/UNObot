@@ -1,12 +1,12 @@
 ﻿using System.Threading.Tasks;
 using ConnectBot.Services;
-using ConnectBot.Templates;
 using Discord.Commands;
+using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
 
 namespace ConnectBot.Modules
 {
-    public class MainCommands : ModuleBase<SocketCommandContext>
+    public class MainCommands : ModuleBase<UNObotCommandContext>
     {
         private readonly GameService _game;
         private readonly ConfigService _cs;
@@ -25,7 +25,7 @@ namespace ConnectBot.Modules
         public async Task ConnectBot()
         {
             await _db.AddUser(Context.User.Id);
-            await _cs.DisplayHelp(new FakeContext(Context));
+            await _cs.DisplayHelp(Context);
         }
         
         [DisableDMs]
@@ -38,33 +38,33 @@ namespace ConnectBot.Modules
             switch (args[0])
             {
                 case "join":
-                    await _game.JoinGame(new FakeContext(Context));
+                    await _game.JoinGame(Context);
                     break;
                 case "leave":
-                    await _game.LeaveGame(new FakeContext(Context));
+                    await _game.LeaveGame(Context);
                     break;
                 case "start":
-                    await _game.StartGame(new FakeContext(Context), args);
+                    await _game.StartGame(Context, args);
                     break;
                 case "game":
-                    await _game.DisplayGame(new FakeContext(Context));
+                    await _game.DisplayGame(Context);
                     break;
                 case "drop":
-                    await _game.DropPiece(new FakeContext(Context), args);
+                    await _game.DropPiece(Context, args);
                     break;
                 case "board":
-                    await _cs.SetUserBoardDefaults(new FakeContext(Context), args);
+                    await _cs.SetUserBoardDefaults(Context, args);
                     break;
                 case "queue":
-                    await _game.GetQueue(new FakeContext(Context));
+                    await _game.GetQueue(Context);
                     break;
                 case "userinfo":
                 case "stats":
-                    await _cs.GetStats(new FakeContext(Context), args);
+                    await _cs.GetStats(Context, args);
                     break;
                 case "help":
                 case "":
-                    await _cs.DisplayHelp(new FakeContext(Context));
+                    await _cs.DisplayHelp(Context);
                     break;
             }
         }

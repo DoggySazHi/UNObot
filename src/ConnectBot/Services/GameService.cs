@@ -31,7 +31,7 @@ namespace ConnectBot.Services
             SettingsManager.RegisterSettings("ConnectBot", settings);
         }
 
-        public async Task DisplayGame(ICommandContextEx context)
+        public async Task DisplayGame(IUNObotCommandContext context)
         {
             var game = await _db.GetGame(context.Guild.Id);
 
@@ -46,7 +46,7 @@ namespace ConnectBot.Services
 
         private static bool _working;
 
-        private async Task DisplayGame(ICommandContextEx context, Game game, string text = null, bool force = false)
+        private async Task DisplayGame(IUNObotCommandContext context, Game game, string text = null, bool force = false)
         {
             var queue = game.Queue;
             var board = game.Board;
@@ -139,7 +139,7 @@ namespace ConnectBot.Services
             await _db.UpdateGame(game);
         }
 
-        public async Task JoinGame(ICommandContextEx context)
+        public async Task JoinGame(IUNObotCommandContext context)
         {
             var game = await _db.GetGame(context.Guild.Id);
             var queue = game.Queue;
@@ -161,7 +161,7 @@ namespace ConnectBot.Services
             await _db.UpdateGame(game);
         }
 
-        public async Task LeaveGame(ICommandContextEx context)
+        public async Task LeaveGame(IUNObotCommandContext context)
         {
             var game = await _db.GetGame(context.Guild.Id);
             var queue = game.Queue;
@@ -194,7 +194,7 @@ namespace ConnectBot.Services
             await ErrorEmbed(context, "You are not in the queue or a game!");
         }
         
-        public async Task StartGame(ICommandContextEx context, string[] args)
+        public async Task StartGame(IUNObotCommandContext context, string[] args)
         {
             var game = await _db.GetGame(context.Guild.Id);
             var queue = game.Queue;
@@ -240,7 +240,7 @@ namespace ConnectBot.Services
             await NextGame(context, game, true);
         }
 
-        private async Task NextGame(ICommandContextEx context, Game game, bool newGame = false)
+        private async Task NextGame(IUNObotCommandContext context, Game game, bool newGame = false)
         {
             var board = game.Board;
             var queue = game.Queue;
@@ -280,7 +280,7 @@ namespace ConnectBot.Services
             await _db.UpdateGame(game);
         }
 
-        public async Task DropPiece(ICommandContextEx context, string[] args)
+        public async Task DropPiece(IUNObotCommandContext context, string[] args)
         {
             var game = await _db.GetGame(context.Guild.Id);
             _afk.ResetTimer(context);
@@ -333,7 +333,7 @@ namespace ConnectBot.Services
             }
         }
 
-        public async Task GetQueue(FakeContext context)
+        public async Task GetQueue(UNObotCommandContext context)
         {
             var game = await _db.GetGame(context.Guild.Id);
             

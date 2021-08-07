@@ -451,7 +451,7 @@ namespace UNObot.MusicBot.MusicCore
                     AutoReset = false,
                     Enabled = true
                 };
-                _autoDcTimer.Elapsed += async (_, _) => { await DisposeAsync(); };
+                _autoDcTimer.Elapsed += (_, _) => { DisposeAsync().GetAwaiter().GetResult(); };
             }
         }
 

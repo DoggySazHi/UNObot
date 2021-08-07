@@ -2,12 +2,13 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
+using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
 using UNObot.Services;
 
 namespace UNObot.Modules
 {
-    public class PluginConfigCommands : ModuleBase<SocketCommandContext>
+    public class PluginConfigCommands : ModuleBase<UNObotCommandContext>
     {
         private readonly PluginLoaderService _pluginService;
 

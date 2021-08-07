@@ -4,12 +4,13 @@ using Discord;
 using Discord.Commands;
 using UNObot.Core.Services;
 using UNObot.Core.UNOCore;
+using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
 using UNObot.Plugins.TerminalCore;
 
 namespace UNObot.Core.Modules
 {
-    public class UNOCommands : ModuleBase<SocketCommandContext>
+    public class UNOCommands : ModuleBase<UNObotCommandContext>
     {
         private readonly UNOPlayCardService _playCard;
         private readonly DatabaseService _db;

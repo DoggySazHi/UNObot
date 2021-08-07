@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using ConnectBot.Templates;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using UNObot.Plugins;
 
 namespace ConnectBot.Services
 {
@@ -15,7 +15,7 @@ namespace ConnectBot.Services
         private readonly DatabaseService _db;
         public DropPiece Callback;
 
-        public delegate Task DropPiece(ICommandContextEx context, string[] args);
+        public delegate Task DropPiece(IUNObotCommandContext context, string[] args);
 
         public ButtonHandler(DiscordSocketClient client, DatabaseService db)
         {
@@ -33,7 +33,7 @@ namespace ConnectBot.Services
             if (!reaction.User.IsSpecified) return;
             if (channel.Value is not ITextChannel serverChannel) return;
             var context =
-                new FakeContext(_client, reaction.User.Value, serverChannel.Guild, message, false) {IsMessage = false};
+                new UNObotCommandContext(_client, reaction.User.Value as SocketUser, serverChannel.Guild as SocketGuild, message as SocketUserMessage, false);
             var game = await _db.GetGame(context.Guild.Id);
             if (game.Queue.GameStarted() && game.Queue.CurrentPlayer().Player == reaction.UserId)
             {

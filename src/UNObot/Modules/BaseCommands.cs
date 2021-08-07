@@ -9,15 +9,13 @@ using UNObot.Services;
 
 namespace UNObot.Modules
 {
-    public class BaseCommands : ModuleBase<SocketCommandContext>
+    public class BaseCommands : ModuleBase<UNObotCommandContext>
     {
         private readonly IUNObotConfig _config;
-        private readonly CommandHandlingService _commands;
         
-        public BaseCommands(IUNObotConfig config, CommandHandlingService commands)
+        public BaseCommands(IUNObotConfig config)
         {
             _config = config;
-            _commands = commands;
         }
         
         [Command("info", RunMode = RunMode.Async), Alias("version")]

@@ -79,7 +79,6 @@ namespace UNObot
                 .AddSingleton<DatabaseService>()
                 .AddSingleton<ShellService>()
                 .AddSingleton<WebhookListenerService>()
-                .AddSingleton<GoogleTranslateService>()
                 .AddSingleton<WatchdogService>()
 #if DEBUG
                 .AddSingleton<DebugService>()

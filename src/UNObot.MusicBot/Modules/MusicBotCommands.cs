@@ -9,7 +9,7 @@ using UNObot.Plugins.Helpers;
 
 namespace UNObot.MusicBot.Modules
 {
-    public class MusicBotCommands : ModuleBase<SocketCommandContext>
+    public class MusicBotCommands : ModuleBase<UNObotCommandContext>
     {
         private readonly MusicBotService _music;
         private readonly IUNObotConfig _config;

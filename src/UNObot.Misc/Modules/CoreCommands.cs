@@ -3,10 +3,11 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using UNObot.Misc.Services;
+using UNObot.Plugins;
 
 namespace UNObot.Misc.Modules
 {
-    public class CoreCommands : ModuleBase<SocketCommandContext>
+    public class CoreCommands : ModuleBase<UNObotCommandContext>
     {
         private readonly DatabaseService _db;
         

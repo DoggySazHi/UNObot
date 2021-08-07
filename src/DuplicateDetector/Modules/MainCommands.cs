@@ -3,11 +3,12 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using DuplicateDetector.Services;
+using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
 
 namespace DuplicateDetector.Modules
 {
-    public class MainCommands : ModuleBase<SocketCommandContext>
+    public class MainCommands : ModuleBase<UNObotCommandContext>
     {
         private readonly IndexerService _indexer;
         

@@ -9,7 +9,7 @@ using UNObot.Plugins.Helpers;
 
 namespace UNObot.Modules
 {
-    public class FunCommands : ModuleBase<SocketCommandContext>
+    public class FunCommands : ModuleBase<UNObotCommandContext>
     {
         private readonly ILogger _logger;
         

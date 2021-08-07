@@ -36,6 +36,7 @@ namespace UNObot.Services
             _provider = provider;
             _commands.CommandExecuted += CommandExecuted;
             _discord.MessageReceived += MessageReceived;
+            _discord.InteractionCreated += InteractionCreated;
             _loaded = new List<Command>();
         }
 
@@ -69,7 +70,7 @@ namespace UNObot.Services
         public async Task RemoveModulesAsync(Assembly assembly)
         {
             foreach(var type in assembly.GetTypes())
-                if(typeof(ModuleBase<SocketCommandContext>).IsAssignableFrom(type))
+                if(typeof(ModuleBase<UNObotCommandContext>).IsAssignableFrom(type))
                     await _commands.RemoveModuleAsync(type);
         }
 
@@ -78,8 +79,7 @@ namespace UNObot.Services
             // Ignore system messages and messages from bots
             if (rawMessage is not SocketUserMessage { Source: MessageSource.User } message) return;
 
-            var context = new SocketCommandContext(_discord, message);
-
+            var context = new UNObotCommandContext(_discord, message);
             if (!await EnforcementPermitsMessage(context)) return;
             
             if (!context.IsPrivate)
@@ -104,8 +104,13 @@ namespace UNObot.Services
                 _logger.Log(LogSeverity.Error, "While attempting to execute a command, we got an error!", e);
             }
         }
+        
+        private async Task InteractionCreated(SocketInteraction arg)
+        {
+            
+        }
 
-        private async Task<bool> EnforcementPermitsMessage(SocketCommandContext context)
+        private async Task<bool> EnforcementPermitsMessage(UNObotCommandContext context)
         {
             if (!context.IsPrivate && await _db.ChannelEnforced(context.Guild.Id))
             {
@@ -137,7 +142,7 @@ namespace UNObot.Services
             return true;
         }
 
-        private async Task<int> IsUserCommand(SocketCommandContext context)
+        private async Task<int> IsUserCommand(UNObotCommandContext context)
         {
             var argPos = -1;
 
@@ -154,7 +159,7 @@ namespace UNObot.Services
             return argPos;
         }
 
-        private bool GetProvider(SocketCommandContext context, int argPos, out IServiceProvider provider)
+        private bool GetProvider(UNObotCommandContext context, int argPos, out IServiceProvider provider)
         {
             provider = _provider;
 
