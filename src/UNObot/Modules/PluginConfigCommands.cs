@@ -40,7 +40,7 @@ namespace UNObot.Modules
         [RequireOwner]
         [Command("plugins", RunMode = RunMode.Async), Alias("pl")]
         [Help(new[] {".plugins (mode)"}, "Get all plugins loaded in the bot.", true, "UNObot 4.1.8")]
-        public async Task Plugin(string mode, [Remainder] string plugin)
+        public async Task Plugins(string mode, [Remainder] string plugin)
         {
             switch (mode.Trim().ToLower())
             {

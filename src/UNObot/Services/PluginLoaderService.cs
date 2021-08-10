@@ -84,6 +84,8 @@ namespace UNObot.Services
             _plugins.RemoveAll(o => !o.Loaded);
             _logger.Log(LogSeverity.Info, $"Loaded {Plugins.Count} plugins!");
             _init = true;
+
+            _commands.RegisterCommands().GetAwaiter().GetResult();
         }
 
         private Assembly LoadPlugin(string path)
@@ -213,6 +215,7 @@ namespace UNObot.Services
             await _commands.ClearHelp();
             foreach (var plugin in _plugins)
                 await _commands.LoadHelp(plugin.PluginAssembly, plugin.Plugin?.Services);
+            await _commands.RegisterCommands();
         }
     }
 }

@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using Discord.Net;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
@@ -285,18 +286,20 @@ namespace UNObot.Services
             foreach (var type in types)
             foreach (var module in type.GetMethods().Concat(type.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)))
             {
-                var helpAtt = module.GetCustomAttribute(typeof(HelpAttribute)) as HelpAttribute;
-                var aliasAtt = module.GetCustomAttribute(typeof(AliasAttribute)) as AliasAttribute;
-                var disableDmsAtt = module.GetCustomAttribute(typeof(DisableDMsAttribute)) as DisableDMsAttribute;
-                var ownerOnlyAtt = module.GetCustomAttribute(typeof(RequireOwnerAttribute)) as RequireOwnerAttribute;
+                var helpAtt = module.GetCustomAttribute<HelpAttribute>();
+                var aliasAtt = module.GetCustomAttribute<AliasAttribute>();
+                var disableDmsAtt = module.GetCustomAttribute<DisableDMsAttribute>();
+                var ownerOnlyAtt = module.GetCustomAttribute<RequireOwnerAttribute>();
 
                 var aliases = new List<string>();
-                //check if it is a command
-                if (!(module.GetCustomAttribute(typeof(CommandAttribute)) is CommandAttribute nameAtt)) continue;
 
-                // var foundHelp = helpAtt == null ? "Missing help." : "Found help.";
+                if (module.GetCustomAttribute(typeof(CommandAttribute)) is not CommandAttribute nameAtt) continue;
+
+                var slashCommandAtt = module.GetCustomAttribute<SlashCommandAttribute>();
+                if (slashCommandAtt != null)
+                    CreateCommand(slashCommandAtt, ownerOnlyAtt);
+
                 var disabledForDMs = disableDmsAtt != null;
-                // _logger.Log(LogSeverity.Verbose, $"Loaded \"{nameAtt.Text}\". {foundHelp}");
                 var positionCmd = _loaded.FindIndex(o => o.CommandName == nameAtt.Text && !o.Original);
                 if (aliasAtt?.Aliases != null)
                     aliases = aliasAtt.Aliases.ToList();
@@ -348,17 +351,17 @@ namespace UNObot.Services
                     foreach (var c in JsonConvert.DeserializeObject<List<Command>>(json))
                     {
                         var index = _loaded.FindIndex(o => o.CommandName == c.CommandName);
-                        if (index >= 0 && _loaded[index].Help == "No help is given for this command.")
+                        switch (index)
                         {
-                            _loaded[index] = c;
-                        }
-                        else if (index < 0)
-                        {
-                            _logger.Log(LogSeverity.Warning,
-                                "A command was added that isn't in UNObot's code. It will be added to the help list, but will not be active.");
-                            var newCommand = c;
-                            newCommand.Active = false;
-                            _loaded.Add(newCommand);
+                            case >= 0 when _loaded[index].Help == "No help is given for this command.":
+                                _loaded[index] = c;
+                                break;
+                            case < 0:
+                                _logger.Log(LogSeverity.Warning,
+                                    "A command was added that isn't in UNObot's code. It will be added to the help list, but will not be active.");
+                                c.Active = false;
+                                _loaded.Add(c);
+                                break;
                         }
                     }
                 }
@@ -371,6 +374,51 @@ namespace UNObot.Services
         {
             _loaded.Clear();
             await LoadHelp(Assembly.GetEntryAssembly(), _provider, true);
+        }
+
+        private readonly Dictionary<ulong, List<SlashCommandCreationProperties>> _slashCommands = new();
+
+        private void CreateCommand(SlashCommandAttribute attribute, RequireOwnerAttribute owner)
+        {
+            if (attribute is not { RegisterSlashCommand: true }) return;
+            var builder = attribute.Builder ?? new SlashCommandBuilder();
+
+            if (builder.Name == null)
+                builder.WithName(attribute.Text);
+
+            var commands = !_slashCommands.ContainsKey(attribute.Guild) ?
+                new List<SlashCommandCreationProperties>()
+                : _slashCommands[attribute.Guild];
+
+            builder.WithDefaultPermission(owner == null);
+            
+            commands.Add(builder.Build());
+            
+            // If it's new, it'll set it. Otherwise, it'll just place the same reference.
+            _slashCommands[attribute.Guild] = commands;
+        }
+
+        public async Task RegisterCommands()
+        {
+            try
+            {
+                foreach (var guild in _slashCommands.Keys)
+                {
+                    if (guild == 0)
+                        await _discord.Rest.BulkOverwriteGlobalCommands(_slashCommands[0].ToArray());
+                    else
+                        await _discord.Rest.BulkOverwriteGuildCommands(_slashCommands[guild].ToArray(), guild);
+                }
+            }
+            catch (ApplicationCommandException exception)
+            {
+                var json = JsonConvert.SerializeObject(exception.Error, Formatting.Indented);
+                _logger.Log(LogSeverity.Error, $"Error trying to create a slash command!\n{json}");
+            }
+            finally
+            {
+                _slashCommands.Clear();
+            }
         }
 
         public void Dispose()

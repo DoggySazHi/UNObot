@@ -55,7 +55,6 @@ namespace UNObot
             await _services.GetRequiredService<CommandHandlingService>().InitializeAsync(_services, logger);
             _services.GetRequiredService<WebhookListenerService>();
             _services.GetRequiredService<WatchdogService>().Initialize(logger);
-            _services.GetRequiredService<InteractionHandlingService>();
 
             await _client.SetGameAsync($"UNObot {_config.Version}");
             Console.Title = $"UNObot {_config.Version}";
@@ -73,7 +72,6 @@ namespace UNObot
                 .AddSingleton(_client)
                 .AddSingleton<CommandService>()
                 .AddSingleton<CommandHandlingService>()
-                .AddSingleton<InteractionHandlingService>()
                 .AddSingleton<PluginLoaderService>()
                 .AddSingleton<EmbedDisplayService>()
                 .AddSingleton<DatabaseService>()
