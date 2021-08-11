@@ -17,7 +17,7 @@ using UNObot.Templates;
 
 namespace UNObot.Services
 {
-    public class CommandHandlingService : IDisposable
+    public partial class CommandHandlingService : IDisposable
     {
         private readonly CommandService _commands;
         private readonly DiscordSocketClient _discord;
@@ -48,6 +48,7 @@ namespace UNObot.Services
             await AddModulesAsync(Assembly.GetEntryAssembly(), original: true);
             _discord.ReactionAdded += async (message, _, emote) => 
                 await PluginHelper.DeleteReact(_discord, await message.GetOrDownloadAsync(), emote);
+            InitializeHelpers();
         }
         
         public async Task<IEnumerable<ModuleInfo>> AddModulesAsync(Assembly assembly, IServiceCollection services = null, bool original = false)
@@ -297,7 +298,7 @@ namespace UNObot.Services
 
                 var slashCommandAtt = module.GetCustomAttribute<SlashCommandAttribute>();
                 if (slashCommandAtt != null)
-                    CreateCommand(slashCommandAtt, ownerOnlyAtt);
+                    CreateCommand(module, helpAtt, slashCommandAtt, ownerOnlyAtt);
 
                 var disabledForDMs = disableDmsAtt != null;
                 var positionCmd = _loaded.FindIndex(o => o.CommandName == nameAtt.Text && !o.Original);
@@ -378,7 +379,7 @@ namespace UNObot.Services
 
         private readonly Dictionary<ulong, List<SlashCommandCreationProperties>> _slashCommands = new();
 
-        private void CreateCommand(SlashCommandAttribute attribute, RequireOwnerAttribute owner)
+        private void CreateCommand(MethodInfo method, HelpAttribute help, SlashCommandAttribute attribute, RequireOwnerAttribute owner)
         {
             if (attribute is not { RegisterSlashCommand: true }) return;
             var builder = attribute.Builder ?? new SlashCommandBuilder();
@@ -386,16 +387,61 @@ namespace UNObot.Services
             if (builder.Name == null)
                 builder.WithName(attribute.Text);
 
+            if (help != null && !string.IsNullOrWhiteSpace(help.HelpMsg))
+                builder.WithDescription(help.HelpMsg);
+            else
+                builder.WithDescription("No description is provided about this command.");
+
             var commands = !_slashCommands.ContainsKey(attribute.Guild) ?
                 new List<SlashCommandCreationProperties>()
                 : _slashCommands[attribute.Guild];
 
             builder.WithDefaultPermission(owner == null);
+
+            var parameters = method.GetParameters();
+
+            // Eh, why not set null even if parameters.Length is zero.
+            if (builder.Options == null || builder.Options.Count < parameters.Length)
+                builder.Options = parameters.Length == 0 ? null : parameters.Select(o =>
+                    {
+                        var temp = new SlashCommandOptionBuilder()
+                            .WithName(o.Name)
+                            .WithRequired(!o.IsOptional);
+
+                        if (o.ParameterType == typeof(bool))
+                            temp.WithType(ApplicationCommandOptionType.Boolean);
+                        else if (o.ParameterType == typeof(sbyte) ||
+                                 o.ParameterType == typeof(byte) ||
+                                 o.ParameterType == typeof(short) ||
+                                 o.ParameterType == typeof(ushort) ||
+                                 o.ParameterType == typeof(int) ||
+                                 o.ParameterType == typeof(uint) ||
+                                 o.ParameterType == typeof(long))
+                            temp.WithType(ApplicationCommandOptionType.Integer);
+                        else if (IsDerivedFrom(o.ParameterType, typeof(IUser)))
+                            temp.WithType(ApplicationCommandOptionType.User);
+                        else if (IsDerivedFrom(o.ParameterType, typeof(IRole)))
+                            temp.WithType(ApplicationCommandOptionType.Role);
+                        else if (IsDerivedFrom(o.ParameterType, typeof(IChannel)))
+                            temp.WithType(ApplicationCommandOptionType.Channel);
+                        else if (IsDerivedFrom(o.ParameterType, typeof(IMentionable)))
+                            temp.WithType(ApplicationCommandOptionType.Mentionable);
+                        else
+                            temp.WithType(ApplicationCommandOptionType.String);
+
+                        return temp;
+                    }
+                ).ToList();
             
             commands.Add(builder.Build());
             
             // If it's new, it'll set it. Otherwise, it'll just place the same reference.
             _slashCommands[attribute.Guild] = commands;
+        }
+
+        private bool IsDerivedFrom(Type derivedType, Type baseType)
+        {
+            return derivedType.IsSubclassOf(baseType) || derivedType == baseType;
         }
 
         public async Task RegisterCommands()
@@ -405,9 +451,17 @@ namespace UNObot.Services
                 foreach (var guild in _slashCommands.Keys)
                 {
                     if (guild == 0)
+                    {
                         await _discord.Rest.BulkOverwriteGlobalCommands(_slashCommands[0].ToArray());
+                        // foreach (var command in _slashCommands[0])
+                        //     await _discord.Rest.CreateGlobalCommand(command);
+                    }
                     else
+                    {
                         await _discord.Rest.BulkOverwriteGuildCommands(_slashCommands[guild].ToArray(), guild);
+                        // foreach (var command in _slashCommands[guild])
+                        //     await _discord.Rest.CreateGuildCommand(command, guild);
+                    }
                 }
             }
             catch (ApplicationCommandException exception)

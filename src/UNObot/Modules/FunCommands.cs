@@ -107,17 +107,9 @@ namespace UNObot.Modules
             await BaseReact(numMessages, emote);
         }
 
-        [Command("calculateemote", RunMode = RunMode.Async)]
-        [RequireOwner]
-        [DisableDMs]
-        public async Task CalculateEmote([Remainder] string input)
-        {
-            await ReplyAsync($"Server: ``{Context.Guild.Id}`` emoteID: ``{input}``").ConfigureAwait(false);
-        }
-
         [Command("say", RunMode = RunMode.Async)]
         [RequireOwner]
-        public async Task Emote([Remainder] string input)
+        public async Task Say([Remainder] string input)
         {
             try
             {
@@ -137,7 +129,7 @@ namespace UNObot.Modules
             {
                 if (ulong.TryParse(input, out _))
                     input = $"<:a:{input}>"; // Why can't we just use the ID directly?
-                IEmote emote = Discord.Emote.Parse(input);
+                IEmote emote = Emote.Parse(input);
                 await BaseReact(numMessages, emote);
             }
             catch (Exception)

@@ -28,7 +28,7 @@ namespace UNObot.Modules
             await ReplyAsync(output);
         }
         
-        [Command("fullhelp", RunMode = RunMode.Async), Alias("help")]
+        [SlashCommand("fullhelp", RunMode = RunMode.Async), Alias("help")]
         [Help(new[] {".fullhelp"}, "If you need help using help, you're truly lost.", true, "UNObot 1.0")]
         public async Task FullHelp()
         {
