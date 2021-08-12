@@ -1,29 +1,17 @@
-﻿using System;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Net;
-using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using UNObot.Plugins;
 
 namespace UNObot.Services
 {
     public partial class CommandHandlingService
     {
-        static HttpClient _client = new ();
         private bool _waitRegister;
         private bool _ready;
 
         private void InitializeHelpers()
         {
-            _client.BaseAddress = new Uri("https://discord.com/api/v9/");
-            _client.DefaultRequestHeaders.Accept.Clear();
-            _client.DefaultRequestHeaders.Accept.Add(
-                new MediaTypeWithQualityHeaderValue("application/json"));
-            var token = _provider.GetRequiredService<IUNObotConfig>().Token;
-            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Authorization", $"Bot {token}");
             _discord.Ready += OnReady;
         }
 
