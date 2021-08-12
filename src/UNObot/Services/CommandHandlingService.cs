@@ -444,37 +444,6 @@ namespace UNObot.Services
             return derivedType.IsSubclassOf(baseType) || derivedType == baseType;
         }
 
-        public async Task RegisterCommands()
-        {
-            try
-            {
-                foreach (var guild in _slashCommands.Keys)
-                {
-                    if (guild == 0)
-                    {
-                        await _discord.Rest.BulkOverwriteGlobalCommands(_slashCommands[0].ToArray());
-                        // foreach (var command in _slashCommands[0])
-                        //     await _discord.Rest.CreateGlobalCommand(command);
-                    }
-                    else
-                    {
-                        await _discord.Rest.BulkOverwriteGuildCommands(_slashCommands[guild].ToArray(), guild);
-                        // foreach (var command in _slashCommands[guild])
-                        //     await _discord.Rest.CreateGuildCommand(command, guild);
-                    }
-                }
-            }
-            catch (ApplicationCommandException exception)
-            {
-                var json = JsonConvert.SerializeObject(exception.Error, Formatting.Indented);
-                _logger.Log(LogSeverity.Error, $"Error trying to create a slash command!\n{json}");
-            }
-            finally
-            {
-                _slashCommands.Clear();
-            }
-        }
-
         public void Dispose()
         {
             ((IDisposable) _commands)?.Dispose();

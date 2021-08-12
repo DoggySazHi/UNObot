@@ -48,13 +48,12 @@ namespace UNObot
             _logger.Log(LogSeverity.Info, "UNObot Launcher 3.0");
 
             _client.Log += logger.LogDiscord;
-
-            await _client.LoginAsync(TokenType.Bot, _config.Token);
-            await _client.StartAsync();
-            
             await _services.GetRequiredService<CommandHandlingService>().InitializeAsync(_services, logger);
             _services.GetRequiredService<WebhookListenerService>();
             _services.GetRequiredService<WatchdogService>().Initialize(logger);
+
+            await _client.LoginAsync(TokenType.Bot, _config.Token);
+            await _client.StartAsync();
 
             await _client.SetGameAsync($"UNObot {_config.Version}");
             Console.Title = $"UNObot {_config.Version}";
