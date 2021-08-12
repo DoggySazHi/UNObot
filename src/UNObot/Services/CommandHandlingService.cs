@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Discord.Net;
 using Discord.WebSocket;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
@@ -133,7 +132,7 @@ namespace UNObot.Services
             
             try
             {
-                var message = $"{command.Data.Name}{command.Data.Options.Aggregate("", (a, b) => $"{a} {b.Value}")}";
+                var message = $"{command.Data.Name}{(command.Data?.Options == null ? "" : command.Data.Options.Aggregate("", (a, b) => $"{a} {b.Value}"))}";
                 var success = GetProvider(message, context.IsPrivate, 0, out var provider);
                 if(!success)
                     await command.RespondAsync(
@@ -386,6 +385,7 @@ namespace UNObot.Services
 
             if (builder.Name == null)
                 builder.WithName(attribute.Text);
+            builder.Name = builder.Name.ToLower();
 
             if (help != null && !string.IsNullOrWhiteSpace(help.HelpMsg))
                 builder.WithDescription(help.HelpMsg);
@@ -405,7 +405,8 @@ namespace UNObot.Services
                 builder.Options = parameters.Length == 0 ? null : parameters.Select(o =>
                     {
                         var temp = new SlashCommandOptionBuilder()
-                            .WithName(o.Name)
+                            .WithName(o.Name?.ToLower() ?? "" + (char) (o.Position + 'a'))
+                            .WithDescription("A value.")
                             .WithRequired(!o.IsOptional);
 
                         if (o.ParameterType == typeof(bool))
