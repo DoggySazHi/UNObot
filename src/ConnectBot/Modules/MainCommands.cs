@@ -6,7 +6,7 @@ using UNObot.Plugins.Attributes;
 
 namespace ConnectBot.Modules
 {
-    public class MainCommands : ModuleBase<UNObotCommandContext>
+    public class MainCommands : UNObotModule<UNObotCommandContext>
     {
         private readonly GameService _game;
         private readonly ConfigService _cs;

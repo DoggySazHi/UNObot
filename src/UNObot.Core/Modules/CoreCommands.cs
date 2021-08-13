@@ -8,7 +8,7 @@ using UNObot.Plugins.Helpers;
 
 namespace UNObot.Core.Modules
 {
-    public class CoreCommands : ModuleBase<UNObotCommandContext>
+    public class CoreCommands : UNObotModule<UNObotCommandContext>
     {
         private readonly ILogger _logger;
         private readonly IUNObotConfig _config;

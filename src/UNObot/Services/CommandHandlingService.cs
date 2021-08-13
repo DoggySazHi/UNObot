@@ -71,7 +71,7 @@ namespace UNObot.Services
         public async Task RemoveModulesAsync(Assembly assembly)
         {
             foreach(var type in assembly.GetTypes())
-                if(typeof(ModuleBase<UNObotCommandContext>).IsAssignableFrom(type))
+                if(typeof(UNObotModule<UNObotCommandContext>).IsAssignableFrom(type))
                     await _commands.RemoveModuleAsync(type);
         }
 
@@ -117,7 +117,7 @@ namespace UNObot.Services
             if (arg is not SocketSlashCommand command) return;
             if (command.User.IsBot || command.User.IsWebhook) return;
 
-            var context = new UNObotCommandContext(_discord, arg.User, null, arg.Channel);
+            var context = new UNObotCommandContext(_discord, arg);
             
             var enforcementMessage = await EnforcementPermitsMessage(context);
             if (enforcementMessage != null)

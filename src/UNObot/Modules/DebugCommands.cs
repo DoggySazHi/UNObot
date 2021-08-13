@@ -10,7 +10,7 @@ using UNObot.Services;
 
 namespace UNObot.Modules
 {
-    public class DebugCommands : ModuleBase<UNObotCommandContext>
+    public class DebugCommands : UNObotModule<UNObotCommandContext>
     {
         private readonly ILogger _logger;
         private readonly ShellService _shell;

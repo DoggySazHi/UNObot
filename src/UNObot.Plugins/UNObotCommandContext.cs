@@ -17,6 +17,7 @@ namespace UNObot.Plugins
         public ISocketMessageChannel Channel { get; }
         public SocketUser User { get; }
         public SocketUserMessage Message { get; }
+        public SocketInteraction Interaction { get; }
 
         IDiscordClient ICommandContext.Client => Client;
         IGuild ICommandContext.Guild => Guild;
@@ -48,6 +49,12 @@ namespace UNObot.Plugins
             : this(discord, message.Author, message, message.Channel)
         {
             
+        }
+        
+        public UNObotCommandContext(DiscordSocketClient discord, SocketInteraction interaction)
+            : this(discord, interaction.User, null, interaction.Channel)
+        {
+            Interaction = interaction;
         }
     }
 }

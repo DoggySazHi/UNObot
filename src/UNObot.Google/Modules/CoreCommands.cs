@@ -9,7 +9,7 @@ using UNObot.Plugins.Helpers;
 
 namespace UNObot.Google.Modules
 {
-    public class CoreCommands : ModuleBase<UNObotCommandContext>
+    public class CoreCommands : UNObotModule<UNObotCommandContext>
     {
         private readonly GoogleSearchService _google;
         private readonly IUNObotConfig _config;

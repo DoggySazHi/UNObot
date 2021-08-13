@@ -11,7 +11,7 @@ using static UNObot.ServerQuery.Queries.IRCON;
 
 namespace UNObot.ServerQuery.Modules
 {
-    public class ServerCommands : ModuleBase<UNObotCommandContext>
+    public class ServerCommands : UNObotModule<UNObotCommandContext>
     {
         private const string TooLong = "[Message is too long; trimmed.]\n";
 

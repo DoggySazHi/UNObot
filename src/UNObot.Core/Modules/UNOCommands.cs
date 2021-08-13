@@ -10,7 +10,7 @@ using UNObot.Plugins.TerminalCore;
 
 namespace UNObot.Core.Modules
 {
-    public class UNOCommands : ModuleBase<UNObotCommandContext>
+    public class UNOCommands : UNObotModule<UNObotCommandContext>
     {
         private readonly UNOPlayCardService _playCard;
         private readonly DatabaseService _db;

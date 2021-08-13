@@ -8,7 +8,7 @@ using UNObot.Services;
 
 namespace UNObot.Modules
 {
-    public class PluginConfigCommands : ModuleBase<UNObotCommandContext>
+    public class PluginConfigCommands : UNObotModule<UNObotCommandContext>
     {
         private readonly PluginLoaderService _pluginService;
 

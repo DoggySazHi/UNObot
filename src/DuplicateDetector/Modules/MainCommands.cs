@@ -8,7 +8,7 @@ using UNObot.Plugins.Attributes;
 
 namespace DuplicateDetector.Modules
 {
-    public class MainCommands : ModuleBase<UNObotCommandContext>
+    public class MainCommands : UNObotModule<UNObotCommandContext>
     {
         private readonly IndexerService _indexer;
         

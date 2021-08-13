@@ -8,7 +8,7 @@ using UNObot.Plugins.Attributes;
 
 namespace UNObot.Misc.Modules
 {
-    public class CoreCommands : ModuleBase<UNObotCommandContext>
+    public class CoreCommands : UNObotModule<UNObotCommandContext>
     {
         private readonly DatabaseService _db;
         

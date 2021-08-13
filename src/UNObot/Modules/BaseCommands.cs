@@ -9,7 +9,7 @@ using UNObot.Services;
 
 namespace UNObot.Modules
 {
-    public class BaseCommands : ModuleBase<UNObotCommandContext>
+    public class BaseCommands : UNObotModule<UNObotCommandContext>
     {
         private readonly IUNObotConfig _config;
         
