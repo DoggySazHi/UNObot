@@ -65,42 +65,44 @@ namespace UNObot.Services
         {
             var optionAttribute = o.GetCustomAttribute<SlashCommandOptionAttribute>();
             
-            var temp = new SlashCommandOptionBuilder().WithName(optionAttribute?.Name ?? o.Name?.ToLower() ?? "" + (char)(o.Position + 'a'))
+            var builder = new SlashCommandOptionBuilder().WithName(optionAttribute?.Name ?? o.Name?.ToLower() ?? "" + (char)(o.Position + 'a'))
                 .WithDescription(optionAttribute?.Description ?? "A value.")
                 .WithRequired(optionAttribute?.Required ?? !o.IsOptional);
 
+            builder.Name = builder.Name.ToLower();
+
             if (optionAttribute?.OptionType != null)
-                temp.WithType(optionAttribute.OptionType);
+                builder.WithType(optionAttribute.OptionType);
             else {
                 if (o.ParameterType == typeof(bool))
-                    temp.WithType(ApplicationCommandOptionType.Boolean);
+                    builder.WithType(ApplicationCommandOptionType.Boolean);
                 else if (o.ParameterType == typeof(sbyte) || o.ParameterType == typeof(byte) ||
                          o.ParameterType == typeof(short) || o.ParameterType == typeof(ushort) ||
                          o.ParameterType == typeof(int) || o.ParameterType == typeof(uint) ||
                          o.ParameterType == typeof(long))
-                    temp.WithType(ApplicationCommandOptionType.Integer);
+                    builder.WithType(ApplicationCommandOptionType.Integer);
                 else if (IsDerivedFrom(o.ParameterType, typeof(IUser)))
-                    temp.WithType(ApplicationCommandOptionType.User);
+                    builder.WithType(ApplicationCommandOptionType.User);
                 else if (IsDerivedFrom(o.ParameterType, typeof(IRole)))
-                    temp.WithType(ApplicationCommandOptionType.Role);
+                    builder.WithType(ApplicationCommandOptionType.Role);
                 else if (IsDerivedFrom(o.ParameterType, typeof(IChannel)))
-                    temp.WithType(ApplicationCommandOptionType.Channel);
+                    builder.WithType(ApplicationCommandOptionType.Channel);
                 else if (IsDerivedFrom(o.ParameterType, typeof(IMentionable)))
-                    temp.WithType(ApplicationCommandOptionType.Mentionable);
+                    builder.WithType(ApplicationCommandOptionType.Mentionable);
                 else
-                    temp.WithType(ApplicationCommandOptionType.String);
+                    builder.WithType(ApplicationCommandOptionType.String);
             }
 
             if (optionAttribute?.ChoiceValues != null)
             {
                 for (var i = 0; i < optionAttribute.Choices.Length; ++i)
                     if (optionAttribute.ChoiceValues[i] is int)
-                        temp.AddChoice(optionAttribute.Choices[i].ToString(), (int) optionAttribute.ChoiceValues[i]);
+                        builder.AddChoice(optionAttribute.Choices[i].ToString(), (int) optionAttribute.ChoiceValues[i]);
                     else
-                        temp.AddChoice(optionAttribute.Choices[i].ToString(), optionAttribute.ChoiceValues[i].ToString());
+                        builder.AddChoice(optionAttribute.Choices[i].ToString(), optionAttribute.ChoiceValues[i].ToString());
             }
 
-            return temp;
+            return builder;
         }
 
         private static bool IsDerivedFrom(Type derivedType, Type baseType)

@@ -47,7 +47,7 @@ namespace UNObot.ServerQuery.Modules
         {
             await ReplyAsync(UnturnedReleaseNotes.GetLatestLink());
         }
-
+        
         [Command("slamc", RunMode = RunMode.Async)]
         [Help(new[] {".slamc"}, "Get basic server information about the Slightly Less Average Minecraft server.", true,
             "UNObot 2.4")]
@@ -166,9 +166,12 @@ namespace UNObot.ServerQuery.Modules
             }
         }
 
-        [Command("ouchies", RunMode = RunMode.Async)]
+        [SlashCommand("ouchies", RunMode = RunMode.Async, Guild = 420005591155605535)]
         [Help(new[] {".ouchies (Port)"}, "That must hurt.", true, "UNObot 4.0.12")]
-        public async Task GetOuchies(ushort port)
+        public async Task GetOuchies(
+            [SlashCommandOption("The port associated with the server.", new object[] { "SurvivalA", "SurvivalB" }, new object[] { 29292, 27285 })]
+            ushort port
+        )
         {
             var message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
@@ -224,9 +227,12 @@ namespace UNObot.ServerQuery.Modules
             }
         }
 
-        [Command("locate", RunMode = RunMode.Async)]
+        [SlashCommand("locate", RunMode = RunMode.Async, Guild = 420005591155605535)]
         [Help(new[] {".locate (port)"}, "¿Dónde están?", true, "UNObot 4.0.16")]
-        public async Task GetLocations(ushort port)
+        public async Task GetLocations(
+            [SlashCommandOption("The port associated with the server.", new object[] { "SurvivalA", "SurvivalB", "Creative" }, new object[] { 29292, 27285, 25432 })]
+            ushort port
+        )
         {
             var message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
