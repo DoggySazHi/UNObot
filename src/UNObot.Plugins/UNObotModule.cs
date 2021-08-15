@@ -27,7 +27,5 @@ namespace UNObot.Plugins
             return await unobotContext.Interaction.GetOriginalResponseAsync();
 
         }
-        
-     
     }
 }

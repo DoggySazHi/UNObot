@@ -54,7 +54,7 @@ namespace UNObot.Misc.Modules
             await ReplyAsync("Test Message 2", component: c2.Build());
         }
 
-        [SlashCommand("mukyu", RunMode = RunMode.Async)]
+        [SlashCommand("mukyu", RunMode = RunMode.Async, Guild = 420005591155605535)]
         public async Task Mukyu(bool thing, bool otherThing = false)
         {
             await ReplyAsync($"Received command! {thing} {otherThing}");

@@ -13,6 +13,7 @@ using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
 using UNObot.Plugins.Helpers;
 using UNObot.Templates;
+using ParameterInfo = System.Reflection.ParameterInfo;
 
 namespace UNObot.Services
 {
@@ -381,7 +382,7 @@ namespace UNObot.Services
         private void CreateCommand(MethodInfo method, HelpAttribute help, SlashCommandAttribute attribute, RequireOwnerAttribute owner)
         {
             if (attribute is not { RegisterSlashCommand: true }) return;
-            var builder = attribute.Builder ?? new SlashCommandBuilder();
+            var builder = new SlashCommandBuilder();
 
             if (builder.Name == null)
                 builder.WithName(attribute.Text);
@@ -396,48 +397,40 @@ namespace UNObot.Services
                 new List<SlashCommandCreationProperties>()
                 : _slashCommands[attribute.Guild];
 
-            builder.WithDefaultPermission(owner == null);
+            builder.WithDefaultPermission(owner == null || attribute.DefaultPermission);
 
             var parameters = method.GetParameters();
 
-            // Eh, why not set null even if parameters.Length is zero.
-            if (builder.Options == null || builder.Options.Count < parameters.Length)
-                builder.Options = parameters.Length == 0 ? null : parameters.Select(o =>
-                    {
-                        var temp = new SlashCommandOptionBuilder()
-                            .WithName(o.Name?.ToLower() ?? "" + (char) (o.Position + 'a'))
-                            .WithDescription("A value.")
-                            .WithRequired(!o.IsOptional);
-
-                        if (o.ParameterType == typeof(bool))
-                            temp.WithType(ApplicationCommandOptionType.Boolean);
-                        else if (o.ParameterType == typeof(sbyte) ||
-                                 o.ParameterType == typeof(byte) ||
-                                 o.ParameterType == typeof(short) ||
-                                 o.ParameterType == typeof(ushort) ||
-                                 o.ParameterType == typeof(int) ||
-                                 o.ParameterType == typeof(uint) ||
-                                 o.ParameterType == typeof(long))
-                            temp.WithType(ApplicationCommandOptionType.Integer);
-                        else if (IsDerivedFrom(o.ParameterType, typeof(IUser)))
-                            temp.WithType(ApplicationCommandOptionType.User);
-                        else if (IsDerivedFrom(o.ParameterType, typeof(IRole)))
-                            temp.WithType(ApplicationCommandOptionType.Role);
-                        else if (IsDerivedFrom(o.ParameterType, typeof(IChannel)))
-                            temp.WithType(ApplicationCommandOptionType.Channel);
-                        else if (IsDerivedFrom(o.ParameterType, typeof(IMentionable)))
-                            temp.WithType(ApplicationCommandOptionType.Mentionable);
-                        else
-                            temp.WithType(ApplicationCommandOptionType.String);
-
-                        return temp;
-                    }
-                ).ToList();
+            builder.Options = parameters.Length == 0 ? null : parameters.Select(DefaultOption).ToList();
             
             commands.Add(builder.Build());
             
             // If it's new, it'll set it. Otherwise, it'll just place the same reference.
             _slashCommands[attribute.Guild] = commands;
+        }
+
+        private SlashCommandOptionBuilder DefaultOption(ParameterInfo o)
+        {
+            var temp = new SlashCommandOptionBuilder().WithName(o.Name?.ToLower() ?? "" + (char)(o.Position + 'a'))
+                .WithDescription("A value.")
+                .WithRequired(!o.IsOptional);
+
+            if (o.ParameterType == typeof(bool))
+                temp.WithType(ApplicationCommandOptionType.Boolean);
+            else if (o.ParameterType == typeof(sbyte) || o.ParameterType == typeof(byte) || o.ParameterType == typeof(short) || o.ParameterType == typeof(ushort) || o.ParameterType == typeof(int) || o.ParameterType == typeof(uint) || o.ParameterType == typeof(long))
+                temp.WithType(ApplicationCommandOptionType.Integer);
+            else if (IsDerivedFrom(o.ParameterType, typeof(IUser)))
+                temp.WithType(ApplicationCommandOptionType.User);
+            else if (IsDerivedFrom(o.ParameterType, typeof(IRole)))
+                temp.WithType(ApplicationCommandOptionType.Role);
+            else if (IsDerivedFrom(o.ParameterType, typeof(IChannel)))
+                temp.WithType(ApplicationCommandOptionType.Channel);
+            else if (IsDerivedFrom(o.ParameterType, typeof(IMentionable)))
+                temp.WithType(ApplicationCommandOptionType.Mentionable);
+            else
+                temp.WithType(ApplicationCommandOptionType.String);
+
+            return temp;
         }
 
         private bool IsDerivedFrom(Type derivedType, Type baseType)
