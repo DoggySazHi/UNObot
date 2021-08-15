@@ -40,10 +40,9 @@ namespace UNObot.Plugins.Attributes
     /// <summary>
     /// Provide information about a parameter, used in combination with <see cref="SlashCommandAttribute"/>.
     /// </summary>
-    [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
+    [AttributeUsage(AttributeTargets.Parameter)]
     public class SlashCommandOptionAttribute : Attribute
     {
-        public string Parameter { get; }
         public string Name { get; }
         public string Description { get; }
         public ApplicationCommandOptionType OptionType { get; set; } = ApplicationCommandOptionType.String;
@@ -51,16 +50,22 @@ namespace UNObot.Plugins.Attributes
         /// <inheritdoc cref="SlashCommandBuilder.DefaultPermission"/>
         public bool Required { get; set; } = true;
         
-        private object[] Choices { get; }
-        private object[] ChoiceValues { get; }
+        public object[] Choices { get; }
+        public object[] ChoiceValues { get; }
 
+        /// <summary>
+        /// Identify a parameter for slash command usage.
+        /// </summary>
+        /// <param name="name">The display name of the option.</param>
+        /// <param name="description">The description associated with the option.</param>
+        /// <param name="choices">Display choices for the option. May be null.</param>
+        /// <param name="values">Value choices for the previously defined choices. May be null.</param>
+        /// <exception cref="InvalidOperationException"></exception>
         public SlashCommandOptionAttribute(
-            [NotNull] string parameter,
             [NotNull] string name,
             [NotNull] string description,
             object[] choices = null, object[] values = null)
         {
-            Parameter = parameter;
             Name = name;
             Description = description;
             Choices = choices;
