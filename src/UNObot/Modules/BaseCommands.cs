@@ -18,7 +18,7 @@ namespace UNObot.Modules
             _config = config;
         }
         
-        [Command("info", RunMode = RunMode.Async), Alias("version")]
+        [SlashCommand("info", RunMode = RunMode.Async), Alias("version")]
         [Help(new[] {".info"}, "Get the current version of UNObot.", true, "UNObot 1.0")]
         public async Task Info()
         {
@@ -74,10 +74,13 @@ namespace UNObot.Modules
             await Context.User.SendMessageAsync(response);
         }
 
-        [Command("help", RunMode = RunMode.Async)]
+        [SlashCommand("help", RunMode = RunMode.Async)]
         [Alias("ahh", "ahhh", "ahhhh")]
         [Help(new[] {".help (command)"}, "If you need help using help, you're truly lost.", true, "UNObot 1.0")]
-        public async Task Help(string cmdSearch)
+        public async Task Help(
+            [SlashCommandOption("Get help about this specific command.")]
+            string cmdSearch
+            )
         {
             var response = "";
             var cmd = CommandHandlingService.FindCommand(cmdSearch);

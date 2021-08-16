@@ -84,7 +84,6 @@ namespace ConnectBot.Services
                         });
                         PluginHelper.GhostMessage(context, text).ContinueWithoutAwait(_logger);
                         modSuccess = true;
-                        await _button.ClearReactions(message, currentPlayer);
                     }
                 }
                 catch (HttpException ex)
@@ -101,7 +100,7 @@ namespace ConnectBot.Services
             {
                 var newMessage = await context.Channel.SendMessageAsync(embed: embed);
                 PluginHelper.GhostMessage(context, text).ContinueWithoutAwait(_logger);
-                _button.AddNumbers(newMessage, new Range(1, board.Width + 1)).ContinueWithoutAwait(_logger);
+                _button.AddNumbers(newMessage, board.Width).ContinueWithoutAwait(_logger);
                 game.LastChannel = context.Channel.Id;
                 game.LastMessage = newMessage.Id;
             }

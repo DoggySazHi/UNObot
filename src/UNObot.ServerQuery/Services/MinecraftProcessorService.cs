@@ -113,7 +113,6 @@ namespace UNObot.ServerQuery.Services
                     double[] coordinates = null;
 
                     JToken json;
-                    string exceptionPath = null;
                     using (var textReader = new StringReader(jsonString))
                     using (var jsonReader = new JsonTextReader(textReader))
                     using (var jsonWriter = new JTokenWriter())
@@ -124,27 +123,25 @@ namespace UNObot.ServerQuery.Services
                         }
                         catch (JsonReaderException ex)
                         {
-                            exceptionPath = ex.Path;
+                            var badToken = jsonWriter.Token.SelectToken(ex.Path);
+                            _logger.Log(LogSeverity.Error, $"Error occurred with token: {badToken}");
+
                             _logger.Log(LogSeverity.Error, $@"Error near string: {jsonString.Substring(
                                 Math.Max(0, ex.LinePosition - 10), Math.Min(20, jsonString.Length - ex.LinePosition - 10)
                             )}", ex);
+
+                            throw;
                         }
 
                         json = jsonWriter.Token;
-                    }
-
-                    if (exceptionPath != null)
-                    {
-                        var badToken = json.SelectToken(exceptionPath);
-                        _logger.Log(LogSeverity.Error, $"Error occurred with token: {badToken}");
                     }
 
                     var dimension = json["Dimension"];
                     var position = json["Pos"];
                     var food = json["foodLevel"]?.ToObject<string>() ?? "20";
                     var healthNum = json["Health"]?.ToObject<float>();
-                    var xpLevels = json["XpLevel"].ToObject<int>();
-                    var xpPercent = json["XpP"].ToObject<float>();
+                    var xpLevels = json["XpLevel"]?.ToObject<int>() ?? 0;
+                    var xpPercent = json["XpP"]?.ToObject<float>() ?? 0;
                     var xpPoints = (Exp(xpLevels + 1, 0) - Exp(xpLevels, 0)) * xpPercent;
                     var experience = (int) Exp(xpLevels, (int) Math.Floor(xpPoints));
                     var health = healthNum != null ? Math.Ceiling((float) healthNum).ToString("#") : "20";

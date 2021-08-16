@@ -215,11 +215,11 @@ namespace UNObot.Modules
             }
         }
 
-        [Command("settings", RunMode = RunMode.Async)]
+        [SlashCommand("settings", RunMode = RunMode.Async)]
         [RequireUserPermission(GuildPermission.ManageChannels)]
         [DisableDMs]
         [Help(new[] {".settings"},
-            "Access configurable settings for UNObot.", true, "UNObot 4.3")]
+            "Access configurable settings for UNObot. For moderators only.", true, "UNObot 4.3")]
         public async Task ViewSettings()
         {
             var manager = await _db.GetSettings(Context.Guild.Id);

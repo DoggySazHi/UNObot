@@ -255,7 +255,7 @@ namespace UNObot.ServerQuery.Services
             if (server == null)
             {
                 return EmbedTemplate($"Player Locations of {ip}")
-                    .AddField("Mukyu~", "Invalid port for checking ouchies!")
+                    .AddField("Mukyu~", "Invalid port for checking locations!")
                     .Build();
             }
 
@@ -276,15 +276,21 @@ namespace UNObot.ServerQuery.Services
             foreach (var user in users)
                 if (user.Online)
                 {
-                    playersOnline +=
-                        $"{user.Username} - **X:** {user.Coordinates[0]:N2} **Y:** {user.Coordinates[1]:N2} **Z:** {user.Coordinates[2]:N2} ";
-                    if (user.Coordinates.Length == 4)
-                        playersOnline += user.Coordinates[3] switch
-                        {
-                            1 => "**End**",
-                            -1 => "**Nether**",
-                            _ => "**Overworld**"
-                        };
+                    if (user.Coordinates == null)
+                        playersOnline += $"{user.Username} - Unknown location.";
+                    else
+                    {
+                        playersOnline +=
+                            $"{user.Username} - **X:** {user.Coordinates[0]:N2} **Y:** {user.Coordinates[1]:N2} **Z:** {user.Coordinates[2]:N2} ";
+                        if (user.Coordinates.Length == 4)
+                            playersOnline += user.Coordinates[3] switch
+                            {
+                                1 => "**End**",
+                                -1 => "**Nether**",
+                                _ => "**Overworld**"
+                            };
+                    }
+
                     playersOnline += "\n";
                 }
 
