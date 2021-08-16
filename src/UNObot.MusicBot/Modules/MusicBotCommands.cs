@@ -53,7 +53,7 @@ namespace UNObot.MusicBot.Modules
                 .AddField(".playerloop", "Loop the current song playing.", true)
                 .AddField(".playerloopqueue", "Loop the contents of the queue.", true);
             var embed = builder.Build();
-            await Context.Channel.SendMessageAsync(
+            await Context.ReplyAsync(
                 "",
                 embed: embed);
         }

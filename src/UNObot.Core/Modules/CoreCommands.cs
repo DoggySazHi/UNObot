@@ -55,7 +55,7 @@ namespace UNObot.Core.Modules
                 .AddField(".uno", "You got to call UNO right after placing your second-to-last card!", true)
                 .AddField(".fullhelp", "See an extended listing of commands.\nNice!", true);
             var embed = builder.Build();
-            await Context.Channel.SendMessageAsync(
+            await Context.ReplyAsync(
                 ":+1: got cha fam",
                 embed: embed);
         }

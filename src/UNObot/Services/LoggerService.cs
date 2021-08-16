@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using UNObot.Plugins;
+using UNObot.Plugins.Helpers;
 
 namespace UNObot.Services
 {
@@ -148,7 +149,7 @@ namespace UNObot.Services
             if (message.Exception is CommandException command)
             {
 #if DEBUG
-                var _ = command.Context.Channel.SendMessageAsync($"{command.Message}");
+                var _ = command.Context.ReplyAsync($"{command.Message}");
 #endif
                 textMessage = command.Message;
             }

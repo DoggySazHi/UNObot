@@ -98,7 +98,7 @@ namespace ConnectBot.Services
 
             if (!modSuccess)
             {
-                var newMessage = await context.Channel.SendMessageAsync(embed: embed);
+                var newMessage = await context.ReplyAsync(embed: embed);
                 PluginHelper.GhostMessage(context, text).ContinueWithoutAwait(_logger);
                 _button.AddNumbers(newMessage, board.Width).ContinueWithoutAwait(_logger);
                 game.LastChannel = context.Channel.Id;
@@ -112,13 +112,13 @@ namespace ConnectBot.Services
                 {
                     if (winnerColor == -1)
                     {
-                        await context.Channel.SendMessageAsync("It's a draw... the board is full!");
+                        await context.ReplyAsync("It's a draw... the board is full!");
                     }
                     else
                     {
                         var index = queue.InGame.Values.ToList().FindIndex(o => o == winnerColor);
                         var winner = queue.InGame[index].Key;
-                        await context.Channel.SendMessageAsync($"<@{winner}> won the game!");
+                        await context.ReplyAsync($"<@{winner}> won the game!");
                         _db.UpdateStats(winner, DatabaseService.ConnectBotStat.GamesWon).ContinueWithoutAwait(_logger);
                     }
                     
@@ -273,7 +273,7 @@ namespace ConnectBot.Services
                 if (newGame)
                     await ErrorEmbed(context, "There are not enough players to start a game!");
                 else
-                    await context.Channel.SendMessageAsync("There are no more players in the queue. Join with ``.cbot join``!");
+                    await context.ReplyAsync("There are no more players in the queue. Join with ``.cbot join``!");
             }
             
             await _db.UpdateGame(game);
@@ -346,7 +346,7 @@ namespace ConnectBot.Services
             var embed = new EmbedBuilder()
                 .AddField($"Queue in {context.Guild.Name}", players);
             
-            await context.Channel.SendMessageAsync(embed: Build(embed, context));
+            await context.ReplyAsync(embed: Build(embed, context));
         }
     }
 }

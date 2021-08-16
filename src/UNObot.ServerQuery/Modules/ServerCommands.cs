@@ -445,7 +445,7 @@ namespace UNObot.ServerQuery.Modules
                     RCONStatus.Success => "An existing RCON connection exists for your user. Please close it first.",
                     _ => "I don't know what happened here."
                 };
-                await message.MakeDeletable().ModifyAsync(o => o.Content = error).ConfigureAwait(false);
+                await message.MakeDeletable(Context.User.Id).ModifyAsync(o => o.Content = error).ConfigureAwait(false);
             }
             else
             {
@@ -481,7 +481,7 @@ namespace UNObot.ServerQuery.Modules
             var message = await ReplyAsync("Searching...");
             var success = _query.CloseRCON(Context.User.Id);
             if (!success)
-                await message.MakeDeletable().ModifyAsync(o => o.Content = "Could not find an open connection owned by you.");
+                await message.MakeDeletable(Context.User.Id).ModifyAsync(o => o.Content = "Could not find an open connection owned by you.");
             else
                 await message.ModifyAsync(o => o.Content = "Successfully closed your connection.");
         }
@@ -491,7 +491,7 @@ namespace UNObot.ServerQuery.Modules
             var message = await ReplyAsync("Searching...");
             var success = _query.ExecuteRCON(Context.User.Id, "", out var output);
             if (!success)
-                await message.MakeDeletable().ModifyAsync(o => o.Content = "Could not find an open connection owned by you.");
+                await message.MakeDeletable(Context.User.Id).ModifyAsync(o => o.Content = "Could not find an open connection owned by you.");
             else
                 await message.ModifyAsync(o =>
                     o.Content = $"Connected to {output.Server.Address} on {output.Server.Port}.");
@@ -505,9 +505,9 @@ namespace UNObot.ServerQuery.Modules
                 var success = _embed.UnturnedQueryEmbed(ip, port, out var embed, averages);
                 if (!success || embed == null)
                 {
-                    await message.ModifyAsync(o =>
+                    await message.MakeDeletable(Context.User.Id)
+                        .ModifyAsync(o =>
                         o.Content = "Error: Apparently we couldn't get any information about this server.");
-                    message.MakeDeletable();
                     return;
                 }
 

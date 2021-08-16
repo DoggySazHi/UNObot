@@ -95,14 +95,14 @@ namespace UNObot.Modules
             //end check
             if (allowedChannels.Count == 0)
             {
-                await Context.Channel.SendMessageAsync(
+                await Context.ReplyAsync(
                     "Error: Cannot enable enforcechannels if there are no allowed channels!");
                 return;
             }
 
             if (!await DatabaseExtensions.HasDefaultChannel(_config, Context.Guild.Id))
             {
-                await Context.Channel.SendMessageAsync(
+                await Context.ReplyAsync(
                     "Error: Cannot enable enforcechannels if there is no default channel!");
                 return;
             }

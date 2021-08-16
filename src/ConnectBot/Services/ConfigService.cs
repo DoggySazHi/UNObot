@@ -27,44 +27,44 @@ namespace ConnectBot.Services
                 .AddField(".cbot game", "See the board.", true)
                 .AddField(".cbot stats (user)", "See config options and stats of oneself or others.", true)
                 .AddField(".fullhelp", "See an extended listing of commands.\nNice!", true);
-            await context.Channel.SendMessageAsync(embed: Build(help, context));
+            await context.ReplyAsync(embed: Build(help, context));
         }
 
         public async Task SetUserBoardDefaults(IUNObotCommandContext fakeContext, string[] args)
         {
             if (args.Length != 4)
             {
-                (await ErrorEmbed(fakeContext, "The parameters should be .cbot board [width] [height] [connect].")).MakeDeletable();
+                (await ErrorEmbed(fakeContext, "The parameters should be .cbot board [width] [height] [connect].")).MakeDeletable(fakeContext.User.Id);
                 return;
             }
 
             if (!int.TryParse(args[1], out var width) || width <= 0)
             {
-                (await ErrorEmbed(fakeContext, "The width of the board should be an integer greater than 1!")).MakeDeletable();
+                (await ErrorEmbed(fakeContext, "The width of the board should be an integer greater than 1!")).MakeDeletable(fakeContext.User.Id);
                 return;
             }
             
             if (!int.TryParse(args[2], out var height) || height <= 0)
             {
-                (await ErrorEmbed(fakeContext, "The height of the board should be an integer greater than 1!")).MakeDeletable();
+                (await ErrorEmbed(fakeContext, "The height of the board should be an integer greater than 1!")).MakeDeletable(fakeContext.User.Id);
                 return;
             }
             
             if (!int.TryParse(args[3], out var connect) || connect <= 0)
             {
-                (await ErrorEmbed(fakeContext, "The connect value of the board should be an integer greater than 1!")).MakeDeletable();
+                (await ErrorEmbed(fakeContext, "The connect value of the board should be an integer greater than 1!")).MakeDeletable(fakeContext.User.Id);
                 return;
             }
 
             if (width > 8 || height > 8)
             {
-                (await ErrorEmbed(fakeContext, "The width and height of the board is too large (max 8x8, due to embed restrictions)!")).MakeDeletable();
+                (await ErrorEmbed(fakeContext, "The width and height of the board is too large (max 8x8, due to embed restrictions)!")).MakeDeletable(fakeContext.User.Id);
                 return;
             }
             
             if (connect > width || connect > height || connect > Math.Sqrt(Math.Pow(width, 2) + Math.Pow(height, 2)))
             {
-                (await ErrorEmbed(fakeContext, "The connect length is too long, and cannot fit in the board!")).MakeDeletable();
+                (await ErrorEmbed(fakeContext, "The connect length is too long, and cannot fit in the board!")).MakeDeletable(fakeContext.User.Id);
                 return;
             }
             
@@ -119,7 +119,7 @@ namespace ConnectBot.Services
                     $"Board height: {defaultHeight}\n" +
                     $"Connect length: {defaultConnect}", true);
 
-            await context.Channel.SendMessageAsync(embed: Build(embed, context));
+            await context.ReplyAsync(embed: Build(embed, context));
         }
     }
 }

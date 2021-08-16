@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using UNObot.Plugins.Helpers;
 
 namespace UNObot.Plugins
 {
@@ -19,13 +20,8 @@ namespace UNObot.Plugins
             InteractionResponseType type = InteractionResponseType.ChannelMessageWithSource,
             bool ephemeral = false)
         {
-            if (Context is not UNObotCommandContext { Interaction: { } } unobotContext)
-                return await base.ReplyAsync(message, isTTS, embed, options, allowedMentions, messageReference,
-                    component);
-            await unobotContext.Interaction.RespondAsync(message, isTTS, embed, type, ephemeral, allowedMentions, options, component)
-                .ConfigureAwait(false);
-            return await unobotContext.Interaction.GetOriginalResponseAsync();
-
+            return await Context.ReplyAsync(message, isTTS, embed, options, allowedMentions, messageReference,
+                component, type, ephemeral);
         }
     }
 }

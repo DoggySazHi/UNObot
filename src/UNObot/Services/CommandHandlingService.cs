@@ -45,8 +45,7 @@ namespace UNObot.Services
             _commands.Log += logger.LogCommand;
             _provider = provider;
             await AddModulesAsync(Assembly.GetEntryAssembly(), original: true);
-            _discord.ReactionAdded += async (message, _, emote) => 
-                await PluginHelper.DeleteReact(_discord, await message.GetOrDownloadAsync(), emote);
+            _discord.InteractionCreated += async interaction => await PluginHelper.DeleteReact(interaction, _discord);
             InitializeHelpers();
         }
         
@@ -101,7 +100,7 @@ namespace UNObot.Services
             {
                 var success = GetProvider(context.Message.Content, context.IsPrivate, argPos, out var provider);
                 if(!success)
-                    await context.Channel.SendMessageAsync(
+                    await context.ReplyAsync(
                         "This command cannot be run in DMs. Please try again in a server.");
                 else
                     await _commands.ExecuteAsync(context, argPos, provider);
@@ -171,7 +170,7 @@ namespace UNObot.Services
 
             if (allowedChannels.Count == 0)
             {
-                await context.Channel.SendMessageAsync(
+                await context.ReplyAsync(
                     "Warning: Since there are no channels that allow UNObot to speak normally, channel enforcement has been disabled.");
                 await _db.SetEnforceChannel(context.Guild.Id, false);
             }
@@ -233,16 +232,16 @@ namespace UNObot.Services
                 switch (result.Error.Value)
                 {
                     case CommandError.BadArgCount:
-                        (await context.Channel.SendMessageAsync(
-                            $"Hmm, that's not how it works. Type '<@{context.Client.CurrentUser.Id}> help' for the parameters of your command.")).MakeDeletable();
+                        (await context.ReplyAsync(
+                            $"Hmm, that's not how it works. Type '<@{context.Client.CurrentUser.Id}> help' for the parameters of your command.")).MakeDeletable(context.User.Id);
                         break;
                     case CommandError.ParseFailed:
-                        (await context.Channel.SendMessageAsync(
-                            "You dun goof. If it asks for numbers, type an actual number. If it asks for words, make sure to double quote around it.")).MakeDeletable();
+                        (await context.ReplyAsync(
+                            "You dun goof. If it asks for numbers, type an actual number. If it asks for words, make sure to double quote around it.")).MakeDeletable(context.User.Id);
                         break;
                     case CommandError.MultipleMatches:
-                        (await context.Channel.SendMessageAsync(
-                            $"There are multiple commands with the same name. Type '<@{context.Client.CurrentUser.Id}> help' to see which one you need.")).MakeDeletable();
+                        (await context.ReplyAsync(
+                            $"There are multiple commands with the same name. Type '<@{context.Client.CurrentUser.Id}> help' to see which one you need.")).MakeDeletable(context.User.Id);
                         break;
                     case CommandError.UnmetPrecondition:
                     case CommandError.UnknownCommand:

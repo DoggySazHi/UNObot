@@ -37,23 +37,42 @@ namespace UNObot.Plugins.Helpers
         /// <param name="message">The message to add the react to.</param>
         /// <returns>The same message (used in a chain).</returns>
         public static IUserMessage MakeDeletable(this IUserMessage message)
+            => MakeDeletable(message, 0);
+
+        /// <summary>
+        /// Add a reaction recognizing that the message is deletable.
+        /// </summary>
+        /// <param name="message">The message to add the react to.</param>
+        /// <param name="user">The user allowed to delete the message.</param>
+        /// <returns>The same message (used in a chain).</returns>
+        public static IUserMessage MakeDeletable(this IUserMessage message, ulong user)
         {
-            message.AddReactionAsync(Delete).GetAwaiter().GetResult();
+            message.ModifyAsync(o =>
+                o.Components = new ComponentBuilder()
+                    .WithButton("Delete", $"delete{user}", ButtonStyle.Danger, Delete)
+                    .Build())
+                .ContinueWithoutAwait(_ => {});
             return message;
         }
 
         /// <summary>
-        /// Delete the message if the user deletable reaction has been added.
-        /// Only used internally in the command handler.
+        /// Delete the message if the user-deletable button has been clicked.
+        /// Used internally in the command handler.
         /// </summary>
+        /// <param name="interaction">The interaction sent</param>
         /// <param name="client">The Discord bot client.</param>
-        /// <param name="message">The message to analyze.</param>
-        /// <param name="emote">The reaction that is recognized as the delete emote.</param>
-        public static async Task DeleteReact(DiscordSocketClient client, IUserMessage message, SocketReaction emote)
+        public static async Task DeleteReact(SocketInteraction interaction, DiscordSocketClient client)
         {
-            if (message.Author.Id == client.CurrentUser.Id && emote.UserId != client.CurrentUser.Id &&
-                emote.Emote.Equals(Delete))
-                await message.DeleteAsync();
+            if (interaction is not SocketMessageComponent button) return;
+            var message = await button.GetOriginalResponseAsync();
+            if (message.Author.Id == client.CurrentUser.Id &&
+                button.Data.Type == ComponentType.Button &&
+                button.Data.CustomId.StartsWith("delete"))
+            {
+                var user = ulong.Parse(button.Data.CustomId[6..]);
+                if (button.User.Id == user)
+                    await message.DeleteAsync();
+            }
         }
 
         /// <summary>
@@ -106,14 +125,15 @@ namespace UNObot.Plugins.Helpers
             if (text == null && embed == null)
                 return null;
             IUserMessage message;
+            
             try
             {
-                message = await context.Channel.SendMessageAsync(text, embed: embed);
+                message = await context.ReplyAsync(text, embed: embed);
             }
             catch (CommandException)
             {
                 fallback ??= text;
-                message = await context.Channel.SendMessageAsync(fallback);
+                message = await context.ReplyAsync(fallback);
             }
 
             if (time <= 0)
@@ -121,6 +141,25 @@ namespace UNObot.Plugins.Helpers
             await Task.Delay(time);
             await message.DeleteAsync();
             return null;
+        }
+
+        public static async Task<IUserMessage> ReplyAsync(this ICommandContext context,
+            string message = null,
+            bool isTTS = false,
+            Embed embed = null,
+            RequestOptions options = null,
+            AllowedMentions allowedMentions = null,
+            MessageReference messageReference = null,
+            MessageComponent component = null,
+            InteractionResponseType type = InteractionResponseType.ChannelMessageWithSource,
+            bool ephemeral = false)
+        {
+            if (context is not UNObotCommandContext { Interaction: { } } unobotContext)
+                return await context.ReplyAsync(message, isTTS, embed, options, allowedMentions, messageReference,
+                    component);
+            await unobotContext.Interaction.RespondAsync(message, isTTS, embed, type, ephemeral, allowedMentions, options, component)
+                .ConfigureAwait(false);
+            return await unobotContext.Interaction.GetOriginalResponseAsync();
         }
 
         public static Color RandomColor()
