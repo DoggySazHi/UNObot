@@ -51,9 +51,9 @@ namespace ConnectBot.Services
             var queue = game.Queue;
             var board = game.Board;
 
-            var currentPlayer =
-                await (await context.Client.GetGuildAsync(game.Server)).GetUserAsync(queue.CurrentPlayer().Player);
-            
+            // Something's funky with Discord, I have to download the guild...
+            var currentPlayer = (await (await context.Client.GetGuildAsync(game.Server)).GetUsersAsync()).First(o => o.Id == queue.CurrentPlayer().Player);
+
             if (currentPlayer.Nickname == null)
                 game.Description = $"It is now {currentPlayer.Nickname} ({currentPlayer.Username}#{currentPlayer.Discriminator})'s turn.";
             else
