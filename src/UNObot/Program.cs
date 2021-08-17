@@ -33,7 +33,7 @@ namespace UNObot
                 {
                     AlwaysDownloadUsers = true,
                     DefaultRetryMode = RetryMode.AlwaysRetry,
-                    MessageCacheSize = 50
+                    MessageCacheSize = 50,
                 }
             );
             

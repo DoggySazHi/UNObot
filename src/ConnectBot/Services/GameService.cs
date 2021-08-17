@@ -50,10 +50,14 @@ namespace ConnectBot.Services
         {
             var queue = game.Queue;
             var board = game.Board;
+
             var currentPlayer =
                 await (await context.Client.GetGuildAsync(game.Server)).GetUserAsync(queue.CurrentPlayer().Player);
             
-            game.Description = $"It is now {currentPlayer.Nickname} ({currentPlayer.Username}#{currentPlayer.Discriminator})'s turn.";
+            if (currentPlayer.Nickname == null)
+                game.Description = $"It is now {currentPlayer.Nickname} ({currentPlayer.Username}#{currentPlayer.Discriminator})'s turn.";
+            else
+                game.Description = $"It is now {currentPlayer.Username}#{currentPlayer.Discriminator}'s turn.";
 
             var boardDisplay = game.GameMode.HasFlag(GameMode.Blind)
                 ? "The game is in blind mode!"
