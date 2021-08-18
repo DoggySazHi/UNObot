@@ -157,7 +157,7 @@ namespace UNObot.Plugins.Helpers
             if (context is not UNObotCommandContext { Interaction: { } } unobotContext)
                 return await context.Channel.SendMessageAsync(message, isTTS, embed, options, allowedMentions, messageReference,
                     component);
-            return await unobotContext.Interaction.FollowupAsync(new [] { embed }, message, isTTS, ephemeral, type, allowedMentions, options, component);
+            return await unobotContext.Interaction.FollowupAsync(embed == null ? null : new [] { embed }, message, isTTS, ephemeral, type, allowedMentions, options, component);
         }
 
         public static Color RandomColor()

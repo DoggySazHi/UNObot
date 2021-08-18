@@ -48,7 +48,7 @@ namespace ConnectBot.Services
                     .WithPlaceholder("Pick a column to drop to.")
                     .WithCustomId("unobot")
                     .WithOptions(Enumerable.Range(1, columns)
-                        .Select(p => new SelectMenuOptionBuilder("Column " + p, $"{p - 1}"))
+                        .Select(p => new SelectMenuOptionBuilder("Column " + p, $"{p}"))
                         .ToList()
                     ))
                 .Build());
