@@ -155,11 +155,9 @@ namespace UNObot.Plugins.Helpers
             bool ephemeral = false)
         {
             if (context is not UNObotCommandContext { Interaction: { } } unobotContext)
-                return await context.ReplyAsync(message, isTTS, embed, options, allowedMentions, messageReference,
+                return await context.Channel.SendMessageAsync(message, isTTS, embed, options, allowedMentions, messageReference,
                     component);
-            await unobotContext.Interaction.RespondAsync(message, isTTS, embed, type, ephemeral, allowedMentions, options, component)
-                .ConfigureAwait(false);
-            return await unobotContext.Interaction.GetOriginalResponseAsync();
+            return await unobotContext.Interaction.FollowupAsync(new [] { embed }, message, isTTS, ephemeral, type, allowedMentions, options, component);
         }
 
         public static Color RandomColor()

@@ -34,6 +34,7 @@ namespace UNObot
                     AlwaysDownloadUsers = true,
                     DefaultRetryMode = RetryMode.AlwaysRetry,
                     MessageCacheSize = 50,
+                    AlwaysAcknowledgeInteractions = true
                 }
             );
             
