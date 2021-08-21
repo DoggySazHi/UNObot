@@ -55,13 +55,18 @@ namespace UNObot
 
             await _client.LoginAsync(TokenType.Bot, _config.Token);
             await _client.StartAsync();
+            _client.Ready += SetGame;
 
-            await _client.SetGameAsync($"UNObot {_config.Version}");
             Console.Title = $"UNObot {_config.Version}";
             SafeExitHandler();
             ExitEvent.WaitOne();
             ExitEvent.Dispose();
             OnExit();
+        }
+
+        private async Task SetGame()
+        {
+            await _client.SetGameAsync($"UNObot {_config.Version}");
         }
         
         private ServiceProvider ConfigureServices()
