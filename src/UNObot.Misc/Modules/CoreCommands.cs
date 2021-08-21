@@ -1,41 +1,63 @@
-﻿using System;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Timers;
+using Discord;
 using Discord.Commands;
+using UNObot.Misc.Services;
+using UNObot.Plugins;
+using UNObot.Plugins.Attributes;
 
 namespace UNObot.Misc.Modules
 {
-    public class CoreCommands : ModuleBase<SocketCommandContext>
+    public class CoreCommands : UNObotModule<UNObotCommandContext>
     {
-        [Command("autovf", RunMode = RunMode.Async)]
-        public async Task TestPerms()
+        private readonly DatabaseService _db;
+        
+        public CoreCommands(DatabaseService db)
         {
-            var message = await ReplyAsync("Loading...");
-            using var timer = new Timer {
-                Interval = 5000,
-                Enabled = true
-            };
+            _db = db;
+        }
+        
+        [Command("migrateall", RunMode = RunMode.Async)]
+        [RequireOwner]
+        public async Task MigrateSettings()
+        {
+            var message = await ReplyAsync("Migrating...");
+            await _db.Migrate();
+            await message.ModifyAsync(o => o.Content = "Finished migration.");
+        }
 
-            var current = 0;
-            var total = Context.Guild.Users.Count;
+        [Command("components", RunMode = RunMode.Async)]
+        [RequireOwner]
+        public async Task ComponentTest()
+        {
+            var c1 = new ComponentBuilder()
+                .WithButton("Button A", null, ButtonStyle.Link, url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+                .WithButton("Button B", "b")
+                .WithButton("Button C", "c", ButtonStyle.Danger)
+                .WithButton("Button D", "d", ButtonStyle.Success, Emote.Parse("<:reimudab:613573307710701608>"))
+                .Build();
+            var c2 = new ComponentBuilder()
+                .WithSelectMenu(new SelectMenuBuilder().WithCustomId("character-select")
+                .WithOptions(new List<SelectMenuOptionBuilder>
+                {
+                    new SelectMenuOptionBuilder("Reimu", "reimu").WithDescription("poor").WithEmote(Emote.Parse("<:reimuthink:629869106006327303>")),
+                    new SelectMenuOptionBuilder("Marisa", "marisa").WithDescription("ordinary magician").WithEmote(Emote.Parse("<:marisapout:806912521503375391>")),
+                    new SelectMenuOptionBuilder("Sanae", "sanae").WithDescription("snek").WithEmote(Emote.Parse("<:sanaepout:732061262539915338>")),
+                    new SelectMenuOptionBuilder("Sakuya", "succuya").WithDescription("knives and pads").WithEmote(new Emoji("🔪")),
+                    new SelectMenuOptionBuilder("Momiji", "momizi").WithDescription("awoo").WithEmote(Emote.Parse("<:momijithink:584209739978899466>")),
+                    new SelectMenuOptionBuilder("Cute", "bruh").WithDescription("It's true").WithEmote(new Emoji("❤️"))
+                })
+                .WithPlaceholder("Pick some characters")
+                .WithMaxValues(6)
+            );
+            await ReplyAsync("Test Message 1", component: c1);
+            await ReplyAsync("Test Message 2", component: c2.Build());
+        }
 
-            timer.Elapsed += (_, _) =>
-            {
-                // ReSharper disable once AccessToModifiedClosure
-                message.ModifyAsync(o => o.Content = $"Loading... {current}/{total}");
-            };
-            
-            foreach (var user in Context.Guild.Users)
-            {
-                var role = Context.Guild.Roles.First(o =>
-                    o.Name.Contains("delinquent", StringComparison.InvariantCultureIgnoreCase));
-                await user.AddRoleAsync(role);
-                current++;
-            }
-
-            timer.Stop();
-            await message.ModifyAsync(o => o.Content = $"Finished updating {total} users!");
+        [SlashCommand("mukyu", RunMode = RunMode.Async, Guild = 420005591155605535)]
+        public async Task Mukyu(bool thing, bool otherThing = false)
+        {
+            await ReplyAsync($"Received command! {thing} {otherThing}");
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Discord;
+using Microsoft.Extensions.DependencyInjection;
+using UNObot.Misc.Services;
 using UNObot.Plugins;
 
 namespace UNObot.Misc.Modules
@@ -18,7 +20,8 @@ namespace UNObot.Misc.Modules
             Author = "DoggySazHi";
             Version = "N/A";
 
-            Services = new ServiceCollection();
+            logger.Log(LogSeverity.Debug, "Misc package loaded.");
+            Services = new ServiceCollection().AddTransient<DatabaseService>();
             
             return 0;
         }

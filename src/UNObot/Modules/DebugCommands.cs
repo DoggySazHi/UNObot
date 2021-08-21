@@ -10,16 +10,14 @@ using UNObot.Services;
 
 namespace UNObot.Modules
 {
-    public class DebugCommands : ModuleBase<SocketCommandContext>
+    public class DebugCommands : UNObotModule<UNObotCommandContext>
     {
         private readonly ILogger _logger;
-        private readonly GoogleTranslateService _gts;
         private readonly ShellService _shell;
         
-        public DebugCommands(ILogger logger, GoogleTranslateService gts, ShellService shell)
+        public DebugCommands(ILogger logger, ShellService shell)
         {
             _logger = logger;
-            _gts = gts;
             _shell = shell;
         }
         
@@ -59,11 +57,7 @@ namespace UNObot.Modules
         [Command("exit", RunMode = RunMode.Async)]
         public async Task Exit()
         {
-            if (Context.User.Id == 278524552462598145)
-            {
-                await ReplyAsync("Error: <:patchythink:592817853313581067>");
-            }
-            else if (Context.User.Id == 191397590946807809)
+            if (Context.User.Id == 191397590946807809)
             {
                 await ReplyAsync("Shutting down!");
                 Program.Exit();
@@ -71,12 +65,6 @@ namespace UNObot.Modules
         }
 
 #if DEBUG
-        [Command("translate", RunMode = RunMode.Async)]
-        public async Task Translate(string from, string to, [Remainder] string message)
-        {
-            await ReplyAsync(_gts.Translate(message, from, to)).ConfigureAwait(false);
-        }
-
         [Command("debugstatus", RunMode = RunMode.Async)]
         public async Task DebugStatus()
         {

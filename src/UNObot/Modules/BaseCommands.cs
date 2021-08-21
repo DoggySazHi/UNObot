@@ -9,18 +9,16 @@ using UNObot.Services;
 
 namespace UNObot.Modules
 {
-    public class BaseCommands : ModuleBase<SocketCommandContext>
+    public class BaseCommands : UNObotModule<UNObotCommandContext>
     {
         private readonly IUNObotConfig _config;
-        private readonly CommandHandlingService _commands;
         
-        public BaseCommands(IUNObotConfig config, CommandHandlingService commands)
+        public BaseCommands(IUNObotConfig config)
         {
             _config = config;
-            _commands = commands;
         }
         
-        [Command("info", RunMode = RunMode.Async), Alias("version")]
+        [SlashCommand("info", RunMode = RunMode.Async), Alias("version")]
         [Help(new[] {".info"}, "Get the current version of UNObot.", true, "UNObot 1.0")]
         public async Task Info()
         {
@@ -30,7 +28,7 @@ namespace UNObot.Modules
             await ReplyAsync(output);
         }
         
-        [Command("fullhelp", RunMode = RunMode.Async), Alias("help")]
+        [SlashCommand("fullhelp", RunMode = RunMode.Async), Alias("help")]
         [Help(new[] {".fullhelp"}, "If you need help using help, you're truly lost.", true, "UNObot 1.0")]
         public async Task FullHelp()
         {
@@ -51,7 +49,7 @@ namespace UNObot.Modules
                     if (response.Length > 1996)
                     {
                         oldResponse += "```";
-                        await Context.Message.Author.SendMessageAsync(oldResponse);
+                        await Context.User.SendMessageAsync(oldResponse);
                         response = "```";
                         response += $"- {cmd.CommandName}: {cmd.Help}\n";
                         if (cmd.Usages.Count > 0)
@@ -67,22 +65,25 @@ namespace UNObot.Modules
                 {
                     response = oldResponse;
                     response += "```";
-                    await Context.Message.Author.SendMessageAsync(response);
+                    await Context.User.SendMessageAsync(response);
                     response = "```\n";
                 }
             }
 
             response += "```";
-            await Context.Message.Author.SendMessageAsync(response);
+            await Context.User.SendMessageAsync(response);
         }
 
-        [Command("help", RunMode = RunMode.Async)]
+        [SlashCommand("help", RunMode = RunMode.Async)]
         [Alias("ahh", "ahhh", "ahhhh")]
         [Help(new[] {".help (command)"}, "If you need help using help, you're truly lost.", true, "UNObot 1.0")]
-        public async Task Help(string cmdSearch)
+        public async Task Help(
+            [SlashCommandOption("Get help about this specific command.")]
+            string cmdSearch
+            )
         {
             var response = "";
-            var cmd = _commands.FindCommand(cmdSearch);
+            var cmd = CommandHandlingService.FindCommand(cmdSearch);
             if(cmd == null)
             {
                 await ReplyAsync("Command was not found in the help list.");

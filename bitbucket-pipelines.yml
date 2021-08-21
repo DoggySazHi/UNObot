@@ -23,13 +23,6 @@ pipelines:
             - mv src/UNObot/bin/Release/net5.0/publish src/UNObot/bin/Release/net5.0/UNObot
             - >
               echo "{\"commit\": \"$BITBUCKET_COMMIT\", \"build\":\"$BITBUCKET_BUILD_NUMBER\"}" > src/UNObot/bin/Release/net5.0/UNObot/build.json
-            - pipe: atlassian/scp-deploy:0.3.13
-              variables:
-                USER: 'doggysazhi'
-                SERVER: 'williamle.com'
-                REMOTE_PATH: '/mnt/backup/Projects'
-                LOCAL_PATH: 'src/UNObot/bin/Release/net5.0/UNObot'
-                DEBUG: 'true'
     manualbuild:
       - step:
           caches:
@@ -58,10 +51,3 @@ pipelines:
             - mv src/UNObot/bin/Release/net5.0/publish src/UNObot/bin/Release/net5.0/UNObot
             - >
               echo "{\"commit\": \"$BITBUCKET_COMMIT\", \"build\":\"$BITBUCKET_BUILD_NUMBER\"}" > src/UNObot/bin/Release/net5.0/UNObot/build.json
-            - pipe: atlassian/scp-deploy:0.3.13
-              variables:
-                USER: 'doggysazhi'
-                SERVER: 'williamle.com'
-                REMOTE_PATH: '/mnt/backup/Projects'
-                LOCAL_PATH: 'src/UNObot/bin/Release/net5.0/UNObot'
-                DEBUG: 'true'

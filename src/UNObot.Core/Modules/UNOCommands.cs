@@ -4,12 +4,13 @@ using Discord;
 using Discord.Commands;
 using UNObot.Core.Services;
 using UNObot.Core.UNOCore;
+using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
 using UNObot.Plugins.TerminalCore;
 
 namespace UNObot.Core.Modules
 {
-    public class UNOCommands : ModuleBase<SocketCommandContext>
+    public class UNOCommands : UNObotModule<UNObotCommandContext>
     {
         private readonly UNOPlayCardService _playCard;
         private readonly DatabaseService _db;
@@ -231,7 +232,7 @@ namespace UNObot.Core.Modules
                                 }
 
                             var card = Card.RandomCard();
-                            await Context.Message.Author.SendMessageAsync(
+                            await Context.User.SendMessageAsync(
                                 "You have recieved: " + card.Color + " " + card.Value + ".");
                             await _db.AddCard(Context.User.Id, card);
                             await _db.SetCardsDrawn(Context.Guild.Id, 1);
@@ -273,7 +274,7 @@ namespace UNObot.Core.Modules
                     if (await _db.IsServerInGame(Context.Guild.Id))
                     {
                         var num = (await _db.GetCards(Context.User.Id)).Count;
-                        await Context.Message.Author.SendMessageAsync(
+                        await Context.User.SendMessageAsync(
                             $"You have {num} {(num == 1 ? "card" : "cards")} left.", false,
                             await _embed.DisplayCards(Context.User.Id, Context.Guild.Id));
                         _afk.ResetTimer(Context.Guild.Id);
@@ -460,7 +461,7 @@ namespace UNObot.Core.Modules
                             foreach (var c in playerCards)
                                 if (c.Color == currentCard.Color || c.Value == currentCard.Value)
                                 {
-                                    await Context.Message.Author.SendMessageAsync(
+                                    await Context.User.SendMessageAsync(
                                         "Played the first card that matched the criteria!");
                                     await ReplyAsync(await _playCard.Play(c.Color, c.Value, null, Context));
                                     return;
@@ -491,7 +492,7 @@ namespace UNObot.Core.Modules
                                     foreach (var cardTake in cardsTaken) response += cardTake + "\n";
                                     await ReplyAsync(
                                         $"You have drawn {cardsDrawn} card{(cardsDrawn == 1 ? "" : "s")}.");
-                                    await Context.Message.Author.SendMessageAsync(response);
+                                    await Context.User.SendMessageAsync(response);
                                     await ReplyAsync(await _playCard.Play(rngCard.Color, rngCard.Value, null,
                                         Context));
                                     break;
@@ -503,7 +504,7 @@ namespace UNObot.Core.Modules
                                     response +=
                                         $"\n\nYou have drawn {cardsDrawn} cards, however the autodrawer has stopped at a Wild card." +
                                         $"{(gamemode.HasFlag(GameMode.Retro) ? "If you want to skip, use .skip or .quickplay." : "\nIf you want to draw for a regular card, run the command again.")}";
-                                    await Context.Message.Author.SendMessageAsync(response);
+                                    await Context.User.SendMessageAsync(response);
                                     await _db.SetCardsDrawn(Context.Guild.Id, cardsDrawn);
                                     break;
                                 }
@@ -511,7 +512,7 @@ namespace UNObot.Core.Modules
                                 if (gamemode.HasFlag(GameMode.Retro))
                                 {
                                     await ReplyAsync("You have drawn a card and skipped.");
-                                    await Context.Message.Author.SendMessageAsync($"You have drawn a {rngCard}.");
+                                    await Context.User.SendMessageAsync($"You have drawn a {rngCard}.");
                                     await SkipQP();
                                     break;
                                 }

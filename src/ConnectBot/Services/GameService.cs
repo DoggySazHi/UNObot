@@ -31,7 +31,7 @@ namespace ConnectBot.Services
             SettingsManager.RegisterSettings("ConnectBot", settings);
         }
 
-        public async Task DisplayGame(ICommandContextEx context)
+        public async Task DisplayGame(IUNObotCommandContext context)
         {
             var game = await _db.GetGame(context.Guild.Id);
 
@@ -46,14 +46,18 @@ namespace ConnectBot.Services
 
         private static bool _working;
 
-        private async Task DisplayGame(ICommandContextEx context, Game game, string text = null, bool force = false)
+        private async Task DisplayGame(IUNObotCommandContext context, Game game, string text = null, bool force = false)
         {
             var queue = game.Queue;
             var board = game.Board;
-            var currentPlayer =
-                await (await context.Client.GetGuildAsync(game.Server)).GetUserAsync(queue.CurrentPlayer().Player);
-            
-            game.Description = $"It is now {currentPlayer.Nickname} ({currentPlayer.Username}#{currentPlayer.Discriminator})'s turn.";
+
+            // Something's funky with Discord, I have to download the guild...
+            var currentPlayer = (await (await context.Client.GetGuildAsync(game.Server)).GetUsersAsync()).First(o => o.Id == queue.CurrentPlayer().Player);
+
+            if (currentPlayer.Nickname == null)
+                game.Description = $"It is now {currentPlayer.Nickname} ({currentPlayer.Username}#{currentPlayer.Discriminator})'s turn.";
+            else
+                game.Description = $"It is now {currentPlayer.Username}#{currentPlayer.Discriminator}'s turn.";
 
             var boardDisplay = game.GameMode.HasFlag(GameMode.Blind)
                 ? "The game is in blind mode!"
@@ -84,7 +88,6 @@ namespace ConnectBot.Services
                         });
                         PluginHelper.GhostMessage(context, text).ContinueWithoutAwait(_logger);
                         modSuccess = true;
-                        await _button.ClearReactions(message, currentPlayer);
                     }
                 }
                 catch (HttpException ex)
@@ -99,9 +102,9 @@ namespace ConnectBot.Services
 
             if (!modSuccess)
             {
-                var newMessage = await context.Channel.SendMessageAsync(embed: embed);
+                var newMessage = await context.ReplyAsync(embed: embed);
                 PluginHelper.GhostMessage(context, text).ContinueWithoutAwait(_logger);
-                _button.AddNumbers(newMessage, new Range(1, board.Width + 1)).ContinueWithoutAwait(_logger);
+                _button.AddNumbers(newMessage, board.Width).ContinueWithoutAwait(_logger);
                 game.LastChannel = context.Channel.Id;
                 game.LastMessage = newMessage.Id;
             }
@@ -113,13 +116,13 @@ namespace ConnectBot.Services
                 {
                     if (winnerColor == -1)
                     {
-                        await context.Channel.SendMessageAsync("It's a draw... the board is full!");
+                        await context.ReplyAsync("It's a draw... the board is full!");
                     }
                     else
                     {
                         var index = queue.InGame.Values.ToList().FindIndex(o => o == winnerColor);
                         var winner = queue.InGame[index].Key;
-                        await context.Channel.SendMessageAsync($"<@{winner}> won the game!");
+                        await context.ReplyAsync($"<@{winner}> won the game!");
                         _db.UpdateStats(winner, DatabaseService.ConnectBotStat.GamesWon).ContinueWithoutAwait(_logger);
                     }
                     
@@ -139,7 +142,7 @@ namespace ConnectBot.Services
             await _db.UpdateGame(game);
         }
 
-        public async Task JoinGame(ICommandContextEx context)
+        public async Task JoinGame(IUNObotCommandContext context)
         {
             var game = await _db.GetGame(context.Guild.Id);
             var queue = game.Queue;
@@ -161,7 +164,7 @@ namespace ConnectBot.Services
             await _db.UpdateGame(game);
         }
 
-        public async Task LeaveGame(ICommandContextEx context)
+        public async Task LeaveGame(IUNObotCommandContext context)
         {
             var game = await _db.GetGame(context.Guild.Id);
             var queue = game.Queue;
@@ -194,7 +197,7 @@ namespace ConnectBot.Services
             await ErrorEmbed(context, "You are not in the queue or a game!");
         }
         
-        public async Task StartGame(ICommandContextEx context, string[] args)
+        public async Task StartGame(IUNObotCommandContext context, string[] args)
         {
             var game = await _db.GetGame(context.Guild.Id);
             var queue = game.Queue;
@@ -213,6 +216,9 @@ namespace ConnectBot.Services
             
             game.GameMode = GameMode.Normal;
             foreach (var mode in args[1..])
+            {
+                if (string.IsNullOrWhiteSpace(mode))
+                    continue;
                 switch (mode.ToLower().Trim())
                 {
                     case "blind":
@@ -228,6 +234,7 @@ namespace ConnectBot.Services
                         await ErrorEmbed(context, $"\"{mode}\" is not a valid mode!");
                         return;
                 }
+            }
 
             if (game.GameMode.HasFlag(GameMode.Custom))
             {
@@ -240,7 +247,7 @@ namespace ConnectBot.Services
             await NextGame(context, game, true);
         }
 
-        private async Task NextGame(ICommandContextEx context, Game game, bool newGame = false)
+        private async Task NextGame(IUNObotCommandContext context, Game game, bool newGame = false)
         {
             var board = game.Board;
             var queue = game.Queue;
@@ -274,13 +281,13 @@ namespace ConnectBot.Services
                 if (newGame)
                     await ErrorEmbed(context, "There are not enough players to start a game!");
                 else
-                    await context.Channel.SendMessageAsync("There are no more players in the queue. Join with ``.cbot join``!");
+                    await context.ReplyAsync("There are no more players in the queue. Join with ``.cbot join``!");
             }
             
             await _db.UpdateGame(game);
         }
 
-        public async Task DropPiece(ICommandContextEx context, string[] args)
+        public async Task DropPiece(IUNObotCommandContext context, string[] args)
         {
             var game = await _db.GetGame(context.Guild.Id);
             _afk.ResetTimer(context);
@@ -333,7 +340,7 @@ namespace ConnectBot.Services
             }
         }
 
-        public async Task GetQueue(FakeContext context)
+        public async Task GetQueue(UNObotCommandContext context)
         {
             var game = await _db.GetGame(context.Guild.Id);
             
@@ -347,7 +354,7 @@ namespace ConnectBot.Services
             var embed = new EmbedBuilder()
                 .AddField($"Queue in {context.Guild.Name}", players);
             
-            await context.Channel.SendMessageAsync(embed: Build(embed, context));
+            await context.ReplyAsync(embed: Build(embed, context));
         }
     }
 }

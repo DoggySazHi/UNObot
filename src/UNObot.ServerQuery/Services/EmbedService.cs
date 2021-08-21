@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using Discord;
 using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
-using UNObot.Plugins.TerminalCore;
+using UNObot.ServerQuery.Queries;
 using static UNObot.ServerQuery.Services.MinecraftProcessorService;
 
 namespace UNObot.ServerQuery.Services
@@ -54,7 +55,6 @@ namespace UNObot.ServerQuery.Services
                 return false;
             }
 
-            var random = ThreadSafeRandom.ThisThreadsRandom;
             var serverName = information.Name;
             var serverImageUrl = rules.Rules
                 .FirstOrDefault(o => o.Name.Contains("Browser_Icon", StringComparison.OrdinalIgnoreCase)).Value;
@@ -94,24 +94,10 @@ namespace UNObot.ServerQuery.Services
             if (rocketPluginsExists != -1)
                 rocketModPlugins = rules.Rules[rocketPluginsExists].Value;
 
-            var builder = new EmbedBuilder()
+            var builder = EmbedTemplate($"Server Query of {serverName}")
                 .WithTitle("Description")
                 .WithDescription(serverDescription)
-                .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
-                .WithTimestamp(DateTimeOffset.Now)
-                .WithFooter(footer =>
-                {
-                    footer
-                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
-                        .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
-                })
                 .WithThumbnailUrl(serverImageUrl)
-                .WithAuthor(author =>
-                {
-                    author
-                        .WithName($"Server Query of {serverName}")
-                        .WithIconUrl("https://williamle.com/unobot/unobot.png");
-                })
                 .AddField("IP", ip, true)
                 .AddField("Port", port, true)
                 .AddField("Map", map, true)
@@ -135,7 +121,7 @@ namespace UNObot.ServerQuery.Services
             return true;
         }
 
-        public bool MinecraftQueryEmbed(string ip, ushort port, out Embed result)
+        public async Task<Embed> MinecraftQueryEmbed(string ip, ushort port)
         {
             //TODO with the new option to disable status, it might be that queries work but not simple statuses.
             var defaultStatus = new MCStatus(ip, port);
@@ -143,18 +129,17 @@ namespace UNObot.ServerQuery.Services
 
             if (!defaultStatus.ServerUp && !extendedGet)
             {
-                result = null;
-                return false;
+                return null;
             }
 
             List<MCUser> mcUserInfo = null;
-            if (_query.OutsideServers.Contains(ip) && _query.SpecialServers.ContainsKey(port))
+            var server = await GetSpecialServer(ip, port);
+            
+            if (server != null)
             {
-                var server = _query.SpecialServers[port];
                 mcUserInfo = _minecraft.GetMCUsers(server.Server, server.RCONPort, server.Password, out _);
             }
 
-            var random = ThreadSafeRandom.ThisThreadsRandom;
             var serverDescription = defaultStatus.Motd;
             var playersOnline = defaultStatus.CurrentPlayers == "0" ? "" : "Unknown (server doesn't have query on!)";
 
@@ -179,34 +164,19 @@ namespace UNObot.ServerQuery.Services
                 }
             }
 
-            var builder = new EmbedBuilder()
+            var builder = EmbedTemplate($"Minecraft Server Query of {ip}")
                 .WithTitle("MOTD")
                 .WithDescription(serverDescription)
-                .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
-                .WithTimestamp(DateTimeOffset.Now)
-                .WithFooter(footer =>
-                {
-                    footer
-                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
-                        .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
-                })
-                .WithAuthor(author =>
-                {
-                    author
-                        .WithName($"Minecraft Server Query of {ip}")
-                        .WithIconUrl("https://williamle.com/unobot/unobot.png");
-                })
                 .AddField("IP", ip, true)
                 .AddField("Port", port, true)
                 .AddField("Version", $"{defaultStatus.Version}", true)
                 .AddField("Ping", $"{defaultStatus.Delay} ms", true)
                 .AddField($"Players: {defaultStatus.CurrentPlayers}/{defaultStatus.MaximumPlayers}",
                     string.IsNullOrWhiteSpace(playersOnline) ? "Nobody's online!" : playersOnline, true);
-            result = builder.Build();
-            return true;
+            return builder.Build();
         }
         
-        public bool MinecraftPEQueryEmbed(string ip, ushort port, out Embed result)
+        public Task<Embed> MinecraftPEQueryEmbed(string ip, ushort port)
         {
             var ping = new Stopwatch();
             ping.Start();
@@ -214,89 +184,39 @@ namespace UNObot.ServerQuery.Services
             ping.Stop();
 
             if (!extendedGet)
-            {
-                result = null;
-                return false;
-            }
+                return null;
 
-            List<MCUser> mcUserInfo = null;
-            if (_query.OutsideServers.Contains(ip) && _query.SpecialServers.ContainsKey(port))
-            {
-                var server = _query.SpecialServers[port];
-                mcUserInfo = _minecraft.GetMCUsers(server.Server, server.RCONPort, server.Password, out _);
-            }
-
-            var random = ThreadSafeRandom.ThisThreadsRandom;
             var serverDescription = extendedStatus.Motd;
             
             var playersOnline = "";
             for (var i = 0; i < extendedStatus.Players.Length; i++)
             {
                 playersOnline += $"{extendedStatus.Players[i]}";
-                if (mcUserInfo != null)
-                {
-                    var userInfo = mcUserInfo.Find(o => o.Username == extendedStatus.Players[i]);
-                    if (userInfo != null)
-                        playersOnline +=
-                            $"\n- **Ouchies:** {userInfo.Ouchies} | **Health:** {userInfo.Health} | **Food:** {userInfo.Food}\n- **Experience:** {userInfo.Experience} ({userInfo.ExperienceLevels} levels)";
-                    else
-                        playersOnline += "\n Unknown stats.";
-                }
 
                 if (i != extendedStatus.Players.Length - 1)
                     playersOnline += "\n";
             }
 
-            var builder = new EmbedBuilder()
+            var builder = EmbedTemplate($"Minecraft Server Query of {ip}")
                 .WithTitle("MOTD")
                 .WithDescription(serverDescription)
-                .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
-                .WithTimestamp(DateTimeOffset.Now)
-                .WithFooter(footer =>
-                {
-                    footer
-                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
-                        .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
-                })
-                .WithAuthor(author =>
-                {
-                    author
-                        .WithName($"Minecraft Server Query of {ip}")
-                        .WithIconUrl("https://williamle.com/unobot/unobot.png");
-                })
                 .AddField("IP", ip, true)
                 .AddField("Port", port, true)
                 .AddField("Version", $"{extendedStatus.Version}", true)
                 .AddField("Ping", $"{ping.ElapsedMilliseconds} ms", true)
                 .AddField($"Players: {extendedStatus.Players.Length}/{extendedStatus.MaxPlayers}",
                     string.IsNullOrWhiteSpace(playersOnline) ? "Nobody's online!" : playersOnline, true);
-            result = builder.Build();
-            return true;
+            return Task.Run(builder.Build); // We do a little bit of tom-foolery.
         }
 
-        public bool OuchiesEmbed(string ip, ushort port, out Embed result)
+        public async Task<Embed> OuchiesEmbed(string ip, ushort port)
         {
-            var random = ThreadSafeRandom.ThisThreadsRandom;
-
-            if (!_query.OutsideServers.Contains(ip) || !_query.SpecialServers.ContainsKey(port))
+            var server = await GetSpecialServer(ip, port);
+            
+            if (server == null)
             {
-                result = new EmbedBuilder()
-                    .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
-                    .WithTimestamp(DateTimeOffset.Now)
-                    .WithFooter(footer =>
-                    {
-                        footer
-                            .WithText($"UNObot {_config.Version} - By DoggySazHi")
-                            .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
-                    })
-                    .WithAuthor(author =>
-                    {
-                        author
-                            .WithName($"Ouchies of {ip}")
-                            .WithIconUrl("https://williamle.com/unobot/unobot.png");
-                    })
+                return EmbedTemplate($"Ouchies of {ip}")
                     .AddField("Mukyu~", "Invalid port for checking ouchies!").Build();
-                return true;
             }
 
             MinecraftStatus status = null;
@@ -307,11 +227,9 @@ namespace UNObot.ServerQuery.Services
 
             if (!extendedGet || status == null)
             {
-                result = null;
-                return false;
+                return null;
             }
 
-            var server = _query.SpecialServers[port];
             var ouchies = _minecraft.GetMCUsers(server.Server, server.RCONPort, server.Password, out _);
 
             var playersOnline = "";
@@ -320,54 +238,25 @@ namespace UNObot.ServerQuery.Services
                 playersOnline += $"{item.Username} - {item.Ouchies} Ouchies\n";
             // Doesn't seem to affect embeds. PlayersOnline = PlayersOnline.Substring(0, PlayersOnline.Length - 1);
 
-            var builder = new EmbedBuilder()
+            var builder = EmbedTemplate($"Ouchies of {ip}")
                 .WithTitle("MOTD")
                 .WithDescription(status.Motd)
-                .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
-                .WithTimestamp(DateTimeOffset.Now)
-                .WithFooter(footer =>
-                {
-                    footer
-                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
-                        .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
-                })
-                .WithAuthor(author =>
-                {
-                    author
-                        .WithName($"Ouchies of {ip}")
-                        .WithIconUrl("https://williamle.com/unobot/unobot.png");
-                })
                 .AddField("IP", ip, true)
                 .AddField("Port", port, true)
                 .AddField("Version", $"{status.Version}", true)
                 .AddField("Ouchies Listing", playersOnline, true);
-            result = builder.Build();
-            return true;
+            return builder.Build();
         }
 
-        public bool LocationsEmbed(string ip, ushort port, out Embed result)
+        public async Task<Embed> LocationsEmbed(string ip, ushort port)
         {
-            var random = ThreadSafeRandom.ThisThreadsRandom;
-
-            if (!_query.OutsideServers.Contains(ip) || !_query.SpecialServers.ContainsKey(port))
+            var server = await GetSpecialServer(ip, port);
+            
+            if (server == null)
             {
-                result = new EmbedBuilder()
-                    .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
-                    .WithTimestamp(DateTimeOffset.Now)
-                    .WithFooter(footer =>
-                    {
-                        footer
-                            .WithText($"UNObot {_config.Version} - By DoggySazHi")
-                            .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
-                    })
-                    .WithAuthor(author =>
-                    {
-                        author
-                            .WithName($"Player Locations of {ip}")
-                            .WithIconUrl("https://williamle.com/unobot/unobot.png");
-                    })
-                    .AddField("Mukyu~", "Invalid port for checking ouchies!").Build();
-                return true;
+                return EmbedTemplate($"Player Locations of {ip}")
+                    .AddField("Mukyu~", "Invalid port for checking locations!")
+                    .Build();
             }
 
             MinecraftStatus status = null;
@@ -378,26 +267,30 @@ namespace UNObot.ServerQuery.Services
 
             if (!extendedGet || status == null)
             {
-                result = null;
-                return false;
+                return null;
             }
 
-            var server = _query.SpecialServers[port];
             var users = _minecraft.GetMCUsers(server.Server, server.RCONPort, server.Password, out _);
 
             var playersOnline = "";
             foreach (var user in users)
                 if (user.Online)
                 {
-                    playersOnline +=
-                        $"{user.Username} - **X:** {user.Coordinates[0]:N2} **Y:** {user.Coordinates[1]:N2} **Z:** {user.Coordinates[2]:N2} ";
-                    if (user.Coordinates.Length == 4)
-                        playersOnline += user.Coordinates[3] switch
-                        {
-                            1 => "**End**",
-                            -1 => "**Nether**",
-                            _ => "**Overworld**"
-                        };
+                    if (user.Coordinates == null)
+                        playersOnline += $"{user.Username} - Unknown location.";
+                    else
+                    {
+                        playersOnline +=
+                            $"{user.Username} - **X:** {user.Coordinates[0]:N2} **Y:** {user.Coordinates[1]:N2} **Z:** {user.Coordinates[2]:N2} ";
+                        if (user.Coordinates.Length == 4)
+                            playersOnline += user.Coordinates[3] switch
+                            {
+                                1 => "**End**",
+                                -1 => "**Nether**",
+                                _ => "**Overworld**"
+                            };
+                    }
+
                     playersOnline += "\n";
                 }
 
@@ -405,40 +298,27 @@ namespace UNObot.ServerQuery.Services
                 playersOnline = "Nobody's online!";
             // Doesn't seem to affect embeds. PlayersOnline = PlayersOnline.Substring(0, PlayersOnline.Length - 1);
 
-            var builder = new EmbedBuilder()
+            var builder = EmbedTemplate($"Player Locations of {ip}")
                 .WithTitle("MOTD")
                 .WithDescription(status.Motd)
-                .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
-                .WithTimestamp(DateTimeOffset.Now)
-                .WithFooter(footer =>
-                {
-                    footer
-                        .WithText($"UNObot {_config.Version} - By DoggySazHi")
-                        .WithIconUrl("https://williamle.com/unobot/doggysazhi.png");
-                })
-                .WithAuthor(author =>
-                {
-                    author
-                        .WithName($"Player Locations of {ip}")
-                        .WithIconUrl("https://williamle.com/unobot/unobot.png");
-                })
                 .AddField("IP", ip, true)
                 .AddField("Port", port, true)
                 .AddField("Version", $"{status.Version}", true)
                 .AddField("Players", playersOnline, true);
-            result = builder.Build();
-            return true;
+            
+            return builder.Build();
         }
 
-        public bool TransferEmbed(string ip, ushort port, ulong source, string target, string amountIn,
-            out Embed result)
+        public async Task<Embed> TransferEmbed(string ip, ushort port, ulong source, string target, string amountIn)
         {
             var messageTitle = "Mukyu~";
             var message = "General error; IDK what happened, see UNObot logs.";
 
             try
             {
-                if (!_query.OutsideServers.Contains(ip) || !_query.SpecialServers.ContainsKey(port))
+                var server = await GetSpecialServer(ip, port);
+                
+                if (server == null)
                 {
                     message = "This server does not support experience transfer.";
                 }
@@ -453,9 +333,8 @@ namespace UNObot.ServerQuery.Services
                     }
                     else
                     {
-                        var server = _query.SpecialServers[port];
                         var users = _minecraft.GetMCUsers(server.Server, server.RCONPort, server.Password, out var client, false);
-                        var sourceMCUsername = _db.GetMinecraftUser(source).GetAwaiter().GetResult();
+                        var sourceMCUsername = await _db.GetMinecraftUser(source);
                         var sourceUser = users.Find(o => o.Online && o.Username == sourceMCUsername);
                         var targetUser = users.Find(o => o.Online && o.Username == target);
 
@@ -509,8 +388,8 @@ namespace UNObot.ServerQuery.Services
                         {
                             if (fullTransfer)
                                 amount = sourceUser.Experience;
-                            client.Execute($"xp add {sourceUser.Username} -{amount} points", true);
-                            client.Execute($"xp add {targetUser.Username} {amount} points");
+                            client.ExecuteSingle($"xp add {sourceUser.Username} -{amount} points", true);
+                            client.ExecuteSingle($"xp add {targetUser.Username} {amount} points");
                             messageTitle = "Nice.";
 
                             message = $"Transfer successful.{(sourceUser == targetUser ? " But why?" : "")}\n" +
@@ -525,10 +404,21 @@ namespace UNObot.ServerQuery.Services
                 _logger.Log(LogSeverity.Error, message, e);
             }
 
-            var random = ThreadSafeRandom.ThisThreadsRandom;
+            var builder = EmbedTemplate($"Experience Transfer for {ip}")
+                .AddField(messageTitle, message);
+            return builder.Build();
+        }
 
-            var builder = new EmbedBuilder()
-                .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
+        private async Task<DatabaseService.RCONServer> GetSpecialServer(string ip, ushort port)
+        {
+            if (!await _db.IsInternalHostname(ip))
+                return null;
+            return await _db.GetRCONServer(port);
+        }
+
+        private EmbedBuilder EmbedTemplate(string title)
+            => new EmbedBuilder()
+                .WithColor(PluginHelper.RandomColor())
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
@@ -539,12 +429,8 @@ namespace UNObot.ServerQuery.Services
                 .WithAuthor(author =>
                 {
                     author
-                        .WithName($"Experience Transfer for {ip}")
+                        .WithName(title)
                         .WithIconUrl("https://williamle.com/unobot/unobot.png");
-                })
-                .AddField(messageTitle, message);
-            result = builder.Build();
-            return true;
-        }
+                });
     }
 }

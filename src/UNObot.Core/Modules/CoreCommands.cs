@@ -4,11 +4,11 @@ using Discord;
 using Discord.Commands;
 using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
-using UNObot.Plugins.TerminalCore;
+using UNObot.Plugins.Helpers;
 
 namespace UNObot.Core.Modules
 {
-    public class CoreCommands : ModuleBase<SocketCommandContext>
+    public class CoreCommands : UNObotModule<UNObotCommandContext>
     {
         private readonly ILogger _logger;
         private readonly IUNObotConfig _config;
@@ -23,10 +23,9 @@ namespace UNObot.Core.Modules
         [Alias("ahh", "ahhh", "ahhhh", "commands", "command")]
         public async Task Help()
         {
-            var r = ThreadSafeRandom.ThisThreadsRandom;
             var builder = new EmbedBuilder()
                 .WithTitle("Quick-start guide to UNObot")
-                .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
+                .WithColor(PluginHelper.RandomColor())
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
@@ -56,7 +55,7 @@ namespace UNObot.Core.Modules
                 .AddField(".uno", "You got to call UNO right after placing your second-to-last card!", true)
                 .AddField(".fullhelp", "See an extended listing of commands.\nNice!", true);
             var embed = builder.Build();
-            await Context.Channel.SendMessageAsync(
+            await Context.ReplyAsync(
                 ":+1: got cha fam",
                 embed: embed);
         }

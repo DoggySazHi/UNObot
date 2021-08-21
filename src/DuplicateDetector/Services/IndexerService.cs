@@ -10,6 +10,7 @@ using DuplicateDetector.Templates;
 using Newtonsoft.Json;
 using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
+using UNObot.Plugins.Settings;
 
 namespace DuplicateDetector.Services
 {
@@ -35,6 +36,10 @@ namespace DuplicateDetector.Services
             
             Directory.CreateDirectory(_cacheDir);
             Directory.CreateDirectory(_imageDir);
+            
+            var settings = new Setting("DuplicateDetector Settings");
+            settings.UpdateSetting("Watch Channels", new ChannelIDList());
+            SettingsManager.RegisterSettings("DuplicateDetector", settings);
         }
 
         private Task AddImage(SocketMessage message)
@@ -56,12 +61,9 @@ namespace DuplicateDetector.Services
 
                 foreach (var attachment in message.Attachments)
                 {
-                    Console.WriteLine("Starting write");
                     try
                     {
-#pragma warning disable 4014
-                        db.ExecuteAsync(
-#pragma warning restore 4014
+                        await db.ExecuteAsync(
                             _config.ConvertSql(
                                 "INSERT INTO DuplicateDetector.Images (channel, message, author, url, proxy_url, spoiler, posted) VALUES (@Channel, @Message, @Author, @URL, @Proxy_URL, @Spoiler, @Posted)"),
                             new

@@ -5,10 +5,11 @@ using Discord;
 using Discord.Commands;
 using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
+using UNObot.Plugins.Helpers;
 
 namespace UNObot.Modules
 {
-    public class FunCommands : ModuleBase<SocketCommandContext>
+    public class FunCommands : UNObotModule<UNObotCommandContext>
     {
         private readonly ILogger _logger;
         
@@ -25,7 +26,7 @@ namespace UNObot.Modules
         [Help(new[] {".gulag (user)"}, "Blyat.", false, "UNObot 1.4")]
         public async Task Gulag(string user)
         {
-            //extraclean
+            // Remove all pinging separators
             user = user.Trim(' ', '<', '>', '!', '@');
             await ReplyAsync($"<@{user}> has been sent to gulag and has all of his cards converted to red blyats.");
         }
@@ -106,52 +107,45 @@ namespace UNObot.Modules
             await BaseReact(numMessages, emote);
         }
 
-        [Command("calculateemote", RunMode = RunMode.Async)]
+        [Command("say", RunMode = RunMode.Async)]
         [RequireOwner]
-        [DisableDMs]
-        public async Task CalculateEmote([Remainder] string input)
-        {
-            await ReplyAsync($"Server: ``{Context.Guild.Id}`` emoteID: ``{input}``").ConfigureAwait(false);
-        }
-
-        [Command("emote", RunMode = RunMode.Async)]
-        [RequireOwner]
-        public async Task Emote(ulong server, ulong emoteId)
+        public async Task Say([Remainder] string input)
         {
             try
             {
-                IEmote emote = await Context.Client.GetGuild(server).GetEmoteAsync(emoteId);
-                await ReplyAsync(emote.ToString());
+                await ReplyAsync(input);
             }
             catch (Exception)
             {
-                await ReplyAsync("Failed to get emote!");
+                await PluginHelper.GhostMessage(Context, "Failed to get emote!");
             }
         }
 
         [Command("emotereact", RunMode = RunMode.Async)]
         [RequireOwner]
-        public async Task EmoteReact(ulong server, ulong emoteId, int numMessages)
+        public async Task EmoteReact(string input, int numMessages = 1)
         {
             try
             {
-                IEmote emote = await Context.Client.GetGuild(server).GetEmoteAsync(emoteId);
+                if (ulong.TryParse(input, out _))
+                    input = $"<:a:{input}>"; // Why can't we just use the ID directly?
+                IEmote emote = Emote.Parse(input);
                 await BaseReact(numMessages, emote);
             }
             catch (Exception)
             {
-                await ReplyAsync("Failed to get emote!");
+                await PluginHelper.GhostMessage(Context, "Failed to get emote!");
             }
         }
 
-        public async Task BaseReact(int numMessages, IEmote emote)
+        private async Task BaseReact(int numMessages, IEmote emote)
         {
             var messages = await Context.Channel.GetMessagesAsync(numMessages + 1).FlattenAsync();
             var message = messages.Last();
 
-            if (!(message is IUserMessage updatedMessage))
+            if (message is not IUserMessage updatedMessage)
             {
-                await ReplyAsync("Couldn't add reaction!");
+                await PluginHelper.GhostMessage(Context, "Reaction could not be added!");
                 return;
             }
 
@@ -162,13 +156,13 @@ namespace UNObot.Modules
 
             var userMessage = await Context.Channel.GetMessagesAsync(1).FlattenAsync();
 
-            if (!(Context.Channel is ITextChannel textchannel))
+            if (Context.Channel is not ITextChannel channel)
             {
-                _logger.Log(LogSeverity.Warning, "error cast");
+                _logger.Log(LogSeverity.Warning, "It's not a text channel.");
                 return;
             }
 
-            await textchannel.DeleteMessagesAsync(userMessage);
+            await channel.DeleteMessagesAsync(userMessage);
         }
     }
 }

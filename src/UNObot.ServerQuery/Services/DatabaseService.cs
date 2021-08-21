@@ -1,4 +1,5 @@
-﻿using System.Data.Common;
+﻿using System;
+using System.Data.Common;
 using System.Threading.Tasks;
 using Dapper;
 using Discord;
@@ -17,20 +18,82 @@ namespace UNObot.ServerQuery.Services
             _logger = logger;
             _config = config;
         }
+
+        public async Task<bool> IsInternalHostname(string hostname)
+        {
+            await using var db = _config.GetConnection();
+
+            const string commandText = "SELECT COUNT(1) FROM ServerQuery.InternalHostname WHERE hostname = @Hostname";
+
+            try
+            {
+                return await db.ExecuteScalarAsync<bool>(_config.ConvertSql(commandText), new { Hostname = hostname } );
+            }
+            catch (DbException ex)
+            {
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
+                return false;
+            }
+        }
         
         public async Task<string> GetMinecraftUser(ulong user)
         {
             await using var db = _config.GetConnection();
 
-            const string commandText = "SELECT minecraftUsername FROM UNObot.Players WHERE userid = @UserID";
+            const string commandText = "SELECT minecraft_username FROM ServerQuery.Player WHERE userid = @ID";
 
             try
             {
-                return await db.ExecuteScalarAsync<string>(_config.ConvertSql(commandText), new { UserID = user } );
+                return await db.ExecuteScalarAsync<string>(_config.ConvertSql(commandText), new { ID = Convert.ToDecimal(user) } );
             }
             catch (DbException ex)
             {
-                _logger.Log(LogSeverity.Error, "A MySQL error has occurred.", ex);
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
+                return null;
+            }
+        }
+
+        public async Task<bool> HasRCONPrivilege(ulong user)
+        {
+            await using var db = _config.GetConnection();
+
+            const string commandText = "SELECT rcon_privilege FROM ServerQuery.Player WHERE userid = @ID";
+
+            try
+            {
+                return await db.ExecuteScalarAsync<bool>(_config.ConvertSql(commandText), new { ID = Convert.ToDecimal(user) } );
+            }
+            catch (DbException ex)
+            {
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
+                return false;
+            }
+        }
+        
+        public class RCONServer
+        {
+            public string Server { get; init; }
+            public ushort RCONPort { get; init; }
+            public string Password { get; init; }
+        }
+        
+        public async Task<RCONServer> GetRCONServer(ushort port)
+        {
+            await using var db = _config.GetConnection();
+
+            const string commandText = "SELECT ip, rcon_port, password FROM ServerQuery.RCONServer WHERE port = @Port";
+
+            try
+            {
+                var data = await db.QueryFirstOrDefaultAsync(_config.ConvertSql(commandText), new { Port = Convert.ToInt32(port) } );
+                if (data == null)
+                    return null;
+                return new RCONServer
+                    {Server = data.ip, RCONPort = Convert.ToUInt16(data.rcon_port), Password = data.password};
+            }
+            catch (DbException ex)
+            {
+                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
                 return null;
             }
         }

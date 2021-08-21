@@ -27,7 +27,7 @@ namespace UNObot.Services
             _watchdog.Elapsed += WatchdogCheck;
         }
         
-        public void InitializeAsync(LoggerService logger)
+        public void Initialize(LoggerService logger)
         {
             _logger = logger;
             _logger.Log(LogSeverity.Info, $"Watchdog woke up! Check delay: {Timeout / 1000} seconds.");
@@ -35,16 +35,17 @@ namespace UNObot.Services
 
         private void WatchdogCheck(object sender, ElapsedEventArgs e)
         {
-            if (_client.ConnectionState == Disconnected || _client.ConnectionState == Disconnecting)
+            if (_client.ConnectionState is Disconnected or Disconnecting)
             {
                 _logger.Log(LogSeverity.Critical, $"Watchdog not fed in the last {Timeout / 1000} seconds! Quitting!");
-                Program.Exit();
+                Program.Exit(1);
             }
         }
 
         public void Dispose()
         {
             _watchdog?.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }

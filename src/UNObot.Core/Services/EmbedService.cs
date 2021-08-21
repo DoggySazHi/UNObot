@@ -5,7 +5,7 @@ using Discord;
 using Discord.WebSocket;
 using UNObot.Core.UNOCore;
 using UNObot.Plugins;
-using UNObot.Plugins.TerminalCore;
+using UNObot.Plugins.Helpers;
 
 namespace UNObot.Core.Services
 {
@@ -144,12 +144,10 @@ namespace UNObot.Core.Services
             yellowCards += yellowCards == "" ? "There are no cards available." : "";
             wildCards += wildCards == "" ? "There are no cards available." : "";
 
-            var r = ThreadSafeRandom.ThisThreadsRandom;
-
             var builder = new EmbedBuilder()
                 .WithTitle("Cards in Hand")
                 .WithDescription($"Current Card: {currentCard}")
-                .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
+                .WithColor(PluginHelper.RandomColor())
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {

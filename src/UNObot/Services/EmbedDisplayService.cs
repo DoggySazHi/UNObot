@@ -7,7 +7,6 @@ using Newtonsoft.Json.Linq;
 using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
 using UNObot.Plugins.Settings;
-using UNObot.Plugins.TerminalCore;
 
 namespace UNObot.Services
 {
@@ -22,10 +21,8 @@ namespace UNObot.Services
 
         public Embed WebhookEmbed(WebhookListenerService.CommitInfo info)
         {
-            var random = ThreadSafeRandom.ThisThreadsRandom;
-
             var builder = new EmbedBuilder()
-                .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
+                .WithColor(PluginHelper.RandomColor())
                 .WithTimestamp(info.CommitDate)
                 .WithFooter(footer =>
                 {
@@ -47,10 +44,8 @@ namespace UNObot.Services
 
         public Embed OctoprintEmbed(WebhookListenerService.OctoprintInfo info)
         {
-            var random = ThreadSafeRandom.ThisThreadsRandom;
-
             var builder = new EmbedBuilder()
-                .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
+                .WithColor(PluginHelper.RandomColor())
                 .WithTimestamp(info.Timestamp)
                 .WithFooter(footer =>
                 {
@@ -87,10 +82,8 @@ namespace UNObot.Services
 
         public Embed SettingsEmbed(IEnumerable<Setting> settings)
         {
-            var random = ThreadSafeRandom.ThisThreadsRandom;
-
             var builder = new EmbedBuilder()
-                .WithColor(new Color(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256)))
+                .WithColor(PluginHelper.RandomColor())
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {

@@ -16,7 +16,7 @@ using UNObot.Templates;
 
 namespace UNObot.Services
 {
-    public class CommandHandlingService : IDisposable
+    public partial class CommandHandlingService : IDisposable
     {
         private readonly CommandService _commands;
         private readonly DiscordSocketClient _discord;
@@ -36,6 +36,7 @@ namespace UNObot.Services
             _provider = provider;
             _commands.CommandExecuted += CommandExecuted;
             _discord.MessageReceived += MessageReceived;
+            _discord.InteractionCreated += InteractionCreated;
             _loaded = new List<Command>();
         }
 
@@ -44,8 +45,8 @@ namespace UNObot.Services
             _commands.Log += logger.LogCommand;
             _provider = provider;
             await AddModulesAsync(Assembly.GetEntryAssembly(), original: true);
-            _discord.ReactionAdded += async (message, _, emote) => 
-                await PluginHelper.DeleteReact(_discord, await message.GetOrDownloadAsync(), emote);
+            _discord.InteractionCreated += async interaction => await PluginHelper.DeleteReact(interaction, _discord);
+            InitializeHelpers();
         }
         
         public async Task<IEnumerable<ModuleInfo>> AddModulesAsync(Assembly assembly, IServiceCollection services = null, bool original = false)
@@ -69,58 +70,37 @@ namespace UNObot.Services
         public async Task RemoveModulesAsync(Assembly assembly)
         {
             foreach(var type in assembly.GetTypes())
-                if(typeof(ModuleBase<SocketCommandContext>).IsAssignableFrom(type))
+                if(typeof(UNObotModule<UNObotCommandContext>).IsAssignableFrom(type))
                     await _commands.RemoveModuleAsync(type);
         }
 
         private async Task MessageReceived(SocketMessage rawMessage)
         {
             // Ignore system messages and messages from bots
-            if (!(rawMessage is SocketUserMessage message)) return;
-            if (message.Source != MessageSource.User) return;
+            if (rawMessage is not SocketUserMessage { Source: MessageSource.User } message) return;
 
-            var argPos = 0;
-            var context = new SocketCommandContext(_discord, message);
-
-            if (!context.IsPrivate && await _db.ChannelEnforced(context.Guild.Id))
+            var context = new UNObotCommandContext(_discord, message);
+            
+            var enforcementMessage = await EnforcementPermitsMessage(context);
+            if (enforcementMessage != null)
             {
-                //start check
-                var allowedChannels = await _db.GetAllowedChannels(context.Guild.Id);
-                var currentChannels = context.Guild.TextChannels.ToList();
-                var currentChannelsIDs = currentChannels.Select(channel => channel.Id).ToList();
-                if (allowedChannels.Except(currentChannelsIDs).Any())
-                {
-                    var tempList = new List<ulong>(allowedChannels.Except(currentChannelsIDs));
-                    foreach (var toRemove in tempList)
-                        allowedChannels.Remove(toRemove);
-                    await _db.SetAllowedChannels(context.Guild.Id, allowedChannels);
-                }
-
-                //end check
-                if (allowedChannels.Count == 0)
-                {
-                    await context.Channel.SendMessageAsync(
-                        "Warning: Since there are no channels that allow UNObot to speak normally, channel enforcement has been disabled.");
-                    await _db.SetEnforceChannel(context.Guild.Id, false);
-                }
-                else if (!allowedChannels.Contains(context.Channel.Id))
-                {
-                    return;
-                }
+                await context.User.SendMessageAsync(enforcementMessage);
+                return;
             }
-
-            if (!(context.IsPrivate && message.HasCharPrefix('.', ref argPos)) && // If it's in a DM, forcibly use '.' prefix
-                !(!context.IsPrivate && message.HasStringPrefix(await _db.GetPrefix(context.Guild.Id), ref argPos)) && // If it's in a server, query DB.
-                !message.HasMentionPrefix(_discord.CurrentUser, ref argPos)) return; // Look for mentions.
-
+            
             if (!context.IsPrivate)
                 await _db.RegisterServer(context.Guild.Id);
             await _db.RegisterUser(context.User.Id, context.User.Username);
+            
+            var argPos = await IsUserCommand(context);
+            if (argPos < 0)
+                return;
+
             try
             {
-                var success = GetProvider(context, argPos, out var provider);
+                var success = GetProvider(context.Message.Content, context.IsPrivate, argPos, out var provider);
                 if(!success)
-                    await context.Channel.SendMessageAsync(
+                    await context.ReplyAsync(
                         "This command cannot be run in DMs. Please try again in a server.");
                 else
                     await _commands.ExecuteAsync(context, argPos, provider);
@@ -130,17 +110,123 @@ namespace UNObot.Services
                 _logger.Log(LogSeverity.Error, "While attempting to execute a command, we got an error!", e);
             }
         }
+        
+        private async Task InteractionCreated(SocketInteraction arg)
+        {
+            if (arg is not SocketSlashCommand command) return;
+            if (command.User.IsBot || command.User.IsWebhook) return;
 
-        private bool GetProvider(SocketCommandContext context, int argPos, out IServiceProvider provider)
+            var context = new UNObotCommandContext(_discord, arg);
+            
+            var enforcementMessage = await EnforcementPermitsMessage(context);
+            if (enforcementMessage != null)
+            {
+                await arg.RespondAsync(enforcementMessage, ephemeral: true);
+                return;
+            }
+            
+            if (!context.IsPrivate)
+                await _db.RegisterServer(context.Guild.Id);
+            await _db.RegisterUser(context.User.Id, context.User.Username);
+            
+            try
+            {
+                var message = $"{command.Data.Name}";
+                var options = command.Data.Options;
+                while (options != null)
+                {
+                    var tempOptions = options;
+                    options = null;
+                    foreach (var o in tempOptions)
+                    {
+                        if (o.Type is ApplicationCommandOptionType.SubCommandGroup or ApplicationCommandOptionType.SubCommand)
+                        {
+                            message += $" {o.Name}";
+                            options = o.Options;
+                        }
+                        else
+                        {
+                            message += $" {o.Value}";
+                        }
+                    }
+                }
+                var success = GetProvider(message, context.IsPrivate, 0, out var provider);
+                if(!success)
+                    await command.RespondAsync(
+                        "This command cannot be run in DMs. Please try again in a server.", ephemeral: true);
+                else
+                    await _commands.ExecuteAsync(context, message, provider);
+            }
+            catch (Exception e)
+            {
+                _logger.Log(LogSeverity.Error, "While attempting to execute a command, we got an error!", e);
+            }
+        }
+
+        /// <summary>
+        /// Check if the server's enforcement options allow UNObot to receive a command in a certain channel.
+        /// </summary>
+        /// <param name="context">The context of the message.</param>
+        /// <returns>Returns null if allowed, otherwise a string with the message.</returns>
+        private async Task<string> EnforcementPermitsMessage(UNObotCommandContext context)
+        {
+            // We don't care about DMs or if the server doesn't care about enforcement.
+            if (context.IsPrivate || !await _db.ChannelEnforced(context.Guild.Id)) return null;
+            
+            // Filter allowed channels to the channels that are on the server.
+            var allowedChannels = await _db.GetAllowedChannels(context.Guild.Id);
+            var currentChannels = context.Guild.TextChannels.ToList();
+            var currentChannelsIDs = currentChannels.Select(channel => channel.Id).ToList();
+            if (allowedChannels.Except(currentChannelsIDs).Any())
+            {
+                // Only runs if an allowed channel was deleted.
+                var tempList = new List<ulong>(allowedChannels.Except(currentChannelsIDs));
+                foreach (var toRemove in tempList)
+                    allowedChannels.Remove(toRemove);
+                await _db.SetAllowedChannels(context.Guild.Id, allowedChannels);
+            }
+
+            if (allowedChannels.Count == 0)
+            {
+                await context.ReplyAsync(
+                    "Warning: Since there are no channels that allow UNObot to speak normally, channel enforcement has been disabled.");
+                await _db.SetEnforceChannel(context.Guild.Id, false);
+            }
+            else if (!allowedChannels.Contains(context.Channel.Id))
+            {
+                var outMessage = "I am not allowed to receive commands in the channel you invoked me in.\nTry one of these channels:";
+                outMessage += allowedChannels.Aggregate("", (a, b) => $"{a} <#{b}>");
+                return outMessage;
+            }
+
+            return null;
+        }
+
+        private async Task<int> IsUserCommand(UNObotCommandContext context)
+        {
+            var argPos = -1;
+
+            if (context.Message.HasMentionPrefix(_discord.CurrentUser, ref argPos))
+                return argPos;
+            
+            if (context.IsPrivate) // If it's in a DM, forcibly use '.' prefix
+            {
+                context.Message.HasCharPrefix('.', ref argPos);
+                return argPos;
+            }
+
+            context.Message.HasStringPrefix(await _db.GetPrefix(context.Guild.Id), ref argPos); // If it's in a server, query DB.
+            return argPos;
+        }
+
+        private bool GetProvider(string message, bool isPrivate, int argPos, out IServiceProvider provider)
         {
             provider = _provider;
 
-            var message = context.Message;
-            var messageString = message.ToString();
-            var endOfCommand = messageString.IndexOf(' ', argPos);
+            var endOfCommand = message.IndexOf(' ', argPos);
             var attemptCommandExecute =
-                messageString.Substring(argPos,
-                    (endOfCommand == -1 ? messageString.Length : endOfCommand) - argPos);
+                message.Substring(argPos,
+                    (endOfCommand == -1 ? message.Length : endOfCommand) - argPos);
             foreach (var command in _loaded)
             {
                 var sameCommand =
@@ -151,7 +237,7 @@ namespace UNObot.Services
                 if (!sameCommand) continue;
                 if (command.Services != null)
                     provider = command.Services;
-                if (context.IsPrivate && command.DisableDMs)
+                if (isPrivate && command.DisableDMs)
                     return false;
             }
             return true;
@@ -164,16 +250,16 @@ namespace UNObot.Services
                 switch (result.Error.Value)
                 {
                     case CommandError.BadArgCount:
-                        (await context.Channel.SendMessageAsync(
-                            $"Hmm, that's not how it works. Type '<@{context.Client.CurrentUser.Id}> help' for the parameters of your command.")).MakeDeletable();
+                        (await context.ReplyAsync(
+                            $"Hmm, that's not how it works. Type '<@{context.Client.CurrentUser.Id}> help' for the parameters of your command.")).MakeDeletable(context.User.Id);
                         break;
                     case CommandError.ParseFailed:
-                        (await context.Channel.SendMessageAsync(
-                            "You dun goof. If it asks for numbers, type an actual number. If it asks for words, make sure to double quote around it.")).MakeDeletable();
+                        (await context.ReplyAsync(
+                            "You dun goof. If it asks for numbers, type an actual number. If it asks for words, make sure to double quote around it.")).MakeDeletable(context.User.Id);
                         break;
                     case CommandError.MultipleMatches:
-                        (await context.Channel.SendMessageAsync(
-                            $"There are multiple commands with the same name. Type '<@{context.Client.CurrentUser.Id}> help' to see which one you need.")).MakeDeletable();
+                        (await context.ReplyAsync(
+                            $"There are multiple commands with the same name. Type '<@{context.Client.CurrentUser.Id}> help' to see which one you need.")).MakeDeletable(context.User.Id);
                         break;
                     case CommandError.UnmetPrecondition:
                     case CommandError.UnknownCommand:
@@ -185,7 +271,7 @@ namespace UNObot.Services
             }
         }
 
-        public Command FindCommand(string name)
+        public static Command FindCommand(string name)
         {
             var index = _loaded.FindIndex(o => o.CommandName == name);
             var index2 = _loaded.FindIndex(o => o.Aliases.Contains(name));
@@ -217,18 +303,20 @@ namespace UNObot.Services
             foreach (var type in types)
             foreach (var module in type.GetMethods().Concat(type.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)))
             {
-                var helpAtt = module.GetCustomAttribute(typeof(HelpAttribute)) as HelpAttribute;
-                var aliasAtt = module.GetCustomAttribute(typeof(AliasAttribute)) as AliasAttribute;
-                var disableDmsAtt = module.GetCustomAttribute(typeof(DisableDMsAttribute)) as DisableDMsAttribute;
-                var ownerOnlyAtt = module.GetCustomAttribute(typeof(RequireOwnerAttribute)) as RequireOwnerAttribute;
+                var helpAtt = module.GetCustomAttribute<HelpAttribute>();
+                var aliasAtt = module.GetCustomAttribute<AliasAttribute>();
+                var disableDmsAtt = module.GetCustomAttribute<DisableDMsAttribute>();
+                var ownerOnlyAtt = module.GetCustomAttribute<RequireOwnerAttribute>();
 
                 var aliases = new List<string>();
-                //check if it is a command
-                if (!(module.GetCustomAttribute(typeof(CommandAttribute)) is CommandAttribute nameAtt)) continue;
 
-                // var foundHelp = helpAtt == null ? "Missing help." : "Found help.";
+                if (module.GetCustomAttribute(typeof(CommandAttribute)) is not CommandAttribute nameAtt) continue;
+
+                var slashCommandAtt = module.GetCustomAttribute<SlashCommandAttribute>();
+                if (slashCommandAtt != null)
+                    CreateCommand(module, helpAtt, slashCommandAtt, ownerOnlyAtt);
+
                 var disabledForDMs = disableDmsAtt != null;
-                // _logger.Log(LogSeverity.Verbose, $"Loaded \"{nameAtt.Text}\". {foundHelp}");
                 var positionCmd = _loaded.FindIndex(o => o.CommandName == nameAtt.Text && !o.Original);
                 if (aliasAtt?.Aliases != null)
                     aliases = aliasAtt.Aliases.ToList();
@@ -280,17 +368,17 @@ namespace UNObot.Services
                     foreach (var c in JsonConvert.DeserializeObject<List<Command>>(json))
                     {
                         var index = _loaded.FindIndex(o => o.CommandName == c.CommandName);
-                        if (index >= 0 && _loaded[index].Help == "No help is given for this command.")
+                        switch (index)
                         {
-                            _loaded[index] = c;
-                        }
-                        else if (index < 0)
-                        {
-                            _logger.Log(LogSeverity.Warning,
-                                "A command was added that isn't in UNObot's code. It will be added to the help list, but will not be active.");
-                            var newCommand = c;
-                            newCommand.Active = false;
-                            _loaded.Add(newCommand);
+                            case >= 0 when _loaded[index].Help == "No help is given for this command.":
+                                _loaded[index] = c;
+                                break;
+                            case < 0:
+                                _logger.Log(LogSeverity.Warning,
+                                    "A command was added that isn't in UNObot's code. It will be added to the help list, but will not be active.");
+                                c.Active = false;
+                                _loaded.Add(c);
+                                break;
                         }
                     }
                 }
@@ -309,6 +397,7 @@ namespace UNObot.Services
         {
             ((IDisposable) _commands)?.Dispose();
             _discord?.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }

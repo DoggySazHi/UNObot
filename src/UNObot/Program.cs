@@ -17,6 +17,7 @@ namespace UNObot
         private ServiceProvider _services;
         private DiscordSocketClient _client;
         private static readonly ManualResetEvent ExitEvent = new(false);
+        private static int ExitCode;
         private IUNObotConfig _config;
         private ILogger _logger;
 
@@ -33,7 +34,7 @@ namespace UNObot
                     AlwaysDownloadUsers = true,
                     DefaultRetryMode = RetryMode.AlwaysRetry,
                     MessageCacheSize = 50,
-                    ExclusiveBulkDelete = true
+                    AlwaysAcknowledgeInteractions = true
                 }
             );
             
@@ -48,19 +49,24 @@ namespace UNObot
             _logger.Log(LogSeverity.Info, "UNObot Launcher 3.0");
 
             _client.Log += logger.LogDiscord;
+            await _services.GetRequiredService<CommandHandlingService>().InitializeAsync(_services, logger);
+            _services.GetRequiredService<WebhookListenerService>();
+            _services.GetRequiredService<WatchdogService>().Initialize(logger);
 
             await _client.LoginAsync(TokenType.Bot, _config.Token);
             await _client.StartAsync();
-            await _services.GetRequiredService<CommandHandlingService>().InitializeAsync(_services, logger);
-            _services.GetRequiredService<WebhookListenerService>();
-            _services.GetRequiredService<WatchdogService>().InitializeAsync(logger);
+            _client.Ready += SetGame;
 
-            await _client.SetGameAsync($"UNObot {_config.Version}");
             Console.Title = $"UNObot {_config.Version}";
             SafeExitHandler();
             ExitEvent.WaitOne();
             ExitEvent.Dispose();
             OnExit();
+        }
+
+        private async Task SetGame()
+        {
+            await _client.SetGameAsync($"UNObot {_config.Version}");
         }
         
         private ServiceProvider ConfigureServices()
@@ -76,7 +82,6 @@ namespace UNObot
                 .AddSingleton<DatabaseService>()
                 .AddSingleton<ShellService>()
                 .AddSingleton<WebhookListenerService>()
-                .AddSingleton<GoogleTranslateService>()
                 .AddSingleton<WatchdogService>()
 #if DEBUG
                 .AddSingleton<DebugService>()
@@ -112,8 +117,9 @@ namespace UNObot
             };
         }
 
-        public static void Exit()
+        public static void Exit(int code = 0)
         {
+            ExitCode = code;
             try
             {
                 ExitEvent.Set();
@@ -140,7 +146,7 @@ namespace UNObot
                 }
             }
             _services.Dispose();
-            Environment.Exit(0);
+            Environment.Exit(ExitCode);
         }
 
         private IUNObotConfig BuildConfig()

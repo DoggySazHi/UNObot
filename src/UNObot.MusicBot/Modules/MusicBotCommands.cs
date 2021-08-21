@@ -5,11 +5,11 @@ using Discord.Commands;
 using UNObot.Plugins.Attributes;
 using UNObot.MusicBot.Services;
 using UNObot.Plugins;
-using UNObot.Plugins.TerminalCore;
+using UNObot.Plugins.Helpers;
 
 namespace UNObot.MusicBot.Modules
 {
-    public class MusicBotCommands : ModuleBase<SocketCommandContext>
+    public class MusicBotCommands : UNObotModule<UNObotCommandContext>
     {
         private readonly MusicBotService _music;
         private readonly IUNObotConfig _config;
@@ -24,10 +24,9 @@ namespace UNObot.MusicBot.Modules
         [Alias("playercommand", "playercommands", "playercmd", "playercmds")]
         public async Task PlayerHelp()
         {
-            var r = ThreadSafeRandom.ThisThreadsRandom;
             var builder = new EmbedBuilder()
                 .WithTitle("Quick-start guide to UNObot-MusicBot")
-                .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
+                .WithColor(PluginHelper.RandomColor())
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {
@@ -54,7 +53,7 @@ namespace UNObot.MusicBot.Modules
                 .AddField(".playerloop", "Loop the current song playing.", true)
                 .AddField(".playerloopqueue", "Loop the contents of the queue.", true);
             var embed = builder.Build();
-            await Context.Channel.SendMessageAsync(
+            await Context.ReplyAsync(
                 "",
                 embed: embed);
         }
@@ -66,7 +65,7 @@ namespace UNObot.MusicBot.Modules
             "Wait, MusicBot functionality in UNObot?", true, "UNObot 3.2 Beta 1")]
         public async Task PlayMusic([Remainder] string link)
         {
-            var audioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
+            var audioChannel = (Context.User as IGuildUser)?.VoiceChannel;
             if (audioChannel == null)
             {
                 await ReplyAsync("Please join a VC that I can connect to!").ConfigureAwait(true);
@@ -102,7 +101,7 @@ namespace UNObot.MusicBot.Modules
         [DisableDMs]
         public async Task Play()
         {
-            var audioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
+            var audioChannel = (Context.User as IGuildUser)?.VoiceChannel;
             if (audioChannel == null)
             {
                 await ReplyAsync("Please join a VC that I can connect to!").ConfigureAwait(true);
@@ -120,7 +119,7 @@ namespace UNObot.MusicBot.Modules
             "Wait, MusicBot functionality in UNObot?", true, "UNObot 3.2 Beta 1")]
         public async Task PlayMusicTop([Remainder] string link)
         {
-            var audioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
+            var audioChannel = (Context.User as IGuildUser)?.VoiceChannel;
             if (audioChannel == null)
             {
                 await ReplyAsync("Please join a VC that I can connect to!").ConfigureAwait(true);
@@ -160,7 +159,7 @@ namespace UNObot.MusicBot.Modules
         [Help(new[] {".playerpause"}, "Pause the player.", true, "UNObot 3.2 Beta 2")]
         public async Task Pause()
         {
-            var audioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
+            var audioChannel = (Context.User as IGuildUser)?.VoiceChannel;
             if (audioChannel == null)
             {
                 await ReplyAsync("Please join a VC that I can connect to!").ConfigureAwait(true);
@@ -177,7 +176,7 @@ namespace UNObot.MusicBot.Modules
         [Help(new[] {".playershuffle"}, "Shuffle the player.", true, "UNObot 3.2 Beta 3")]
         public async Task Shuffle()
         {
-            var audioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
+            var audioChannel = (Context.User as IGuildUser)?.VoiceChannel;
             if (audioChannel == null)
             {
                 await ReplyAsync("Please join a VC that I can connect to!").ConfigureAwait(true);
@@ -193,7 +192,7 @@ namespace UNObot.MusicBot.Modules
         [Help(new[] {".playerskip"}, "Skip the current song.", true, "UNObot 3.2 Beta 3")]
         public async Task Skip()
         {
-            var audioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
+            var audioChannel = (Context.User as IGuildUser)?.VoiceChannel;
             if (audioChannel == null)
             {
                 await ReplyAsync("Please join a VC that I can connect to!").ConfigureAwait(true);
@@ -210,7 +209,7 @@ namespace UNObot.MusicBot.Modules
         [Help(new[] {".playerloop"}, "Loop the current song.", true, "UNObot 3.2 Beta 4")]
         public async Task Loop()
         {
-            var audioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
+            var audioChannel = (Context.User as IGuildUser)?.VoiceChannel;
             if (audioChannel == null)
             {
                 await ReplyAsync("Please join a VC that I can connect to!").ConfigureAwait(true);
@@ -227,7 +226,7 @@ namespace UNObot.MusicBot.Modules
         [Help(new[] {".playerloopqueue"}, "Loop the entire queue.", true, "UNObot 3.2 Beta 4")]
         public async Task LoopQueue()
         {
-            var audioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
+            var audioChannel = (Context.User as IGuildUser)?.VoiceChannel;
             if (audioChannel == null)
             {
                 await ReplyAsync("Please join a VC that I can connect to!").ConfigureAwait(true);
@@ -245,7 +244,7 @@ namespace UNObot.MusicBot.Modules
         [Help(new[] {".playerdc"}, "Disconnect the bot from the channel.", true, "UNObot 3.2 Beta 4")]
         public async Task Disconnect()
         {
-            var audioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
+            var audioChannel = (Context.User as IGuildUser)?.VoiceChannel;
             if (audioChannel == null)
             {
                 await ReplyAsync("Please join a VC that I can connect to!").ConfigureAwait(false);
@@ -302,7 +301,7 @@ namespace UNObot.MusicBot.Modules
         [Help(new[] {".playerremove"}, "Remove the song.", true, "UNObot 3.2 Beta 3")]
         public async Task Remove(int index)
         {
-            var audioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
+            var audioChannel = (Context.User as IGuildUser)?.VoiceChannel;
             if (audioChannel == null)
             {
                 await ReplyAsync("Please join a VC that I can connect to!").ConfigureAwait(true);
@@ -320,7 +319,7 @@ namespace UNObot.MusicBot.Modules
         [RequireOwner]
         public async Task VCTest1([Remainder] string Link)
         {
-            var AudioChannel = (Context.Message.Author as IGuildUser)?.VoiceChannel;
+            var AudioChannel = (Context.User as IGuildUser)?.VoiceChannel;
             if (AudioChannel == null)
             {
                 await ReplyAsync("Please join a VC that I can connect to!").ConfigureAwait(true);

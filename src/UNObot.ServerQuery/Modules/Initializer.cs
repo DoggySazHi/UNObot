@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using UNObot.Plugins;
+using UNObot.ServerQuery.Queries;
 using UNObot.ServerQuery.Services;
 
 namespace UNObot.ServerQuery.Modules
@@ -17,7 +18,7 @@ namespace UNObot.ServerQuery.Modules
             Name = "UNObot-ServerQuery";
             Description = "Utilities for probing game servers.";
             Author = "DoggySazHi";
-            Version = "1.2.1 (4.2.10)";
+            Version = "1.3.0 (4.3 Beta 8)";
 
             Services = new ServiceCollection()
                 .AddSingleton<QueryHandlerService>()

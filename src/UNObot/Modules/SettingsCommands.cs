@@ -11,7 +11,7 @@ using UNObot.Services;
 
 namespace UNObot.Modules
 {
-    public class SettingsCommands : ModuleBase<SocketCommandContext>
+    public class SettingsCommands : UNObotModule<UNObotCommandContext>
     {
         private readonly IUNObotConfig _config;
         private readonly DatabaseService _db;
@@ -95,14 +95,14 @@ namespace UNObot.Modules
             //end check
             if (allowedChannels.Count == 0)
             {
-                await Context.Channel.SendMessageAsync(
+                await Context.ReplyAsync(
                     "Error: Cannot enable enforcechannels if there are no allowed channels!");
                 return;
             }
 
             if (!await DatabaseExtensions.HasDefaultChannel(_config, Context.Guild.Id))
             {
-                await Context.Channel.SendMessageAsync(
+                await Context.ReplyAsync(
                     "Error: Cannot enable enforcechannels if there is no default channel!");
                 return;
             }
@@ -215,11 +215,11 @@ namespace UNObot.Modules
             }
         }
 
-        [Command("settings", RunMode = RunMode.Async)]
+        [SlashCommand("settings", RunMode = RunMode.Async)]
         [RequireUserPermission(GuildPermission.ManageChannels)]
         [DisableDMs]
         [Help(new[] {".settings"},
-            "Access configurable settings for UNObot.", true, "UNObot 4.3")]
+            "Access configurable settings for UNObot. For moderators only.", true, "UNObot 4.3")]
         public async Task ViewSettings()
         {
             var manager = await _db.GetSettings(Context.Guild.Id);

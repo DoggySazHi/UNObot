@@ -5,11 +5,11 @@ using Discord.Commands;
 using UNObot.Google.Services;
 using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
-using UNObot.Plugins.TerminalCore;
+using UNObot.Plugins.Helpers;
 
 namespace UNObot.Google.Modules
 {
-    public class CoreCommands : ModuleBase<SocketCommandContext>
+    public class CoreCommands : UNObotModule<UNObotCommandContext>
     {
         private readonly GoogleSearchService _google;
         private readonly IUNObotConfig _config;
@@ -42,11 +42,10 @@ namespace UNObot.Google.Modules
                 return;
             }
 
-            var r = ThreadSafeRandom.ThisThreadsRandom;
             var embed = new EmbedBuilder()
                 .WithTitle($"Search results for \"{query}\"")
                 .WithDescription(search.Preview)
-                .WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)))
+                .WithColor(PluginHelper.RandomColor())
                 .WithTimestamp(DateTimeOffset.Now)
                 .WithFooter(footer =>
                 {

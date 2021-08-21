@@ -2,12 +2,13 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Discord.Commands;
+using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
 using UNObot.Services;
 
 namespace UNObot.Modules
 {
-    public class PluginConfigCommands : ModuleBase<SocketCommandContext>
+    public class PluginConfigCommands : UNObotModule<UNObotCommandContext>
     {
         private readonly PluginLoaderService _pluginService;
 
@@ -39,7 +40,7 @@ namespace UNObot.Modules
         [RequireOwner]
         [Command("plugins", RunMode = RunMode.Async), Alias("pl")]
         [Help(new[] {".plugins (mode)"}, "Get all plugins loaded in the bot.", true, "UNObot 4.1.8")]
-        public async Task Plugin(string mode, [Remainder] string plugin)
+        public async Task Plugins(string mode, [Remainder] string plugin)
         {
             switch (mode.Trim().ToLower())
             {

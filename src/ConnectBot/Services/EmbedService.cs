@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
-using ConnectBot.Templates;
 using Discord;
 using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
-using UNObot.Plugins.TerminalCore;
 
 namespace ConnectBot.Services
 {
@@ -17,7 +15,7 @@ namespace ConnectBot.Services
             _config = config;
         }
 
-        public async Task<IUserMessage> ErrorEmbed(ICommandContextEx context, string message, bool ghost = false)
+        public async Task<IUserMessage> ErrorEmbed(IUNObotCommandContext context, string message, bool ghost = false)
         {
             var error = new EmbedBuilder()
                 .WithTitle("Error!!")
@@ -32,7 +30,7 @@ namespace ConnectBot.Services
                 embed: embed, ghost ? 5000 : -1);
         }
 
-        public async Task<IUserMessage> SuccessEmbed(ICommandContextEx context, string message, bool ghost = false)
+        public async Task<IUserMessage> SuccessEmbed(IUNObotCommandContext context, string message, bool ghost = false)
         {
             var error = new EmbedBuilder()
                 .WithTitle("Success!!")
@@ -47,11 +45,10 @@ namespace ConnectBot.Services
                 embed: embed, ghost ? 5000 : -1);
         }
 
-        public Embed Build(EmbedBuilder embed, ICommandContextEx context, bool addColor = true)
+        public Embed Build(EmbedBuilder embed, IUNObotCommandContext context, bool addColor = true)
         {
-            var r = ThreadSafeRandom.ThisThreadsRandom;
             if (addColor)
-                embed.WithColor(new Color(r.Next(0, 256), r.Next(0, 256), r.Next(0, 256)));
+                embed.WithColor(PluginHelper.RandomColor());
             
             return embed
                 .WithTimestamp(DateTimeOffset.Now)

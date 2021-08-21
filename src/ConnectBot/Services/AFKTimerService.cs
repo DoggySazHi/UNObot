@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using System.Timers;
-using ConnectBot.Templates;
 using Discord;
 using Discord.WebSocket;
 using UNObot.Plugins;
@@ -15,7 +14,7 @@ namespace ConnectBot.Services
     public class ServerTimer : IDisposable
     {
         public Timer AFKTrigger { get; set; }
-        public ICommandContextEx Context { get; set; }
+        public IUNObotCommandContext Context { get; set; }
 
         public void Dispose()
         {
@@ -29,7 +28,7 @@ namespace ConnectBot.Services
         private readonly ILogger _logger;
         private readonly DatabaseService _db;
         private readonly DiscordSocketClient _client;
-        public delegate Task NextGame(ICommandContextEx context, Game game, bool newGame = false);
+        public delegate Task NextGame(IUNObotCommandContext context, Game game, bool newGame = false);
 
         private NextGame _callback;
 
@@ -40,7 +39,7 @@ namespace ConnectBot.Services
             _client = client;
         }
 
-        public void ResetTimer([NotNull] ICommandContextEx context)
+        public void ResetTimer([NotNull] IUNObotCommandContext context)
         {
             var timer = PlayTimers.Find(o => o.Context.Guild.Id == context.Guild.Id);
             if (timer == null)
@@ -55,7 +54,7 @@ namespace ConnectBot.Services
             }
         }
 
-        public void StartTimer(ICommandContextEx context, NextGame callback)
+        public void StartTimer(IUNObotCommandContext context, NextGame callback)
         {
             _callback ??= callback;
             _logger.Log(LogSeverity.Debug, "Starting timer!");

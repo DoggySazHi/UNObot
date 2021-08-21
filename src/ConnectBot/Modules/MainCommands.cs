@@ -1,12 +1,13 @@
 ﻿using System.Threading.Tasks;
 using ConnectBot.Services;
-using ConnectBot.Templates;
+using Discord;
 using Discord.Commands;
+using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
 
 namespace ConnectBot.Modules
 {
-    public class MainCommands : ModuleBase<SocketCommandContext>
+    public class MainCommands : UNObotModule<UNObotCommandContext>
     {
         private readonly GameService _game;
         private readonly ConfigService _cs;
@@ -25,48 +26,151 @@ namespace ConnectBot.Modules
         public async Task ConnectBot()
         {
             await _db.AddUser(Context.User.Id);
-            await _cs.DisplayHelp(new FakeContext(Context));
+            await _cs.DisplayHelp(Context);
         }
         
         [DisableDMs]
-        [Command("cbot", RunMode = RunMode.Async)]
+        [SlashCommand("cbot", RunMode = RunMode.Async)]
         [Help(new [] {".cbot help"}, "The base command for ConnectBot. Use .cbot help for more info.", true, "UNObot 4.2.0")]
-        public async Task ConnectBot([Remainder] string input)
+        public async Task ConnectBot(
+            [Remainder]
+            [SlashCommandOption("A subcommand for UNObot. See .cbot help for more info.",
+                new object[] { "join", "leave", "start", "game", "drop", "board", "queue", "stats", "help" })]
+            string input)
         {
             await _db.AddUser(Context.User.Id);
-            var args = input.Trim().ToLower().Split(' ');
-            switch (args[0])
+            var args = input.Trim().Split(' '); // We need to preserve case for other things like stats.
+            switch (args[0].ToLower())
             {
                 case "join":
-                    await _game.JoinGame(new FakeContext(Context));
+                    await _game.JoinGame(Context);
                     break;
                 case "leave":
-                    await _game.LeaveGame(new FakeContext(Context));
+                    await _game.LeaveGame(Context);
                     break;
                 case "start":
-                    await _game.StartGame(new FakeContext(Context), args);
+                    await _game.StartGame(Context, args);
                     break;
                 case "game":
-                    await _game.DisplayGame(new FakeContext(Context));
+                    await _game.DisplayGame(Context);
                     break;
                 case "drop":
-                    await _game.DropPiece(new FakeContext(Context), args);
+                    await _game.DropPiece(Context, args);
                     break;
                 case "board":
-                    await _cs.SetUserBoardDefaults(new FakeContext(Context), args);
+                    await _cs.SetUserBoardDefaults(Context, args);
                     break;
                 case "queue":
-                    await _game.GetQueue(new FakeContext(Context));
+                    await _game.GetQueue(Context);
                     break;
                 case "userinfo":
                 case "stats":
-                    await _cs.GetStats(new FakeContext(Context), args);
+                    await _cs.GetStats(Context, args);
                     break;
                 case "help":
                 case "":
-                    await _cs.DisplayHelp(new FakeContext(Context));
+                    await _cs.DisplayHelp(Context);
                     break;
             }
+        }
+        
+        [DisableDMs]
+        [SlashCommand("cbot", RunMode = RunMode.Async)]
+        [SlashSubcommand("join", "Join the ConnectBot queue in the current server.")]
+        [Help(new [] {".cbot help"}, "The base command for ConnectBot. Use .cbot help for more info.", true, "UNObot 4.3 Beta 9")]
+        public async Task ConnectBotDebugA()
+        {
+            await _db.AddUser(Context.User.Id);
+            await _game.JoinGame(Context);
+        }
+        
+        [DisableDMs]
+        [SlashCommand("cbot", RunMode = RunMode.Async)]
+        [SlashSubcommand("leave", "Leave the ConnectBot queue in the current server.")]
+        [Help(new [] {".cbot help"}, "The base command for ConnectBot. Use .cbot help for more info.", true, "UNObot 4.3 Beta 9")]
+        public async Task ConnectBotDebugB()
+        {
+            await _db.AddUser(Context.User.Id);
+            await _game.LeaveGame(Context);
+        }
+        
+        [DisableDMs]
+        [SlashCommand("cbot", RunMode = RunMode.Async)]
+        [SlashSubcommand("start", "Start the queue for ConnectBot.")]
+        [Help(new [] {".cbot help"}, "The base command for ConnectBot. Use .cbot help for more info.", true, "UNObot 4.3 Beta 9")]
+        public async Task ConnectBotDebugC(
+            [SlashCommandOption("A start option.", new object[] { "blind", "custom", "normal" }, Required = false)] string optionA,
+            [SlashCommandOption("A start option.", new object[] { "blind", "custom", "normal" }, Required = false)] string optionB)
+        {
+            await _db.AddUser(Context.User.Id);
+            await _game.StartGame(Context, new[] { null, optionA, optionB });
+        }
+        
+        [DisableDMs]
+        [SlashCommand("cbot", RunMode = RunMode.Async)]
+        [SlashSubcommand("game", "Show the current game status.")]
+        [Help(new [] {".cbot help"}, "The base command for ConnectBot. Use .cbot help for more info.", true, "UNObot 4.3 Beta 9")]
+        public async Task ConnectBotDebugD()
+        {
+            await _db.AddUser(Context.User.Id);
+            await _game.DisplayGame(Context);
+        }
+        
+        [DisableDMs]
+        [SlashCommand("cbot", RunMode = RunMode.Async)]
+        [SlashSubcommand("drop", "Drop a piece.")]
+        [Help(new [] {".cbot help"}, "The base command for ConnectBot. Use .cbot help for more info.", true, "UNObot 4.3 Beta 9")]
+        public async Task ConnectBotDebugE(
+            [SlashCommandOption("Position of your next piece.", OptionType = ApplicationCommandOptionType.Integer, Required = true)] int position
+            )
+        {
+            await _db.AddUser(Context.User.Id);
+            await _game.DropPiece(Context, new [] { null, "" + position });
+        }
+        
+        [DisableDMs]
+        [SlashCommand("cbot", RunMode = RunMode.Async)]
+        [SlashSubcommand("board", "Set your board config.")]
+        [Help(new [] {".cbot help"}, "The base command for ConnectBot. Use .cbot help for more info.", true, "UNObot 4.3 Beta 9")]
+        public async Task ConnectBotDebugF(
+            [SlashCommandOption("A start option.", OptionType = ApplicationCommandOptionType.Integer, Required = true)] string rows,
+            [SlashCommandOption("A start option.", OptionType = ApplicationCommandOptionType.Integer, Required = true)] string columns,
+            [SlashCommandOption("A start option.", OptionType = ApplicationCommandOptionType.Integer, Required = true)] string connect)
+        {
+            await _db.AddUser(Context.User.Id);
+            await _cs.SetUserBoardDefaults(Context, new [] { null, "" + rows, "" + columns, "" + connect });
+        }
+
+        [DisableDMs]
+        [SlashCommand("cbot", RunMode = RunMode.Async)]
+        [SlashSubcommand("queue", "Get the current queue of players waiting to play.")]
+        [Help(new[] { ".cbot help" }, "The base command for ConnectBot. Use .cbot help for more info.", true,
+            "UNObot 4.3 Beta 9")]
+        public async Task ConnectBotDebugG()
+        {
+            await _db.AddUser(Context.User.Id);
+            await _game.GetQueue(Context);
+        }
+
+        [DisableDMs]
+        [SlashCommand("cbot", RunMode = RunMode.Async)]
+        [SlashSubcommand("stats", "Get your (or someone else's) stats.")]
+        [Help(new [] {".cbot help"}, "The base command for ConnectBot. Use .cbot help for more info.", true, "UNObot 4.3 Beta 9")]
+        public async Task ConnectBotDebugH(
+            [SlashCommandOption("A user to get their stats.", Required = false, OptionType = ApplicationCommandOptionType.User)] IUser user)
+        {
+            await _db.AddUser(Context.User.Id);
+            await _cs.GetStats(Context, new [] { null, "" + user.Id });
+        }
+        
+        [DisableDMs]
+        [SlashCommand("cbot", RunMode = RunMode.Async)]
+        [SlashSubcommand("help", "Show a help menu for ConnectBot.")]
+        [Help(new [] {".cbot help"}, "The base command for ConnectBot. Use .cbot help for more info.", true, "UNObot 4.3 Beta 9")]
+        public async Task ConnectBotDebugI()
+        {
+            await _db.AddUser(Context.User.Id);
+            await _cs.DisplayHelp(Context);
         }
     }
 }

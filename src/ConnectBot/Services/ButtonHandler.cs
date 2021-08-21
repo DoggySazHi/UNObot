@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using ConnectBot.Templates;
 using Discord;
-using Discord.Commands;
 using Discord.WebSocket;
+using UNObot.Plugins;
 
 namespace ConnectBot.Services
 {
@@ -15,7 +14,7 @@ namespace ConnectBot.Services
         private readonly DatabaseService _db;
         public DropPiece Callback;
 
-        public delegate Task DropPiece(ICommandContextEx context, string[] args);
+        public delegate Task DropPiece(IUNObotCommandContext context, string[] args);
 
         public ButtonHandler(DiscordSocketClient client, DatabaseService db)
         {
@@ -23,73 +22,36 @@ namespace ConnectBot.Services
             _db = db;
             if (_init) return;
             _init = true;
-            client.ReactionAdded += ReactionAdded;
+            client.InteractionCreated += InteractionCreated;
         }
 
-        private async Task ReactionAdded(Cacheable<IUserMessage, ulong> inMessage, ISocketMessageChannel channel, SocketReaction reaction)
+        private async Task InteractionCreated(SocketInteraction arg)
         {
-            var message = await inMessage.GetOrDownloadAsync();
+            if (arg is not SocketMessageComponent interaction) return;
+            var message = await interaction.GetOriginalResponseAsync();
             if (message.Author.Id != _client.CurrentUser.Id) return;
-            if (!reaction.User.IsSpecified) return;
-            if (!(channel is ITextChannel serverChannel)) return;
+            if (interaction.Channel is not ITextChannel) return;
             var context =
-                new FakeContext(_client, reaction.User.Value, serverChannel.Guild, message, false) {IsMessage = false};
+                new UNObotCommandContext(_client, interaction);
             var game = await _db.GetGame(context.Guild.Id);
-            if (game.Queue.GameStarted() && game.Queue.CurrentPlayer().Player == reaction.UserId)
+            if (Callback != null && game.Queue.GameStarted() && game.Queue.CurrentPlayer().Player == context.User.Id)
             {
-                var number = -1;
-                for(var i = 0; i < _numbers.Length; i++)
-                    if (_numbers[i].Name == reaction.Emote.Name)
-                        number = i;
-                if (number != -1 && Callback != null)
-                    _ = Callback(context, new[] {"", number.ToString()}).ConfigureAwait(false);
+                _ = Callback(context, new[] {"", interaction.Data.Values.FirstOrDefault()}).ConfigureAwait(false);
             }
         }
-
-        private readonly IEmote[] _numbers = {
-            new Emoji("\u0030\u20E3"),
-            new Emoji("\u0031\u20E3"),
-            new Emoji("\u0032\u20E3"),
-            new Emoji("\u0033\u20E3"),
-            new Emoji("\u0034\u20E3"),
-            new Emoji("\u0035\u20E3"),
-            new Emoji("\u0036\u20E3"),
-            new Emoji("\u0037\u20E3"),
-            new Emoji("\u0038\u20E3"),
-            new Emoji("\u0039\u20E3"),
-            new Emoji( "\U0001F51F") // in short, a "bruh" moment
-        };
-
-        public async Task AddNumbers(IUserMessage message, Range range)
+        
+        public async Task AddNumbers(IUserMessage message, int columns)
         {
-            if (range.End.Value > _numbers.Length)
-                range = new Range(range.Start, new Index(0, true));
-            try
-            {
-                await message.AddReactionsAsync(_numbers[range]);
-            }
-            catch (CommandException)
-            {
-                 /* well, crap! */
-            }
-        }
-
-        public async Task ClearReactions(IUserMessage message, IUser user)
-        {
-            try
-            {
-                foreach (var emoji in _numbers)
-                {
-                    var users = await message.GetReactionUsersAsync(emoji, 50).FlattenAsync();
-                    var react = users.FirstOrDefault(o => o.Id == user.Id);
-                    if (react != null)
-                        await message.RemoveReactionAsync(emoji, user);
-                }
-            }
-            catch (CommandException)
-            {
-                // No permissions to delete!
-            }
+            columns = Math.Min(columns, SlashCommandOptionBuilder.MaxChoiceCount);
+            await message.ModifyAsync(o => o.Components = new ComponentBuilder()
+                .WithSelectMenu(new SelectMenuBuilder()
+                    .WithPlaceholder("Pick a column to drop to.")
+                    .WithCustomId("unobot")
+                    .WithOptions(Enumerable.Range(1, columns)
+                        .Select(p => new SelectMenuOptionBuilder("Column " + p, $"{p}"))
+                        .ToList()
+                    ))
+                .Build());
         }
     }
 }

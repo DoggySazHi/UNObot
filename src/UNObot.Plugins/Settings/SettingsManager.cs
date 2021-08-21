@@ -6,10 +6,16 @@ namespace UNObot.Plugins.Settings
 {
     public class SettingsManager
     {
+        public delegate void RefreshSetting(SettingsManager manager, ulong server);
+        public static event RefreshSetting OnQuery;
+        private static readonly object _settingsLock = new();
+        
         [JsonIgnore]
         private static readonly Dictionary<string, Setting> defaultSettings;
         [JsonIgnore]
         public static IReadOnlyDictionary<string, Setting> DefaultSettings => defaultSettings;
+        [JsonProperty]
+        public ulong Server { get; }
         [JsonProperty]
         private Dictionary<string, Setting> _currentSettings;
         [JsonIgnore]
@@ -20,14 +26,15 @@ namespace UNObot.Plugins.Settings
             defaultSettings = new Dictionary<string, Setting>();
         }
 
-        public SettingsManager() : this(defaultSettings) {}
+        public SettingsManager(ulong server) : this(server, defaultSettings) {}
 
         [JsonConstructor]
-        public SettingsManager(Dictionary<string, Setting> data)
+        public SettingsManager(ulong server, Dictionary<string, Setting> data)
         {
+            Server = server;
             _currentSettings = data == null ? new Dictionary<string, Setting>(defaultSettings) : new Dictionary<string, Setting>(data);
         }
-        
+
         /// <summary>
         /// Add a default setting to the service. This should be called by all services.
         /// </summary>
@@ -53,10 +60,25 @@ namespace UNObot.Plugins.Settings
         }
 
         public void UpdateSetting(string identifier, string key, ISetting value)
-            => _currentSettings[identifier].UpdateSetting(key, value);
+        {
+            lock (_settingsLock)
+            {
+                _currentSettings[identifier].UpdateSetting(key, value);
+            }
+        }
 
         public T GetSetting<T>(string identifier, string key)
-            => _currentSettings[identifier].GetSetting<T>(key);
+        {
+            if (OnQuery != null)
+            {
+                foreach (var del in OnQuery.GetInvocationList())
+                {
+                    var method = (RefreshSetting) del;
+                    method.Invoke(this, Server);
+                }
+            }
 
+            return _currentSettings[identifier].GetSetting<T>(key);
+        }
     }
 }
