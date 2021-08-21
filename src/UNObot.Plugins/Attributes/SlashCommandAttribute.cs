@@ -18,20 +18,7 @@ namespace UNObot.Plugins.Attributes
         
         /// <inheritdoc cref="SlashCommandBuilder.DefaultPermission"/>
         public bool DefaultPermission { get; set; } = true;
-        
-        /// <summary>
-        /// The subcommand that is associated with the base command.
-        /// Note that if a subcommand is applied for a base command, then the base command will be unusable.
-        /// </summary>
-        public string Subcommand { get; set; }
-        
-        /// <summary>
-        /// The subcommand group that is associated with the base command.
-        /// Note that if a subcommand group is applied for a base command, then the base command will be unusable.
-        /// Subcommand cannot be null if this is not null.
-        /// </summary>
-        public string SubcommandGroup { get; set; }
-        
+
         /// <summary>
         /// The ID of the guild the command belongs to. A 0 will make it a global command.
         /// </summary>
@@ -56,17 +43,39 @@ namespace UNObot.Plugins.Attributes
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
     public class SlashCommandGroupAttribute : Attribute
     {
-        public string Group { get; }
+        public string Name { get; }
         public string Description { get; }
 
         /// <summary>
         /// Create a slash command group for a subcommand.
         /// </summary>
-        /// <param name="group">The name of the group.</param>
+        /// <param name="name">The name of the group.</param>
         /// <param name="description">The description for the group.</param>
-        public SlashCommandGroupAttribute(string group, string description)
+        public SlashCommandGroupAttribute(string name, string description)
         {
-            Group = group;
+            Name = name;
+            Description = description;
+        }
+    }
+
+    /// <summary>
+    /// The subcommand that is associated with the base command.
+    /// Note that if a subcommand is applied for a base command, then the base command will be unusable.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Method)]
+    public class SlashSubcommandAttribute : Attribute
+    {
+        public string Name { get; }
+        public string Description { get; }
+        
+        /// <summary>
+        /// Create a subcommand.
+        /// </summary>
+        /// <param name="name">The name of the group.</param>
+        /// <param name="description">The description for the group.</param>
+        public SlashSubcommandAttribute(string name, string description)
+        {
+            Name = name;
             Description = description;
         }
     }

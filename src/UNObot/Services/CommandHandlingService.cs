@@ -131,7 +131,25 @@ namespace UNObot.Services
             
             try
             {
-                var message = $"{command.Data.Name}{(command.Data?.Options == null ? "" : command.Data.Options.Aggregate("", (a, b) => $"{a} {b.Value}"))}";
+                var message = $"{command.Data.Name}";
+                var options = command.Data.Options;
+                while (options != null)
+                {
+                    var tempOptions = options;
+                    options = null;
+                    foreach (var o in tempOptions)
+                    {
+                        if (o.Type is ApplicationCommandOptionType.SubCommandGroup or ApplicationCommandOptionType.SubCommand)
+                        {
+                            message += $" {o.Name}";
+                            options = o.Options;
+                        }
+                        else
+                        {
+                            message += $" {o.Value}";
+                        }
+                    }
+                }
                 var success = GetProvider(message, context.IsPrivate, 0, out var provider);
                 if(!success)
                     await command.RespondAsync(

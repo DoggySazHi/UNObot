@@ -34,21 +34,24 @@ namespace UNObot.Services
         private void CreateCommand(MethodInfo method, HelpAttribute help, SlashCommandAttribute attribute, RequireOwnerAttribute owner)
         {
             if (attribute is not { RegisterSlashCommand: true }) return;
-            var builder = _slashCommands[attribute.Guild].Find(o => o.Name.Equals(attribute.Text, StringComparison.OrdinalIgnoreCase)) ?? new SlashCommandBuilder();
-            if (attribute.SubcommandGroup != null && attribute.Subcommand == null)
-                throw new CustomAttributeFormatException("Your subcommand cannot be null if you have defined a subcommand!\n" +
-                                                         $"Command: {attribute.Text} Subcommand Group: {attribute.SubcommandGroup} Subcommand: {attribute.Subcommand}");
+
+            SlashCommandBuilder builder;
+            if (_slashCommands.ContainsKey(attribute.Guild))
+                builder = _slashCommands[attribute.Guild]
+                              .Find(o => o.Name.Equals(attribute.Text, StringComparison.OrdinalIgnoreCase)) ??
+                          new SlashCommandBuilder();
+            else
+                builder = new SlashCommandBuilder();
+
+            var subgroup = method.GetCustomAttribute<SlashCommandGroupAttribute>() ?? method.DeclaringType?.GetCustomAttribute<SlashCommandGroupAttribute>();
+            var subcommand = method.GetCustomAttribute<SlashSubcommandAttribute>();
+
+            if (subgroup != null && subcommand == null)
+                throw new InvalidOperationException(
+                    "A SlashSubcommandAttribute must be applied to a method if a SlashCommandGroupAttribute is added!\n" +
+                    $"Command: {attribute.Text} Subcommand Group: {subgroup.Name}");
             
-            if (attribute.SubcommandGroup != null)
-            {
-                var groupName = attribute.SubcommandGroup.ToLower();
-                var group = builder.Options.Find(o => o.Name.Equals(groupName));
-                if (group == null)
-                    group = new SlashCommandOptionBuilder()
-                        .WithType(ApplicationCommandOptionType.SubCommandGroup)
-                        .WithName(groupName);
-            }
-            
+            // Fill in base command properties
             if (builder.Name == null)
                 builder.WithName(attribute.Text);
             builder.Name = builder.Name.ToLower();
@@ -57,21 +60,58 @@ namespace UNObot.Services
                 builder.WithDescription(help.HelpMsg);
             else
                 builder.WithDescription("No description is provided about this command.");
-            
+
             builder.WithDefaultPermission(owner == null || attribute.DefaultPermission);
-
-            var parameters = method.GetParameters();
-
-            builder.Options = parameters.Length == 0 ? null : parameters.Select(GenerateOption).ToList();
             
+            // Create group and subcommand
+            if (subgroup != null)
+            {
+                var groupName = subgroup.Name.ToLower();
+                var group = builder.Options.Find(o => o.Name.Equals(groupName));
+                if (group == null)
+                {
+                    group = new SlashCommandOptionBuilder()
+                        .WithType(ApplicationCommandOptionType.SubCommandGroup)
+                        .WithName(groupName.ToLower())
+                        .WithDescription(subgroup.Description);
+                }
+                group.AddOption(BuildSubcommand(method, subcommand));
+            }
+            // Just create subcommand
+            else if (subcommand != null)
+            {
+                builder.AddOption(BuildSubcommand(method, subcommand));
+            }
+            // Attach directly to base command
+            else
+            {
+                var parameters = method.GetParameters();
+
+                builder.Options = parameters.Length == 0 ? null : parameters.Select(GenerateOption).ToList();
+            }
+
             var commands = !_slashCommands.ContainsKey(attribute.Guild) ?
                 new List<SlashCommandBuilder>()
                 : _slashCommands[attribute.Guild];
             
-            commands.Add(builder);
+            if (!commands.Contains(builder))
+                commands.Add(builder);
             
             // If it's new, it'll set it. Otherwise, it'll just place the same reference.
             _slashCommands[attribute.Guild] = commands;
+        }
+
+        private SlashCommandOptionBuilder BuildSubcommand(MethodInfo method, SlashSubcommandAttribute subcommand)
+        {
+            var command = new SlashCommandOptionBuilder()
+                .WithName(subcommand.Name.ToLower())
+                .WithDescription(subcommand.Description)
+                .WithType(ApplicationCommandOptionType.SubCommand);
+
+            var parameters = method.GetParameters();
+
+            command.Options = parameters.Length == 0 ? null : parameters.Select(GenerateOption).ToList();
+            return command;
         }
 
         private SlashCommandOptionBuilder GenerateOption(ParameterInfo o)

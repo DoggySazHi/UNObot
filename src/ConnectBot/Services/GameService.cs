@@ -216,6 +216,9 @@ namespace ConnectBot.Services
             
             game.GameMode = GameMode.Normal;
             foreach (var mode in args[1..])
+            {
+                if (string.IsNullOrWhiteSpace(mode))
+                    continue;
                 switch (mode.ToLower().Trim())
                 {
                     case "blind":
@@ -231,6 +234,7 @@ namespace ConnectBot.Services
                         await ErrorEmbed(context, $"\"{mode}\" is not a valid mode!");
                         return;
                 }
+            }
 
             if (game.GameMode.HasFlag(GameMode.Custom))
             {
