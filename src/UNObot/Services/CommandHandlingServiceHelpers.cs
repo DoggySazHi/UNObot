@@ -29,13 +29,26 @@ namespace UNObot.Services
                 await RegisterCommands();
         }
         
-        private readonly Dictionary<ulong, List<SlashCommandCreationProperties>> _slashCommands = new();
+        private readonly Dictionary<ulong, List<SlashCommandBuilder>> _slashCommands = new();
 
         private void CreateCommand(MethodInfo method, HelpAttribute help, SlashCommandAttribute attribute, RequireOwnerAttribute owner)
         {
             if (attribute is not { RegisterSlashCommand: true }) return;
-            var builder = new SlashCommandBuilder();
-
+            var builder = _slashCommands[attribute.Guild].Find(o => o.Name.Equals(attribute.Text, StringComparison.OrdinalIgnoreCase)) ?? new SlashCommandBuilder();
+            if (attribute.SubcommandGroup != null && attribute.Subcommand == null)
+                throw new CustomAttributeFormatException("Your subcommand cannot be null if you have defined a subcommand!\n" +
+                                                         $"Command: {attribute.Text} Subcommand Group: {attribute.SubcommandGroup} Subcommand: {attribute.Subcommand}");
+            
+            if (attribute.SubcommandGroup != null)
+            {
+                var groupName = attribute.SubcommandGroup.ToLower();
+                var group = builder.Options.Find(o => o.Name.Equals(groupName));
+                if (group == null)
+                    group = new SlashCommandOptionBuilder()
+                        .WithType(ApplicationCommandOptionType.SubCommandGroup)
+                        .WithName(groupName);
+            }
+            
             if (builder.Name == null)
                 builder.WithName(attribute.Text);
             builder.Name = builder.Name.ToLower();
@@ -52,10 +65,10 @@ namespace UNObot.Services
             builder.Options = parameters.Length == 0 ? null : parameters.Select(GenerateOption).ToList();
             
             var commands = !_slashCommands.ContainsKey(attribute.Guild) ?
-                new List<SlashCommandCreationProperties>()
+                new List<SlashCommandBuilder>()
                 : _slashCommands[attribute.Guild];
             
-            commands.Add(builder.Build());
+            commands.Add(builder);
             
             // If it's new, it'll set it. Otherwise, it'll just place the same reference.
             _slashCommands[attribute.Guild] = commands;
@@ -65,7 +78,8 @@ namespace UNObot.Services
         {
             var optionAttribute = o.GetCustomAttribute<SlashCommandOptionAttribute>();
             
-            var builder = new SlashCommandOptionBuilder().WithName(optionAttribute?.Name ?? o.Name?.ToLower() ?? "" + (char)(o.Position + 'a'))
+            var builder = new SlashCommandOptionBuilder()
+                .WithName(optionAttribute?.Name ?? o.Name?.ToLower() ?? "" + (char)(o.Position + 'a'))
                 .WithDescription(optionAttribute?.Description ?? "A value.")
                 .WithRequired(optionAttribute?.Required ?? !o.IsOptional);
 
@@ -124,11 +138,11 @@ namespace UNObot.Services
                 {
                     if (guild == 0)
                     {
-                        await _discord.Rest.BulkOverwriteGlobalCommands(_slashCommands[0].ToArray());
+                        await _discord.Rest.BulkOverwriteGlobalCommands(_slashCommands[0].Select(o => o.Build()).ToArray());
                     }
                     else
                     {
-                        await _discord.Rest.BulkOverwriteGuildCommands(_slashCommands[guild].ToArray(), guild);
+                        await _discord.Rest.BulkOverwriteGuildCommands(_slashCommands[guild].Select(o => o.Build()).ToArray(), guild);
                     }
                 }
             }
