@@ -15,7 +15,7 @@ namespace UNObot.Plugins.Helpers
 
         static PluginHelper()
         {
-            Delete = Emote.Parse("<:trash:747166938467401808>");
+            Delete = Emote.Parse("<a:trash:878428941013090314>");
         }
 
         /// <summary>
