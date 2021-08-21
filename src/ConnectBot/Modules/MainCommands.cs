@@ -1,9 +1,7 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using ConnectBot.Services;
 using Discord;
 using Discord.Commands;
-using Discord.WebSocket;
 using UNObot.Plugins;
 using UNObot.Plugins.Attributes;
 
@@ -77,7 +75,7 @@ namespace ConnectBot.Modules
         }
         
         [DisableDMs]
-        [SlashCommand("cbot", RunMode = RunMode.Async, Guild = 420005591155605535)]
+        [SlashCommand("cbot", RunMode = RunMode.Async)]
         [SlashSubcommand("join", "Join the ConnectBot queue in the current server.")]
         [Help(new [] {".cbot help"}, "The base command for ConnectBot. Use .cbot help for more info.", true, "UNObot 4.3 Beta 9")]
         public async Task ConnectBotDebugA()
@@ -87,7 +85,7 @@ namespace ConnectBot.Modules
         }
         
         [DisableDMs]
-        [SlashCommand("cbot", RunMode = RunMode.Async, Guild = 420005591155605535)]
+        [SlashCommand("cbot", RunMode = RunMode.Async)]
         [SlashSubcommand("leave", "Leave the ConnectBot queue in the current server.")]
         [Help(new [] {".cbot help"}, "The base command for ConnectBot. Use .cbot help for more info.", true, "UNObot 4.3 Beta 9")]
         public async Task ConnectBotDebugB()
@@ -97,7 +95,7 @@ namespace ConnectBot.Modules
         }
         
         [DisableDMs]
-        [SlashCommand("cbot", RunMode = RunMode.Async, Guild = 420005591155605535)]
+        [SlashCommand("cbot", RunMode = RunMode.Async)]
         [SlashSubcommand("start", "Start the queue for ConnectBot.")]
         [Help(new [] {".cbot help"}, "The base command for ConnectBot. Use .cbot help for more info.", true, "UNObot 4.3 Beta 9")]
         public async Task ConnectBotDebugC(
@@ -109,7 +107,7 @@ namespace ConnectBot.Modules
         }
         
         [DisableDMs]
-        [SlashCommand("cbot", RunMode = RunMode.Async, Guild = 420005591155605535)]
+        [SlashCommand("cbot", RunMode = RunMode.Async)]
         [SlashSubcommand("game", "Show the current game status.")]
         [Help(new [] {".cbot help"}, "The base command for ConnectBot. Use .cbot help for more info.", true, "UNObot 4.3 Beta 9")]
         public async Task ConnectBotDebugD()
@@ -119,7 +117,7 @@ namespace ConnectBot.Modules
         }
         
         [DisableDMs]
-        [SlashCommand("cbot", RunMode = RunMode.Async, Guild = 420005591155605535)]
+        [SlashCommand("cbot", RunMode = RunMode.Async)]
         [SlashSubcommand("drop", "Drop a piece.")]
         [Help(new [] {".cbot help"}, "The base command for ConnectBot. Use .cbot help for more info.", true, "UNObot 4.3 Beta 9")]
         public async Task ConnectBotDebugE(
@@ -131,7 +129,7 @@ namespace ConnectBot.Modules
         }
         
         [DisableDMs]
-        [SlashCommand("cbot", RunMode = RunMode.Async, Guild = 420005591155605535)]
+        [SlashCommand("cbot", RunMode = RunMode.Async)]
         [SlashSubcommand("board", "Set your board config.")]
         [Help(new [] {".cbot help"}, "The base command for ConnectBot. Use .cbot help for more info.", true, "UNObot 4.3 Beta 9")]
         public async Task ConnectBotDebugF(
@@ -144,7 +142,7 @@ namespace ConnectBot.Modules
         }
 
         [DisableDMs]
-        [SlashCommand("cbot", RunMode = RunMode.Async, Guild = 420005591155605535)]
+        [SlashCommand("cbot", RunMode = RunMode.Async)]
         [SlashSubcommand("queue", "Get the current queue of players waiting to play.")]
         [Help(new[] { ".cbot help" }, "The base command for ConnectBot. Use .cbot help for more info.", true,
             "UNObot 4.3 Beta 9")]
@@ -155,7 +153,7 @@ namespace ConnectBot.Modules
         }
 
         [DisableDMs]
-        [SlashCommand("cbot", RunMode = RunMode.Async, Guild = 420005591155605535)]
+        [SlashCommand("cbot", RunMode = RunMode.Async)]
         [SlashSubcommand("stats", "Get your (or someone else's) stats.")]
         [Help(new [] {".cbot help"}, "The base command for ConnectBot. Use .cbot help for more info.", true, "UNObot 4.3 Beta 9")]
         public async Task ConnectBotDebugH(
@@ -166,7 +164,7 @@ namespace ConnectBot.Modules
         }
         
         [DisableDMs]
-        [SlashCommand("cbot", RunMode = RunMode.Async, Guild = 420005591155605535)]
+        [SlashCommand("cbot", RunMode = RunMode.Async)]
         [SlashSubcommand("help", "Show a help menu for ConnectBot.")]
         [Help(new [] {".cbot help"}, "The base command for ConnectBot. Use .cbot help for more info.", true, "UNObot 4.3 Beta 9")]
         public async Task ConnectBotDebugI()
