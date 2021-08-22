@@ -78,7 +78,7 @@ namespace UNObot.Modules
         [Alias("ahh", "ahhh", "ahhhh")]
         [Help(new[] {".help (command)"}, "If you need help using help, you're truly lost.", true, "UNObot 1.0")]
         public async Task Help(
-            [SlashCommandOption("Get help about this specific command.")]
+            [SlashCommandOption("Get help about this specific command.", Required = false)]
             string cmdSearch
             )
         {
