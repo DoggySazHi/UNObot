@@ -31,7 +31,7 @@ namespace UNObot.ServerQuery.Services
             _minecraft = minecraft;
         }
         
-        public bool UnturnedQueryEmbed(string ip, ushort port, out Embed result, ServerAverages averages = null)
+        public Embed UnturnedQueryEmbed(string ip, ushort port, ServerAverages averages = null)
         {
             A2SInfo information = null;
             var informationGet = false;
@@ -51,8 +51,7 @@ namespace UNObot.ServerQuery.Services
 
             if (!informationGet || !playersGet || !rulesGet)
             {
-                result = null;
-                return false;
+                return null;
             }
 
             var serverName = information.Name;
@@ -117,8 +116,7 @@ namespace UNObot.ServerQuery.Services
                     $"Last week: {averages.AverageLastWeek:N2} players\n" +
                     $"Last month: {averages.AverageLastMonth:N2} players\n" +
                     $"Last year: {averages.AverageLastYear:N2} players\n", true);
-            result = builder.Build();
-            return true;
+            return builder.Build();
         }
 
         public async Task<Embed> MinecraftQueryEmbed(string ip, ushort port)

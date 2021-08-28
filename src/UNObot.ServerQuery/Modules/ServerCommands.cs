@@ -30,7 +30,7 @@ namespace UNObot.ServerQuery.Modules
             _db = db;
         }
 
-        [Command("ubows", RunMode = RunMode.Async)]
+        [SlashCommand("ubows", RunMode = RunMode.Async, Guild = 185593135458418701)]
         [Alias("ubow")]
         [Help(new[] {".ubows"}, "Get basic server information about the Unturned Bunker Official Wikia Server.", true,
             "UNObot 2.4")]
@@ -46,27 +46,6 @@ namespace UNObot.ServerQuery.Modules
         public async Task Urn()
         {
             await ReplyAsync(UnturnedReleaseNotes.GetLatestLink());
-        }
-        
-        [Command("slamc", RunMode = RunMode.Async)]
-        [Help(new[] {".slamc"}, "Get basic server information about the Slightly Less Average Minecraft server.", true,
-            "UNObot 2.4")]
-        public async Task Slamc()
-        {
-            var response = _query.GetInfoMC("williamle.com");
-            if (response.ServerUp)
-                await ReplyAsync(
-                    $"Current players: {response.CurrentPlayers}/{response.MaximumPlayers}\nCurrently running on {response.Version}.");
-            else
-                await ReplyAsync("The server seems to be down from here...");
-        }
-
-        [Command("pcreative", RunMode = RunMode.Async)]
-        [Help(new[] {".pcreative"}, "Get basic server information about the pCreative Minecraft server.", true,
-            "UNObot 2.4")]
-        public async Task PCreative()
-        {
-            await CheckMC("williamle.com", 25432);
         }
 
         [Command("checkmc", RunMode = RunMode.Async)]
@@ -129,42 +108,10 @@ namespace UNObot.ServerQuery.Modules
             }
         }
 
-        [Command("psurvival", RunMode = RunMode.Async)]
-        [Help(new[] {".psurvival"}, "Get basic server information about the pSurvival Minecraft server.", true,
-            "UNObot 2.4")]
-        public async Task PSurvival()
-        {
-            await CheckMC("williamle.com", 29292);
-        }
-
         [Command("ouchies", RunMode = RunMode.Async)]
-        [Help(new[] {".ouchies"}, "That must hurt.", true, "UNObot 4.0.12")]
+        [Help(new[] { ".ouchies" }, "That must hurt.", true, "UNObot 4.0.12")]
         public async Task GetOuchies()
-        {
-            var message = await ReplyAsync("I am now querying the server, please wait warmly...");
-            try
-            {
-                var embed = await _embed.OuchiesEmbed("williamle.com", 29292);
-                if (embed == null)
-                {
-                    await message.ModifyAsync(o =>
-                        o.Content = "Error: Apparently we couldn't get any information about this server.");
-                    return;
-                }
-
-                await message.ModifyAsync(o =>
-                {
-                    o.Content = "";
-                    o.Embed = embed;
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
-                await message.ModifyAsync(o =>
-                    o.Content = "We had some difficulties displaying the status. Please try again?");
-            }
-        }
+            => await BaseQuery(() => _embed.OuchiesEmbed("williamle.com", 29292));
 
         [SlashCommand("ouchies", RunMode = RunMode.Async, Guild = 420005591155605535)]
         [Help(new[] {".ouchies (Port)"}, "That must hurt.", true, "UNObot 4.0.12")]
@@ -172,60 +119,12 @@ namespace UNObot.ServerQuery.Modules
             [SlashCommandOption("The port associated with the server.", new object[] { "SurvivalA", "SurvivalB" }, new object[] { 29292, 27285 })]
             ushort port
         )
-        {
-            var message = await ReplyAsync("I am now querying the server, please wait warmly...");
-            try
-            {
-                var embed = await _embed.OuchiesEmbed("williamle.com", port);
-                if (embed == null)
-                {
-                    await message.ModifyAsync(o =>
-                        o.Content = "Error: Apparently we couldn't get any information about this server.");
-                    return;
-                }
-
-                await message.ModifyAsync(o =>
-                {
-                    o.Content = "";
-                    o.Embed = embed;
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
-                await message.ModifyAsync(o =>
-                    o.Content = "We had some difficulties displaying the status. Please try again?");
-            }
-        }
+            => await BaseQuery(() => _embed.OuchiesEmbed("williamle.com", port));
 
         [Command("locate", RunMode = RunMode.Async)]
-        [Help(new[] {".locate"}, "¿Dónde están?", true, "UNObot 4.0.16")]
+        [Help(new[] { ".locate" }, "¿Dónde están?", true, "UNObot 4.0.16")]
         public async Task GetLocations()
-        {
-            var message = await ReplyAsync("I am now querying the server, please wait warmly...");
-            try
-            {
-                var embed = await _embed.LocationsEmbed("williamle.com", 29292);
-                if (embed == null)
-                {
-                    await message.ModifyAsync(o =>
-                        o.Content = "Error: Apparently we couldn't get any information about this server.");
-                    return;
-                }
-
-                await message.ModifyAsync(o =>
-                {
-                    o.Content = "";
-                    o.Embed = embed;
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
-                await message.ModifyAsync(o =>
-                    o.Content = "We had some difficulties displaying the status. Please try again?");
-            }
-        }
+            => await BaseQuery(() => _embed.LocationsEmbed("williamle.com", 29292));
 
         [SlashCommand("locate", RunMode = RunMode.Async, Guild = 420005591155605535)]
         [Help(new[] {".locate (port)"}, "¿Dónde están?", true, "UNObot 4.0.16")]
@@ -260,50 +159,14 @@ namespace UNObot.ServerQuery.Modules
         }
 
         [Command("expay", RunMode = RunMode.Async)]
-        [Help(new[] {".expay (target) (amount)"}, "Where's my experience?", true, "UNObot 4.0.17")]
+        [Help(new[] { ".expay (target) (amount)" }, "Where's my experience?", true, "UNObot 4.0.17")]
         public async Task ExPay(string target, string amount)
-        {
-            var message = await ReplyAsync("I am now contacting the server, please wait warmly...");
-            try
-            {
-                var embed = await _embed.TransferEmbed("williamle.com", 29292, Context.User.Id, target, amount);
-                
-                await message.ModifyAsync(o =>
-                {
-                    o.Content = "";
-                    o.Embed = embed;
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
-                await message.ModifyAsync(o =>
-                    o.Content = "We had some difficulties displaying the status. Please try again?");
-            }
-        }
+            => await BaseQuery(() => _embed.TransferEmbed("williamle.com", 29292, Context.User.Id, target, amount));
 
-        [Command("expay", RunMode = RunMode.Async)]
+        [SlashCommand("expay", RunMode = RunMode.Async, Guild = 420005591155605535)]
         [Help(new[] {".expay (port) (target) (amount)"}, "Where's my experience?", true, "UNObot 4.0.17")]
         public async Task ExPay(ushort port, string target, string amount)
-        {
-            var message = await ReplyAsync("I am now contacting the server, please wait warmly...");
-            try
-            {
-                var embed = await _embed.TransferEmbed("williamle.com", port, Context.User.Id, target, amount);
-
-                await message.ModifyAsync(o =>
-                {
-                    o.Content = "";
-                    o.Embed = embed;
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
-                await message.ModifyAsync(o =>
-                    o.Content = "We had some difficulties displaying the status. Please try again?");
-            }
-        }
+            => await BaseQuery(() => _embed.TransferEmbed("williamle.com", port, Context.User.Id, target, amount));
 
         [Command("mctime", RunMode = RunMode.Async)]
         [Help(new[] {".mctime"}, "SLEEP GUYS", true, "UNObot 4.0.16")]
@@ -313,9 +176,10 @@ namespace UNObot.ServerQuery.Modules
             await RunRCON(server.Server, server.RCONPort, server.Password, "time query daytime", false);
         }
 
-        [Command("mctime", RunMode = RunMode.Async)]
+        [SlashCommand("mctime", RunMode = RunMode.Async, Guild = 420005591155605535)]
         [Help(new[] {".mctime (port)"}, "SLEEP GUYS", true, "UNObot 4.0.16")]
-        public async Task GetMCTime(ushort port)
+        public async Task GetMCTime(
+            [SlashCommandOption("The port of the server to check the time of.", new object[] { "SurvivalA", "SurvivalB", "Creative" }, new object[] { 29292, 27285, 25432 }, Required = false)] ushort port)
         {
             var server = await _db.GetRCONServer(port);
             
@@ -327,21 +191,14 @@ namespace UNObot.ServerQuery.Modules
 
             await RunRCON(server.Server, server.RCONPort, server.Password, "time query daytime", false);
         }
-
-        [Command("unofficialwiki", RunMode = RunMode.Async)]
-        [Alias("unwiki")]
-        [Help(new[] {".unofficialwiki"}, "Get basic server information about the Unofficial Wikia Server.", true,
-            "UNObot 2.4")]
-        public async Task UnoffWiki()
-        {
-            await CheckUnturned("williamle.com", 27040);
-        }
-
-        [Command("checkunturned", RunMode = RunMode.Async)]
+        
+        [SlashCommand("checkunturned", RunMode = RunMode.Async)]
         [Alias("checku")]
         [Help(new[] {".checkunturned (ip) (port)"}, "Get basic server information about any Unturned server.", true,
             "UNObot 3.7")]
-        public async Task CheckUnturnedServer(string ip, ushort port = 27015)
+        public async Task CheckUnturnedServer(
+            [SlashCommandOption("The IP of the server to check.")] string ip,
+            [SlashCommandOption("The port of the server to check.", Required = false)] ushort port = 27015)
         {
             await CheckUnturned(ip, port);
         }
@@ -498,14 +355,18 @@ namespace UNObot.ServerQuery.Modules
         }
 
         public async Task CheckUnturned(string ip, ushort port = 27015, ServerAverages averages = null)
+            => await BaseQuery(() => new Task<Embed>(() => _embed.UnturnedQueryEmbed(ip, port, averages)));
+
+        private async Task BaseQuery(Func<Task<Embed>> method)
         {
             var message = await ReplyAsync("I am now querying the server, please wait warmly...");
             try
             {
-                var success = _embed.UnturnedQueryEmbed(ip, port, out var embed, averages);
-                if (!success || embed == null)
+                var embed = await method();
+                if (embed == null)
                 {
-                    await message.MakeDeletable(Context.User.Id)
+                    await message
+                        .MakeDeletable()
                         .ModifyAsync(o =>
                         o.Content = "Error: Apparently we couldn't get any information about this server.");
                     return;
@@ -519,7 +380,7 @@ namespace UNObot.ServerQuery.Modules
             }
             catch (Exception ex)
             {
-                _logger.Log(LogSeverity.Error, "Error loading embeds for a server.", ex);
+                _logger.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
                 await message.ModifyAsync(o =>
                     o.Content = "We had some difficulties displaying the status. Please try again?");
             }
