@@ -24,7 +24,10 @@ namespace UNObot.Plugins.Helpers
         /// <returns>A directory path.</returns>
         public static string Directory()
         {
-            var folder = Path.Combine(Path.GetDirectoryName(Assembly.GetCallingAssembly().Location)!,
+            var assemblyPath = Assembly.GetCallingAssembly().Location;
+            if (string.IsNullOrEmpty(assemblyPath))
+                assemblyPath = AppContext.BaseDirectory;
+            var folder = Path.Combine(Path.GetDirectoryName(assemblyPath)!,
                 Assembly.GetCallingAssembly().GetName().Name!);
             if (!System.IO.Directory.Exists(folder))
                 System.IO.Directory.CreateDirectory(folder);
