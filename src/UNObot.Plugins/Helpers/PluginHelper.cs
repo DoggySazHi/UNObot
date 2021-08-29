@@ -154,13 +154,12 @@ namespace UNObot.Plugins.Helpers
             AllowedMentions allowedMentions = null,
             MessageReference messageReference = null,
             MessageComponent component = null,
-            InteractionResponseType type = InteractionResponseType.ChannelMessageWithSource,
             bool ephemeral = false)
         {
             if (context is not UNObotCommandContext { Interaction: { } } unobotContext)
                 return await context.Channel.SendMessageAsync(message, isTTS, embed, options, allowedMentions, messageReference,
                     component);
-            return await unobotContext.Interaction.FollowupAsync(embed == null ? null : new [] { embed }, message, isTTS, ephemeral, type, allowedMentions, options, component);
+            return await unobotContext.Interaction.FollowupAsync(message, embed == null ? null : new [] { embed }, isTTS, ephemeral, allowedMentions, options, component);
         }
 
         public static Color RandomColor()
@@ -172,9 +171,7 @@ namespace UNObot.Plugins.Helpers
             {
                 var index = random.Next(i + 1);
                 
-                var temp = rgb[index];
-                rgb[index] = rgb[i];
-                rgb[i] = temp;
+                (rgb[index], rgb[i]) = (rgb[i], rgb[index]);
             }
 
             return new Color(rgb[0], rgb[1], rgb[2]);

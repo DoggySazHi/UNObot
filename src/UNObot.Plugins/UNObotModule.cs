@@ -17,11 +17,10 @@ namespace UNObot.Plugins
             AllowedMentions allowedMentions = null,
             MessageReference messageReference = null,
             MessageComponent component = null,
-            InteractionResponseType type = InteractionResponseType.ChannelMessageWithSource,
             bool ephemeral = false)
         {
             return await Context.ReplyAsync(message, isTTS, embed, options, allowedMentions, messageReference,
-                component, type, ephemeral);
+                component, ephemeral);
         }
     }
 }

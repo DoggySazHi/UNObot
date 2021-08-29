@@ -99,7 +99,7 @@ namespace UNObot.Core.Services
                 return "This is illegal you know. Your card must match in color/value, or be a wild card.";
             var response = "";
             var usernamePlayer = context.User.Username;
-            response += $"{usernamePlayer} has placed an {playCard}.\n";
+            response += $"{usernamePlayer} has placed a {playCard}.\n";
             
             var unoPlayer = await _db.GetUNOPlayer(server);
             if (unoPlayer != 0)

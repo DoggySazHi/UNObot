@@ -20,12 +20,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <TrimmerRootAssembly Include="System.Resources.Writer"/>
-    <TrimmerRootAssembly Include="System.Diagnostics.FileVersionInfo"/>
-    <TrimmerRootAssembly Include="System.Runtime"/>
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Update="*.json">
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
     </Content>
@@ -51,7 +45,7 @@
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.0.90" />
     <PackageReference Include="Dapper.Contrib" Version="2.0.78" />
-    <PackageReference Include="Discord.Net.Labs" Version="2.4.9" />
+    <PackageReference Include="Discord.Net.Labs" Version="3.0.2" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="5.0.0" />

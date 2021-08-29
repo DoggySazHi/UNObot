@@ -104,9 +104,10 @@ namespace UNObot.Services
                     var context = _server.GetContext();
                     var request = context.Request;
                     var url = context.Request.RawUrl;
+                    var displayURL = url == null ? "<null?>" : Uri.EscapeUriString(url).Replace(Environment.NewLine, "");
 #if DEBUG
-                    _logger.Log(LogSeverity.Debug, $"Received request from {url}.");
-                    var headers = request.Headers.AllKeys.Aggregate("Headers: ", (current, key) => current + $"{key}, {request.Headers[key]}\n");
+                    _logger.Log(LogSeverity.Debug, $"Received request from {displayURL}.");
+                    var headers = request.Headers.AllKeys.Aggregate("Headers: ", (current, key) => current + $"{key?.Replace(Environment.NewLine, "")}, {request.Headers[key]?.Replace(Environment.NewLine, "")}\n");
                     _logger.Log(LogSeverity.Debug, headers);
 #endif
 
@@ -140,19 +141,19 @@ namespace UNObot.Services
                                     catch (Exception e)
                                     {
                                         _logger.Log(LogSeverity.Critical, "Webhook Parser failed!", e);
-                                        _logger.Log(LogSeverity.Critical, $"URL: {url}");
+                                        _logger.Log(LogSeverity.Critical, $"URL: {displayURL}");
                                         _logger.Log(LogSeverity.Critical, text);
                                     }
                                 }
                                 else
                                 {
                                     _logger.Log(LogSeverity.Warning,
-                                        $"Does not seem to point to a server. URL: {url}");
+                                        $"Does not seem to point to a server. URL: {displayURL}");
                                 }
                             }
                             else
                             {
-                                _logger.Log(LogSeverity.Debug, $"Given an invalid channel! URL: {url}");
+                                _logger.Log(LogSeverity.Debug, $"Given an invalid channel! URL: {displayURL}");
                             }
                         }
                     }

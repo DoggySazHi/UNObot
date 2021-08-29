@@ -135,6 +135,9 @@ namespace UNObot.Services
                          o.ParameterType == typeof(int) || o.ParameterType == typeof(uint) ||
                          o.ParameterType == typeof(long))
                     builder.WithType(ApplicationCommandOptionType.Integer);
+                else if (o.ParameterType == typeof(float) || o.ParameterType == typeof(double) ||
+                         o.ParameterType == typeof(decimal))
+                    builder.WithType(ApplicationCommandOptionType.Number);
                 else if (IsDerivedFrom(o.ParameterType, typeof(IUser)))
                     builder.WithType(ApplicationCommandOptionType.User);
                 else if (IsDerivedFrom(o.ParameterType, typeof(IRole)))
@@ -176,13 +179,18 @@ namespace UNObot.Services
             {
                 foreach (var guild in _slashCommands.Keys)
                 {
+                    // Mainly to avoid warnings from Rider, using LINQ to do it.
+                    var commands = new ApplicationCommandProperties[_slashCommands[guild].Count];
+                    for (var i = 0; i < _slashCommands[guild].Count; ++i)
+                        commands[i] = _slashCommands[guild][i].Build();
+                    
                     if (guild == 0)
                     {
-                        await _discord.Rest.BulkOverwriteGlobalCommands(_slashCommands[0].Select(o => o.Build()).ToArray());
+                        await _discord.Rest.BulkOverwriteGlobalCommands(commands);
                     }
                     else
                     {
-                        await _discord.Rest.BulkOverwriteGuildCommands(_slashCommands[guild].Select(o => o.Build()).ToArray(), guild);
+                        await _discord.Rest.BulkOverwriteGuildCommands(commands, guild);
                     }
                 }
             }
