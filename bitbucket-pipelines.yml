@@ -9,7 +9,7 @@ pipelines:
         script:
           - dotnet build -c Release
           - dotnet build src/UNObot -c Release
-          - ls src/UNObot/bin/Release/net5.0/plugins
+          - ls src/UNObot/bin/Release/net5.0/win-x64/plugins
   custom:
     manualdeploy:
       - step:
@@ -20,7 +20,7 @@ pipelines:
             - dotnet build -c Release
             - dotnet publish -c Release src/UNObot
             - rm -rf src/UNObot/bin/Release/net5.0/UNObot
-            - mv src/UNObot/bin/Release/net5.0/publish src/UNObot/bin/Release/net5.0/UNObot
+            - mv src/UNObot/bin/Release/net5.0/win-x64/publish src/UNObot/bin/Release/net5.0/UNObot
             - >
               echo "{\"commit\": \"$BITBUCKET_COMMIT\", \"build\":\"$BITBUCKET_BUILD_NUMBER\"}" > src/UNObot/bin/Release/net5.0/UNObot/build.json
     manualbuild:
@@ -31,7 +31,6 @@ pipelines:
           script:
             - dotnet build -c Release
             - dotnet build src/UNObot -c Release
-            - ls src/UNObot/bin/Release/net5.0/plugins
   branches:
     master:
       - step:
@@ -41,13 +40,12 @@ pipelines:
           script:
             - dotnet build -c Release
             - dotnet build src/UNObot -c Release
-            - ls src/UNObot/bin/Release/net5.0/plugins
       - step:
           name: Deploy
           script:
             - dotnet build -c Release
             - dotnet publish -c Release src/UNObot
             - rm -rf src/UNObot/bin/Release/net5.0/UNObot
-            - mv src/UNObot/bin/Release/net5.0/publish src/UNObot/bin/Release/net5.0/UNObot
+            - mv src/UNObot/bin/Release/net5.0/win-x64/publish/ src/UNObot/bin/Release/net5.0/UNObot
             - >
               echo "{\"commit\": \"$BITBUCKET_COMMIT\", \"build\":\"$BITBUCKET_BUILD_NUMBER\"}" > src/UNObot/bin/Release/net5.0/UNObot/build.json
