@@ -1,4 +1,4 @@
-image: mcr.microsoft.com/dotnet/sdk:5.0-windowsservercore-ltsc2022
+image: mcr.microsoft.com/dotnet/sdk:5.0
 
 pipelines:
   default:
@@ -9,7 +9,6 @@ pipelines:
         script:
           - dotnet build -c Release
           - dotnet build src/UNObot -c Release
-          - ls src/UNObot/bin/Release/net5.0/win-x64/plugins
   custom:
     manualdeploy:
       - step:
@@ -18,11 +17,6 @@ pipelines:
           name: Manual Build and Deploy
           script:
             - dotnet build -c Release
-            - dotnet publish -c Release src/UNObot
-            - rm -rf src/UNObot/bin/Release/net5.0/UNObot
-            - mv src/UNObot/bin/Release/net5.0/win-x64/publish src/UNObot/bin/Release/net5.0/UNObot
-            - >
-              echo "{\"commit\": \"$BITBUCKET_COMMIT\", \"build\":\"$BITBUCKET_BUILD_NUMBER\"}" > src/UNObot/bin/Release/net5.0/UNObot/build.json
     manualbuild:
       - step:
           caches:
@@ -40,12 +34,3 @@ pipelines:
           script:
             - dotnet build -c Release
             - dotnet build src/UNObot -c Release
-      - step:
-          name: Deploy
-          script:
-            - dotnet build -c Release
-            - dotnet publish -c Release src/UNObot
-            - rm -rf src/UNObot/bin/Release/net5.0/UNObot
-            - mv src/UNObot/bin/Release/net5.0/win-x64/publish/ src/UNObot/bin/Release/net5.0/UNObot
-            - >
-              echo "{\"commit\": \"$BITBUCKET_COMMIT\", \"build\":\"$BITBUCKET_BUILD_NUMBER\"}" > src/UNObot/bin/Release/net5.0/UNObot/build.json
