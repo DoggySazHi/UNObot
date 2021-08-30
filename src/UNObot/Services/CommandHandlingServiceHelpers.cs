@@ -195,7 +195,7 @@ namespace UNObot.Services
                 _waitRegister = true;
                 return;
             }
-            
+
             try
             {
                 foreach (var guild in _slashCommands.Keys)
@@ -204,7 +204,7 @@ namespace UNObot.Services
                     var commands = new ApplicationCommandProperties[_slashCommands[guild].Count];
                     for (var i = 0; i < _slashCommands[guild].Count; ++i)
                         commands[i] = _slashCommands[guild][i].Build();
-                    
+
                     if (guild == 0)
                     {
                         await _discord.Rest.BulkOverwriteGlobalCommands(commands);
@@ -219,6 +219,11 @@ namespace UNObot.Services
             {
                 var json = JsonConvert.SerializeObject(exception.Error, Formatting.Indented);
                 _logger.Log(LogSeverity.Error, $"Error trying to create a slash command!\n{json}");
+            }
+            catch (HttpException exception)
+            {
+                var json = JsonConvert.SerializeObject(exception.Error, Formatting.Indented);
+                _logger.Log(LogSeverity.Error, $"Permissions were not granted for a server!\n{json}");
             }
             finally
             {

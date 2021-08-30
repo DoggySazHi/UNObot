@@ -22,7 +22,8 @@ namespace ConnectBot.Modules
             button.Callback = game.DropPiece;
         }
         
-        [Command("cbot", RunMode = RunMode.Async)]
+        [SlashCommand("cbot", RunMode = RunMode.Async)]
+        [Help(new [] {".cbot help"}, "The base command for ConnectBot. Use .cbot help for more info.", true, "UNObot 4.2.0")]
         public async Task ConnectBot()
         {
             await _db.AddUser(Context.User.Id);
@@ -30,13 +31,10 @@ namespace ConnectBot.Modules
         }
         
         [DisableDMs]
-        [SlashCommand("cbot", RunMode = RunMode.Async)]
+        // Do not make a slash command; will conflict with others.
+        [Command("cbot", RunMode = RunMode.Async)]
         [Help(new [] {".cbot help"}, "The base command for ConnectBot. Use .cbot help for more info.", true, "UNObot 4.2.0")]
-        public async Task ConnectBot(
-            [Remainder]
-            [SlashCommandOption("A subcommand for UNObot. See .cbot help for more info.",
-                new object[] { "join", "leave", "start", "game", "drop", "board", "queue", "stats", "help" })]
-            string input)
+        public async Task ConnectBot([Remainder] string input)
         {
             await _db.AddUser(Context.User.Id);
             var args = input.Trim().Split(' '); // We need to preserve case for other things like stats.
