@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -118,13 +119,13 @@ namespace UNObot.Services
         {
             var optionAttribute = o.GetCustomAttribute<SlashCommandOptionAttribute>();
             
-            var builder = new SlashCommandOptionBuilder()
-                .WithName(optionAttribute?.Name ?? o.Name?.ToLower() ?? "" + (char)(o.Position + 'a'))
+            // TODO so, Discord.NET is broken as options can range from 1-32 chars, however their RegEx requires 3-32 chars.
+            // So I use reflection to bypass it.
+            
+            var builder = CreateBuilder(optionAttribute?.Name ?? o.Name?.ToLower() ?? "" + (char)(o.Position + 'a'))
                 .WithDescription(optionAttribute?.Description ?? "A value.")
                 .WithRequired(optionAttribute?.Required ?? !o.IsOptional);
-
-            builder.Name = builder.Name.ToLower();
-
+            
             if (optionAttribute?.OptionType != null)
                 builder.WithType(optionAttribute.OptionType);
             else {
@@ -160,6 +161,26 @@ namespace UNObot.Services
             }
 
             return builder;
+        }
+
+        private static SlashCommandOptionBuilder CreateBuilder(string name)
+        {
+            var output = new SlashCommandOptionBuilder();
+            
+            if (name?.Length > SlashCommandBuilder.MaxNameLength)
+                throw new ArgumentException("Name length must be less than or equal to 32");
+            if (name?.Length < 1)
+                throw new ArgumentException("Name length must at least 1 characters in length");
+            if (name != null)
+            {
+                name = name.ToLower();
+                // Bug origin: https://github.com/Discord-Net-Labs/Discord.Net-Labs/blob/eb271a9ccc59b45f6a70556ef065ff2fbc531fce/src/Discord.Net.Core/Entities/Interactions/SlashCommandBuilder.cs#L304
+                if (!Regex.IsMatch(name, @"^[\w-]{1,32}$"))
+                    throw new ArgumentException("Option name cannot contain any special characters or whitespaces!");
+            }
+
+            typeof(SlashCommandOptionBuilder).GetField("_name", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(output, name);
+            return output;
         }
 
         private static bool IsDerivedFrom(Type derivedType, Type baseType)
