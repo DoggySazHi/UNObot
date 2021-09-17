@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -27,7 +28,7 @@ namespace UNObot.Core.Modules
             _embed = embed;
         }
 
-        [Command("join", RunMode = RunMode.Async)]
+        [SlashCommand("join", RunMode = RunMode.Async)]
         [Help(new[] {".join"}, "Join the queue in the current server.", true, "UNObot 0.1")]
         [DisableDMs]
         public async Task Join()
@@ -50,7 +51,7 @@ namespace UNObot.Core.Modules
             await ReplyAsync($"{Context.User.Username} has been added to the queue.\n");
         }
 
-        [Command("leave", RunMode = RunMode.Async)]
+        [SlashCommand("leave", RunMode = RunMode.Async)]
         [DisableDMs]
         [Help(new[] {".leave"}, "Leave the queue (or game) in the current server.", true, "UNObot 0.2")]
         public async Task Leave()
@@ -86,65 +87,31 @@ namespace UNObot.Core.Modules
         }
 
         [Command("stats", RunMode = RunMode.Async)]
-        [Help(new[] {".stats"},
-            "Get the statistics of you or another player to see if they are a noob, pro, or cheater.", true,
-            "UNObot 1.4")]
-        public async Task Stats()
-        {
-            var stats = await _db.GetStats(Context.User.Id);
-            var note = await _db.GetNote(Context.User.Id);
-            if (!await _db.UserExists(Context.User.Id))
-                await ReplyAsync("You do not currently exist in the database. Maybe you should play a game.");
-            else
-                await ReplyAsync((note != null ? $"NOTE: {note}\n" : "") 
-                    + $"{Context.User.Username}'s stats:\n"
-                    + $"Games joined: {stats.GamesJoined}\n"
-                    + $"Games fully played: {stats.GamesPlayed}\n"
-                    + $"Games won: {stats.GamesWon}");
-        }
-
-        [Command("stats", RunMode = RunMode.Async)]
         [Help(new[] {".stats (ping another player, or their ID)"},
             "Get the statistics of you or another player to see if they are a noob, pro, or cheater.", true,
             "UNObot 1.4")]
-        public async Task Stats2([Remainder] string user)
+        public async Task Stats2([SlashCommandOption("The user to get the stat of.", Required = false)] IUser user = null)
         {
-            user = user.Trim();
-            //Style of Username#XXXX or Username XXXX
-            if ((user.Contains('#') || user.Contains(' ')) && user.Length >= 6 &&
-                int.TryParse(user.Substring(user.Length - 4), out var discriminator))
-            {
-                var userObj = Context.Client.GetUser(user[..^5], discriminator.ToString());
-                //Negative one is only passed in because it cannot convert to ulong; it will fail the TryParse and give a "Mention the player..." error.
-                user = userObj != null ? userObj.Id.ToString() : (-1).ToString();
-            }
-
-            user = user.Trim(' ', '<', '>', '!', '@');
-            if (!ulong.TryParse(user, out var userid))
-            {
-                await ReplyAsync(
-                    "Mention the player with this command to see their stats. Or if you want to be polite, try using their ID.");
-                return;
-            }
-
+            var userid = user?.Id ?? Context.User.Id;
+            
             if (!await _db.UserExists(userid))
             {
                 await ReplyAsync(
-                    "The user does not exist; either you have typed it wrong, or that user doesn't exist in the UNObot database.");
+                    "User not found in the database.");
                 return;
             }
 
-            var stats = await _db.GetStats(userid);
+            var (gamesJoined, gamesPlayed, gamesWon) = await _db.GetStats(userid);
             var note = await _db.GetNote(userid);
             await ReplyAsync((note != null ? $"NOTE: {note}\n" : "") 
                 + $"{Context.Client.GetUser(userid).Username}'s stats:\n"
-                + $"Games joined: {stats.GamesJoined}\n"
-                + $"Games fully played: {stats.GamesPlayed}\n"
-                + $"Games won: {stats.GamesWon}");
+                + $"Games joined: {gamesJoined}\n"
+                + $"Games fully played: {gamesPlayed}\n"
+                + $"Games won: {gamesWon}");
         }
 
         [Command("setnote", RunMode = RunMode.Async)]
-        [Help(new[] {".setnote"}, "Set a note about yourself. Write nothing to delete your message", true,
+        [Help(new[] {".setnote"}, "Set a note about yourself. Write nothing to delete your message.", true,
             "UNObot 2.1")]
         public async Task SetNote()
         {
@@ -153,7 +120,7 @@ namespace UNObot.Core.Modules
         }
 
         [Command("setnote", RunMode = RunMode.Async)]
-        [Help(new[] {".setnote"}, "Set a note about yourself. Write nothing to delete your message", true,
+        [Help(new[] {".setnote"}, "Set a note about yourself. Write nothing to delete your message.", true,
             "UNObot 2.1")]
         public async Task SetNote([Remainder] string text)
         {
@@ -206,7 +173,7 @@ namespace UNObot.Core.Modules
             await ReplyAsync("Successfully removed note!");
         }
 
-        [Command("draw", RunMode = RunMode.Async)]
+        [SlashCommand("draw", RunMode = RunMode.Async)]
         [Alias("take", "dr", "tk")]
         [DisableDMs]
         [Help(new[] {".draw"}, "Draw a randomized card, which is based off probabilities instead of the real deck.",
@@ -259,8 +226,8 @@ namespace UNObot.Core.Modules
             }
         }
 
-        [Command("deck", RunMode = RunMode.Async)]
-        [Alias("hand", "cards", "d", "h")]
+        [SlashCommand("hand", RunMode = RunMode.Async)]
+        [Alias("deck", "cards", "d", "h")]
         [DisableDMs]
         [Help(new[] {".deck"}, "View all of the cards you possess.", true, "UNObot 0.2")]
         public async Task Deck()
@@ -295,7 +262,7 @@ namespace UNObot.Core.Modules
             }
         }
 
-        [Command("skip", RunMode = RunMode.Async)]
+        [SlashCommand("skip", RunMode = RunMode.Async)]
         [Alias("s")]
         [DisableDMs]
         [Help(new[] {".skip"}, "Skip your turn if the game is in fast mode. However, you are forced to draw two cards.",
@@ -362,9 +329,6 @@ namespace UNObot.Core.Modules
                                         "You cannot skip without drawing at least one card! HINT: You can try using .quickplay/.qp instead of .draw and .skip.");
                                     return;
                                 }
-
-                                // Useless, it will be cleared.
-                                //await _db.SetCardsDrawn(Context.Guild.Id, CardsDrawn + 1);
 
                                 await _queue.NextPlayer(Context.Guild.Id);
                                 await ReplyAsync(
@@ -541,19 +505,7 @@ namespace UNObot.Core.Modules
             }
         }
 
-        [Command("players", RunMode = RunMode.Async)]
-        [Alias("users", "pl")]
-        [DisableDMs]
-        [Help(new[] {".players"},
-            "See all players in the game, as well as the amount of cards they have. Note however that if the server is running in private mode, it will not show the exact amount of cards that they have.",
-            false, "UNObot 1.0")]
-        public async Task Players()
-        {
-            await ReplyAsync(".players has been deprecated and has been replaced with .game.");
-            await Game();
-        }
-
-        [Command("game", RunMode = RunMode.Async)]
+        [SlashCommand("game", RunMode = RunMode.Async)]
         [Help(new[] {".game"}, "Display all information about the current game.", true, "UNObot 3.0")]
         [DisableDMs]
         public async Task Game()
@@ -567,7 +519,7 @@ namespace UNObot.Core.Modules
                 await ReplyAsync("The game has not started!");
         }
 
-        [Command("queue", RunMode = RunMode.Async)]
+        [SlashCommand("queue", RunMode = RunMode.Async)]
         [Alias("q")]
         [DisableDMs]
         [Help(new[] {".queue"}, "See which players are currently waiting to play a game.", true, "UNObot 2.4")]
@@ -575,7 +527,7 @@ namespace UNObot.Core.Modules
         {
             await _db.AddGame(Context.Guild.Id);
             await _db.AddUser(Context.User.Id, Context.User.Username);
-            var currqueue = await _db.GetUsersWithServer(Context.Guild.Id);
+            var currentQueue = await _db.GetUsersWithServer(Context.Guild.Id);
             if (await _db.IsServerInGame(Context.Guild.Id))
             {
                 await ReplyAsync("Since the server is already in a game, you can also use .game!");
@@ -583,19 +535,17 @@ namespace UNObot.Core.Modules
                 return;
             }
 
-            if (currqueue.Count <= 0)
+            if (currentQueue.Count <= 0)
             {
                 await ReplyAsync("There is nobody in the queue. Join with .join!");
                 return;
             }
 
-            var response = "Current queue players:\n";
-            foreach (var player in currqueue)
-                response += $"- <@{player}>\n";
+            var response = currentQueue.Aggregate("Current queue players:\n", (current, player) => current + $"- <@{player}>\n");
             await ReplyAsync(response);
         }
 
-        [Command("uno", RunMode = RunMode.Async)]
+        [SlashCommand("uno", RunMode = RunMode.Async)]
         [Alias("u")]
         [DisableDMs]
         [Help(new[] {".uno"}, "Quickly use this when you have one card left.", true, "UNObot 0.2")]

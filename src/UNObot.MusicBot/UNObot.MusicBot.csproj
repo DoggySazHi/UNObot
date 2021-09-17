@@ -2,10 +2,11 @@
 
     <PropertyGroup>
         <TargetFramework>net5.0</TargetFramework>
+        <LangVersion>default</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Discord.Net.Labs" Version="3.0.2" />
+      <PackageReference Include="Discord.Net.Labs" Version="3.0.4" />
       <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="5.0.0" />
       <PackageReference Include="Microsoft.Extensions.Configuration" Version="5.0.0" />
       <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="5.0.0" />

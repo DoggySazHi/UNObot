@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace UNObot.ServerQuery.Queries
 {
@@ -11,7 +12,14 @@ namespace UNObot.ServerQuery.Queries
     {
         private static readonly byte[] Handshake = {0xFF, 0xFF, 0xFF, 0xFF, 0x56, 0xFF, 0xFF, 0xFF, 0xFF};
 
+        private IPEndPoint _endPoint;
+        
         public A2SRules(IPEndPoint ep)
+        {
+            _endPoint = ep;
+        }
+
+        public async Task FetchData()
         {
             try
             {
@@ -19,8 +27,8 @@ namespace UNObot.ServerQuery.Queries
                 var udp = new UdpClient();
                 udp.Client.SendTimeout = 5000;
                 udp.Client.ReceiveTimeout = 5000;
-                udp.Send(Handshake, Handshake.Length, ep);
-                var ms = new MemoryStream(udp.Receive(ref ep));
+                await udp.SendAsync(Handshake, Handshake.Length, _endPoint);
+                var ms = new MemoryStream(udp.Receive(ref _endPoint));
                 var br = new BinaryReader(ms, Encoding.UTF8);
                 ms.Seek(4, SeekOrigin.Begin);
 
@@ -33,8 +41,8 @@ namespace UNObot.ServerQuery.Queries
 
                     br.Close();
                     ms.Close();
-                    udp.Send(response, response.Length, ep);
-                    ms = new MemoryStream(udp.Receive(ref ep));
+                    await udp.SendAsync(response, response.Length, _endPoint);
+                    ms = new MemoryStream(udp.Receive(ref _endPoint));
                     br = new BinaryReader(ms, Encoding.UTF8);
                     ms.Seek(4, SeekOrigin.Begin);
                     Header = br.ReadByte();
@@ -72,15 +80,15 @@ namespace UNObot.ServerQuery.Queries
             }
         }
 
-        public byte Header { get; }
-        public short RuleCount { get; }
-        public List<Rule> Rules { get; }
-        public bool ServerUp { get; }
+        public byte Header { get; private set; }
+        public short RuleCount { get; private set; }
+        public List<Rule> Rules { get; private set; }
+        public bool ServerUp { get; private set; }
 
         public struct Rule
         {
-            public string Name { get; set; }
-            public string Value { get; set; }
+            public string Name { get; init; }
+            public string Value { get; init; }
         }
     }
 }

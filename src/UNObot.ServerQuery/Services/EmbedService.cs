@@ -18,20 +18,17 @@ namespace UNObot.ServerQuery.Services
         private readonly ILogger _logger;
         private readonly IUNObotConfig _config;
         private readonly DatabaseService _db;
-        private readonly QueryHandlerService _query;
         private readonly MinecraftProcessorService _minecraft;
 
-        public EmbedService(ILogger logger, IUNObotConfig config, DatabaseService db, QueryHandlerService query,
-            MinecraftProcessorService minecraft)
+        public EmbedService(ILogger logger, IUNObotConfig config, DatabaseService db, MinecraftProcessorService minecraft)
         {
             _logger = logger;
             _config = config;
             _db = db;
-            _query = query;
             _minecraft = minecraft;
         }
         
-        public Embed UnturnedQueryEmbed(string ip, ushort port, ServerAverages averages = null)
+        public async Task<Embed> UnturnedQueryEmbed(string ip, ushort port, ServerAverages averages = null)
         {
             A2SInfo information = null;
             var informationGet = false;
@@ -42,11 +39,22 @@ namespace UNObot.ServerQuery.Services
             for (var i = 0; i < Attempts; i++)
             {
                 if (!informationGet)
-                    informationGet = _query.GetInfo(ip, (ushort) (port + 1), out information);
+                {
+                    information = await QueryHandlerService.GetInfo(ip, (ushort)(port + 1));
+                    informationGet = information.ServerUp;
+                }
+
                 if (!playersGet)
-                    playersGet = _query.GetPlayers(ip, (ushort) (port + 1), out players);
+                {
+                    players = await QueryHandlerService.GetPlayers(ip, (ushort)(port + 1));
+                    playersGet = players.ServerUp;
+                }
+
                 if (!rulesGet)
-                    rulesGet = _query.GetRules(ip, (ushort) (port + 1), out rules);
+                {
+                    rules = await QueryHandlerService.GetRules(ip, (ushort)(port + 1));
+                    rulesGet = rules.ServerUp;
+                }
             }
 
             if (!informationGet || !playersGet || !rulesGet)
@@ -56,26 +64,24 @@ namespace UNObot.ServerQuery.Services
 
             var serverName = information.Name;
             var serverImageUrl = rules.Rules
-                .FirstOrDefault(o => o.Name.Contains("Browser_Icon", StringComparison.OrdinalIgnoreCase)).Value;
+                .FirstOrDefault(o => o.Name.Contains("Browser_Icon", StringComparison.OrdinalIgnoreCase)).Value
+                ?? "";
             var serverDescription = "";
             var map = information.Map;
             var playersOnline = "";
             var vacEnabled = information.Vac == A2SInfo.VacFlags.Secured;
             var unturnedVersion = rules.Rules
-                .FirstOrDefault(o => o.Name.Contains("unturned", StringComparison.OrdinalIgnoreCase)).Value;
+                .FirstOrDefault(o => o.Name.Contains("GameVersion", StringComparison.OrdinalIgnoreCase)).Value
+                                  ?? $"Unknown Version ({information.Version}?)";
             var rocketModVersion = "";
             var rocketModPlugins = "";
-
-            serverImageUrl ??= "";
-
-            unturnedVersion ??= $"Unknown Version ({information.Version}?)";
 
             var descriptionLines = Convert.ToInt32(rules.Rules
                 .Find(o => o.Name.Contains("Browser_Desc_Full_Count", StringComparison.OrdinalIgnoreCase)).Value
                 .Trim());
             for (var i = 0; i < descriptionLines; i++)
                 serverDescription += rules.Rules.FirstOrDefault(o =>
-                    o.Name.Contains($"Browser_Desc_Full_Line_{i}", StringComparison.OrdinalIgnoreCase)).Value;
+                    o.Name.Contains($"Browser_Desc_Full_Line_{i}", StringComparison.OrdinalIgnoreCase)).Value ?? "";
             for (var i = 0; i < players.PlayerCount; i++)
             {
                 playersOnline +=
@@ -123,7 +129,7 @@ namespace UNObot.ServerQuery.Services
         {
             //TODO with the new option to disable status, it might be that queries work but not simple statuses.
             var defaultStatus = new MCStatus(ip, port);
-            var extendedGet = _query.GetInfoMCNew(ip, port, out var extendedStatus);
+            var extendedGet = QueryHandlerService.GetInfoMCNew(ip, port, out var extendedStatus);
 
             if (!defaultStatus.ServerUp && !extendedGet)
             {
@@ -178,7 +184,7 @@ namespace UNObot.ServerQuery.Services
         {
             var ping = new Stopwatch();
             ping.Start();
-            var extendedGet = _query.GetInfoMCNew(ip, port, out var extendedStatus);
+            var extendedGet = QueryHandlerService.GetInfoMCNew(ip, port, out var extendedStatus);
             ping.Stop();
 
             if (!extendedGet)
@@ -221,7 +227,7 @@ namespace UNObot.ServerQuery.Services
             var extendedGet = false;
             for (var i = 0; i < Attempts; i++)
                 if (!extendedGet)
-                    extendedGet = _query.GetInfoMCNew(ip, port, out status);
+                    extendedGet = QueryHandlerService.GetInfoMCNew(ip, port, out status);
 
             if (!extendedGet || status == null)
             {
@@ -261,7 +267,7 @@ namespace UNObot.ServerQuery.Services
             var extendedGet = false;
             for (var i = 0; i < Attempts; i++)
                 if (!extendedGet)
-                    extendedGet = _query.GetInfoMCNew(ip, port, out status);
+                    extendedGet = QueryHandlerService.GetInfoMCNew(ip, port, out status);
 
             if (!extendedGet || status == null)
             {
@@ -323,7 +329,7 @@ namespace UNObot.ServerQuery.Services
                 else
                 {
                     // One-shot query, since it takes too long if it does fail. Plus, it's only one query instead of multi-A2S.
-                    var extendedGet = _query.GetInfoMCNew(ip, port, out var status);
+                    var extendedGet = QueryHandlerService.GetInfoMCNew(ip, port, out var status);
 
                     if (!extendedGet || status == null)
                     {

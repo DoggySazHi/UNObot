@@ -355,7 +355,7 @@ namespace UNObot.ServerQuery.Modules
         }
 
         public async Task CheckUnturned(string ip, ushort port = 27015, ServerAverages averages = null)
-            => await BaseQuery(() => new Task<Embed>(() => _embed.UnturnedQueryEmbed(ip, port, averages)));
+            => await BaseQuery(() => _embed.UnturnedQueryEmbed(ip, port, averages));
 
         private async Task BaseQuery(Func<Task<Embed>> method)
         {

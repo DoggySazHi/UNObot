@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using UNObot.ServerQuery.Queries;
 
 namespace UNObot.ServerQuery.Services
@@ -20,46 +21,46 @@ namespace UNObot.ServerQuery.Services
             _manager = manager;
         }
 
-        public bool GetInfo(string ip, ushort port, out A2SInfo output)
+        public static async Task<A2SInfo> GetInfo(string ip, ushort port)
         {
             var success = TryParseServer(ip, port, out var iPEndPoint);
             if (!success)
             {
-                output = null;
-                return false;
+                return null;
             }
 
-            output = new A2SInfo(iPEndPoint);
-            return output.ServerUp;
+            var output = new A2SInfo(iPEndPoint);
+            await output.FetchData();
+            return output;
         }
 
-        public bool GetPlayers(string ip, ushort port, out A2SPlayer output)
+        public static async Task<A2SPlayer> GetPlayers(string ip, ushort port)
         {
             var success = TryParseServer(ip, port, out var iPEndPoint);
             if (!success)
             {
-                output = null;
-                return false;
+                return null;
             }
 
-            output = new A2SPlayer(iPEndPoint);
-            return output.ServerUp;
+            var output = new A2SPlayer(iPEndPoint);
+            await output.FetchData();
+            return output;
         }
 
-        public bool GetRules(string ip, ushort port, out A2SRules output)
+        public static async Task<A2SRules> GetRules(string ip, ushort port)
         {
             var success = TryParseServer(ip, port, out var iPEndPoint);
             if (!success)
             {
-                output = null;
-                return false;
+                return null;
             }
 
-            output = new A2SRules(iPEndPoint);
-            return output.ServerUp;
+            var output = new A2SRules(iPEndPoint);
+            await output.FetchData();
+            return output;
         }
 
-        public bool GetInfoMCNew(string ip, ushort port, out MinecraftStatus output)
+        public static bool GetInfoMCNew(string ip, ushort port, out MinecraftStatus output)
         {
             var success = TryParseServer(ip, port, out var iPEndPoint);
             if (!success)

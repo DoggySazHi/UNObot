@@ -24,14 +24,12 @@ namespace UNObot.ServerQuery.Services
         private ServerLog _logs;
 
         private readonly ILogger _logger;
-        private readonly QueryHandlerService _query;
         
         public bool Ready { get; private set; }
 
-        public UBOWServerLoggerService(ILogger logger, QueryHandlerService query)
+        public UBOWServerLoggerService(ILogger logger)
         {
             _logger = logger;
-            _query = query;
             
             _logger.Log(LogSeverity.Info, "Loading logger service...");
             _logTimer = new Timer
@@ -98,7 +96,8 @@ namespace UNObot.ServerQuery.Services
 
                 for (var i = 0; i < Attempts; i++)
                 {
-                    serverUp = _query.GetInfo(Ip, QueryPort, out var output);
+                    var output = await QueryHandlerService.GetInfo(Ip, QueryPort);
+                    serverUp = output.ServerUp;
                     if (!serverUp) continue;
                     playerCount = output.Players;
                     break;
@@ -110,6 +109,7 @@ namespace UNObot.ServerQuery.Services
                     PlayerCount = playerCount,
                     ServerUp = serverUp
                 };
+                
                 _logs.ListOLogs.Add(nowLog);
                 await _logs.AppendToFile(FileName, nowLog);
                 if (_logs.ListOLogs.Count >= 365 * 24 * 60)
