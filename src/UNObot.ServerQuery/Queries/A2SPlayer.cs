@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace UNObot.ServerQuery.Queries
 {
-    public class A2SPlayer
+    public class A2SPlayer : IQuery
     {
         private static readonly byte[] Handshake = {0xFF, 0xFF, 0xFF, 0xFF, 0x55, 0xFF, 0xFF, 0xFF, 0xFF};
 

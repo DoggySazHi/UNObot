@@ -45,7 +45,6 @@ namespace UNObot.Templates
                 var output = new SqlConnectionStringBuilder
                 {
                     DataSource = $"{SqlServer},{SqlPort}",
-                    IntegratedSecurity = true,
                     UserID = SqlUser,
                     Password = SqlPassword,
                     InitialCatalog = "UNObot"

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -132,6 +133,7 @@ namespace UNObot.MusicBot.Services
                 var path = GetNextFile(guild, video.Id, "mp3");
                 if (File.Exists(path))
                     return path;
+                Debug.Assert(path != null); // I have no idea why the analyzer detects it.
                 try
                 {
                     await _client.Videos.DownloadAsync(url, path, o =>
@@ -171,6 +173,7 @@ namespace UNObot.MusicBot.Services
 
             if (File.Exists(fileName))
                 return fileName;
+            Debug.Assert(fileName != null); // I have no idea why the analyzer detects it.
 
             for (var i = 0; i < DlAttempts; i++)
                 try
@@ -204,6 +207,8 @@ namespace UNObot.MusicBot.Services
         private string GetNextFile(ulong guild, string id, string extension)
         {
             var fileName = Path.Combine(PathToGuildFolder(guild), $"{id}.{extension}");
+            if (fileName == null)
+                throw new InvalidOperationException("Generated filename is null; what happened?");
             _logger.Log(LogSeverity.Debug, "Saving to " + fileName);
             return fileName;
         }

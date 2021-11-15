@@ -128,10 +128,10 @@ namespace UNObot.ServerQuery.Services
         public async Task<Embed> MinecraftQueryEmbed(string ip, ushort port)
         {
             //TODO with the new option to disable status, it might be that queries work but not simple statuses.
-            var defaultStatus = new MCStatus(ip, port);
-            var extendedGet = QueryHandlerService.GetInfoMCNew(ip, port, out var extendedStatus);
+            var defaultStatus = await QueryHandlerService.GetMCStatus(ip, port);
+            var extendedStatus = await QueryHandlerService.GetMCQuery(ip, port);
 
-            if (!defaultStatus.ServerUp && !extendedGet)
+            if (!defaultStatus.ServerUp && !extendedStatus.ServerUp)
             {
                 return null;
             }
@@ -147,7 +147,7 @@ namespace UNObot.ServerQuery.Services
             var serverDescription = defaultStatus.Motd;
             var playersOnline = defaultStatus.CurrentPlayers == "0" ? "" : "Unknown (server doesn't have query on!)";
 
-            if (extendedStatus != null && extendedGet)
+            if (extendedStatus != null)
             {
                 playersOnline = "";
                 for (var i = 0; i < extendedStatus.Players.Length; i++)
@@ -180,37 +180,24 @@ namespace UNObot.ServerQuery.Services
             return builder.Build();
         }
         
-        public Task<Embed> MinecraftPEQueryEmbed(string ip, ushort port)
+        public async Task<Embed> MinecraftPEQueryEmbed(string ip, ushort port)
         {
-            var ping = new Stopwatch();
-            ping.Start();
-            var extendedGet = QueryHandlerService.GetInfoMCNew(ip, port, out var extendedStatus);
-            ping.Stop();
+            var status = await QueryHandlerService.GetMCPEStatus(ip, port);
 
-            if (!extendedGet)
+            if (status == null)
                 return null;
-
-            var serverDescription = extendedStatus.Motd;
             
-            var playersOnline = "";
-            for (var i = 0; i < extendedStatus.Players.Length; i++)
-            {
-                playersOnline += $"{extendedStatus.Players[i]}";
-
-                if (i != extendedStatus.Players.Length - 1)
-                    playersOnline += "\n";
-            }
+            var serverDescription = status.Motd;
 
             var builder = EmbedTemplate($"Minecraft Server Query of {ip}")
                 .WithTitle("MOTD")
                 .WithDescription(serverDescription)
                 .AddField("IP", ip, true)
                 .AddField("Port", port, true)
-                .AddField("Version", $"{extendedStatus.Version}", true)
-                .AddField("Ping", $"{ping.ElapsedMilliseconds} ms", true)
-                .AddField($"Players: {extendedStatus.Players.Length}/{extendedStatus.MaxPlayers}",
-                    string.IsNullOrWhiteSpace(playersOnline) ? "Nobody's online!" : playersOnline, true);
-            return Task.Run(builder.Build); // We do a little bit of tom-foolery.
+                .AddField("Version", $"{status.Version}", true)
+                .AddField("Ping", $"{status.Ping} ms", true)
+                .AddField("Players", $"{status.Players}/{status.MaxPlayers}");
+            return builder.Build();
         }
 
         public async Task<Embed> OuchiesEmbed(string ip, ushort port)
@@ -223,13 +210,10 @@ namespace UNObot.ServerQuery.Services
                     .AddField("Mukyu~", "Invalid port for checking ouchies!").Build();
             }
 
-            MinecraftStatus status = null;
-            var extendedGet = false;
-            for (var i = 0; i < Attempts; i++)
-                if (!extendedGet)
-                    extendedGet = QueryHandlerService.GetInfoMCNew(ip, port, out status);
+            MCQuery status = null;
+            for (var i = 0; i < Attempts; i++) status ??= await QueryHandlerService.GetMCQuery(ip, port);
 
-            if (!extendedGet || status == null)
+            if (status == null)
             {
                 return null;
             }
@@ -263,13 +247,10 @@ namespace UNObot.ServerQuery.Services
                     .Build();
             }
 
-            MinecraftStatus status = null;
-            var extendedGet = false;
-            for (var i = 0; i < Attempts; i++)
-                if (!extendedGet)
-                    extendedGet = QueryHandlerService.GetInfoMCNew(ip, port, out status);
+            MCQuery status = null;
+            for (var i = 0; i < Attempts; i++) status ??= await QueryHandlerService.GetMCQuery(ip, port);
 
-            if (!extendedGet || status == null)
+            if (status == null)
             {
                 return null;
             }
@@ -329,9 +310,9 @@ namespace UNObot.ServerQuery.Services
                 else
                 {
                     // One-shot query, since it takes too long if it does fail. Plus, it's only one query instead of multi-A2S.
-                    var extendedGet = QueryHandlerService.GetInfoMCNew(ip, port, out var status);
+                    var status = await QueryHandlerService.GetMCStatus(ip, port);
 
-                    if (!extendedGet || status == null)
+                    if (status == null)
                     {
                         message = "Could not connect to the server!";
                     }

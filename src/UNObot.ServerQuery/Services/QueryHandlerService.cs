@@ -23,53 +23,82 @@ namespace UNObot.ServerQuery.Services
 
         public static async Task<A2SInfo> GetInfo(string ip, ushort port)
         {
-            var success = TryParseServer(ip, port, out var iPEndPoint);
+            var success = TryParseServer(ip, port, out var ipEndPoint);
             if (!success)
             {
                 return null;
             }
 
-            var output = new A2SInfo(iPEndPoint);
+            var output = new A2SInfo(ipEndPoint);
             await output.FetchData();
             return output;
         }
 
         public static async Task<A2SPlayer> GetPlayers(string ip, ushort port)
         {
-            var success = TryParseServer(ip, port, out var iPEndPoint);
+            var success = TryParseServer(ip, port, out var ipEndPoint);
             if (!success)
             {
                 return null;
             }
 
-            var output = new A2SPlayer(iPEndPoint);
+            var output = new A2SPlayer(ipEndPoint);
             await output.FetchData();
             return output;
         }
 
         public static async Task<A2SRules> GetRules(string ip, ushort port)
         {
-            var success = TryParseServer(ip, port, out var iPEndPoint);
+            var success = TryParseServer(ip, port, out var ipEndPoint);
             if (!success)
             {
                 return null;
             }
 
-            var output = new A2SRules(iPEndPoint);
+            var output = new A2SRules(ipEndPoint);
+            await output.FetchData();
+            return output;
+        }
+        
+        public static async Task<MCStatus> GetMCStatus(string ip, ushort port)
+        {
+            var success = TryParseServer(ip, port, out var ipEndPoint);
+            
+            if (!success)
+            {
+                return null;
+            }
+            
+            var output = new MCStatus(ipEndPoint);
+            await output.FetchData();
+            return output;
+        }
+        
+        public static async Task<MCQuery> GetMCQuery(string ip, ushort port)
+        {
+            var success = TryParseServer(ip, port, out var ipEndPoint);
+            
+            if (!success)
+            {
+                return null;
+            }
+            
+            var output = new MCQuery(ipEndPoint);
             await output.FetchData();
             return output;
         }
 
-        public static bool GetInfoMCNew(string ip, ushort port, out MinecraftStatus output)
+        public static async Task<MCPEStatus> GetMCPEStatus(string ip, ushort port)
         {
-            var success = TryParseServer(ip, port, out var iPEndPoint);
+            var success = TryParseServer(ip, port, out var ipEndPoint);
             if (!success)
             {
-                output = null;
-                return false;
+                return null;
             }
-            output = new MinecraftStatus(iPEndPoint);
-            return output.ServerUp;
+
+            var output = new MCPEStatus(ipEndPoint);
+            await output.FetchData();
+            return output;
         }
 
         public bool SendRCON(string ip, ushort port, string command, string password, out IRCON output)
@@ -161,11 +190,6 @@ namespace UNObot.ServerQuery.Services
             }
 
             return addresses;
-        }
-
-        public MCStatus GetInfoMC(string ip, ushort port = 25565)
-        {
-            return new MCStatus(ip, port);
         }
     }
 }

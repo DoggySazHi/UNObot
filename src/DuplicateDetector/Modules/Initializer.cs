@@ -47,7 +47,7 @@ namespace DuplicateDetector.Modules
             if (!File.Exists(configPath))
             {
                 logger.Log(LogSeverity.Warning,
-                    "Config doesn't exist! The file has been created, please edit all fields to be correct. Exiting.");
+                    "DuplicateDetector Config doesn't exist! The file has been created, please edit all fields to be correct. Exiting.");
                 new DuplicateDetectorConfig().Write(configPath);
                 config = null;
                 return false;

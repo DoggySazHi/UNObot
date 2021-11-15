@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -76,8 +75,8 @@ namespace UNObot.ServerQuery.Queries
             var payload = MakePacketData(Password, PacketType.SERVERDATA_AUTH, 0);
             _socket.Send(payload);
             var count = _socket.Receive(RXData);
-            var id = LittleEndianReader(RXData, 4);
-            var type = LittleEndianReader(RXData, 8);
+            var id = Utilities.LittleEndianReader(RXData, 4);
+            var type = Utilities.LittleEndianReader(RXData, 8);
             if (count < 12 || id == -1 || type != (int) PacketType.SERVERDATA_AUTH_RESPONSE)
             {
                 Status = IRCON.RCONStatus.AuthFail;
@@ -99,8 +98,8 @@ namespace UNObot.ServerQuery.Queries
             var payload = MakePacketData(command, PacketType.SERVERDATA_EXECCOMMAND, 0);
             _socket.Send(payload);
             var count = _socket.Receive(RXData);
-            var id = LittleEndianReader(RXData, 4);
-            var type = LittleEndianReader(RXData, 8);
+            var id = Utilities.LittleEndianReader(RXData, 4);
+            var type = Utilities.LittleEndianReader(RXData, 8);
             if (id == -1 || type != (int) PacketType.SERVERDATA_RESPONSE_VALUE || count <= 12)
             {
                 Status = IRCON.RCONStatus.IntFail;
@@ -148,7 +147,7 @@ namespace UNObot.ServerQuery.Queries
 
                 if (lifetime == 0)
                 {
-                    lifetime = LittleEndianReader(RXData, startOfPacket) - 10;
+                    lifetime = Utilities.LittleEndianReader(RXData, startOfPacket) - 10;
                     position = startOfPacket + 12;
                     Console.WriteLine(lifetime);
                     _data.EnsureCapacity(_data.Length + Math.Min(count - position, lifetime));
@@ -156,8 +155,8 @@ namespace UNObot.ServerQuery.Queries
 
                 if (packetCount == 1)
                 {
-                    var id = LittleEndianReader(RXData, 4);
-                    var type = LittleEndianReader(RXData, 8);
+                    var id = Utilities.LittleEndianReader(RXData, 4);
+                    var type = Utilities.LittleEndianReader(RXData, 8);
                     if (id == -1 || type != (int) PacketType.SERVERDATA_RESPONSE_VALUE || count <= 12)
                     {
                         Status = IRCON.RCONStatus.ExecFail;
@@ -209,28 +208,6 @@ namespace UNObot.ServerQuery.Queries
                 _data.Remove(dataTrim, _data.Length - dataTrim);
         }
 
-        private static byte[] LittleEndianConverter(int data)
-        {
-            var output = BitConverter.GetBytes(data);
-            if (!BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(output);
-            }
-
-            return output;
-        }
-
-        private static int LittleEndianReader(IReadOnlyList<byte> data, int startIndex)
-        {
-            var temp = new [] {data[startIndex], data[startIndex + 1], data[startIndex + 2], data[startIndex + 3]};
-            if (!BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(temp);
-            }
-
-            return BitConverter.ToInt32(temp);
-        }
-
         private void WipeBuffer()
         {
             Array.Fill(RXData, (byte) 0b0);
@@ -239,9 +216,9 @@ namespace UNObot.ServerQuery.Queries
         private byte[] MakePacketData(string body, PacketType type, int id)
         {
             var lengthNum = body.Length;
-            var length = LittleEndianConverter(lengthNum + 10);
-            var idData = LittleEndianConverter(id);
-            var packetType = LittleEndianConverter((int) type);
+            var length = Utilities.LittleEndianConverter(lengthNum + 10);
+            var idData = Utilities.LittleEndianConverter(id);
+            var packetType = Utilities.LittleEndianConverter((int) type);
             var bodyData = new ASCIIEncoding().GetBytes(body);
             var packet = new byte[length.Length + idData.Length + packetType.Length + body.Length + 2];
             var counter = 0;

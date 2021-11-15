@@ -103,8 +103,8 @@ namespace UNObot.ServerQuery.Queries
                 var payload = MakePacketData(Password, PacketType.ServerdataAuth, 0);
                 _client.Send(payload);
                 _client.Receive(rxData);
-                var id = LittleEndianReader(ref rxData, 4);
-                var type = LittleEndianReader(ref rxData, 8);
+                var id = Utilities.LittleEndianReader(ref rxData, 4);
+                var type = Utilities.LittleEndianReader(ref rxData, 8);
                 if (id == -1 || type != 2)
                 {
                     Status = IRCON.RCONStatus.AuthFail;
@@ -163,8 +163,8 @@ namespace UNObot.ServerQuery.Queries
                         }
                         // StringConcat.Append($"\nPacket {PacketCount}\n\n");
 #endif
-                        var id = LittleEndianReader(ref rxData, 4);
-                        var type = LittleEndianReader(ref rxData, 8);
+                        var id = Utilities.LittleEndianReader(ref rxData, 4);
+                        var type = Utilities.LittleEndianReader(ref rxData, 8);
                         if ((id == -1 || type != (int) PacketType.ServerdataResponseValue) && packetCount == 0)
                         {
                             Status = IRCON.RCONStatus.AuthFail;
@@ -244,8 +244,8 @@ namespace UNObot.ServerQuery.Queries
                 var payload = MakePacketData(command, PacketType.ServerdataExeccommand, 0);
                 _client.Send(payload);
                 _client.Receive(rxData);
-                var id = LittleEndianReader(ref rxData, 4);
-                var type = LittleEndianReader(ref rxData, 8);
+                var id = Utilities.LittleEndianReader(ref rxData, 4);
+                var type = Utilities.LittleEndianReader(ref rxData, 8);
                 if (id == -1 || type != 0)
                 {
                     Status = IRCON.RCONStatus.AuthFail;
@@ -272,25 +272,7 @@ namespace UNObot.ServerQuery.Queries
             if (Status != IRCON.RCONStatus.Success || !reuse)
                 Dispose();
         }
-
-        private static byte[] LittleEndianConverter(int data)
-        {
-            var b = new byte[4];
-            b[0] = (byte) data;
-            b[1] = (byte) (((uint) data >> 8) & 0xFF);
-            b[2] = (byte) (((uint) data >> 16) & 0xFF);
-            b[3] = (byte) (((uint) data >> 24) & 0xFF);
-            return b;
-        }
-
-        private static int LittleEndianReader(ref byte[] data, int startIndex)
-        {
-            return (data[startIndex + 3] << 24)
-                   | (data[startIndex + 2] << 16)
-                   | (data[startIndex + 1] << 8)
-                   | data[startIndex];
-        }
-
+        
         // Fixes those random 14 byte sequences in RCON output.
         private static void WackDataProcessor(ref List<byte> data)
         {
@@ -327,9 +309,9 @@ namespace UNObot.ServerQuery.Queries
 
         private static byte[] MakePacketData(string body, PacketType type, int id)
         {
-            var length = LittleEndianConverter(body.Length + 9);
-            var idData = LittleEndianConverter(id);
-            var packetType = LittleEndianConverter((int) type);
+            var length = Utilities.LittleEndianConverter(body.Length + 9);
+            var idData = Utilities.LittleEndianConverter(id);
+            var packetType = Utilities.LittleEndianConverter((int) type);
             var bodyData = Encoding.UTF8.GetBytes(body);
             // Plus 1 for the null byte.
             var packet = new byte[length.Length + idData.Length + packetType.Length + bodyData.Length + 1];

@@ -204,6 +204,7 @@ namespace DuplicateDetector.Services
                 var extension = url.Split("/")[^1].Split(".")[^1];
                 var path = Path.Combine(_imageDir, $"{name}.{extension}");
                 var uri = new Uri(url);
+                // TODO Bad practice! Use static instance!
                 var client = new HttpClient();
                 var response = await client.GetAsync(uri);
                 if (File.Exists(path))

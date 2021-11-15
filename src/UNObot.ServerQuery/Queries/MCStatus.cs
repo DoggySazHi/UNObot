@@ -1,39 +1,49 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace UNObot.ServerQuery.Queries
 {
-    public class MCStatus
+    public class MCStatus : IQuery
     {
         private const ushort DataSize = 512; // this will hopefully suffice since the MotD should be <=59 characters
         private const ushort NumFields = 6; // number of values expected from server
 
-        public MCStatus(string address, ushort port)
+        private readonly IPEndPoint _ipEndPoint;
+
+        public MCStatus(IPEndPoint ipEndPoint)
+        {
+            _ipEndPoint = ipEndPoint;
+        }
+        
+        public string Motd { get; private set; }
+        public string Version { get; private set; }
+        public string CurrentPlayers { get; private set; }
+        public string MaximumPlayers { get; private set; }
+        public bool ServerUp { get; private set; }
+        public long Delay { get; private set; }
+        public async Task FetchData()
         {
             var rawServerData = new byte[DataSize];
-
-            Address = address;
-            Port = port;
-
+            
             try
             {
                 var stopWatch = new Stopwatch();
-                var tcpclient = new TcpClient
+                using var tcpClient = new TcpClient
                 {
                     ReceiveTimeout = 5000,
                     SendTimeout = 5000
                 };
                 stopWatch.Start();
-                tcpclient.Connect(address, port);
-                stopWatch.Stop();
-                var stream = tcpclient.GetStream();
+                await tcpClient.ConnectAsync(_ipEndPoint);
+                var stream = tcpClient.GetStream();
                 var payload = new byte[] {0xFE, 0x01};
                 stream.Write(payload, 0, payload.Length);
                 stream.Read(rawServerData, 0, DataSize);
-                tcpclient.Close();
-                tcpclient.Dispose();
+                stopWatch.Stop();
                 Delay = stopWatch.ElapsedMilliseconds;
             }
             catch (Exception)
@@ -63,14 +73,5 @@ namespace UNObot.ServerQuery.Queries
                 }
             }
         }
-
-        public string Address { get; set; }
-        public ushort Port { get; set; }
-        public string Motd { get; set; }
-        public string Version { get; set; }
-        public string CurrentPlayers { get; set; }
-        public string MaximumPlayers { get; set; }
-        public bool ServerUp { get; set; }
-        public long Delay { get; set; }
     }
 }

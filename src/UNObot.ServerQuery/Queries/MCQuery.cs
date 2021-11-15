@@ -3,17 +3,37 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace UNObot.ServerQuery.Queries
 {
-    /// <summary>
+     /// <summary>
     ///     William's proud of himself for writing this class.
     /// </summary>
-    public class MinecraftStatus
+    public class MCQuery : IQuery
     {
         private readonly byte[] _sessionHandshake = {0xFE, 0xFD, 0x09, 0x00, 0x00, 0x00, 0x01};
 
-        public MinecraftStatus(IPEndPoint server)
+        private IPEndPoint _ipEndPoint;
+
+        public MCQuery(IPEndPoint ipEndPoint)
+        {
+            _ipEndPoint = ipEndPoint;
+        }
+
+        public bool ServerUp { get; private set; }
+        public int MaxPlayers { get; private set; }
+        public string Ip { get; private set; }
+        public ushort Port { get; private set; }
+        public string GameId { get; private set; }
+        public string GameType { get; private set; }
+        public string Plugins { get; private set; }
+        public string Version { get; private set; }
+        public string Map { get; private set; }
+        public string Motd { get; private set; }
+        public string[] Players { get; private set; }
+        
+        public async Task FetchData()
         {
             UdpClient udp = null;
             MemoryStream memoryStream = null;
@@ -29,8 +49,8 @@ namespace UNObot.ServerQuery.Queries
                     }
                 };
 
-                udp.Send(_sessionHandshake, _sessionHandshake.Length, server);
-                memoryStream = new MemoryStream(udp.Receive(ref server));
+                await udp.SendAsync(_sessionHandshake, _sessionHandshake.Length, _ipEndPoint);
+                memoryStream = new MemoryStream(udp.Receive(ref _ipEndPoint));
                 binaryReader = new BinaryReader(memoryStream, Encoding.UTF8);
                 memoryStream.Seek(5, SeekOrigin.Begin);
                 var challengeString = Utilities.ReadNullTerminatedString(ref binaryReader);
@@ -46,8 +66,8 @@ namespace UNObot.ServerQuery.Queries
 
                 binaryReader.Close();
                 memoryStream.Close();
-                udp.Send(response, response.Length, server);
-                memoryStream = new MemoryStream(udp.Receive(ref server));
+                await udp.SendAsync(response, response.Length, _ipEndPoint);
+                memoryStream = new MemoryStream(udp.Receive(ref _ipEndPoint));
                 binaryReader = new BinaryReader(memoryStream, Encoding.UTF8);
                 memoryStream.Seek(1 + 4 + 11, SeekOrigin.Begin);
 
@@ -118,17 +138,5 @@ namespace UNObot.ServerQuery.Queries
                 udp?.Close();
             }
         }
-
-        public bool ServerUp { get; }
-        public int MaxPlayers { get; }
-        public string Ip { get; }
-        public ushort Port { get; }
-        public string GameId { get; }
-        public string GameType { get; }
-        public string Plugins { get; }
-        public string Version { get; }
-        public string Map { get; }
-        public string Motd { get; }
-        public string[] Players { get; }
     }
 }

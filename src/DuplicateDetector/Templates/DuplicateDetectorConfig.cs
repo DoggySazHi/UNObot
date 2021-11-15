@@ -4,7 +4,6 @@ using System.IO;
 using Discord;
 using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using UNObot.Plugins;
 
 namespace DuplicateDetector.Templates
@@ -51,8 +50,6 @@ namespace DuplicateDetector.Templates
             }
         }
         
-        [JsonIgnore] public JObject RawData { get; }
-
         [JsonIgnore] private ILogger _logger;
 
         /// <summary>
@@ -74,8 +71,7 @@ namespace DuplicateDetector.Templates
             
             var json = File.ReadAllText(file);
             JsonConvert.PopulateObject(json, this);
-            RawData = JObject.Parse(json);
-            File.WriteAllText(file, JsonConvert.SerializeObject(this, Formatting.Indented));
+            Write(file);
             _logger = logger;
         }
         

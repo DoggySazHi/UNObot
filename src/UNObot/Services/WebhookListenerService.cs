@@ -104,7 +104,7 @@ namespace UNObot.Services
                     var context = _server.GetContext();
                     var request = context.Request;
                     var url = context.Request.RawUrl;
-                    var displayURL = url == null ? "<null?>" : Uri.EscapeUriString(url).Replace(Environment.NewLine, "");
+                    var displayURL = url == null ? "<null?>" : Uri.EscapeDataString(url).Replace(Environment.NewLine, "");
 #if DEBUG
                     _logger.Log(LogSeverity.Debug, $"Received request from {displayURL}.");
                     var headers = request.Headers.AllKeys.Aggregate("Headers: ", (current, key) => current + $"{key?.Replace(Environment.NewLine, "")}, {request.Headers[key]?.Replace(Environment.NewLine, "")}\n");

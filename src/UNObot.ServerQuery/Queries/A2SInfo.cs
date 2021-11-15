@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace UNObot.ServerQuery.Queries
 {
-    public class A2SInfo
+    public class A2SInfo : IQuery
     {
         // \xFF\xFF\xFF\xFFTSource Engine Query\x00 because UTF-8 doesn't like to encode 0xFF
         private static readonly byte[] Request =
