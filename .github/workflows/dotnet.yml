@@ -16,7 +16,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: 6.0.x
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
@@ -27,14 +27,14 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: unobot
-        path: src/UNObot/bin/Release/net5.0/win-x64/publish/UNObot.exe
+        path: src/UNObot/bin/Release/net6.0/win-x64/publish/UNObot.exe
     - name: Upload plugins
       uses: actions/upload-artifact@v2
       with:
         name: unobot-plugins
-        path: src/UNObot/bin/Release/net5.0/win-x64/publish/plugins/*.dll
+        path: src/UNObot/bin/Release/net6.0/win-x64/publish/plugins/*.dll
     - name: Upload debug files
       uses: actions/upload-artifact@v2
       with:
         name: unobot-debug
-        path: src/UNObot/bin/Release/net5.0/win-x64/publish/**/*.pdb
+        path: src/UNObot/bin/Release/net6.0/win-x64/publish/**/*.pdb
