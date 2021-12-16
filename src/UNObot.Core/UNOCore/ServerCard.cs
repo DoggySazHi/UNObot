@@ -1,19 +1,18 @@
-﻿namespace UNObot.Core.UNOCore
+﻿namespace UNObot.Core.UNOCore;
+
+public class ServerCard
 {
-    public class ServerCard
+    public Card Card;
+    public int CardsAllocated = 1;
+    public int CardsAvailable = 1;
+
+    public ServerCard(Card card)
     {
-        public Card Card;
-        public int CardsAllocated = 1;
-        public int CardsAvailable = 1;
+        Card = card;
+    }
 
-        public ServerCard(Card card)
-        {
-            Card = card;
-        }
-
-        public bool Equals(ServerCard other)
-        {
-            return Card.Equals(other.Card);
-        }
+    public bool Equals(ServerCard other)
+    {
+        return Card.Equals(other.Card);
     }
 }

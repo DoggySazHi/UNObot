@@ -1,9 +1,8 @@
 ﻿using System.Threading.Tasks;
 
-namespace UNObot.ServerQuery.Queries
+namespace UNObot.ServerQuery.Queries;
+
+public interface IQuery
 {
-    public interface IQuery
-    {
-        public Task FetchData();
-    }
+    public Task FetchData();
 }

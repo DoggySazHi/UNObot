@@ -6,96 +6,95 @@ using Discord;
 using UNObot.Plugins;
 using UNObot.Plugins.Helpers;
 
-namespace UNObot.ServerQuery.Services
+namespace UNObot.ServerQuery.Services;
+
+public class DatabaseService
 {
-    public class DatabaseService
+    private readonly ILogger _logger;
+    private readonly IUNObotConfig _config;
+        
+    public DatabaseService(ILogger logger, IUNObotConfig config)
     {
-        private readonly ILogger _logger;
-        private readonly IUNObotConfig _config;
-        
-        public DatabaseService(ILogger logger, IUNObotConfig config)
+        _logger = logger;
+        _config = config;
+    }
+
+    public async Task<bool> IsInternalHostname(string hostname)
+    {
+        await using var db = _config.GetConnection();
+
+        const string commandText = "SELECT COUNT(1) FROM ServerQuery.InternalHostname WHERE hostname = @Hostname";
+
+        try
         {
-            _logger = logger;
-            _config = config;
+            return await db.ExecuteScalarAsync<bool>(_config.ConvertSql(commandText), new { Hostname = hostname } );
         }
-
-        public async Task<bool> IsInternalHostname(string hostname)
+        catch (DbException ex)
         {
-            await using var db = _config.GetConnection();
-
-            const string commandText = "SELECT COUNT(1) FROM ServerQuery.InternalHostname WHERE hostname = @Hostname";
-
-            try
-            {
-                return await db.ExecuteScalarAsync<bool>(_config.ConvertSql(commandText), new { Hostname = hostname } );
-            }
-            catch (DbException ex)
-            {
-                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
-                return false;
-            }
+            _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
+            return false;
         }
+    }
         
-        public async Task<string> GetMinecraftUser(ulong user)
+    public async Task<string> GetMinecraftUser(ulong user)
+    {
+        await using var db = _config.GetConnection();
+
+        const string commandText = "SELECT minecraft_username FROM ServerQuery.Player WHERE userid = @ID";
+
+        try
         {
-            await using var db = _config.GetConnection();
+            return await db.ExecuteScalarAsync<string>(_config.ConvertSql(commandText), new { ID = Convert.ToDecimal(user) } );
+        }
+        catch (DbException ex)
+        {
+            _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
+            return null;
+        }
+    }
 
-            const string commandText = "SELECT minecraft_username FROM ServerQuery.Player WHERE userid = @ID";
+    public async Task<bool> HasRCONPrivilege(ulong user)
+    {
+        await using var db = _config.GetConnection();
 
-            try
-            {
-                return await db.ExecuteScalarAsync<string>(_config.ConvertSql(commandText), new { ID = Convert.ToDecimal(user) } );
-            }
-            catch (DbException ex)
-            {
-                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
+        const string commandText = "SELECT rcon_privilege FROM ServerQuery.Player WHERE userid = @ID";
+
+        try
+        {
+            return await db.ExecuteScalarAsync<bool>(_config.ConvertSql(commandText), new { ID = Convert.ToDecimal(user) } );
+        }
+        catch (DbException ex)
+        {
+            _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
+            return false;
+        }
+    }
+        
+    public class RCONServer
+    {
+        public string Server { get; init; }
+        public ushort RCONPort { get; init; }
+        public string Password { get; init; }
+    }
+        
+    public async Task<RCONServer> GetRCONServer(ushort port)
+    {
+        await using var db = _config.GetConnection();
+
+        const string commandText = "SELECT ip, rcon_port, password FROM ServerQuery.RCONServer WHERE port = @Port";
+
+        try
+        {
+            var data = await db.QueryFirstOrDefaultAsync(_config.ConvertSql(commandText), new { Port = Convert.ToInt32(port) } );
+            if (data == null)
                 return null;
-            }
+            return new RCONServer
+                {Server = data.ip, RCONPort = Convert.ToUInt16(data.rcon_port), Password = data.password};
         }
-
-        public async Task<bool> HasRCONPrivilege(ulong user)
+        catch (DbException ex)
         {
-            await using var db = _config.GetConnection();
-
-            const string commandText = "SELECT rcon_privilege FROM ServerQuery.Player WHERE userid = @ID";
-
-            try
-            {
-                return await db.ExecuteScalarAsync<bool>(_config.ConvertSql(commandText), new { ID = Convert.ToDecimal(user) } );
-            }
-            catch (DbException ex)
-            {
-                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
-                return false;
-            }
-        }
-        
-        public class RCONServer
-        {
-            public string Server { get; init; }
-            public ushort RCONPort { get; init; }
-            public string Password { get; init; }
-        }
-        
-        public async Task<RCONServer> GetRCONServer(ushort port)
-        {
-            await using var db = _config.GetConnection();
-
-            const string commandText = "SELECT ip, rcon_port, password FROM ServerQuery.RCONServer WHERE port = @Port";
-
-            try
-            {
-                var data = await db.QueryFirstOrDefaultAsync(_config.ConvertSql(commandText), new { Port = Convert.ToInt32(port) } );
-                if (data == null)
-                    return null;
-                return new RCONServer
-                    {Server = data.ip, RCONPort = Convert.ToUInt16(data.rcon_port), Password = data.password};
-            }
-            catch (DbException ex)
-            {
-                _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
-                return null;
-            }
+            _logger.Log(LogSeverity.Error, "A SQL error has occurred.", ex);
+            return null;
         }
     }
 }

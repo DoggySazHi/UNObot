@@ -6,71 +6,70 @@ using Discord;
 using Discord.WebSocket;
 using UNObot.Plugins;
 
-namespace UNObot.ServerQuery.Services
+namespace UNObot.ServerQuery.Services;
+
+public class UnturnedReleaseNotes : IDisposable
 {
-    public class UnturnedReleaseNotes : IDisposable
+    private readonly Timer _checkInterval;
+    private string _lastLink;
+    private readonly DiscordSocketClient _client;
+    private readonly ILogger _logger;
+
+    public UnturnedReleaseNotes(DiscordSocketClient client, ILogger logger)
     {
-        private readonly Timer _checkInterval;
-        private string _lastLink;
-        private readonly DiscordSocketClient _client;
-        private readonly ILogger _logger;
-
-        public UnturnedReleaseNotes(DiscordSocketClient client, ILogger logger)
+        _logger = logger;
+        _client = client;
+        _lastLink = GetLatestLink();
+        _checkInterval = new Timer
         {
-            _logger = logger;
-            _client = client;
-            _lastLink = GetLatestLink();
-            _checkInterval = new Timer
-            {
-                AutoReset = true,
-                Interval = 1000 * 60 * 5,
-                Enabled = true
-            };
-            _checkInterval.Elapsed += CheckForUpdates;
+            AutoReset = true,
+            Interval = 1000 * 60 * 5,
+            Enabled = true
+        };
+        _checkInterval.Elapsed += CheckForUpdates;
+    }
+
+    public void Dispose()
+    {
+        _checkInterval?.Dispose();
+    }
+
+    private async void CheckForUpdates(object sender, ElapsedEventArgs e)
+    {
+        var link = GetLatestLink();
+        if (_lastLink != link)
+        {
+            _lastLink = link;
+            await _client.GetGuild(185593135458418701).GetTextChannel(477647595175411718)
+                .SendMessageAsync(link);
+            //_ = Program.SendPM(Link, 191397590946807809);
+            _logger.Log(LogSeverity.Verbose, "Found update.");
+        }
+        else
+        {
+            _logger.Log(LogSeverity.Verbose, "No updates found.");
+        }
+    }
+
+    public static string GetLatestLink()
+    {
+        var url = "https://steamcommunity.com/games/304930/rss/";
+        SyndicationFeed feed;
+        using (var reader = XmlReader.Create(url))
+        {
+            feed = SyndicationFeed.Load(reader);
         }
 
-        public void Dispose()
-        {
-            _checkInterval?.Dispose();
-        }
-
-        private async void CheckForUpdates(object sender, ElapsedEventArgs e)
-        {
-            var link = GetLatestLink();
-            if (_lastLink != link)
+        var link = "";
+        foreach (var item in feed.Items)
+            //string subject = item.Title.Text;
+            //string summary = item.Summary.Text;
+            if (item.Links.Count > 0)
             {
-                _lastLink = link;
-                await _client.GetGuild(185593135458418701).GetTextChannel(477647595175411718)
-                    .SendMessageAsync(link);
-                //_ = Program.SendPM(Link, 191397590946807809);
-                _logger.Log(LogSeverity.Verbose, "Found update.");
+                link = item.Links[0].GetAbsoluteUri().ToString();
+                break;
             }
-            else
-            {
-                _logger.Log(LogSeverity.Verbose, "No updates found.");
-            }
-        }
 
-        public static string GetLatestLink()
-        {
-            var url = "https://steamcommunity.com/games/304930/rss/";
-            SyndicationFeed feed;
-            using (var reader = XmlReader.Create(url))
-            {
-                feed = SyndicationFeed.Load(reader);
-            }
-
-            var link = "";
-            foreach (var item in feed.Items)
-                //string subject = item.Title.Text;
-                //string summary = item.Summary.Text;
-                if (item.Links.Count > 0)
-                {
-                    link = item.Links[0].GetAbsoluteUri().ToString();
-                    break;
-                }
-
-            return link;
-        }
+        return link;
     }
 }

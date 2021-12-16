@@ -5,40 +5,39 @@ using Discord;
 using Newtonsoft.Json;
 using UNObot.Plugins;
 
-namespace UNObot.Services
+namespace UNObot.Services;
+
+public class LocalizationService
 {
-    public class LocalizationService
+    private static readonly string LocalizationFile = "translations_en.json";
+    private Dictionary<string, string> _localizations;
+    private readonly ILogger _logger;
+
+    public LocalizationService(ILogger logger)
     {
-        private static readonly string LocalizationFile = "translations_en.json";
-        private Dictionary<string, string> _localizations;
-        private readonly ILogger _logger;
-
-        public LocalizationService(ILogger logger)
-        {
-            _logger = logger;
+        _logger = logger;
             
-            if (File.Exists(LocalizationFile))
-                try
-                {
-                    using var sr = new StreamReader(LocalizationFile);
-                    var json = sr.ReadToEnd();
-                    _localizations = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
-                }
-                catch (Exception e)
-                {
-                    _logger.Log(LogSeverity.Warning, $"Failed to read localizations; generating a new one!\n{e}");
-                    CreateNewLocalization();
-                }
-            else
+        if (File.Exists(LocalizationFile))
+            try
+            {
+                using var sr = new StreamReader(LocalizationFile);
+                var json = sr.ReadToEnd();
+                _localizations = JsonConvert.DeserializeObject<Dictionary<string, string>>(json);
+            }
+            catch (Exception e)
+            {
+                _logger.Log(LogSeverity.Warning, $"Failed to read localizations; generating a new one!\n{e}");
                 CreateNewLocalization();
-        }
+            }
+        else
+            CreateNewLocalization();
+    }
 
-        private void CreateNewLocalization()
-        {
-            _localizations = new Dictionary<string, string>();
-            using var sw = new StreamWriter(LocalizationFile);
-            sw.Write(JsonConvert.SerializeObject(_localizations));
-            _logger.Log(LogSeverity.Info, "Created empty localization file.");
-        }
+    private void CreateNewLocalization()
+    {
+        _localizations = new Dictionary<string, string>();
+        using var sw = new StreamWriter(LocalizationFile);
+        sw.Write(JsonConvert.SerializeObject(_localizations));
+        _logger.Log(LogSeverity.Info, "Created empty localization file.");
     }
 }

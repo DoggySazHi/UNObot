@@ -1,10 +1,9 @@
 ﻿using System;
 using Discord;
 
-namespace UNObot.Plugins
+namespace UNObot.Plugins;
+
+public interface ILogger
 {
-    public interface ILogger
-    {
-        void Log(LogSeverity severity, string message, Exception exception = null);
-    }
+    void Log(LogSeverity severity, string message, Exception exception = null);
 }

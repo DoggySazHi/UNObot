@@ -2,26 +2,25 @@
 using System.Collections.Generic;
 using System.Threading;
 
-namespace UNObot.Plugins.TerminalCore
+namespace UNObot.Plugins.TerminalCore;
+
+public static class ThreadSafeRandom
 {
-    public static class ThreadSafeRandom
+    [ThreadStatic] private static Random _local;
+
+    public static Random ThisThreadsRandom =>
+        _local ??= new Random(unchecked(Environment.TickCount * 31 + Thread.CurrentThread.ManagedThreadId));
+
+    public static void Shuffle<T>(this IList<T> list)
     {
-        [ThreadStatic] private static Random _local;
-
-        public static Random ThisThreadsRandom =>
-            _local ??= new Random(unchecked(Environment.TickCount * 31 + Thread.CurrentThread.ManagedThreadId));
-
-        public static void Shuffle<T>(this IList<T> list)
+        var n = list.Count;
+        while (n > 1)
         {
-            var n = list.Count;
-            while (n > 1)
-            {
-                n--;
-                var k = ThisThreadsRandom.Next(n + 1);
-                var value = list[k];
-                list[k] = list[n];
-                list[n] = value;
-            }
+            n--;
+            var k = ThisThreadsRandom.Next(n + 1);
+            var value = list[k];
+            list[k] = list[n];
+            list[n] = value;
         }
     }
 }

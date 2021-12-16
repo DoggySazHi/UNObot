@@ -4,192 +4,190 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using UNObot.ServerQuery.Queries;
 
-namespace UNObot.ServerQuery.Services
+namespace UNObot.ServerQuery.Services;
+//Adopted from Valve description: https://developer.valvesoftware.com/wiki/Server_queries#A2S_INFO
+//Thanks to https://www.techpowerup.com/forums/threads/snippet-c-net-steam-a2s_info-query.229199/ for A2S_INFO, self-reimplemented for A2S_PLAYER and A2S_RULES
+//Dealing with network-level stuff is hard
+
+//Credit to https://github.com/maxime-paquatte/csharp-minecraft-query/blob/master/src/Status.cs
+//Mukyu... but I implemented the Minecraft RCON (Valve RCON) protocol by hand, as well as the query.
+public class QueryHandlerService
 {
-    //Adopted from Valve description: https://developer.valvesoftware.com/wiki/Server_queries#A2S_INFO
-    //Thanks to https://www.techpowerup.com/forums/threads/snippet-c-net-steam-a2s_info-query.229199/ for A2S_INFO, self-reimplemented for A2S_PLAYER and A2S_RULES
-    //Dealing with network-level stuff is hard
+    private readonly RCONManager _manager;
 
-    //Credit to https://github.com/maxime-paquatte/csharp-minecraft-query/blob/master/src/Status.cs
-    //Mukyu... but I implemented the Minecraft RCON (Valve RCON) protocol by hand, as well as the query.
-    public class QueryHandlerService
+    public QueryHandlerService(RCONManager manager)
     {
-        private readonly RCONManager _manager;
+        _manager = manager;
+    }
 
-        public QueryHandlerService(RCONManager manager)
+    public static async Task<A2SInfo> GetInfo(string ip, ushort port)
+    {
+        var success = TryParseServer(ip, port, out var ipEndPoint);
+        if (!success)
         {
-            _manager = manager;
+            return null;
         }
 
-        public static async Task<A2SInfo> GetInfo(string ip, ushort port)
-        {
-            var success = TryParseServer(ip, port, out var ipEndPoint);
-            if (!success)
-            {
-                return null;
-            }
+        var output = new A2SInfo(ipEndPoint);
+        await output.FetchData();
+        return output;
+    }
 
-            var output = new A2SInfo(ipEndPoint);
-            await output.FetchData();
-            return output;
+    public static async Task<A2SPlayer> GetPlayers(string ip, ushort port)
+    {
+        var success = TryParseServer(ip, port, out var ipEndPoint);
+        if (!success)
+        {
+            return null;
         }
 
-        public static async Task<A2SPlayer> GetPlayers(string ip, ushort port)
-        {
-            var success = TryParseServer(ip, port, out var ipEndPoint);
-            if (!success)
-            {
-                return null;
-            }
+        var output = new A2SPlayer(ipEndPoint);
+        await output.FetchData();
+        return output;
+    }
 
-            var output = new A2SPlayer(ipEndPoint);
-            await output.FetchData();
-            return output;
+    public static async Task<A2SRules> GetRules(string ip, ushort port)
+    {
+        var success = TryParseServer(ip, port, out var ipEndPoint);
+        if (!success)
+        {
+            return null;
         }
 
-        public static async Task<A2SRules> GetRules(string ip, ushort port)
-        {
-            var success = TryParseServer(ip, port, out var ipEndPoint);
-            if (!success)
-            {
-                return null;
-            }
-
-            var output = new A2SRules(ipEndPoint);
-            await output.FetchData();
-            return output;
-        }
+        var output = new A2SRules(ipEndPoint);
+        await output.FetchData();
+        return output;
+    }
         
-        public static async Task<MCStatus> GetMCStatus(string ip, ushort port)
+    public static async Task<MCStatus> GetMCStatus(string ip, ushort port)
+    {
+        var success = TryParseServer(ip, port, out var ipEndPoint);
+            
+        if (!success)
         {
-            var success = TryParseServer(ip, port, out var ipEndPoint);
-            
-            if (!success)
-            {
-                return null;
-            }
-            
-            var output = new MCStatus(ipEndPoint);
-            await output.FetchData();
-            return output;
+            return null;
         }
+            
+        var output = new MCStatus(ipEndPoint);
+        await output.FetchData();
+        return output;
+    }
         
-        public static async Task<MCQuery> GetMCQuery(string ip, ushort port)
-        {
-            var success = TryParseServer(ip, port, out var ipEndPoint);
+    public static async Task<MCQuery> GetMCQuery(string ip, ushort port)
+    {
+        var success = TryParseServer(ip, port, out var ipEndPoint);
             
-            if (!success)
-            {
-                return null;
-            }
+        if (!success)
+        {
+            return null;
+        }
             
-            var output = new MCQuery(ipEndPoint);
-            await output.FetchData();
-            return output;
+        var output = new MCQuery(ipEndPoint);
+        await output.FetchData();
+        return output;
+    }
+
+    public static async Task<MCPEStatus> GetMCPEStatus(string ip, ushort port)
+    {
+        var success = TryParseServer(ip, port, out var ipEndPoint);
+        if (!success)
+        {
+            return null;
         }
 
-        public static async Task<MCPEStatus> GetMCPEStatus(string ip, ushort port)
-        {
-            var success = TryParseServer(ip, port, out var ipEndPoint);
-            if (!success)
-            {
-                return null;
-            }
+        var output = new MCPEStatus(ipEndPoint);
+        await output.FetchData();
+        return output;
+    }
 
-            var output = new MCPEStatus(ipEndPoint);
-            await output.FetchData();
-            return output;
+    public bool SendRCON(string ip, ushort port, string command, string password, out IRCON output)
+    {
+        var success = TryParseServer(ip, port, out var iPEndPoint);
+        if (!success)
+        {
+            output = null;
+            return false;
         }
 
-        public bool SendRCON(string ip, ushort port, string command, string password, out IRCON output)
+        output = _manager.CreateRCON(iPEndPoint, password, false, command);
+        return output.Status == IRCON.RCONStatus.Success;
+    }
+
+    public bool CreateRCON(string ip, ushort port, string password, ulong user, out IRCON output)
+    {
+        var possibleRCON = _manager.GetRCON(user);
+        if (possibleRCON != null)
         {
-            var success = TryParseServer(ip, port, out var iPEndPoint);
-            if (!success)
-            {
-                output = null;
-                return false;
-            }
-
-            output = _manager.CreateRCON(iPEndPoint, password, false, command);
-            return output.Status == IRCON.RCONStatus.Success;
-        }
-
-        public bool CreateRCON(string ip, ushort port, string password, ulong user, out IRCON output)
-        {
-            var possibleRCON = _manager.GetRCON(user);
-            if (possibleRCON != null)
-            {
-                output = possibleRCON;
-                return false;
-            }
-
-            var success = TryParseServer(ip, port, out var iPEndPoint);
-            if (!success)
-            {
-                output = null;
-                return false;
-            }
-
-            output = _manager.CreateRCON(iPEndPoint, password, true);
-            output.Owner = user;
-            return output.Status == IRCON.RCONStatus.Success;
-        }
-
-        public bool ExecuteRCON(ulong user, string command, out IRCON output)
-        {
-            var possibleRCON = _manager.GetRCON(user);
             output = possibleRCON;
-            if (possibleRCON == null)
+            return false;
+        }
+
+        var success = TryParseServer(ip, port, out var iPEndPoint);
+        if (!success)
+        {
+            output = null;
+            return false;
+        }
+
+        output = _manager.CreateRCON(iPEndPoint, password, true);
+        output.Owner = user;
+        return output.Status == IRCON.RCONStatus.Success;
+    }
+
+    public bool ExecuteRCON(ulong user, string command, out IRCON output)
+    {
+        var possibleRCON = _manager.GetRCON(user);
+        output = possibleRCON;
+        if (possibleRCON == null)
+            return false;
+
+        possibleRCON.Execute(command, true);
+        return output.Status == IRCON.RCONStatus.Success;
+    }
+
+    public bool CloseRCON(ulong user)
+    {
+        var possibleRCON = _manager.GetRCON(user);
+        if (possibleRCON == null)
+            return false;
+
+        possibleRCON.Dispose();
+        return true;
+    }
+
+    private static bool TryParseServer(string ip, ushort port, out IPEndPoint iPEndPoint)
+    {
+        var parseCheck = IPAddress.TryParse(ip, out var server);
+        var addresses = ResolveDns(ip);
+        if (!parseCheck)
+        {
+            if (addresses == null || addresses.Length == 0)
+            {
+                iPEndPoint = null;
                 return false;
+            }
 
-            possibleRCON.Execute(command, true);
-            return output.Status == IRCON.RCONStatus.Success;
+            server = addresses[0];
         }
 
-        public bool CloseRCON(ulong user)
+        iPEndPoint = new IPEndPoint(server, port);
+        return true;
+    }
+
+    private static IPAddress[] ResolveDns(string ip)
+    {
+        IPAddress[] addresses = null;
+        try
         {
-            var possibleRCON = _manager.GetRCON(user);
-            if (possibleRCON == null)
-                return false;
-
-            possibleRCON.Dispose();
-            return true;
+            addresses = Dns.GetHostAddresses(ip);
         }
-
-        private static bool TryParseServer(string ip, ushort port, out IPEndPoint iPEndPoint)
+        catch (SocketException)
         {
-            var parseCheck = IPAddress.TryParse(ip, out var server);
-            var addresses = ResolveDns(ip);
-            if (!parseCheck)
-            {
-                if (addresses == null || addresses.Length == 0)
-                {
-                    iPEndPoint = null;
-                    return false;
-                }
-
-                server = addresses[0];
-            }
-
-            iPEndPoint = new IPEndPoint(server, port);
-            return true;
         }
-
-        private static IPAddress[] ResolveDns(string ip)
+        catch (ArgumentException)
         {
-            IPAddress[] addresses = null;
-            try
-            {
-                addresses = Dns.GetHostAddresses(ip);
-            }
-            catch (SocketException)
-            {
-            }
-            catch (ArgumentException)
-            {
-            }
-
-            return addresses;
         }
+
+        return addresses;
     }
 }

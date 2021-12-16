@@ -4,48 +4,47 @@ using Discord;
 using Discord.WebSocket;
 using static Discord.ConnectionState;
 
-namespace UNObot.Services
+namespace UNObot.Services;
+
+public class WatchdogService : IDisposable
 {
-    public class WatchdogService : IDisposable
+    private readonly DiscordSocketClient _client;
+    private LoggerService _logger;
+    private readonly Timer _watchdog;
+
+    private const int Timeout = 2 * 60 * 1000;
+        
+    public WatchdogService(DiscordSocketClient client)
     {
-        private readonly DiscordSocketClient _client;
-        private LoggerService _logger;
-        private readonly Timer _watchdog;
-
-        private const int Timeout = 2 * 60 * 1000;
-        
-        public WatchdogService(DiscordSocketClient client)
+        _client = client;
+        _watchdog = new Timer
         {
-            _client = client;
-            _watchdog = new Timer
-            {
-                AutoReset = true,
-                Interval = Timeout,
-                Enabled = true
-            };
+            AutoReset = true,
+            Interval = Timeout,
+            Enabled = true
+        };
             
-            _watchdog.Elapsed += WatchdogCheck;
-        }
+        _watchdog.Elapsed += WatchdogCheck;
+    }
         
-        public void Initialize(LoggerService logger)
-        {
-            _logger = logger;
-            _logger.Log(LogSeverity.Info, $"Watchdog woke up! Check delay: {Timeout / 1000} seconds.");
-        }
+    public void Initialize(LoggerService logger)
+    {
+        _logger = logger;
+        _logger.Log(LogSeverity.Info, $"Watchdog woke up! Check delay: {Timeout / 1000} seconds.");
+    }
 
-        private void WatchdogCheck(object sender, ElapsedEventArgs e)
+    private void WatchdogCheck(object sender, ElapsedEventArgs e)
+    {
+        if (_client.ConnectionState is Disconnected or Disconnecting)
         {
-            if (_client.ConnectionState is Disconnected or Disconnecting)
-            {
-                _logger.Log(LogSeverity.Critical, $"Watchdog not fed in the last {Timeout / 1000} seconds! Quitting!");
-                Program.Exit(1);
-            }
+            _logger.Log(LogSeverity.Critical, $"Watchdog not fed in the last {Timeout / 1000} seconds! Quitting!");
+            Program.Exit(1);
         }
+    }
 
-        public void Dispose()
-        {
-            _watchdog?.Dispose();
-            GC.SuppressFinalize(this);
-        }
+    public void Dispose()
+    {
+        _watchdog?.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

@@ -10,115 +10,88 @@ using UNObot.Plugins;
 using UNObot.Services;
 using UNObot.Templates;
 
-namespace UNObot
+namespace UNObot;
+
+public class Program
 {
-    public class Program
+    private ServiceProvider _services;
+    private DiscordSocketClient _client;
+    private static readonly ManualResetEvent ExitEvent = new(false);
+    private static int _exitCode;
+    private IUNObotConfig _config;
+    private ILogger _logger;
+
+    private static async Task Main()
     {
-        private ServiceProvider _services;
-        private DiscordSocketClient _client;
-        private static readonly ManualResetEvent ExitEvent = new(false);
-        private static int ExitCode;
-        private IUNObotConfig _config;
-        private ILogger _logger;
+        await new Program().MainAsync();
+    }
 
-        private static async Task Main()
-        {
-            await new Program().MainAsync();
-        }
-
-        private async Task MainAsync()
-        {
-            _client = new DiscordSocketClient(
-                new DiscordSocketConfig
-                {
-                    AlwaysDownloadUsers = true,
-                    DefaultRetryMode = RetryMode.AlwaysRetry,
-                    MessageCacheSize = 50
-                }
-            );
+    private async Task MainAsync()
+    {
+        _client = new DiscordSocketClient(
+            new DiscordSocketConfig
+            {
+                AlwaysDownloadUsers = true,
+                DefaultRetryMode = RetryMode.AlwaysRetry,
+                MessageCacheSize = 50
+            }
+        );
             
-            var logger = new LoggerService();
+        var logger = new LoggerService();
             
-            _logger = logger;
+        _logger = logger;
             
-            _config = BuildConfig();
+        _config = BuildConfig();
             
-            _services = ConfigureServices();
+        _services = ConfigureServices();
 
-            _logger.Log(LogSeverity.Info, "UNObot Launcher 3.0");
+        _logger.Log(LogSeverity.Info, "UNObot Launcher 3.0");
 
-            _client.Log += logger.LogDiscord;
-            await _services.GetRequiredService<CommandHandlingService>().InitializeAsync(_services, logger);
-            _services.GetRequiredService<WebhookListenerService>();
-            _services.GetRequiredService<WatchdogService>().Initialize(logger);
+        _client.Log += logger.LogDiscord;
+        await _services.GetRequiredService<CommandHandlingService>().InitializeAsync(_services, logger);
+        _services.GetRequiredService<WebhookListenerService>();
+        _services.GetRequiredService<WatchdogService>().Initialize(logger);
 
-            await _client.LoginAsync(TokenType.Bot, _config.Token);
-            await _client.StartAsync();
-            _client.Ready += SetGame;
+        await _client.LoginAsync(TokenType.Bot, _config.Token);
+        await _client.StartAsync();
+        _client.Ready += SetGame;
 
-            Console.Title = $"UNObot {_config.Version}";
-            SafeExitHandler();
-            ExitEvent.WaitOne();
-            ExitEvent.Dispose();
-            OnExit();
-        }
+        Console.Title = $"UNObot {_config.Version}";
+        SafeExitHandler();
+        ExitEvent.WaitOne();
+        ExitEvent.Dispose();
+        OnExit();
+    }
 
-        private async Task SetGame()
-        {
-            await _client.SetGameAsync($"UNObot {_config.Version}");
-        }
+    private async Task SetGame()
+    {
+        await _client.SetGameAsync($"UNObot {_config.Version}");
+    }
         
-        private ServiceProvider ConfigureServices()
-        {
-            return new ServiceCollection()
-                .AddSingleton(_config)
-                .AddSingleton(_logger)
-                .AddSingleton(_client)
-                .AddSingleton<CommandService>()
-                .AddSingleton<CommandHandlingService>()
-                .AddSingleton<PluginLoaderService>()
-                .AddSingleton<EmbedDisplayService>()
-                .AddSingleton<DatabaseService>()
-                .AddSingleton<ShellService>()
-                .AddSingleton<WebhookListenerService>()
-                .AddSingleton<WatchdogService>()
+    private ServiceProvider ConfigureServices()
+    {
+        return new ServiceCollection()
+            .AddSingleton(_config)
+            .AddSingleton(_logger)
+            .AddSingleton(_client)
+            .AddSingleton<CommandService>()
+            .AddSingleton<CommandHandlingService>()
+            .AddSingleton<PluginLoaderService>()
+            .AddSingleton<EmbedDisplayService>()
+            .AddSingleton<DatabaseService>()
+            .AddSingleton<ShellService>()
+            .AddSingleton<WebhookListenerService>()
+            .AddSingleton<WatchdogService>()
 #if DEBUG
-                .AddSingleton<DebugService>()
+            .AddSingleton<DebugService>()
 #endif
-                .BuildServiceProvider();
-        }
+            .BuildServiceProvider();
+    }
 
-        private void SafeExitHandler()
+    private static void SafeExitHandler()
+    {
+        AppDomain.CurrentDomain.ProcessExit += (_, _) =>
         {
-            AppDomain.CurrentDomain.ProcessExit += (_, _) =>
-            {
-                try
-                {
-                    ExitEvent.Set();
-                }
-                catch (Exception)
-                {
-                    /* ignored */
-                }
-            };
-
-            Console.CancelKeyPress += (_, eventArgs) =>
-            {
-                eventArgs.Cancel = true;
-                try
-                {
-                    ExitEvent.Set();
-                }
-                catch (Exception)
-                {
-                    /* ignored */
-                }
-            };
-        }
-
-        public static void Exit(int code = 0)
-        {
-            ExitCode = code;
             try
             {
                 ExitEvent.Set();
@@ -127,46 +100,72 @@ namespace UNObot
             {
                 /* ignored */
             }
-        }
+        };
 
-        private void OnExit()
+        Console.CancelKeyPress += (_, eventArgs) =>
         {
-            _logger.Log(LogSeverity.Info, "Quitting...");
-            foreach (var service in _services.GetServices<object>())
+            eventArgs.Cancel = true;
+            try
             {
-                switch (service)
-                {
-                    case IAsyncDisposable objDisposableAsync:
-                        objDisposableAsync.DisposeAsync().GetAwaiter().GetResult();
-                        break;
-                    case IDisposable objDisposable:
-                        objDisposable.Dispose();
-                        break;
-                }
+                ExitEvent.Set();
             }
-            _services.Dispose();
-            Environment.Exit(ExitCode);
-        }
+            catch (Exception)
+            {
+                /* ignored */
+            }
+        };
+    }
 
-        private IUNObotConfig BuildConfig()
+    public static void Exit(int code = 0)
+    {
+        _exitCode = code;
+        try
         {
-            _logger.Log(LogSeverity.Info, $"Reading files in {Directory.GetCurrentDirectory()}");
-            if (!File.Exists("config.json"))
-            {
-                _logger.Log(LogSeverity.Info,
-                    "Config doesn't exist! The file has been created, please edit all fields to be correct. Exiting.");
-                new UNObotConfig().Write("config.json");
-                Environment.Exit(1);
-                return null;
-            }
-
-            var config = new UNObotConfig(_logger);
-            if (!config.VerifyConfig())
-                Environment.Exit(1);
-
-            _logger.Log(LogSeverity.Info, $"Running {config.Version}!");
-
-            return config;
+            ExitEvent.Set();
         }
+        catch (Exception)
+        {
+            /* ignored */
+        }
+    }
+
+    private void OnExit()
+    {
+        _logger.Log(LogSeverity.Info, "Quitting...");
+        foreach (var service in _services.GetServices<object>())
+        {
+            switch (service)
+            {
+                case IAsyncDisposable objDisposableAsync:
+                    objDisposableAsync.DisposeAsync().GetAwaiter().GetResult();
+                    break;
+                case IDisposable objDisposable:
+                    objDisposable.Dispose();
+                    break;
+            }
+        }
+        _services.Dispose();
+        Environment.Exit(_exitCode);
+    }
+
+    private IUNObotConfig BuildConfig()
+    {
+        _logger.Log(LogSeverity.Info, $"Reading files in {Directory.GetCurrentDirectory()}");
+        if (!File.Exists("config.json"))
+        {
+            _logger.Log(LogSeverity.Info,
+                "Config doesn't exist! The file has been created, please edit all fields to be correct. Exiting.");
+            new UNObotConfig().Write("config.json");
+            Environment.Exit(1);
+            return null;
+        }
+
+        var config = new UNObotConfig(_logger);
+        if (!config.VerifyConfig())
+            Environment.Exit(1);
+
+        _logger.Log(LogSeverity.Info, $"Running {config.Version}!");
+
+        return config;
     }
 }

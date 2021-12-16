@@ -1,9 +1,8 @@
-﻿namespace UNObot.Plugins
+﻿namespace UNObot.Plugins;
+
+public interface IDBConfig
 {
-    public interface IDBConfig
-    {
-        public string MySqlConnection { get; }
-        public string SqlConnection { get; }
-        public bool UseSqlServer { get; }
-    }
+    public string MySqlConnection { get; }
+    public string SqlConnection { get; }
+    public bool UseSqlServer { get; }
 }

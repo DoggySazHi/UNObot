@@ -9,381 +9,380 @@ using UNObot.Plugins.Helpers;
 using UNObot.ServerQuery.Services;
 using static UNObot.ServerQuery.Queries.IRCON;
 
-namespace UNObot.ServerQuery.Modules
+namespace UNObot.ServerQuery.Modules;
+
+public class ServerCommands : UNObotModule<UNObotCommandContext>
 {
-    public class ServerCommands : UNObotModule<UNObotCommandContext>
+    private const string TooLong = "[Message is too long; trimmed.]\n";
+
+    private readonly ILogger _logger;
+    private readonly UBOWServerLoggerService _ubowLogger;
+    private readonly EmbedService _embed;
+    private readonly QueryHandlerService _query;
+    private readonly DatabaseService _db;
+        
+    public ServerCommands(ILogger logger, UBOWServerLoggerService ubowLogger, EmbedService embed, QueryHandlerService query, DatabaseService db)
     {
-        private const string TooLong = "[Message is too long; trimmed.]\n";
+        _logger = logger;
+        _ubowLogger = ubowLogger;
+        _embed = embed;
+        _query = query;
+        _db = db;
+    }
 
-        private readonly ILogger _logger;
-        private readonly UBOWServerLoggerService _ubowLogger;
-        private readonly EmbedService _embed;
-        private readonly QueryHandlerService _query;
-        private readonly DatabaseService _db;
+    [SlashCommand("ubows", RunMode = RunMode.Async, Guild = 185593135458418701)]
+    [Alias("ubow")]
+    [Help(new[] {".ubows"}, "Get basic server information about the Unturned Bunker Official Wikia Server.", true,
+        "UNObot 2.4")]
+    public async Task Ubows()
+    {
+        await CheckUnturned("108.61.100.48", 25444, _ubowLogger.GetAverages());
+    }
+
+    [Command("unturnedreleasenotes", RunMode = RunMode.Async)]
+    [Alias("urn")]
+    [Help(new[] {".unturnedreleasenotes"}, "Find out what's in the latest release notes for Unturned.", true,
+        "UNObot 3.1.7")]
+    public async Task Urn()
+    {
+        await ReplyAsync(UnturnedReleaseNotes.GetLatestLink());
+    }
+
+    [Command("checkmc", RunMode = RunMode.Async)]
+    [Help(new[] {".checkmc (ip) (port)"}, "Get basic server information about any Minecraft server.", true,
+        "UNObot 2.4, UNObot 4.0.11")]
+    public async Task CheckMC(string ip, ushort port = 25565)
+    {
+        var message = await ReplyAsync("I am now querying the server, please wait warmly...");
+        try
+        {
+            var embed = await _embed.MinecraftQueryEmbed(ip, port);
+            if (embed == null)
+            {
+                await message.ModifyAsync(o =>
+                    o.Content = "Error: Apparently we couldn't get any information about this server.");
+                return;
+            }
+
+            await message.ModifyAsync(o =>
+            {
+                o.Content = "";
+                o.Embed = embed;
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
+            await message.ModifyAsync(o =>
+                o.Content = "We had some difficulties displaying the status. Please try again?");
+        }
+    }
         
-        public ServerCommands(ILogger logger, UBOWServerLoggerService ubowLogger, EmbedService embed, QueryHandlerService query, DatabaseService db)
+    [Command("checkmcpe", RunMode = RunMode.Async)]
+    [Help(new[] {".checkmcpe (ip) (port)"}, "Get basic server information about any Minecraft PE server.", true,
+        "UNObot 4.2.10")]
+    public async Task CheckMCPE(string ip, ushort port = 19132)
+    {
+        var message = await ReplyAsync("I am now querying the server, please wait warmly...");
+        try
         {
-            _logger = logger;
-            _ubowLogger = ubowLogger;
-            _embed = embed;
-            _query = query;
-            _db = db;
-        }
-
-        [SlashCommand("ubows", RunMode = RunMode.Async, Guild = 185593135458418701)]
-        [Alias("ubow")]
-        [Help(new[] {".ubows"}, "Get basic server information about the Unturned Bunker Official Wikia Server.", true,
-            "UNObot 2.4")]
-        public async Task Ubows()
-        {
-            await CheckUnturned("108.61.100.48", 25444, _ubowLogger.GetAverages());
-        }
-
-        [Command("unturnedreleasenotes", RunMode = RunMode.Async)]
-        [Alias("urn")]
-        [Help(new[] {".unturnedreleasenotes"}, "Find out what's in the latest release notes for Unturned.", true,
-            "UNObot 3.1.7")]
-        public async Task Urn()
-        {
-            await ReplyAsync(UnturnedReleaseNotes.GetLatestLink());
-        }
-
-        [Command("checkmc", RunMode = RunMode.Async)]
-        [Help(new[] {".checkmc (ip) (port)"}, "Get basic server information about any Minecraft server.", true,
-            "UNObot 2.4, UNObot 4.0.11")]
-        public async Task CheckMC(string ip, ushort port = 25565)
-        {
-            var message = await ReplyAsync("I am now querying the server, please wait warmly...");
-            try
+            var embed = await _embed.MinecraftPEQueryEmbed(ip, port);
+            if (embed == null)
             {
-                var embed = await _embed.MinecraftQueryEmbed(ip, port);
-                if (embed == null)
-                {
-                    await message.ModifyAsync(o =>
-                        o.Content = "Error: Apparently we couldn't get any information about this server.");
-                    return;
-                }
+                await message.ModifyAsync(o =>
+                    o.Content = "Error: Apparently we couldn't get any information about this server.");
+                return;
+            }
 
-                await message.ModifyAsync(o =>
-                {
-                    o.Content = "";
-                    o.Embed = embed;
-                });
-            }
-            catch (Exception ex)
+            await message.ModifyAsync(o =>
             {
-                _logger.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
-                await message.ModifyAsync(o =>
-                    o.Content = "We had some difficulties displaying the status. Please try again?");
-            }
+                o.Content = "";
+                o.Embed = embed;
+            });
         }
-        
-        [Command("checkmcpe", RunMode = RunMode.Async)]
-        [Help(new[] {".checkmcpe (ip) (port)"}, "Get basic server information about any Minecraft PE server.", true,
-            "UNObot 4.2.10")]
-        public async Task CheckMCPE(string ip, ushort port = 19132)
+        catch (Exception ex)
         {
-            var message = await ReplyAsync("I am now querying the server, please wait warmly...");
-            try
-            {
-                var embed = await _embed.MinecraftPEQueryEmbed(ip, port);
-                if (embed == null)
-                {
-                    await message.ModifyAsync(o =>
-                        o.Content = "Error: Apparently we couldn't get any information about this server.");
-                    return;
-                }
-
-                await message.ModifyAsync(o =>
-                {
-                    o.Content = "";
-                    o.Embed = embed;
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
-                await message.ModifyAsync(o =>
-                    o.Content = "We had some difficulties displaying the status. Please try again?");
-            }
+            _logger.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
+            await message.ModifyAsync(o =>
+                o.Content = "We had some difficulties displaying the status. Please try again?");
         }
+    }
 
-        [Command("ouchies", RunMode = RunMode.Async)]
-        [Help(new[] { ".ouchies" }, "That must hurt.", true, "UNObot 4.0.12")]
-        public async Task GetOuchies()
-            => await BaseQuery(() => _embed.OuchiesEmbed("williamle.com", 29292));
+    [Command("ouchies", RunMode = RunMode.Async)]
+    [Help(new[] { ".ouchies" }, "That must hurt.", true, "UNObot 4.0.12")]
+    public async Task GetOuchies()
+        => await BaseQuery(() => _embed.OuchiesEmbed("williamle.com", 29292));
 
-        [SlashCommand("ouchies", RunMode = RunMode.Async, Guild = 420005591155605535)]
-        [Help(new[] {".ouchies (Port)"}, "That must hurt.", true, "UNObot 4.0.12")]
-        public async Task GetOuchies(
-            [SlashCommandOption("The port associated with the server.", new object[] { "SurvivalA", "SurvivalB" }, new object[] { 29292, 27285 })]
-            ushort port
-        )
-            => await BaseQuery(() => _embed.OuchiesEmbed("williamle.com", port));
+    [SlashCommand("ouchies", RunMode = RunMode.Async, Guild = 420005591155605535)]
+    [Help(new[] {".ouchies (Port)"}, "That must hurt.", true, "UNObot 4.0.12")]
+    public async Task GetOuchies(
+        [SlashCommandOption("The port associated with the server.", new object[] { "SurvivalA", "SurvivalB" }, new object[] { 29292, 27285 })]
+        ushort port
+    )
+        => await BaseQuery(() => _embed.OuchiesEmbed("williamle.com", port));
 
-        [Command("locate", RunMode = RunMode.Async)]
-        [Help(new[] { ".locate" }, "¿Dónde están?", true, "UNObot 4.0.16")]
-        public async Task GetLocations()
-            => await BaseQuery(() => _embed.LocationsEmbed("williamle.com", 29292));
+    [Command("locate", RunMode = RunMode.Async)]
+    [Help(new[] { ".locate" }, "¿Dónde están?", true, "UNObot 4.0.16")]
+    public async Task GetLocations()
+        => await BaseQuery(() => _embed.LocationsEmbed("williamle.com", 29292));
 
-        [SlashCommand("locate", RunMode = RunMode.Async, Guild = 420005591155605535)]
-        [Help(new[] {".locate (port)"}, "¿Dónde están?", true, "UNObot 4.0.16")]
-        public async Task GetLocations(
-            [SlashCommandOption("The port associated with the server.", new object[] { "SurvivalA", "SurvivalB", "Creative" }, new object[] { 29292, 27285, 25432 })]
-            ushort port
-        )
+    [SlashCommand("locate", RunMode = RunMode.Async, Guild = 420005591155605535)]
+    [Help(new[] {".locate (port)"}, "¿Dónde están?", true, "UNObot 4.0.16")]
+    public async Task GetLocations(
+        [SlashCommandOption("The port associated with the server.", new object[] { "SurvivalA", "SurvivalB", "Creative" }, new object[] { 29292, 27285, 25432 })]
+        ushort port
+    )
+    {
+        var message = await ReplyAsync("I am now querying the server, please wait warmly...");
+        try
         {
-            var message = await ReplyAsync("I am now querying the server, please wait warmly...");
-            try
+            var embed = await _embed.LocationsEmbed("williamle.com", port);
+            if (embed == null)
             {
-                var embed = await _embed.LocationsEmbed("williamle.com", port);
-                if (embed == null)
-                {
-                    await message.ModifyAsync(o =>
-                        o.Content = "Error: Apparently we couldn't get any information about this server.");
-                    return;
-                }
-
                 await message.ModifyAsync(o =>
-                {
-                    o.Content = "";
-                    o.Embed = embed;
-                });
+                    o.Content = "Error: Apparently we couldn't get any information about this server.");
+                return;
             }
-            catch (Exception ex)
+
+            await message.ModifyAsync(o =>
             {
-                _logger.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
-                await message.ModifyAsync(o =>
-                    o.Content = "We had some difficulties displaying the status. Please try again?");
-            }
+                o.Content = "";
+                o.Embed = embed;
+            });
         }
-
-        [Command("expay", RunMode = RunMode.Async)]
-        [Help(new[] { ".expay (target) (amount)" }, "Where's my experience?", true, "UNObot 4.0.17")]
-        public async Task ExPay(string target, string amount)
-            => await BaseQuery(() => _embed.TransferEmbed("williamle.com", 29292, Context.User.Id, target, amount));
-
-        [SlashCommand("expay", RunMode = RunMode.Async, Guild = 420005591155605535)]
-        [Help(new[] {".expay (port) (target) (amount)"}, "Where's my experience?", true, "UNObot 4.0.17")]
-        public async Task ExPay(ushort port, string target, string amount)
-            => await BaseQuery(() => _embed.TransferEmbed("williamle.com", port, Context.User.Id, target, amount));
-
-        [Command("mctime", RunMode = RunMode.Async)]
-        [Help(new[] {".mctime"}, "SLEEP GUYS", true, "UNObot 4.0.16")]
-        public async Task GetMCTime()
+        catch (Exception ex)
         {
-            var server = await _db.GetRCONServer(29292);
-            await RunRCON(server.Server, server.RCONPort, server.Password, "time query daytime", false);
+            _logger.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
+            await message.ModifyAsync(o =>
+                o.Content = "We had some difficulties displaying the status. Please try again?");
         }
+    }
 
-        [SlashCommand("mctime", RunMode = RunMode.Async, Guild = 420005591155605535)]
-        [Help(new[] {".mctime (port)"}, "SLEEP GUYS", true, "UNObot 4.0.16")]
-        public async Task GetMCTime(
-            [SlashCommandOption("The port of the server to check the time of.", new object[] { "SurvivalA", "SurvivalB", "Creative" }, new object[] { 29292, 27285, 25432 }, Required = false)] ushort port)
-        {
-            var server = await _db.GetRCONServer(port);
+    [Command("expay", RunMode = RunMode.Async)]
+    [Help(new[] { ".expay (target) (amount)" }, "Where's my experience?", true, "UNObot 4.0.17")]
+    public async Task ExPay(string target, string amount)
+        => await BaseQuery(() => _embed.TransferEmbed("williamle.com", 29292, Context.User.Id, target, amount));
+
+    [SlashCommand("expay", RunMode = RunMode.Async, Guild = 420005591155605535)]
+    [Help(new[] {".expay (port) (target) (amount)"}, "Where's my experience?", true, "UNObot 4.0.17")]
+    public async Task ExPay(ushort port, string target, string amount)
+        => await BaseQuery(() => _embed.TransferEmbed("williamle.com", port, Context.User.Id, target, amount));
+
+    [Command("mctime", RunMode = RunMode.Async)]
+    [Help(new[] {".mctime"}, "SLEEP GUYS", true, "UNObot 4.0.16")]
+    public async Task GetMCTime()
+    {
+        var server = await _db.GetRCONServer(29292);
+        await RunRCON(server.Server, server.RCONPort, server.Password, "time query daytime", false);
+    }
+
+    [SlashCommand("mctime", RunMode = RunMode.Async, Guild = 420005591155605535)]
+    [Help(new[] {".mctime (port)"}, "SLEEP GUYS", true, "UNObot 4.0.16")]
+    public async Task GetMCTime(
+        [SlashCommandOption("The port of the server to check the time of.", new object[] { "SurvivalA", "SurvivalB", "Creative" }, new object[] { 29292, 27285, 25432 }, Required = false)] ushort port)
+    {
+        var server = await _db.GetRCONServer(port);
             
-            if (server == null)
-            {
-                await ReplyAsync("This is not a valid server port!");
-                return;
-            }
-
-            await RunRCON(server.Server, server.RCONPort, server.Password, "time query daytime", false);
-        }
-        
-        [SlashCommand("checkunturned", RunMode = RunMode.Async)]
-        [Alias("checku")]
-        [Help(new[] {".checkunturned (ip) (port)"}, "Get basic server information about any Unturned server.", true,
-            "UNObot 3.7")]
-        public async Task CheckUnturnedServer(
-            [SlashCommandOption("The IP of the server to check.")] string ip,
-            [SlashCommandOption("The port of the server to check.", Required = false)] ushort port = 27015)
+        if (server == null)
         {
-            await CheckUnturned(ip, port);
+            await ReplyAsync("This is not a valid server port!");
+            return;
         }
 
-        [Command("rcon", RunMode = RunMode.Async)]
-        [Help(new[] {".rcon (ip) (port) (password) (command)"},
-            "Run a command on a remote server. Limited to DoggySazHi ATM.", true, "UNObot 4.0.12")]
-        public async Task RunRCON(string ip, ushort port, string password, [Remainder] string command)
-            => await RunRCON(ip, port, password, command, true);
+        await RunRCON(server.Server, server.RCONPort, server.Password, "time query daytime", false);
+    }
         
-        private async Task RunRCON(string ip, ushort port, string password, string command, bool checkOrigin)
-        {
-            if (checkOrigin && !await _db.HasRCONPrivilege(Context.User.Id))
-                return;
+    [SlashCommand("checkunturned", RunMode = RunMode.Async)]
+    [Alias("checku")]
+    [Help(new[] {".checkunturned (ip) (port)"}, "Get basic server information about any Unturned server.", true,
+        "UNObot 3.7")]
+    public async Task CheckUnturnedServer(
+        [SlashCommandOption("The IP of the server to check.")] string ip,
+        [SlashCommandOption("The port of the server to check.", Required = false)] ushort port = 27015)
+    {
+        await CheckUnturned(ip, port);
+    }
+
+    [Command("rcon", RunMode = RunMode.Async)]
+    [Help(new[] {".rcon (ip) (port) (password) (command)"},
+        "Run a command on a remote server. Limited to DoggySazHi ATM.", true, "UNObot 4.0.12")]
+    public async Task RunRCON(string ip, ushort port, string password, [Remainder] string command)
+        => await RunRCON(ip, port, password, command, true);
+        
+    private async Task RunRCON(string ip, ushort port, string password, string command, bool checkOrigin)
+    {
+        if (checkOrigin && !await _db.HasRCONPrivilege(Context.User.Id))
+            return;
                 
-            var message = await ReplyAsync("Executing...");
-            var success = _query.SendRCON(ip, port, command, password, out var output);
-            if (!success)
-            {
-                var error = "Failed to execute command. ";
-                error += output.Status switch
-                {
-                    RCONStatus.ConnFail => "Is the server up, and the IP/port correct?",
-                    RCONStatus.AuthFail => "Is the correct password used?",
-                    RCONStatus.ExecFail => "Is the command valid, and authentication correct?",
-                    RCONStatus.IntFail => "Something failed publicly, blame DoggySazHi.",
-                    RCONStatus.Success => "I lied. It worked, but Doggy broke the programming.",
-                    _ => "I don't know what happened here."
-                };
-                await message.ModifyAsync(o => o.Content = error).ConfigureAwait(false);
-            }
-            else
-            {
-                var rconMessage = output.Data;
-                if (string.IsNullOrWhiteSpace(rconMessage))
-                    rconMessage = "Command executed successfully; server returned nothing.";
-                rconMessage = new Regex(@"§[0-9a-gklmnor]", RegexOptions.Multiline).Replace(rconMessage, ""); // Remove color codes
-                if (rconMessage.Length > 1995 - TooLong.Length)
-                    rconMessage = TooLong + rconMessage.Substring(0, 1995 - TooLong.Length);
-                await message.ModifyAsync(o => o.Content = rconMessage).ConfigureAwait(false);
-            }
-        }
-
-        [Command("rconexec", RunMode = RunMode.Async)]
-        [RequireOwner]
-        [Help(new[] {".rconexec (command)"},
-            "Run a command on a remote server. Limited to DoggySazHi ATM.", true, "UNObot 4.0.12")]
-        public async Task ExecRCON([Remainder] string command)
+        var message = await ReplyAsync("Executing...");
+        var success = _query.SendRCON(ip, port, command, password, out var output);
+        if (!success)
         {
-            var message = await ReplyAsync("Executing...");
-            var success = _query.ExecuteRCON(Context.User.Id, command, out var output);
-            if (!success)
+            var error = "Failed to execute command. ";
+            error += output.Status switch
             {
-                var error = "Failed to execute command. ";
-                if (output == null)
-                    error += "You did not open a connection with .rcon!";
-                else
-                    error += output.Status switch
-                    {
-                        RCONStatus.ConnFail => "Is the server up, and the IP/port correct?",
-                        RCONStatus.AuthFail => "Is the correct password used?",
-                        RCONStatus.ExecFail =>
-                        "Is the command valid, and authentication correct? This should never appear.",
-                        RCONStatus.IntFail => "Something failed publicly, blame DoggySazHi.",
-                        RCONStatus.Success => "I lied. It worked, but Doggy broke the programming.",
-                        _ => "I don't know what happened here."
-                    };
-
-                await message.ModifyAsync(o => o.Content = error).ConfigureAwait(false);
-            }
-            else
-            {
-                var rconMessage = output.Data;
-                if (string.IsNullOrWhiteSpace(rconMessage))
-                    rconMessage = "Command executed successfully; server returned nothing.";
-                rconMessage = new Regex(@"§[0-9a-gklmnor]", RegexOptions.Multiline).Replace(rconMessage, ""); // Remove color codes
-                if (rconMessage.Length > 1995 - TooLong.Length)
-                    rconMessage = TooLong + rconMessage.Substring(0, 1995 - TooLong.Length);
-                await message.ModifyAsync(o => o.Content = rconMessage).ConfigureAwait(false);
-            }
+                RCONStatus.ConnFail => "Is the server up, and the IP/port correct?",
+                RCONStatus.AuthFail => "Is the correct password used?",
+                RCONStatus.ExecFail => "Is the command valid, and authentication correct?",
+                RCONStatus.IntFail => "Something failed publicly, blame DoggySazHi.",
+                RCONStatus.Success => "I lied. It worked, but Doggy broke the programming.",
+                _ => "I don't know what happened here."
+            };
+            await message.ModifyAsync(o => o.Content = error).ConfigureAwait(false);
         }
-
-        [Command("rcon", RunMode = RunMode.Async)]
-        [RequireOwner]
-        [Help(new[] {".rcon (ip) (port) (password)"},
-            "Run a command on a remote server. Limited to DoggySazHi ATM.", true, "UNObot 4.0.12")]
-        public async Task RunRCON(string ip, ushort port, string password)
+        else
         {
-            var message = await ReplyAsync("Initializing...");
-            var success = _query.CreateRCON(ip, port, password, Context.User.Id, out var output);
-            if (!success)
-            {
-                var error = "Failed to login. ";
+            var rconMessage = output.Data;
+            if (string.IsNullOrWhiteSpace(rconMessage))
+                rconMessage = "Command executed successfully; server returned nothing.";
+            rconMessage = new Regex(@"§[0-9a-gklmnor]", RegexOptions.Multiline).Replace(rconMessage, ""); // Remove color codes
+            if (rconMessage.Length > 1995 - TooLong.Length)
+                rconMessage = TooLong + rconMessage.Substring(0, 1995 - TooLong.Length);
+            await message.ModifyAsync(o => o.Content = rconMessage).ConfigureAwait(false);
+        }
+    }
+
+    [Command("rconexec", RunMode = RunMode.Async)]
+    [RequireOwner]
+    [Help(new[] {".rconexec (command)"},
+        "Run a command on a remote server. Limited to DoggySazHi ATM.", true, "UNObot 4.0.12")]
+    public async Task ExecRCON([Remainder] string command)
+    {
+        var message = await ReplyAsync("Executing...");
+        var success = _query.ExecuteRCON(Context.User.Id, command, out var output);
+        if (!success)
+        {
+            var error = "Failed to execute command. ";
+            if (output == null)
+                error += "You did not open a connection with .rcon!";
+            else
                 error += output.Status switch
                 {
                     RCONStatus.ConnFail => "Is the server up, and the IP/port correct?",
                     RCONStatus.AuthFail => "Is the correct password used?",
                     RCONStatus.ExecFail =>
-                    "Is the command valid, and authentication correct? This should never appear.",
+                        "Is the command valid, and authentication correct? This should never appear.",
                     RCONStatus.IntFail => "Something failed publicly, blame DoggySazHi.",
-                    RCONStatus.Success => "An existing RCON connection exists for your user. Please close it first.",
+                    RCONStatus.Success => "I lied. It worked, but Doggy broke the programming.",
                     _ => "I don't know what happened here."
                 };
-                await message.MakeDeletable(Context.User.Id).ModifyAsync(o => o.Content = error).ConfigureAwait(false);
-            }
-            else
+
+            await message.ModifyAsync(o => o.Content = error).ConfigureAwait(false);
+        }
+        else
+        {
+            var rconMessage = output.Data;
+            if (string.IsNullOrWhiteSpace(rconMessage))
+                rconMessage = "Command executed successfully; server returned nothing.";
+            rconMessage = new Regex(@"§[0-9a-gklmnor]", RegexOptions.Multiline).Replace(rconMessage, ""); // Remove color codes
+            if (rconMessage.Length > 1995 - TooLong.Length)
+                rconMessage = TooLong + rconMessage.Substring(0, 1995 - TooLong.Length);
+            await message.ModifyAsync(o => o.Content = rconMessage).ConfigureAwait(false);
+        }
+    }
+
+    [Command("rcon", RunMode = RunMode.Async)]
+    [RequireOwner]
+    [Help(new[] {".rcon (ip) (port) (password)"},
+        "Run a command on a remote server. Limited to DoggySazHi ATM.", true, "UNObot 4.0.12")]
+    public async Task RunRCON(string ip, ushort port, string password)
+    {
+        var message = await ReplyAsync("Initializing...");
+        var success = _query.CreateRCON(ip, port, password, Context.User.Id, out var output);
+        if (!success)
+        {
+            var error = "Failed to login. ";
+            error += output.Status switch
             {
-                var rconMessage = output.Data;
-                if (string.IsNullOrWhiteSpace(rconMessage))
-                    rconMessage = "Connection created!";
-                await message.ModifyAsync(o => o.Content = rconMessage).ConfigureAwait(false);
-            }
+                RCONStatus.ConnFail => "Is the server up, and the IP/port correct?",
+                RCONStatus.AuthFail => "Is the correct password used?",
+                RCONStatus.ExecFail =>
+                    "Is the command valid, and authentication correct? This should never appear.",
+                RCONStatus.IntFail => "Something failed publicly, blame DoggySazHi.",
+                RCONStatus.Success => "An existing RCON connection exists for your user. Please close it first.",
+                _ => "I don't know what happened here."
+            };
+            await message.MakeDeletable(Context.User.Id).ModifyAsync(o => o.Content = error).ConfigureAwait(false);
         }
-
-        [Command("rcon", RunMode = RunMode.Async)]
-        [RequireOwner]
-        [Help(new[] {".rcon (command)"},
-            "Run a command on a remote server. Limited to DoggySazHi ATM.", true, "UNObot 4.0.12")]
-        public async Task RunRCON(string trigger)
+        else
         {
-            switch (trigger.ToLower().Trim())
+            var rconMessage = output.Data;
+            if (string.IsNullOrWhiteSpace(rconMessage))
+                rconMessage = "Connection created!";
+            await message.ModifyAsync(o => o.Content = rconMessage).ConfigureAwait(false);
+        }
+    }
+
+    [Command("rcon", RunMode = RunMode.Async)]
+    [RequireOwner]
+    [Help(new[] {".rcon (command)"},
+        "Run a command on a remote server. Limited to DoggySazHi ATM.", true, "UNObot 4.0.12")]
+    public async Task RunRCON(string trigger)
+    {
+        switch (trigger.ToLower().Trim())
+        {
+            case "close":
+                await CloseRCON();
+                break;
+            case "status":
+                await GetRCON();
+                break;
+            default:
+                await ReplyAsync("Invalid command. Use \"close\" or \"status\".");
+                break;
+        }
+    }
+
+    private async Task CloseRCON()
+    {
+        var message = await ReplyAsync("Searching...");
+        var success = _query.CloseRCON(Context.User.Id);
+        if (!success)
+            await message.MakeDeletable(Context.User.Id).ModifyAsync(o => o.Content = "Could not find an open connection owned by you.");
+        else
+            await message.ModifyAsync(o => o.Content = "Successfully closed your connection.");
+    }
+
+    private async Task GetRCON()
+    {
+        var message = await ReplyAsync("Searching...");
+        var success = _query.ExecuteRCON(Context.User.Id, "", out var output);
+        if (!success)
+            await message.MakeDeletable(Context.User.Id).ModifyAsync(o => o.Content = "Could not find an open connection owned by you.");
+        else
+            await message.ModifyAsync(o =>
+                o.Content = $"Connected to {output.Server.Address} on {output.Server.Port}.");
+    }
+
+    public async Task CheckUnturned(string ip, ushort port = 27015, ServerAverages averages = null)
+        => await BaseQuery(() => _embed.UnturnedQueryEmbed(ip, port, averages));
+
+    private async Task BaseQuery(Func<Task<Embed>> method)
+    {
+        var message = await ReplyAsync("I am now querying the server, please wait warmly...");
+        try
+        {
+            var embed = await method();
+            if (embed == null)
             {
-                case "close":
-                    await CloseRCON();
-                    break;
-                case "status":
-                    await GetRCON();
-                    break;
-                default:
-                    await ReplyAsync("Invalid command. Use \"close\" or \"status\".");
-                    break;
-            }
-        }
-
-        private async Task CloseRCON()
-        {
-            var message = await ReplyAsync("Searching...");
-            var success = _query.CloseRCON(Context.User.Id);
-            if (!success)
-                await message.MakeDeletable(Context.User.Id).ModifyAsync(o => o.Content = "Could not find an open connection owned by you.");
-            else
-                await message.ModifyAsync(o => o.Content = "Successfully closed your connection.");
-        }
-
-        private async Task GetRCON()
-        {
-            var message = await ReplyAsync("Searching...");
-            var success = _query.ExecuteRCON(Context.User.Id, "", out var output);
-            if (!success)
-                await message.MakeDeletable(Context.User.Id).ModifyAsync(o => o.Content = "Could not find an open connection owned by you.");
-            else
-                await message.ModifyAsync(o =>
-                    o.Content = $"Connected to {output.Server.Address} on {output.Server.Port}.");
-        }
-
-        public async Task CheckUnturned(string ip, ushort port = 27015, ServerAverages averages = null)
-            => await BaseQuery(() => _embed.UnturnedQueryEmbed(ip, port, averages));
-
-        private async Task BaseQuery(Func<Task<Embed>> method)
-        {
-            var message = await ReplyAsync("I am now querying the server, please wait warmly...");
-            try
-            {
-                var embed = await method();
-                if (embed == null)
-                {
-                    await message
-                        .MakeDeletable()
-                        .ModifyAsync(o =>
+                await message
+                    .MakeDeletable()
+                    .ModifyAsync(o =>
                         o.Content = "Error: Apparently we couldn't get any information about this server.");
-                    return;
-                }
+                return;
+            }
 
-                await message.ModifyAsync(o =>
-                {
-                    o.Content = "";
-                    o.Embed = embed;
-                });
-            }
-            catch (Exception ex)
+            await message.ModifyAsync(o =>
             {
-                _logger.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
-                await message.ModifyAsync(o =>
-                    o.Content = "We had some difficulties displaying the status. Please try again?");
-            }
+                o.Content = "";
+                o.Embed = embed;
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.Log(LogSeverity.Error, "Error loading embeds for this server.", ex);
+            await message.ModifyAsync(o =>
+                o.Content = "We had some difficulties displaying the status. Please try again?");
         }
     }
 }
