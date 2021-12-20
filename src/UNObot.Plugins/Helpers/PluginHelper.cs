@@ -159,7 +159,7 @@ public static class PluginHelper
         if (context is not UNObotCommandContext { Interaction: { } } unobotContext)
             return await context.Channel.SendMessageAsync(message, isTTS, embed, options, allowedMentions, messageReference,
                 component);
-        return await unobotContext.Interaction.FollowupAsync(message, embed == null ? null : new [] { embed }, isTTS, ephemeral, allowedMentions, options, component);
+        return await unobotContext.Interaction.FollowupAsync(message, embed == null ? null : new [] { embed }, isTTS, ephemeral, allowedMentions, component, options: options);
     }
 
     public static Color RandomColor()

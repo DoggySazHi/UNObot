@@ -44,7 +44,7 @@ public class MCPEStatus : IQuery
     {
         var stopwatch = new Stopwatch();
             
-        using var udp = new UdpClient(_endPoint.Port);
+        using var udp = new UdpClient();
         udp.Client.SendTimeout = 5000;
         udp.Client.ReceiveTimeout = 5000;
 

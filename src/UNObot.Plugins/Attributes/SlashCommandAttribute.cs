@@ -16,8 +16,8 @@ public class SlashCommandAttribute : CommandAttribute
     /// </summary>
     public bool RegisterSlashCommand { get; set; } = true;
         
-    /// <inheritdoc cref="SlashCommandBuilder.DefaultPermission"/>
-    public bool DefaultPermission { get; set; } = true;
+    /// <inheritdoc cref="SlashCommandBuilder.IsDefaultPermission"/>
+    public bool IsDefaultPermission { get; set; } = true;
 
     /// <summary>
     /// The ID of the guild the command belongs to. A 0 will make it a global command.
@@ -33,7 +33,7 @@ public class SlashCommandAttribute : CommandAttribute
         string command,
         bool ignoreExtraArgs = false) : base(command, ignoreExtraArgs)
     {
-            
+        
     }
 }
     
@@ -90,7 +90,7 @@ public class SlashCommandOptionAttribute : Attribute
     public string Description { get; }
     public ApplicationCommandOptionType OptionType { get; set; } = ApplicationCommandOptionType.String;
         
-    /// <inheritdoc cref="SlashCommandBuilder.DefaultPermission"/>
+    /// <inheritdoc cref="SlashCommandOptionBuilder.IsRequired"/>
     public bool Required { get; set; } = true;
         
     public object[] Choices { get; }

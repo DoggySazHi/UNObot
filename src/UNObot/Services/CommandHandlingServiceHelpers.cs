@@ -62,7 +62,7 @@ public partial class CommandHandlingService
         else
             builder.WithDescription("No description is provided about this command.");
 
-        builder.WithDefaultPermission(owner == null || attribute.DefaultPermission);
+        builder.WithDefaultPermission(owner == null || attribute.IsDefaultPermission);
             
         // Create group and subcommand
         if (subgroup != null)
@@ -215,14 +215,9 @@ public partial class CommandHandlingService
                 }
             }
         }
-        catch (ApplicationCommandException exception)
-        {
-            var json = JsonConvert.SerializeObject(exception.Error, Formatting.Indented);
-            _logger.Log(LogSeverity.Error, $"Error trying to create a slash command!\n{json}");
-        }
         catch (HttpException exception)
         {
-            var json = JsonConvert.SerializeObject(exception.Error, Formatting.Indented);
+            var json = JsonConvert.SerializeObject(exception.Errors, Formatting.Indented);
             _logger.Log(LogSeverity.Error, $"Permissions were not granted for a server!\n{json}");
         }
         finally
