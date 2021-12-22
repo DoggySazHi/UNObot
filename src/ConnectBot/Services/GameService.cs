@@ -105,9 +105,8 @@ public class GameService : EmbedService
 
         if (!modSuccess)
         {
-            var newMessage = await context.ReplyAsync(embed: embed);
+            var newMessage = await context.ReplyAsync(embed: embed, component: ButtonHandler.GenerateNumbers(board.Width));
             PluginHelper.GhostMessage(context, text).ContinueWithoutAwait(_logger);
-            _button.AddNumbers(newMessage, board.Width).ContinueWithoutAwait(_logger);
             game.LastChannel = context.Channel.Id;
             game.LastMessage = newMessage.Id;
         }

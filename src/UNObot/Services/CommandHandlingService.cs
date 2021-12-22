@@ -250,16 +250,16 @@ public partial class CommandHandlingService : IDisposable
             switch (result.Error.Value)
             {
                 case CommandError.BadArgCount:
-                    (await context.ReplyAsync(
-                        $"Hmm, that's not how it works. Type '<@{context.Client.CurrentUser.Id}> help' for the parameters of your command.")).MakeDeletable(context.User.Id);
+                    await context.ReplyAsync(
+                        $"Hmm, that's not how it works. Type '<@{context.Client.CurrentUser.Id}> help' for the parameters of your command.", component: PluginHelper.MakeDeletable(context.User.Id));
                     break;
                 case CommandError.ParseFailed:
-                    (await context.ReplyAsync(
-                        "You dun goof. If it asks for numbers, type an actual number. If it asks for words, make sure to double quote around it.")).MakeDeletable(context.User.Id);
+                    await context.ReplyAsync(
+                        "You dun goof. If it asks for numbers, type an actual number. If it asks for words, make sure to double quote around it.", component: PluginHelper.MakeDeletable(context.User.Id));
                     break;
                 case CommandError.MultipleMatches:
-                    (await context.ReplyAsync(
-                        $"There are multiple commands with the same name. Type '<@{context.Client.CurrentUser.Id}> help' to see which one you need.")).MakeDeletable(context.User.Id);
+                    await context.ReplyAsync(
+                        $"There are multiple commands with the same name. Type '<@{context.Client.CurrentUser.Id}> help' to see which one you need.", component: PluginHelper.MakeDeletable(context.User.Id));
                     break;
                 case CommandError.UnmetPrecondition:
                 case CommandError.UnknownCommand:

@@ -51,12 +51,27 @@ public static class PluginHelper
     public static IUserMessage MakeDeletable(this IUserMessage message, ulong user)
     {
         message.ModifyAsync(o =>
-                o.Components = new ComponentBuilder()
-                    .WithButton("Delete", $"delete{user}", ButtonStyle.Danger, Delete)
-                    .Build())
+                o.Components = MakeDeletable(user))
             .ContinueWithoutAwait(_ => {});
         return message;
     }
+    
+    /// <summary>
+    /// Create a message component recognizing that the message is deletable.
+    /// </summary>
+    /// <returns>A <see cref="MessageComponent"/> which can be used to delete the message.</returns>
+    public static MessageComponent MakeDeletable()
+        => MakeDeletable(0);
+
+    /// <summary>
+    /// Create a message component recognizing that the message is deletable.
+    /// </summary>
+    /// <param name="user">The user allowed to delete the message.</param>
+    /// <returns>A <see cref="MessageComponent"/> which can be used to delete the message.</returns>
+    public static MessageComponent MakeDeletable(ulong user)
+        => new ComponentBuilder()
+            .WithButton("Delete", $"delete{user}", ButtonStyle.Danger, Delete)
+            .Build();
 
     /// <summary>
     /// Delete the message if the user-deletable button has been clicked.
@@ -67,7 +82,9 @@ public static class PluginHelper
     public static async Task DeleteReact(SocketInteraction interaction, DiscordSocketClient client)
     {
         if (interaction is not SocketMessageComponent button) return;
-        var message = await button.GetOriginalResponseAsync();
+        var message = button.Message;
+        //if (message == null) return;
+        
         if (message.Author.Id == client.CurrentUser.Id &&
             button.Data.Type == ComponentType.Button &&
             button.Data.CustomId.StartsWith("delete"))
@@ -113,7 +130,7 @@ public static class PluginHelper
     /// <returns>The same <code>EmbedBuilder</code>, for chaining purposes.</returns>
     public static EmbedBuilder AddBlankField(this EmbedBuilder builder)
         => builder.AddField("\u200b", "\u200b");
-        
+
     /// <summary>
     /// Ghost a message in a channel for a period of time.
     /// </summary>
@@ -121,26 +138,41 @@ public static class PluginHelper
     /// <param name="text">Text to include. May be null.</param>
     /// <param name="fallback">A fallback message to send, if the embed fails. If null, <code>text</code> will be used instead.</param>
     /// <param name="embed">An embed to include. May be null.</param>
+    /// <param name="component">A Discord message component to attach to the message. May be null.</param>
     /// <param name="time">How long to wait until the message is deleted.</param>
     /// <returns>An <code>IUserMessage</code> associated with the ghosted message, or null if the message could not be sent.</returns>
-    public static async Task<IUserMessage> GhostMessage(ICommandContext context, string text = null, string fallback = null, Embed embed = null, int time = 5000)
+    public static async Task<IUserMessage> GhostMessage(ICommandContext context, string text = null, string fallback = null, Embed embed = null, MessageComponent component = null, int time = 5000)
     {
         if (text == null && embed == null)
             return null;
         IUserMessage message;
+
+        if (time <= 0)
+        {
+            try
+            {
+                message = await context.ReplyAsync(text, embed: embed, component: component);
+            }
+            catch (CommandException)
+            {
+                fallback ??= text;
+                message = await context.ReplyAsync(fallback);
+            }
             
+            return message;
+        }
+        
         try
         {
-            message = await context.ReplyAsync(text, embed: embed);
+            // IDK why ReplyAsync doesn't work; is Discord.NET.Labs not capable of deleting followup messages?
+            message = await context.Channel.SendMessageAsync(text, embed: embed, component: component);
         }
         catch (CommandException)
         {
             fallback ??= text;
-            message = await context.ReplyAsync(fallback);
+            message = await context.Channel.SendMessageAsync(fallback);
         }
-
-        if (time <= 0)
-            return message;
+        
         await Task.Delay(time);
         await message.DeleteAsync();
         return null;

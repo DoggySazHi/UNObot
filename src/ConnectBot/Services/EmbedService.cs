@@ -15,7 +15,7 @@ public abstract class EmbedService
         _config = config;
     }
 
-    public async Task<IUserMessage> ErrorEmbed(IUNObotCommandContext context, string message, bool ghost = false)
+    public async Task<IUserMessage> ErrorEmbed(IUNObotCommandContext context, string message, MessageComponent component = null, bool ghost = false)
     {
         var error = new EmbedBuilder()
             .WithTitle("Error!!")
@@ -23,14 +23,15 @@ public abstract class EmbedService
             .WithColor(Color.Red);
         var embed = Build(error, context, false);
         return await PluginHelper.GhostMessage(context,
-            text: null,
-            fallback:
+            null,
             "**Warning: the bot has no embed permissions, and ConnectBot will not display a board without embeds!**\n" +
             $"Error!! - {message}",
-            embed: embed, ghost ? 5000 : -1);
+            embed, 
+            component,
+            ghost ? 5000 : -1);
     }
 
-    public async Task<IUserMessage> SuccessEmbed(IUNObotCommandContext context, string message, bool ghost = false)
+    public async Task<IUserMessage> SuccessEmbed(IUNObotCommandContext context, string message, MessageComponent component = null, bool ghost = false)
     {
         var error = new EmbedBuilder()
             .WithTitle("Success!!")
@@ -38,11 +39,12 @@ public abstract class EmbedService
             .WithColor(Color.Green);
         var embed = Build(error, context, false);
         return await PluginHelper.GhostMessage(context,
-            text: null,
-            fallback:
+            null,
             "**Warning: the bot has no embed permissions, and ConnectBot will not display a board without embeds!**\n" +
             $"Success!! - {message}",
-            embed: embed, ghost ? 5000 : -1);
+            embed,
+            component,
+            ghost ? 5000 : -1);
     }
 
     public Embed Build(EmbedBuilder embed, IUNObotCommandContext context, bool addColor = true)

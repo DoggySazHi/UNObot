@@ -28,7 +28,7 @@ public class ButtonHandler
     private async Task InteractionCreated(SocketInteraction arg)
     {
         if (arg is not SocketMessageComponent interaction) return;
-        var message = await interaction.GetOriginalResponseAsync();
+        var message = interaction.Message;
         if (message.Author.Id != _client.CurrentUser.Id) return;
         if (interaction.Channel is not ITextChannel) return;
         var context =
@@ -38,12 +38,14 @@ public class ButtonHandler
         {
             _ = Callback(context, new[] {"", interaction.Data.Values.FirstOrDefault()}).ConfigureAwait(false);
         }
+
+        await interaction.DeferAsync();
     }
         
-    public async Task AddNumbers(IUserMessage message, int columns)
+    public static MessageComponent GenerateNumbers(int columns)
     {
         columns = Math.Min(columns, SlashCommandOptionBuilder.MaxChoiceCount);
-        await message.ModifyAsync(o => o.Components = new ComponentBuilder()
+        var components = new ComponentBuilder()
             .WithSelectMenu(new SelectMenuBuilder()
                 .WithPlaceholder("Pick a column to drop to.")
                 .WithCustomId("unobot")
@@ -51,6 +53,8 @@ public class ButtonHandler
                     .Select(p => new SelectMenuOptionBuilder("Column " + p, $"{p}"))
                     .ToList()
                 ))
-            .Build());
+            .Build();
+
+        return components;
     }
 }

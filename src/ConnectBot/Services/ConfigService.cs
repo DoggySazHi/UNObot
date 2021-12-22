@@ -34,37 +34,37 @@ public class ConfigService : EmbedService
     {
         if (args.Length != 4)
         {
-            (await ErrorEmbed(fakeContext, "The parameters should be .cbot board [width] [height] [connect].")).MakeDeletable(fakeContext.User.Id);
+            await ErrorEmbed(fakeContext, "The parameters should be .cbot board [width] [height] [connect].", PluginHelper.MakeDeletable(fakeContext.User.Id));
             return;
         }
 
         if (!int.TryParse(args[1], out var width) || width <= 0)
         {
-            (await ErrorEmbed(fakeContext, "The width of the board should be an integer greater than 1!")).MakeDeletable(fakeContext.User.Id);
+            await ErrorEmbed(fakeContext, "The width of the board should be an integer greater than 1!", PluginHelper.MakeDeletable(fakeContext.User.Id));
             return;
         }
             
         if (!int.TryParse(args[2], out var height) || height <= 0)
         {
-            (await ErrorEmbed(fakeContext, "The height of the board should be an integer greater than 1!")).MakeDeletable(fakeContext.User.Id);
+            await ErrorEmbed(fakeContext, "The height of the board should be an integer greater than 1!", PluginHelper.MakeDeletable(fakeContext.User.Id));
             return;
         }
             
         if (!int.TryParse(args[3], out var connect) || connect <= 0)
         {
-            (await ErrorEmbed(fakeContext, "The connect value of the board should be an integer greater than 1!")).MakeDeletable(fakeContext.User.Id);
+            await ErrorEmbed(fakeContext, "The connect value of the board should be an integer greater than 1!", PluginHelper.MakeDeletable(fakeContext.User.Id));
             return;
         }
 
         if (width > 8 || height > 8)
         {
-            (await ErrorEmbed(fakeContext, "The width and height of the board is too large (max 8x8, due to embed restrictions)!")).MakeDeletable(fakeContext.User.Id);
+            await ErrorEmbed(fakeContext, "The width and height of the board is too large (max 8x8, due to embed restrictions)!", PluginHelper.MakeDeletable(fakeContext.User.Id));
             return;
         }
             
         if (connect > width || connect > height || connect > Math.Sqrt(Math.Pow(width, 2) + Math.Pow(height, 2)))
         {
-            (await ErrorEmbed(fakeContext, "The connect length is too long, and cannot fit in the board!")).MakeDeletable(fakeContext.User.Id);
+            await ErrorEmbed(fakeContext, "The connect length is too long, and cannot fit in the board!", PluginHelper.MakeDeletable(fakeContext.User.Id));
             return;
         }
             
