@@ -146,7 +146,7 @@ public class Player : IAsyncDisposable
                     Songs.Add(NowPlaying);
                 if (_quit)
                 {
-                    _ffmpegProcess.Kill();
+                    _ffmpegProcess?.Kill();
                     _ffmpegProcess = null;
                 }
 

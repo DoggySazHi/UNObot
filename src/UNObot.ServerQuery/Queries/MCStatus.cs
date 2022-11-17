@@ -42,7 +42,7 @@ public class MCStatus : IQuery
             var stream = tcpClient.GetStream();
             var payload = new byte[] {0xFE, 0x01};
             stream.Write(payload, 0, payload.Length);
-            stream.Read(rawServerData, 0, DataSize);
+            _ = stream.Read(rawServerData, 0, DataSize);
             stopWatch.Stop();
             Delay = stopWatch.ElapsedMilliseconds;
         }

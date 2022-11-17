@@ -54,7 +54,7 @@ public partial class CommandHandlingService
             
         // Fill in base command properties
         if (builder.Name == null)
-            builder.WithName(attribute.Text);
+            builder.Name = attribute.Text;
         builder.Name = builder.Name.ToLower();
 
         if (help != null && !string.IsNullOrWhiteSpace(help.HelpMsg))

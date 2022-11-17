@@ -138,7 +138,7 @@ public class YoutubeService
             {
                 await _client.Videos.DownloadAsync(url, path, o =>
                 {
-                    o.SetFormat("mp3");
+                    o.SetContainer(Container.Mp3);
                     o.SetFFmpegPath(_ffmpegPath);
                 }).ConfigureAwait(false);
             }

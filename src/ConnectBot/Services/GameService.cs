@@ -16,6 +16,8 @@ public class GameService : EmbedService
 {
     private readonly DatabaseService _db;
     private readonly AFKTimerService _afk;
+    // Forces the object to load once, since it needs a Discord object
+    // ReSharper disable once NotAccessedField.Local
     private readonly ButtonHandler _button;
     private readonly ILogger _logger;
         

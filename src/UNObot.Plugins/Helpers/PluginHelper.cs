@@ -165,7 +165,7 @@ public static class PluginHelper
         try
         {
             // IDK why ReplyAsync doesn't work; is Discord.NET.Labs not capable of deleting followup messages?
-            message = await context.Channel.SendMessageAsync(text, embed: embed, component: component);
+            message = await context.Channel.SendMessageAsync(text, embed: embed, components: component);
         }
         catch (CommandException)
         {
@@ -191,11 +191,13 @@ public static class PluginHelper
         if (context is not UNObotCommandContext { Interaction: { } } unobotContext)
             return await context.Channel.SendMessageAsync(message, isTTS, embed, options, allowedMentions, messageReference,
                 component);
-        if (unobotContext.Interaction.HasResponded)
+        //if (unobotContext.Interaction.HasResponded)
             return await unobotContext.Interaction.FollowupAsync(message, null, isTTS, ephemeral, allowedMentions, component,
                 embed, options);
-        return await unobotContext.Interaction.RespondAsync(message, null, isTTS, ephemeral, allowedMentions, component,
+            /*
+        await unobotContext.Interaction.RespondAsync(message, null, isTTS, ephemeral, allowedMentions, component,
             embed, options);
+        return null;*/
     }
 
     public static Color RandomColor()
