@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Data.Common;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;

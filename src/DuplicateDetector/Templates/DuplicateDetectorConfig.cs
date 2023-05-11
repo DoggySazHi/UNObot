@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using System.IO;
 using Discord;
 using MySql.Data.MySqlClient;
@@ -44,7 +44,9 @@ public class DuplicateDetectorConfig : IDBConfig
                 UserID = SqlUser,
                 Password = SqlPassword,
                 InitialCatalog = "UNObot",
-                IntegratedSecurity = false
+                IntegratedSecurity = false,
+                MultipleActiveResultSets = true,
+                TrustServerCertificate = true
             };
             return output.ConnectionString;
         }
