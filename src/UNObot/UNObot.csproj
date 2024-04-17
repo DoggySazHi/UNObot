@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <ApplicationIcon>uno.ico</ApplicationIcon>
   </PropertyGroup>
 
@@ -43,20 +43,20 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="Dapper" Version="2.0.123" />
+    <PackageReference Include="Dapper" Version="2.1.35" />
     <PackageReference Include="Dapper.Contrib" Version="2.0.78" />
     <PackageReference Include="Discord.Net.Labs" Version="3.6.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.1" />
-    <PackageReference Include="MySql.Data" Version="8.0.33" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    <PackageReference Include="MySql.Data" Version="8.3.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.1.1" />
-    <PackageReference Include="System.ServiceModel.Syndication" Version="6.0.0" />
-    <PackageReference Include="YoutubeExplode" Version="6.2.4" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.0" />
+    <PackageReference Include="System.ServiceModel.Syndication" Version="8.0.0" />
+    <PackageReference Include="YoutubeExplode" Version="6.3.13" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
-    <PackageReference Include="YoutubeExplode.Converter" Version="6.2.4" />
+    <PackageReference Include="YoutubeExplode.Converter" Version="6.3.13" />
   </ItemGroup>
 
   <ItemGroup>
@@ -71,24 +71,24 @@
   
   <Target Name="CopyPlugins" AfterTargets="PostBuildEvent">
     <ItemGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-      <CorePlugin Include="$(SolutionDir)src\UNObot.Core\bin\Release\net6.0\*.dll" />
-      <QueryPlugin Include="$(SolutionDir)src\UNObot.ServerQuery\bin\Release\net6.0\*.dll" />
-      <MusicBotPlugin Include="$(SolutionDir)src\UNObot.MusicBot\bin\Release\net6.0\*.dll" />
-      <DuplicateDetectorPlugin Include="$(SolutionDir)src\DuplicateDetector\bin\Release\net6.0\*.dll" />
-      <ConnectBotPlugin Include="$(SolutionDir)src\ConnectBot\bin\Release\net6.0\*.dll" />
-      <GooglePlugin Include="$(SolutionDir)src\UNObot.Google\bin\Release\net6.0\*.dll" />
-      <MiscPlugin Include="$(SolutionDir)src\UNObot.Misc\bin\Release\net6.0\*.dll" />
+      <CorePlugin Include="$(SolutionDir)src\UNObot.Core\bin\Release\net8.0\*.dll" />
+      <QueryPlugin Include="$(SolutionDir)src\UNObot.ServerQuery\bin\Release\net8.0\*.dll" />
+      <MusicBotPlugin Include="$(SolutionDir)src\UNObot.MusicBot\bin\Release\net8.0\*.dll" />
+      <DuplicateDetectorPlugin Include="$(SolutionDir)src\DuplicateDetector\bin\Release\net8.0\*.dll" />
+      <ConnectBotPlugin Include="$(SolutionDir)src\ConnectBot\bin\Release\net8.0\*.dll" />
+      <GooglePlugin Include="$(SolutionDir)src\UNObot.Google\bin\Release\net8.0\*.dll" />
+      <MiscPlugin Include="$(SolutionDir)src\UNObot.Misc\bin\Release\net8.0\*.dll" />
       <Config Include="$(SolutionDir)src\config.json" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-      <CorePlugin Include="$(SolutionDir)src\UNObot.Core\bin\Debug\net6.0\*.dll" />
-      <QueryPlugin Include="$(SolutionDir)src\UNObot.ServerQuery\bin\Debug\net6.0\*.dll" />
-      <MusicBotPlugin Include="$(SolutionDir)src\UNObot.MusicBot\bin\Debug\net6.0\*.dll" />
-      <DuplicateDetectorPlugin Include="$(SolutionDir)src\DuplicateDetector\bin\Debug\net6.0\*.dll" />
-      <ConnectBotPlugin Include="$(SolutionDir)src\ConnectBot\bin\Debug\net6.0\*.dll" />
-      <GooglePlugin Include="$(SolutionDir)src\UNObot.Google\bin\Debug\net6.0\*.dll" />
-      <MiscPlugin Include="$(SolutionDir)src\UNObot.Misc\bin\Debug\net6.0\*.dll" />
+      <CorePlugin Include="$(SolutionDir)src\UNObot.Core\bin\Debug\net8.0\*.dll" />
+      <QueryPlugin Include="$(SolutionDir)src\UNObot.ServerQuery\bin\Debug\net8.0\*.dll" />
+      <MusicBotPlugin Include="$(SolutionDir)src\UNObot.MusicBot\bin\Debug\net8.0\*.dll" />
+      <DuplicateDetectorPlugin Include="$(SolutionDir)src\DuplicateDetector\bin\Debug\net8.0\*.dll" />
+      <ConnectBotPlugin Include="$(SolutionDir)src\ConnectBot\bin\Debug\net8.0\*.dll" />
+      <GooglePlugin Include="$(SolutionDir)src\UNObot.Google\bin\Debug\net8.0\*.dll" />
+      <MiscPlugin Include="$(SolutionDir)src\UNObot.Misc\bin\Debug\net8.0\*.dll" />
       <Config Include="$(SolutionDir)src\UNObot\config.json" />
     </ItemGroup>
     

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
@@ -12,17 +12,17 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Dapper" Version="2.0.123" />
+      <PackageReference Include="Dapper" Version="2.1.35" />
       <PackageReference Include="Dapper.Contrib" Version="2.0.78" />
       <PackageReference Include="Discord.Net.Labs" Version="3.6.1" />
-      <PackageReference Include="Microsoft.Data.SqlClient" Version="5.1.1" />
+      <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.0" />
     </ItemGroup>
 
     <Target Name="CopyPlugins" AfterTargets="PostBuildEvent">
         <ItemGroup>
             <Plugin Include="$(ProjectDir)$(OutDir)*.dll" />
         </ItemGroup>
-        <Copy SourceFiles="$(Plugin)" DestinationFolder="$(SolutionDir)src\UNObot\bin\Debug\netcoreapp3.1\plugins" SkipUnchangedFiles="false" ContinueOnError="true" Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'" />
-        <Copy SourceFiles="$(Plugin)" DestinationFolder="$(SolutionDir)src\UNObot\bin\Release\netcoreapp3.1\plugins" SkipUnchangedFiles="false" ContinueOnError="true" Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'" />
+        <Copy SourceFiles="$(Plugin)" DestinationFolder="$(SolutionDir)src\UNObot\bin\Debug\net8.0\plugins" SkipUnchangedFiles="false" ContinueOnError="true" Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'" />
+        <Copy SourceFiles="$(Plugin)" DestinationFolder="$(SolutionDir)src\UNObot\bin\Release\net8.0\plugins" SkipUnchangedFiles="false" ContinueOnError="true" Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'" />
     </Target>
 </Project>
